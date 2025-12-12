@@ -1,26 +1,193 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Summer Nude Palette */
+  --color-desert-storm: #F8F8F7;
+  --color-pampas: #ECE9E4;
+  --color-pot-pourri: #F3E8DC;
+  --color-akaroa: #D8C4B2;
+  
+  --color-brandy-rose-50: #FAF7F5;
+  --color-brandy-rose-100: #F2EBE6;
+  --color-brandy-rose-200: #E8D9CF;
+  --color-brandy-rose-300: #D9C1B0;
+  --color-brandy-rose-400: #CCAB96;
+  --color-brandy-rose-500: #BE9982;
+  --color-brandy-rose-600: #A88470;
+  --color-brandy-rose-700: #8F6D5B;
+  --color-brandy-rose-800: #755848;
+  --color-brandy-rose-900: #5E483A;
+  --color-brandy-rose-950: #4A3A2E;
+
+  --color-success: #6B8E6B;
+  --color-success-light: #E8F0E8;
+  --color-warning: #D4A574;
+  --color-warning-light: #FDF6EE;
+  --color-info: #7B9EB8;
+  --color-info-light: #F0F5F8;
+  --color-error: #C17B7B;
+  --color-error-light: #FCF0F0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --radius: 0.375rem; /* 6px */
+  
+  /* Semantic Colors */
+  --background: #F8F8F7; /* Desert Storm */
+  --foreground: #4A3A2E; /* Text Primary */
+  
+  --card: #ECE9E4; /* Pampas */
+  --card-foreground: #4A3A2E;
+  
+  --popover: #ECE9E4;
+  --popover-foreground: #4A3A2E;
+  
+  --primary: #BE9982; /* Brandy Rose 500 */
+  --primary-foreground: #FFFFFF; /* Text Inverse */
+  
+  --secondary: #F3E8DC; /* Pot Pourri */
+  --secondary-foreground: #4A3A2E;
+  
+  --muted: #F3E8DC; /* Pot Pourri (using as muted bg) */
+  --muted-foreground: #A88470; /* Text Muted */
+  
+  --accent: #F3E8DC; /* Pot Pourri */
+  --accent-foreground: #4A3A2E;
+  
+  --destructive: #C17B7B;
+  --destructive-foreground: #FFFFFF;
+  
+  --border: #D8C4B2; /* Akaroa */
+  --input: #ECE9E4; /* Pampas */
+  --ring: #BE9982; /* Brandy Rose */
+  
+  --chart-1: #BE9982;
+  --chart-2: #8F6D5B;
+  --chart-3: #D4A574;
+  --chart-4: #6B8E6B;
+  --chart-5: #7B9EB8;
+  
+  --sidebar: #F8F8F7;
+  --sidebar-foreground: #4A3A2E;
+  --sidebar-primary: #BE9982;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F3E8DC;
+  --sidebar-accent-foreground: #4A3A2E;
+  --sidebar-border: #D8C4B2;
+  --sidebar-ring: #BE9982;
+}
+
+.dark {
+  /* Dark mode mappings (approximated or inverted) 
+     The prompt doesn't explicitly define dark mode palette, 
+     but standard practice is to use darker shades.
+     I'll keep it simple or use defaults? 
+     Prompt says: "Zero lead perdido por falta de resposta".
+     Prompt has no dark mode palette explicitly defined other than "Text Inverse". 
+     I will try to create a reasonable dark mode or leave it similar to light if branding is strict,
+     but Shadcn requires dark variables.
+     I'll use darker Brand Rose shades for background.
+  */
+  --background: #4A3A2E; /* Brandy Rose 950 */
+  --foreground: #F8F8F7; /* Desert Storm */
+  
+  --card: #5E483A; /* Brandy Rose 900 */
+  --card-foreground: #F8F8F7;
+  
+  --popover: #5E483A;
+  --popover-foreground: #F8F8F7;
+  
+  --primary: #BE9982;
+  --primary-foreground: #FFFFFF;
+  
+  --secondary: #755848; /* Brandy Rose 800 */
+  --secondary-foreground: #F8F8F7;
+  
+  --muted: #5E483A;
+  --muted-foreground: #D9C1B0; /* Brandy Rose 300 */
+  
+  --accent: #755848;
+  --accent-foreground: #F8F8F7;
+  
+  --destructive: #7F1D1D;
+  --destructive-foreground: #FFFFFF;
+  
+  --border: #755848;
+  --input: #5E483A;
+  --ring: #D9C1B0;
+  
+  --chart-1: #BE9982;
+  --chart-2: #D9C1B0;
+  --chart-3: #D4A574;
+  --chart-4: #6B8E6B;
+  --chart-5: #7B9EB8;
+  
+  --sidebar: #4A3A2E;
+  --sidebar-foreground: #F8F8F7;
+  --sidebar-primary: #BE9982;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #755848;
+  --sidebar-accent-foreground: #F8F8F7;
+  --sidebar-border: #755848;
+  --sidebar-ring: #D9C1B0;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground font-body bg-cover bg-no-repeat bg-center;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
 }
