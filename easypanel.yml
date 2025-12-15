@@ -1,0 +1,47 @@
+# easypanel.yml
+# Configuração declarativa para Easypanel
+
+name: caroline-cleaning
+description: Caroline Premium Cleaning Platform
+
+services:
+  web:
+    type: app
+    source:
+      type: github
+      owner: your-github-username
+      repo: caroline-cleaning
+      branch: main
+    build:
+      type: dockerfile
+      file: Dockerfile
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpu: "1"
+          memory: "1Gi"
+        requests:
+          cpu: "0.5"
+          memory: "512Mi"
+    domains:
+      - host: carolinecleaning.com
+        https: true
+      - host: www.carolinecleaning.com
+        https: true
+        redirect: carolinecleaning.com
+    healthCheck:
+      path: /api/health
+      interval: 30s
+      timeout: 10s
+    env:
+      - name: NODE_ENV
+        value: production
+      - name: NEXT_PUBLIC_SUPABASE_URL
+        secret: true
+      - name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        secret: true
+      - name: SUPABASE_SERVICE_ROLE_KEY
+        secret: true
+      - name: N8N_WEBHOOK_SECRET
+        secret: true

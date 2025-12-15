@@ -1,0 +1,403 @@
+// app/(admin)/admin/analytics/page.tsx
+import { Suspense } from 'react'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+    TrendingUp,
+    Users,
+    Calendar,
+    DollarSign,
+    MessageSquare,
+    ArrowUpRight,
+    ArrowDownRight,
+    Download,
+    RefreshCw
+} from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
+import { OverviewChart } from '@/components/analytics/overview-chart'
+import { ConversionFunnel } from '@/components/analytics/conversion-funnel'
+import { RecentActivity } from '@/components/analytics/recent-activity'
+import { TopMetrics } from '@/components/analytics/top-metrics'
+
+// Função para calcular métricas
+async function getAnalyticsData(supabase: any) {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
+
+    const startOfMonthStr = startOfMonth.toISOString().split('T')[0]
+    const startOfLastMonthStr = startOfLastMonth.toISOString().split('T')[0]
+    const endOfLastMonthStr = endOfLastMonth.toISOString().split('T')[0]
+
+    // Receita do mês atual
+    const { data: currentRevenue } = await supabase
+        .from('financeiro')
+        .select('valor')
+        .eq('tipo', 'receita')
+        .eq('status', 'pago')
+        .gte('data', startOfMonthStr)
+
+    // Receita do mês anterior
+    const { data: lastRevenue } = await supabase
+        .from('financeiro')
+        .select('valor')
+        .eq('tipo', 'receita')
+        .eq('status', 'pago')
+        .gte('data', startOfLastMonthStr)
+        .lte('data', endOfLastMonthStr)
+
+    // Novos clientes este mês
+    const { count: newClients } = await supabase
+        .from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startOfMonthStr)
+
+    // Novos clientes mês passado
+    const { count: lastNewClients } = await supabase
+        .from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startOfLastMonthStr)
+        .lte('created_at', endOfLastMonthStr)
+
+    // Agendamentos este mês
+    const { count: appointments } = await supabase
+        .from('agendamentos')
+        .select('*', { count: 'exact', head: true })
+        .gte('data', startOfMonthStr)
+        .not('status', 'eq', 'cancelado')
+
+    // Agendamentos mês passado
+    const { count: lastAppointments } = await supabase
+        .from('agendamentos')
+        .select('*', { count: 'exact', head: true })
+        .gte('data', startOfLastMonthStr)
+        .lte('data', endOfLastMonthStr)
+        .not('status', 'eq', 'cancelado')
+
+    // Conversas do chat este mês
+    const { count: chatSessions } = await supabase
+        .from('chat_sessions')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startOfMonthStr)
+
+    // Total de leads convertidos
+    const { count: convertedLeads } = await supabase
+        .from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ativo')
+        .gte('created_at', startOfMonthStr)
+
+    // Calcular totais e variações
+    const totalCurrentRevenue = currentRevenue?.reduce((acc: number, r: any) => acc + r.valor, 0) || 0
+    const totalLastRevenue = lastRevenue?.reduce((acc: number, r: any) => acc + r.valor, 0) || 0
+
+    const revenueChange = totalLastRevenue > 0
+        ? ((totalCurrentRevenue - totalLastRevenue) / totalLastRevenue * 100)
+        : 0
+
+    const clientsChange = (lastNewClients || 0) > 0
+        ? (((newClients || 0) - (lastNewClients || 0)) / (lastNewClients || 1) * 100)
+        : 0
+
+    const appointmentsChange = (lastAppointments || 0) > 0
+        ? (((appointments || 0) - (lastAppointments || 0)) / (lastAppointments || 1) * 100)
+        : 0
+
+    return {
+        revenue: {
+            current: totalCurrentRevenue,
+            change: revenueChange
+        },
+        clients: {
+            new: newClients || 0,
+            change: clientsChange
+        },
+        appointments: {
+            total: appointments || 0,
+            change: appointmentsChange
+        },
+        chat: {
+            sessions: chatSessions || 0,
+            conversions: convertedLeads || 0,
+            conversionRate: chatSessions ? ((convertedLeads || 0) / chatSessions * 100) : 0
+        }
+    }
+}
+
+// Componente auxiliar para origem dos leads
+async function LeadSourceChart() {
+    return (
+        <div className="space-y-4">
+            {[
+                { source: 'Website Chat', count: 45, percentage: 45, color: 'bg-primary' },
+                { source: 'WhatsApp', count: 30, percentage: 30, color: 'bg-success' },
+                { source: 'Indicação', count: 15, percentage: 15, color: 'bg-warning' },
+                { source: 'Instagram', count: 10, percentage: 10, color: 'bg-info' },
+            ].map((item) => (
+                <div key={item.source} className="space-y-2">
+                    <div className="flex justify-between text-body-sm">
+                        <span>{item.source}</span>
+                        <span className="font-medium">{item.count} ({item.percentage}%)</span>
+                    </div>
+                    <div className="h-2 bg-pampas rounded-full overflow-hidden">
+                        <div
+                            className={`h-full ${item.color} rounded-full`}
+                            style={{ width: `${item.percentage}%` }}
+                        />
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+export default async function AnalyticsPage() {
+    const supabase = await createClient()
+    const analytics = await getAnalyticsData(supabase)
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="font-heading text-h2 text-foreground">Analytics</h1>
+                    <p className="text-body text-muted-foreground">
+                        Visão geral do desempenho do seu negócio
+                    </p>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="gap-2">
+                        <RefreshCw className="w-4 h-4" />
+                        Atualizar
+                    </Button>
+                    <Button size="sm" className="gap-2">
+                        <Download className="w-4 h-4" />
+                        Exportar
+                    </Button>
+                </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Revenue */}
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-caption text-muted-foreground">Receita do Mês</p>
+                                <p className="text-h3 font-semibold">{formatCurrency(analytics.revenue.current)}</p>
+                                <div className="flex items-center gap-1 mt-1">
+                                    {analytics.revenue.change >= 0 ? (
+                                        <ArrowUpRight className="w-4 h-4 text-success" />
+                                    ) : (
+                                        <ArrowDownRight className="w-4 h-4 text-destructive" />
+                                    )}
+                                    <span className={`text-caption ${analytics.revenue.change >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                        {Math.abs(analytics.revenue.change).toFixed(1)}% vs mês anterior
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="p-3 bg-success/10 rounded-lg">
+                                <DollarSign className="w-6 h-6 text-success" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* New Clients */}
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-caption text-muted-foreground">Novos Clientes</p>
+                                <p className="text-h3 font-semibold">{analytics.clients.new}</p>
+                                <div className="flex items-center gap-1 mt-1">
+                                    {analytics.clients.change >= 0 ? (
+                                        <ArrowUpRight className="w-4 h-4 text-success" />
+                                    ) : (
+                                        <ArrowDownRight className="w-4 h-4 text-destructive" />
+                                    )}
+                                    <span className={`text-caption ${analytics.clients.change >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                        {Math.abs(analytics.clients.change).toFixed(1)}% vs mês anterior
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="p-3 bg-info/10 rounded-lg">
+                                <Users className="w-6 h-6 text-info" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Appointments */}
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-caption text-muted-foreground">Agendamentos</p>
+                                <p className="text-h3 font-semibold">{analytics.appointments.total}</p>
+                                <div className="flex items-center gap-1 mt-1">
+                                    {analytics.appointments.change >= 0 ? (
+                                        <ArrowUpRight className="w-4 h-4 text-success" />
+                                    ) : (
+                                        <ArrowDownRight className="w-4 h-4 text-destructive" />
+                                    )}
+                                    <span className={`text-caption ${analytics.appointments.change >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                        {Math.abs(analytics.appointments.change).toFixed(1)}% vs mês anterior
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="p-3 bg-warning/10 rounded-lg">
+                                <Calendar className="w-6 h-6 text-warning" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Chat Conversion */}
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-caption text-muted-foreground">Taxa de Conversão</p>
+                                <p className="text-h3 font-semibold">{analytics.chat.conversionRate.toFixed(1)}%</p>
+                                <p className="text-caption text-muted-foreground mt-1">
+                                    {analytics.chat.conversions} de {analytics.chat.sessions} leads
+                                </p>
+                            </div>
+                            <div className="p-3 bg-primary/10 rounded-lg">
+                                <MessageSquare className="w-6 h-6 text-primary" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Charts */}
+            <Tabs defaultValue="overview" className="space-y-6">
+                <TabsList>
+                    <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+                    <TabsTrigger value="conversion">Conversões</TabsTrigger>
+                    <TabsTrigger value="activity">Atividade</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview">
+                    <div className="grid lg:grid-cols-3 gap-6">
+                        <Card className="lg:col-span-2">
+                            <CardHeader>
+                                <CardTitle className="text-h4">Receita vs Agendamentos</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Suspense fallback={<Skeleton className="h-[350px]" />}>
+                                    <OverviewChart />
+                                </Suspense>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-h4">Métricas Principais</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Suspense fallback={<Skeleton className="h-[350px]" />}>
+                                    <TopMetrics />
+                                </Suspense>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="conversion">
+                    <div className="grid lg:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-h4">Funil de Conversão</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Suspense fallback={<Skeleton className="h-[400px]" />}>
+                                    <ConversionFunnel />
+                                </Suspense>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-h4">Origem dos Leads</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Suspense fallback={<Skeleton className="h-[400px]" />}>
+                                    <LeadSourceChart />
+                                </Suspense>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="activity">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-h4">Atividade Recente</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Suspense fallback={<Skeleton className="h-[400px]" />}>
+                                <RecentActivity />
+                            </Suspense>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+
+            {/* Quick Links */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Link href="/admin/analytics/receita">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-3">
+                                <DollarSign className="w-5 h-5 text-success" />
+                                <span className="font-medium">Relatório de Receita</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                <Link href="/admin/analytics/conversoes">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-3">
+                                <TrendingUp className="w-5 h-5 text-info" />
+                                <span className="font-medium">Análise de Conversões</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                <Link href="/admin/analytics/clientes">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-3">
+                                <Users className="w-5 h-5 text-warning" />
+                                <span className="font-medium">Análise de Clientes</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                <Link href="/admin/analytics/carol">
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="pt-6">
+                            <div className="flex items-center gap-3">
+                                <MessageSquare className="w-5 h-5 text-primary" />
+                                <span className="font-medium">Performance Carol</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+            </div>
+        </div>
+    )
+}

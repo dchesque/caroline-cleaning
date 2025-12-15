@@ -1,0 +1,117 @@
+import { createClient } from '@/lib/supabase/server'
+import { Card, CardContent } from '@/components/ui/card'
+import { Calendar, Users, DollarSign, Star } from 'lucide-react'
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
+
+function formatCurrency(value: number) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+    }).format(value)
+}
+
+export async function StatsCards() {
+    const supabase = await createClient()
+    const today = new Date()
+
+    // Agendamentos Hoje
+    const { count: agendamentosHoje } = await supabase
+        .from('agendamentos')
+        .select('*', { count: 'exact', head: true })
+        .gte('data', startOfDay(today).toISOString())
+        .lte('data', endOfDay(today).toISOString())
+
+    const { count: confirmadosHoje } = await supabase
+        .from('agendamentos')
+        .select('*', { count: 'exact', head: true })
+        .gte('data', startOfDay(today).toISOString())
+        .lte('data', endOfDay(today).toISOString())
+        .eq('status', 'confirmado')
+
+    // Novos Leads Semana
+    const { count: novosLeads } = await supabase
+        .from('clientes')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startOfWeek(today).toISOString())
+        .lte('created_at', endOfWeek(today).toISOString())
+        .eq('status', 'lead')
+
+    // Receita Mês
+    const { data: financeiroMes } = await supabase
+        .from('financeiro')
+        .select('valor')
+        .gte('data_pagamento', startOfMonth(today).toISOString())
+        .lte('data_pagamento', endOfMonth(today).toISOString())
+        .eq('status', 'pago')
+
+    const receitaMes = financeiroMes?.reduce((acc, curr) => acc + Number(curr.valor), 0) || 0
+
+    // Avaliação Média (last 90 days)
+    const ninetyDaysAgo = new Date()
+    ninetyDaysAgo.setDate(today.getDate() - 90)
+
+    const { data: ratings } = await supabase
+        .from('feedback')
+        .select('rating')
+        .gte('created_at', ninetyDaysAgo.toISOString())
+
+    const ratingMedio = ratings?.length
+        ? (ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length).toFixed(1)
+        : '5.0'
+
+    const cards = [
+        {
+            title: 'Agendamentos Hoje',
+            value: agendamentosHoje || 0,
+            subtitle: `${confirmadosHoje || 0} confirmados`,
+            icon: Calendar,
+            color: 'text-[#C48B7F]',
+            bgColor: 'bg-[#F9F1F0]',
+        },
+        {
+            title: 'Novos Leads',
+            value: novosLeads || 0,
+            subtitle: 'Esta semana',
+            icon: Users,
+            color: 'text-blue-500',
+            bgColor: 'bg-blue-50',
+        },
+        {
+            title: 'Receita do Mês',
+            value: formatCurrency(receitaMes),
+            subtitle: 'vs mês anterior',
+            icon: DollarSign,
+            color: 'text-green-500',
+            bgColor: 'bg-green-50',
+        },
+        {
+            title: 'Avaliação Média',
+            value: ratingMedio,
+            subtitle: 'Últimos 90 dias',
+            icon: Star,
+            color: 'text-yellow-500',
+            bgColor: 'bg-yellow-50',
+        },
+    ]
+
+    return (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {cards.map((card) => (
+                <Card key={card.title} className="border-none shadow-sm">
+                    <CardContent className="p-6">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
+                                <p className="text-2xl font-bold text-foreground mt-1">{card.value}</p>
+                                <p className="text-xs text-muted-foreground mt-1">{card.subtitle}</p>
+                            </div>
+                            <div className={`p-3 rounded-lg ${card.bgColor}`}>
+                                <card.icon className={`w-5 h-5 ${card.color}`} />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    )
+}
