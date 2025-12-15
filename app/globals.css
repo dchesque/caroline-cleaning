@@ -191,3 +191,9 @@
     @apply font-heading;
   }
 }
+
+@layer utilities {
+  .container {
+    @apply mx-auto px-4 md:px-8;
+  }
+}
