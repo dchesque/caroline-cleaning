@@ -24,14 +24,14 @@ export async function GET() {
 
     try {
         // Check database connection
-        // const supabase = await createClient()
-        // const { error: dbError } = await supabase
-        //     .from('configuracoes')
-        //     .select('id')
-        //     .limit(1)
-        //     .single()
+        const supabase = await createClient()
+        const { error: dbError } = await supabase
+            .from('configuracoes')
+            .select('id')
+            .limit(1)
+            .single()
 
-        const dbHealthy = true // TEMPORARY DEBUG
+        const dbHealthy = !dbError || dbError.code === 'PGRST116'
 
         // Note: It's okay if configuracoes is empty, as long as the query executes (no connection error)
         // However, .single() might error if no rows. Let's try .limit(1) and maybe just check connection.
