@@ -74,12 +74,10 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Health check
+# Health check (requires wget which comes with alpine)
+# Using api/health endpoint we will create
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-# ============================================
-# CRITICAL FIX: Use ENTRYPOINT instead of CMD
-# Easypanel overrides CMD but NOT ENTRYPOINT
-# ============================================
-ENTRYPOINT ["node", "server.js"]
+# Start the application
+CMD ["node", "server.js"]
