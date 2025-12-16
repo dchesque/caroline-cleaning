@@ -67,19 +67,17 @@ RUN chown -R nextjs:nodejs /app
 # Switch to non-root user
 USER nextjs
 
-# Expose port
-EXPOSE 3000
+# ============================================
+# CHANGED: Port 8080 instead of 3000
+# ============================================
+EXPOSE 8080
 
-# Set port environment variable
-ENV PORT=3000
+ENV PORT=8080
 ENV HOSTNAME="0.0.0.0"
 
-# Health check
+# Health check on new port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+  CMD wget --spider http://localhost:8080/api/health || exit 1
 
-# ============================================
-# CRITICAL FIX: Use ENTRYPOINT instead of CMD
-# Easypanel overrides CMD but NOT ENTRYPOINT
-# ============================================
+# Start the application
 ENTRYPOINT ["node", "server.js"]
