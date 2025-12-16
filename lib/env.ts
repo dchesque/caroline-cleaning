@@ -15,6 +15,8 @@ const optionalEnvVars = [
     'OPENAI_API_KEY',
     'NEXT_PUBLIC_GA_ID',
     'SENTRY_DSN',
+    'PORT',
+    'HOSTNAME',
 ] as const
 
 type RequiredEnvVar = typeof requiredEnvVars[number]
@@ -73,7 +75,11 @@ export const env = {
     gaId: process.env.NEXT_PUBLIC_GA_ID,
 
     // App
-    appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:8080',
     nodeEnv: process.env.NODE_ENV || 'development',
     isProduction: process.env.NODE_ENV === 'production',
+
+    // Server
+    port: parseInt(process.env.PORT || '8080', 10),
+    hostname: process.env.HOSTNAME || '0.0.0.0',
 }
