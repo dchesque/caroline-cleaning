@@ -55,11 +55,13 @@ export async function GET() {
         // const dbHealthy = !dbError || dbError.code === 'PGRST116' // PGRST116 is "The result contains 0 rows" which means DB is up
 
         // Memory usage (Node.js)
+        const v8 = require('v8')
+        const heapStats = v8.getHeapStatistics()
         const memUsage = process.memoryUsage()
         const memoryCheck = {
             used: Math.round(memUsage.heapUsed / 1024 / 1024),
-            total: Math.round(memUsage.heapTotal / 1024 / 1024),
-            percentage: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100)
+            total: Math.round(heapStats.heap_size_limit / 1024 / 1024),
+            percentage: Math.round((memUsage.heapUsed / heapStats.heap_size_limit) * 100)
         }
 
         // Determine overall status
