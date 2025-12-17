@@ -70,14 +70,17 @@ USER nextjs
 # ============================================
 # CHANGED: Port 8080 instead of 3000
 # ============================================
-EXPOSE 8080
+# ============================================
+# CHANGED: Port 3000 (Standard)
+# ============================================
+EXPOSE 3000
 
-ENV PORT=8080
+ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Health check on new port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --spider http://localhost:8080/api/health || exit 1
+  CMD wget --spider http://localhost:3000/api/health || exit 1
 
 # Start the application
-ENTRYPOINT ["node", "server.js"]
+CMD ["node", "server.js"]

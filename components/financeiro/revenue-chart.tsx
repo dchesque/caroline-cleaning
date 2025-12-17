@@ -73,7 +73,7 @@ export function RevenueChart() {
                 <XAxis dataKey="month" stroke="#9A8478" fontSize={12} />
                 <YAxis stroke="#9A8478" fontSize={12} tickFormatter={(value) => `$${value}`} />
                 <Tooltip
-                    formatter={(value: number) => [`$${value.toFixed(2)}`, '']}
+                    formatter={(value: any) => [`$${Number(value).toFixed(2)}`, '']}
                     contentStyle={{
                         backgroundColor: 'white',
                         border: '1px solid #E8E4E1',

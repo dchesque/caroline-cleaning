@@ -111,8 +111,8 @@ export function OverviewChart() {
                         borderRadius: '8px',
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                     }}
-                    formatter={(value: number, name: string) => [
-                        name === 'receita' ? `$${value.toFixed(2)}` : value,
+                    formatter={(value: any, name: any) => [
+                        name === 'receita' ? `$${Number(value).toFixed(2)}` : value,
                         name === 'receita' ? 'Receita' : 'Agendamentos'
                     ]}
                 />

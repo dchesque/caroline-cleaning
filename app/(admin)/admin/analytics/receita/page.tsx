@@ -253,7 +253,7 @@ export default function ReceitaPage() {
                                 <XAxis dataKey="month" stroke="#9A8478" fontSize={12} />
                                 <YAxis stroke="#9A8478" fontSize={12} tickFormatter={(v) => `$${v}`} />
                                 <Tooltip
-                                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Receita']}
+                                    formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Receita']}
                                     contentStyle={{
                                         backgroundColor: 'white',
                                         border: '1px solid #E8E4E1',
@@ -288,7 +288,7 @@ export default function ReceitaPage() {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+                                <Tooltip formatter={(value: any) => `$${Number(value).toFixed(2)}`} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
