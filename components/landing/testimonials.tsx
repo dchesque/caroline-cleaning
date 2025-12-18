@@ -1,9 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
+import { Star, Quote } from 'lucide-react'
 
 const testimonials = [
     {
@@ -27,6 +25,13 @@ const testimonials = [
         content: "As a mom of three, I rarely have time for deep cleaning. Carol's team came in and worked miracles. The deep cleaning service is worth every penny!",
         rating: 5,
     },
+    /* Added minimal logic to render 3 items if needed, or keeping original 3 from file (wait, original had 4 items, but prompt says 3 visible on desktop) 
+       If I use grid-cols-3, the 4th item will wrap to new line or be hidden?
+       Prompt: "Desktop: 3 cards visíveis". 
+       I will just render the grid. If there are 4, 3 on top row, 1 on bottom. Or I can limit to 3. 
+       I will limit to 3 for the "3 cards visible" requirement to keep it clean, or just let it flow. 
+       Let's keep all 4 but in a grid.
+    */
     {
         name: 'Michael Torres',
         role: 'Real Estate Agent',
@@ -37,16 +42,6 @@ const testimonials = [
 ]
 
 export function Testimonials() {
-    const [currentIndex, setCurrentIndex] = useState(0)
-
-    const next = () => {
-        setCurrentIndex((prev) => (prev + 1) % testimonials.length)
-    }
-
-    const prev = () => {
-        setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
-    }
-
     return (
         <section id="testimonials" className="py-16 md:py-24 bg-desert-storm overflow-hidden">
             <div className="container">
@@ -61,73 +56,32 @@ export function Testimonials() {
                     </p>
                 </div>
 
-                {/* Carousel */}
-                <div className="relative max-w-4xl mx-auto">
-                    <div className="overflow-hidden">
-                        <div
-                            className="flex transition-transform duration-500 ease-in-out"
-                            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-                        >
-                            {testimonials.map((testimonial, index) => (
-                                <div key={index} className="w-full flex-shrink-0 px-4">
-                                    <Card className="bg-white border-none shadow-lg">
-                                        <CardContent className="p-8 md:p-12 text-center">
-                                            <div className="mb-6 flex justify-center text-brandy-rose-400">
-                                                <Quote className="w-12 h-12 opacity-50" />
-                                            </div>
-
-                                            <div className="flex justify-center gap-1 mb-6">
-                                                {[...Array(testimonial.rating)].map((_, i) => (
-                                                    <Star key={i} className="w-5 h-5 fill-brandy-rose-500 text-brandy-rose-500" />
-                                                ))}
-                                            </div>
-
-                                            <blockquote className="text-xl md:text-2xl font-heading leading-relaxed text-foreground mb-8">
-                                                "{testimonial.content}"
-                                            </blockquote>
-
-                                            <div>
-                                                <div className="font-bold text-foreground">{testimonial.name}</div>
-                                                <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                {/* Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {testimonials.slice(0, 3).map((testimonial, index) => ( // Showing top 3 to match design
+                        <Card key={index} className="bg-white border-none shadow-lg h-full">
+                            <CardContent className="p-8 text-center flex flex-col h-full">
+                                <div className="mb-6 flex justify-center text-brandy-rose-400">
+                                    <Quote className="w-12 h-12 opacity-50" />
                                 </div>
-                            ))}
-                        </div>
-                    </div>
 
-                    {/* Controls */}
-                    <div className="flex justify-center gap-4 mt-8">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={prev}
-                            className="rounded-full h-12 w-12 border-brandy-rose-200 hover:bg-brandy-rose-50 hover:text-brandy-rose-600"
-                        >
-                            <ChevronLeft className="w-6 h-6" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={next}
-                            className="rounded-full h-12 w-12 border-brandy-rose-200 hover:bg-brandy-rose-50 hover:text-brandy-rose-600"
-                        >
-                            <ChevronRight className="w-6 h-6" />
-                        </Button>
-                    </div>
+                                <div className="flex justify-center gap-1 mb-6">
+                                    {[...Array(testimonial.rating)].map((_, i) => (
+                                        <Star key={i} className="w-5 h-5 fill-brandy-rose-500 text-brandy-rose-500" />
+                                    ))}
+                                </div>
 
-                    {/* Dots */}
-                    <div className="flex justify-center gap-2 mt-6">
-                        {testimonials.map((_, index) => (
-                            <button
-                                key={index}
-                                className={`w-2.5 h-2.5 rounded-full transition-colors ${index === currentIndex ? 'bg-brandy-rose-500' : 'bg-brandy-rose-200'
-                                    }`}
-                                onClick={() => setCurrentIndex(index)}
-                            />
-                        ))}
-                    </div>
+                                <blockquote className="text-lg font-heading leading-relaxed text-foreground mb-8 flex-1">
+                                    "{testimonial.content}"
+                                </blockquote>
+
+                                <div>
+                                    <div className="font-bold text-foreground">{testimonial.name}</div>
+                                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
             </div>
         </section>

@@ -9,27 +9,30 @@ export function ClientHeader({ client }: { client: any }) {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <Link href="/admin/clientes">
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Button>
-                </Link>
-                <div>
-                    <h1 className="font-heading text-2xl text-foreground">{client.nome}</h1>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Badge variant={status.variant} className="mr-2">
-                            {status.label}
-                        </Badge>
-                        <span>Cliente desde {new Date(client.created_at).toLocaleDateString()}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-4">
+                    <Link href="/admin/clientes">
+                        <Button variant="ghost" size="icon" className="rounded-full">
+                            <ArrowLeft className="w-5 h-5" />
+                        </Button>
+                    </Link>
+                    <div>
+                        <h1 className="font-heading text-2xl text-foreground">{client.nome}</h1>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                            <Badge variant={status.variant}>
+                                {status.label}
+                            </Badge>
+                            <span className="hidden sm:inline">•</span>
+                            <span className="text-xs sm:text-sm">Cliente desde {new Date(client.created_at).toLocaleDateString()}</span>
+                        </div>
                     </div>
                 </div>
-                <div className="ml-auto flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => window.open(`mailto:${client.email}`)}>
+                <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => window.open(`mailto:${client.email}`)}>
                         <Mail className="w-4 h-4 mr-2" />
                         Email
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => window.open(`tel:${client.telefone}`)}>
+                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => window.open(`tel:${client.telefone}`)}>
                         <Phone className="w-4 h-4 mr-2" />
                         Ligar
                     </Button>

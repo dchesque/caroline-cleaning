@@ -24,13 +24,15 @@ export default async function ClienteDetalhePage({ params }: { params: Promise<{
         <div className="space-y-6">
             <ClientHeader client={client} />
             <Tabs defaultValue="info" className="space-y-6">
-                <TabsList className="bg-white border border-[#EAE0D5] w-full justify-start h-12 p-1">
-                    <TabsTrigger value="info" className="data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Informações</TabsTrigger>
-                    <TabsTrigger value="agendamentos" className="data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Agendamentos</TabsTrigger>
-                    <TabsTrigger value="financeiro" className="data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Financeiro</TabsTrigger>
-                    <TabsTrigger value="contrato" className="data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Contrato</TabsTrigger>
-                    <TabsTrigger value="notas" className="data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Notas</TabsTrigger>
-                </TabsList>
+                <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 sm:pb-0 scrollbar-hide">
+                    <TabsList className="bg-white border border-[#EAE0D5] inline-flex w-auto min-w-full sm:w-full justify-start h-12 p-1">
+                        <TabsTrigger value="info" className="flex-1 min-w-[100px] data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Informações</TabsTrigger>
+                        <TabsTrigger value="agendamentos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Agendamentos</TabsTrigger>
+                        <TabsTrigger value="financeiro" className="flex-1 min-w-[100px] data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Financeiro</TabsTrigger>
+                        <TabsTrigger value="contrato" className="flex-1 min-w-[100px] data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Contrato</TabsTrigger>
+                        <TabsTrigger value="notas" className="flex-1 min-w-[80px] data-[state=active]:bg-[#FDF8F6] data-[state=active]:text-[#C48B7F]">Notas</TabsTrigger>
+                    </TabsList>
+                </div>
                 <TabsContent value="info"><TabInfo client={client} /></TabsContent>
                 <TabsContent value="agendamentos"><TabAgendamentos clientId={id} /></TabsContent>
                 <TabsContent value="financeiro"><TabFinanceiro clientId={id} /></TabsContent>

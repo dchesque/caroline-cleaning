@@ -302,30 +302,57 @@ export default function ReceitaPage() {
                     <CardTitle className="text-h4">Transações</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Data</TableHead>
-                                <TableHead>Cliente</TableHead>
-                                <TableHead>Categoria</TableHead>
-                                <TableHead>Descrição</TableHead>
-                                <TableHead className="text-right">Valor</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {data.transactions.slice(0, 20).map((t: any) => (
-                                <TableRow key={t.id}>
-                                    <TableCell>{formatDate(t.data, 'short')}</TableCell>
-                                    <TableCell>{t.clientes?.nome || '-'}</TableCell>
-                                    <TableCell>{t.categoria}</TableCell>
-                                    <TableCell>{t.descricao || '-'}</TableCell>
-                                    <TableCell className="text-right font-semibold text-success">
-                                        {formatCurrency(t.valor)}
-                                    </TableCell>
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Data</TableHead>
+                                    <TableHead>Cliente</TableHead>
+                                    <TableHead>Categoria</TableHead>
+                                    <TableHead>Descrição</TableHead>
+                                    <TableHead className="text-right">Valor</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {data.transactions.slice(0, 20).map((t: any) => (
+                                    <TableRow key={t.id}>
+                                        <TableCell>{formatDate(t.data, 'short')}</TableCell>
+                                        <TableCell>{t.clientes?.nome || '-'}</TableCell>
+                                        <TableCell>{t.categoria}</TableCell>
+                                        <TableCell>{t.descricao || '-'}</TableCell>
+                                        <TableCell className="text-right font-semibold text-success">
+                                            {formatCurrency(t.valor)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Mobile View */}
+                    <div className="md:hidden space-y-4">
+                        {data.transactions.slice(0, 20).map((t: any) => (
+                            <div key={t.id} className="p-4 bg-desert-storm rounded-lg space-y-2">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-medium">{t.clientes?.nome || 'Cliente não identificado'}</p>
+                                        <p className="text-caption text-muted-foreground">{t.categoria}</p>
+                                    </div>
+                                    <p className="font-semibold text-success">
+                                        {formatCurrency(t.valor)}
+                                    </p>
+                                </div>
+                                {(t.descricao) && (
+                                    <p className="text-body-sm text-foreground/80">{t.descricao}</p>
+                                )}
+                                <div className="text-caption text-muted-foreground flex items-center gap-1 pt-2 border-t border-pampas">
+                                    <Calendar className="w-3 h-3" />
+                                    {formatDate(t.data, 'short')}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
                     {data.transactions.length > 20 && (
                         <p className="text-center text-caption text-muted-foreground mt-4">
                             Mostrando 20 de {data.transactions.length} transações

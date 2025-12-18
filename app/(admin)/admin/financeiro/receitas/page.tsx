@@ -414,38 +414,70 @@ export default function ReceitasPage() {
             {/* Table */}
             <Card>
                 <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Data</TableHead>
-                                <TableHead>Cliente</TableHead>
-                                <TableHead>Categoria</TableHead>
-                                <TableHead>Valor</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredTransactions.map((transaction) => (
-                                <TableRow key={transaction.id}>
-                                    <TableCell>{formatDate(transaction.data)}</TableCell>
-                                    <TableCell>
-                                        {transaction.clientes?.nome || '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                        {CATEGORIAS_RECEITA.find(c => c.value === transaction.categoria)?.label || transaction.categoria}
-                                    </TableCell>
-                                    <TableCell className="font-semibold text-success">
-                                        +{formatCurrency(transaction.valor)}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.variant as any}>
-                                            {STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.label}
-                                        </Badge>
-                                    </TableCell>
+                    <div className="hidden md:block">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Data</TableHead>
+                                    <TableHead>Cliente</TableHead>
+                                    <TableHead>Categoria</TableHead>
+                                    <TableHead>Valor</TableHead>
+                                    <TableHead>Status</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredTransactions.map((transaction) => (
+                                    <TableRow key={transaction.id}>
+                                        <TableCell>{formatDate(transaction.data)}</TableCell>
+                                        <TableCell>
+                                            {transaction.clientes?.nome || '-'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {CATEGORIAS_RECEITA.find(c => c.value === transaction.categoria)?.label || transaction.categoria}
+                                        </TableCell>
+                                        <TableCell className="font-semibold text-success">
+                                            +{formatCurrency(transaction.valor)}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.variant as any}>
+                                                {STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.label}
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden divide-y divide-[#EAE0D5]">
+                        {filteredTransactions.map((transaction) => (
+                            <div key={transaction.id} className="p-4 space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-medium text-foreground">
+                                            {transaction.clientes?.nome || 'Cliente não identificado'}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {CATEGORIAS_RECEITA.find(c => c.value === transaction.categoria)?.label || transaction.categoria}
+                                        </p>
+                                    </div>
+                                    <Badge variant={STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.variant as any}>
+                                        {STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.label}
+                                    </Badge>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                        <CalendarIcon className="w-3 h-3" />
+                                        {formatDate(transaction.data)}
+                                    </div>
+                                    <span className="font-semibold text-success text-base">
+                                        +{formatCurrency(transaction.valor)}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </CardContent>
             </Card>
         </div>

@@ -50,25 +50,25 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-2">
                     <Button variant="outline" size="icon" onClick={() => navigate('prev')}>
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <div className="w-40 text-center font-medium">
+                    <div className="flex-1 sm:flex-none sm:w-40 text-center font-medium">
                         {format(currentDate, view === 'day' ? 'MMM d, yyyy' : 'MMMM yyyy')}
                     </div>
                     <Button variant="outline" size="icon" onClick={() => navigate('next')}>
                         <ChevronRight className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" onClick={() => setCurrentDate(new Date())}>
+                    <Button variant="ghost" onClick={() => setCurrentDate(new Date())} className="hidden sm:inline-flex">
                         Hoje
                     </Button>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Select value={view} onValueChange={(v) => setView(v as ViewType)}>
-                        <SelectTrigger className="w-[120px]">
+                        <SelectTrigger className="w-full sm:w-[120px]">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -77,7 +77,7 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
                             <SelectItem value="day">Dia</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button onClick={() => setIsModalOpen(true)} className="bg-[#C48B7F] hover:bg-[#A66D60]">
+                    <Button onClick={() => setIsModalOpen(true)} className="bg-[#C48B7F] hover:bg-[#A66D60] flex-1 sm:flex-none">
                         <Plus className="w-4 h-4 mr-2" />
                         Novo
                     </Button>

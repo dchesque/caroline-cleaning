@@ -21,7 +21,7 @@ export default function DashboardPage() {
                 <StatsCards />
             </Suspense>
 
-            <div className="grid lg:grid-cols-3 gap-6">
+            <div className="grid lg:grid-cols-3 gap-4 lg:gap-6">
                 <div className="lg:col-span-2">
                     <Suspense fallback={<Skeleton className="h-[400px]" />}>
                         <TodaySchedule />

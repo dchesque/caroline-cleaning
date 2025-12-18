@@ -27,7 +27,7 @@ export function TrustBadges() {
     return (
         <section className="py-12 bg-white border-y border-pampas">
             <div className="container">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                     {badges.map((badge) => (
                         <div
                             key={badge.title}

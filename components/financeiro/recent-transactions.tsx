@@ -56,7 +56,7 @@ export function RecentTransactions() {
                             </p>
                         </div>
                     </div>
-                    <p className={`font-semibold ${transaction.tipo === 'receita' ? 'text-success' : 'text-destructive'
+                    <p className={`font-semibold shrink-0 ${transaction.tipo === 'receita' ? 'text-success' : 'text-destructive'
                         }`}>
                         {transaction.tipo === 'receita' ? '+' : '-'}
                         {formatCurrency(transaction.valor)}

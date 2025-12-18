@@ -109,7 +109,7 @@ export default function ConfiguracoesPage() {
             </div>
 
             <Tabs defaultValue="empresa" className="space-y-6">
-                <TabsList>
+                <TabsList className="w-full justify-start overflow-x-auto">
                     <TabsTrigger value="empresa">Empresa</TabsTrigger>
                     <TabsTrigger value="horarios">Horários</TabsTrigger>
                     <TabsTrigger value="notificacoes">Notificações</TabsTrigger>

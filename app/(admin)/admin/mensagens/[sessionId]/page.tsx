@@ -95,7 +95,7 @@ export default function ConversaDetalhePage() {
             <div className="grid lg:grid-cols-3 gap-6">
                 {/* Messages */}
                 <div className="lg:col-span-2">
-                    <Card className="h-[600px] flex flex-col">
+                    <Card className="h-[calc(100vh-250px)] min-h-[500px] lg:h-[600px] flex flex-col">
                         <CardHeader className="border-b border-pampas">
                             <CardTitle className="text-h4 flex items-center gap-2">
                                 Conversa

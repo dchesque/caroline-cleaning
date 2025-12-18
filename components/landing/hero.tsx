@@ -10,7 +10,8 @@ export function Hero() {
     }
 
     return (
-        <section className="relative pt-32 md:pt-40 pb-16 md:pb-24 overflow-hidden">
+    return (
+        <section className="relative pt-24 sm:pt-32 lg:pt-40 pb-12 sm:pb-16 lg:pb-24 overflow-hidden">
             {/* Background Pattern */}
             <div className="absolute inset-0 bg-gradient-to-b from-pot-pourri/30 to-desert-storm -z-10" />
 
@@ -29,14 +30,14 @@ export function Hero() {
                     </div>
 
                     {/* Headline */}
-                    <h1 className="font-heading text-4xl md:text-6xl font-semibold leading-tight text-foreground mb-6 text-balance animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                    <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight text-foreground mb-6 text-balance animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
                         Premium House Cleaning,
                         <br />
                         <span className="text-brandy-rose-500">Scheduled in Minutes</span>
                     </h1>
 
                     {/* Subheadline */}
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+                    <p className="text-sm sm:text-base md:text-xl text-muted-foreground max-w-xl mx-auto mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
                         Professional cleaning service available 24/7. Chat with Carol, our
                         virtual assistant, to book your free estimate — no forms, no waiting.
                     </p>
@@ -45,7 +46,7 @@ export function Hero() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
                         <Button
                             size="lg"
-                            className="gap-2 h-12 px-8 text-base bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white shadow-lg shadow-brandy-rose-500/20"
+                            className="gap-2 h-12 px-8 w-full sm:w-auto text-base bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white shadow-lg shadow-brandy-rose-500/20"
                             onClick={openChat}
                         >
                             <MessageCircle className="w-5 h-5" />
@@ -54,7 +55,7 @@ export function Hero() {
                         <Button
                             variant="outline"
                             size="lg"
-                            className="gap-2 h-12 px-8 text-base border-brandy-rose-200 hover:bg-brandy-rose-50 text-brandy-rose-700"
+                            className="gap-2 h-12 px-8 w-full sm:w-auto text-base border-brandy-rose-200 hover:bg-brandy-rose-50 text-brandy-rose-700"
                             asChild
                         >
                             <Link href="#services">

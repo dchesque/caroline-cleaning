@@ -95,7 +95,7 @@ export async function StatsCards() {
     ]
 
     return (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {cards.map((card) => (
                 <Card key={card.title} className="border-none shadow-sm">
                     <CardContent className="p-6">

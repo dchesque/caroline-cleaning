@@ -22,7 +22,7 @@ export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) 
             className="cursor-pointer hover:shadow-md transition-shadow border-[#EAE0D5] bg-white h-full"
             onClick={onClick}
         >
-            <CardContent className="p-3 space-y-2">
+            <CardContent className="p-2 sm:p-3 space-y-2">
                 <div className="flex justify-between items-start">
                     <span className="font-semibold text-sm text-[#5D5D5D]">
                         {format(new Date(appointment.data), 'HH:mm')}
