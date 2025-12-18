@@ -62,6 +62,12 @@ export function Header() {
                             How it Works
                         </button>
                         <button
+                            onClick={() => scrollToSection('about')}
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            About
+                        </button>
+                        <button
                             onClick={() => scrollToSection('testimonials')}
                             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                         >
@@ -125,6 +131,12 @@ export function Header() {
                                 className="text-base font-medium text-left py-2 text-foreground"
                             >
                                 How it Works
+                            </button>
+                            <button
+                                onClick={() => scrollToSection('about')}
+                                className="text-base font-medium text-left py-2 text-foreground"
+                            >
+                                About
                             </button>
                             <button
                                 onClick={() => scrollToSection('testimonials')}
