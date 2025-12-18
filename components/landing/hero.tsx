@@ -10,7 +10,6 @@ export function Hero() {
     }
 
     return (
-    return (
         <section className="relative pt-24 sm:pt-32 lg:pt-40 pb-12 sm:pb-16 lg:pb-24 overflow-hidden">
             {/* Background Pattern */}
             <div className="absolute inset-0 bg-gradient-to-b from-pot-pourri/30 to-desert-storm -z-10" />

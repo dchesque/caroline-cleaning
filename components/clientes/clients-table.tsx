@@ -47,7 +47,6 @@ export function ClientsTable({ clients, isLoading }: ClientsTableProps) {
     }
 
     return (
-    return (
         <>
             {/* Desktop Table View */}
             <div className="hidden md:block rounded-md border border-[#EAE0D5] bg-white">
