@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Forçar Node.js runtime (Supabase SSR não é compatível com Edge Runtime)
+export const runtime = 'nodejs'
+
 const rateLimitMap = new Map<string, { count: number; timestamp: number }>()
 
 function rateLimit(ip: string, limit: number = 100, windowMs: number = 60000): boolean {
@@ -21,10 +24,15 @@ function rateLimit(ip: string, limit: number = 100, windowMs: number = 60000): b
 }
 
 export async function middleware(request: NextRequest) {
+    // Skip middleware for health and ready endpoints
+    if (request.nextUrl.pathname === '/api/health' ||
+        request.nextUrl.pathname === '/api/ready') {
+        return NextResponse.next()
+    }
+
     // Rate limiting for APIs
     if (request.nextUrl.pathname.startsWith('/api/')) {
-        // @ts-ignore - ip property exists in NextRequest but types might be outdated or strict
-        const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+        const ip = (request as any).ip || request.headers.get('x-forwarded-for') || 'unknown'
 
         if (!rateLimit(ip)) {
             return NextResponse.json(
@@ -43,7 +51,7 @@ export async function middleware(request: NextRequest) {
             cookies: {
                 getAll() { return request.cookies.getAll() },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) =>
+                    cookiesToSet.forEach(({ name, value }) =>
                         request.cookies.set(name, value)
                     )
                     supabaseResponse = NextResponse.next({ request })
@@ -78,5 +86,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/admin/:path*', '/login', '/api/:path*'],
+    matcher: [
+        '/admin/:path*',
+        '/login',
+        // Excluir explicitamente rotas de saúde do matcher
+        '/((?!api/health|api/ready|_next/static|_next/image|favicon.ico).*)',
+    ],
 }
