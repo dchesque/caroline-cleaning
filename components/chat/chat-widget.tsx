@@ -34,6 +34,18 @@ export function ChatWidget() {
         return () => clearTimeout(timer)
     }, [isOpen])
 
+    // Play notification sound when bubble appears
+    useEffect(() => {
+        if (showBubble) {
+            const audio = new Audio('/sounds/notification.mp3')
+            audio.volume = 0.5 // Adjust volume for a friendly feel
+            audio.play().catch(e => {
+                // Autoplay might be blocked by browser if no user interaction yet
+                console.warn('Notification sound could not be played:', e)
+            })
+        }
+    }, [showBubble])
+
     // Hide bubble when chat opens
     useEffect(() => {
         if (isOpen) {
