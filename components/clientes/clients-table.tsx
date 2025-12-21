@@ -72,8 +72,8 @@ export function ClientsTable({ clients, isLoading }: ClientsTableProps) {
                                             <span className="text-xs text-muted-foreground">{client.email}</span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="max-w-[200px] truncate" title={client.endereco_rua}>
-                                        {client.endereco_rua || '-'}
+                                    <TableCell className="max-w-[200px] truncate" title={client.endereco_completo}>
+                                        {client.endereco_completo || '-'}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={status.variant}>
@@ -125,7 +125,7 @@ export function ClientsTable({ clients, isLoading }: ClientsTableProps) {
 
                             <div className="text-sm text-muted-foreground">
                                 <p>{client.telefone}</p>
-                                <p className="truncate">{client.endereco_rua || 'Endereço não informado'}</p>
+                                <p className="truncate">{client.endereco_completo || 'Endereço não informado'}</p>
                             </div>
 
                             <div className="pt-2 border-t border-[#EAE0D5] flex justify-end">

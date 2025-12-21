@@ -38,10 +38,10 @@ export function AppointmentCard({ appointment, onClick }: AppointmentCardProps) 
                         <Clock className="w-3 h-3" />
                         <span>{appointment.duracao_estimada}h</span>
                     </div>
-                    {appointment.cliente?.endereco_rua && (
+                    {appointment.cliente?.endereco_completo && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 truncate">
                             <MapPin className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{appointment.cliente.endereco_rua}</span>
+                            <span className="truncate">{appointment.cliente.endereco_completo}</span>
                         </div>
                     )}
                 </div>

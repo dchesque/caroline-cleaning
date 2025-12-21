@@ -50,7 +50,7 @@ export function ClientHeader({ client }: { client: any }) {
                 </div>
                 <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-[#C48B7F]" />
-                    <span>{client.endereco_rua}, {client.endereco_cidade} - {client.endereco_estado}</span>
+                    <span>{client.endereco_completo}, {client.endereco_cidade} - {client.endereco_estado}</span>
                 </div>
             </div>
         </div>

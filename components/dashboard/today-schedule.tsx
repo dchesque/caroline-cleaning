@@ -13,7 +13,7 @@ export async function TodaySchedule() {
         .from('agendamentos')
         .select(`
         *,
-        cliente:clientes(nome, endereco_rua)
+        cliente:clientes(nome, endereco_completo)
     `)
         .gte('data', startOfDay(today).toISOString())
         .lte('data', endOfDay(today).toISOString())
@@ -44,7 +44,7 @@ export async function TodaySchedule() {
                                             <span>{appointment.duracao_estimada || 2}h</span>
                                             <span className="text-xs">•</span>
                                             <MapPin className="w-3 h-3 shrink-0" />
-                                            <span className="truncate max-w-[150px]">{appointment.cliente?.endereco_rua || 'Endereço não informado'}</span>
+                                            <span className="truncate max-w-[150px]">{appointment.cliente?.endereco_completo || 'Endereço não informado'}</span>
                                         </div>
                                     </div>
                                 </div>

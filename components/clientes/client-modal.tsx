@@ -36,10 +36,10 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         telefone: '',
         email: '',
         // Step 2
-        endereco_rua: '',
-        endereco_cidade: '',
-        endereco_estado: '',
-        endereco_zip: '',
+        endereco_completo: '',
+        cidade: '',
+        estado: '',
+        zip_code: '',
         // Step 3
         tipo_residencia: 'casa',
         quartos: '3',
@@ -75,10 +75,9 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                 nome: formData.nome,
                 telefone: formData.telefone,
                 email: formData.email,
-                endereco_rua: formData.endereco_rua,
-                endereco_cidade: formData.endereco_cidade,
-                endereco_estado: formData.endereco_estado,
-                endereco_zip: formData.endereco_zip,
+                endereco_completo: formData.endereco_completo,
+                estado: formData.estado,
+                zip_code: formData.zip_code,
                 tipo_residencia: formData.tipo_residencia,
                 quartos: parseInt(formData.quartos) || 0,
                 banheiros: parseFloat(formData.banheiros) || 0,
@@ -138,21 +137,21 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                     {step === 2 && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Endereço (Rua)*</Label>
-                                <Input value={formData.endereco_rua} onChange={e => handleChange('endereco_rua', e.target.value)} required />
+                                <Label>Endereço Completo*</Label>
+                                <Input value={formData.endereco_completo} onChange={e => handleChange('endereco_completo', e.target.value)} required />
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-2 col-span-1">
                                     <Label>Cidade</Label>
-                                    <Input value={formData.endereco_cidade} onChange={e => handleChange('endereco_cidade', e.target.value)} />
+                                    <Input value={formData.cidade} onChange={e => handleChange('cidade', e.target.value)} />
                                 </div>
                                 <div className="space-y-2 col-span-1">
                                     <Label>Estado</Label>
-                                    <Input value={formData.endereco_estado} onChange={e => handleChange('endereco_estado', e.target.value)} />
+                                    <Input value={formData.estado} onChange={e => handleChange('estado', e.target.value)} />
                                 </div>
                                 <div className="space-y-2 col-span-1">
                                     <Label>ZIP Code</Label>
-                                    <Input value={formData.endereco_zip} onChange={e => handleChange('endereco_zip', e.target.value)} />
+                                    <Input value={formData.zip_code} onChange={e => handleChange('zip_code', e.target.value)} />
                                 </div>
                             </div>
                         </div>
