@@ -10,12 +10,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import {
     LayoutDashboard, Calendar, Users, FileText,
     DollarSign, Settings, Menu, MessageSquare, BarChart3,
+    UserPlus
 } from 'lucide-react'
 
 const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Agenda', href: '/admin/agenda', icon: Calendar },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
+    { name: 'Leads', href: '/admin/leads', icon: UserPlus },
     { name: 'Contratos', href: '/admin/contratos', icon: FileText },
     { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign },
     { name: 'Mensagens', href: '/admin/mensagens', icon: MessageSquare },

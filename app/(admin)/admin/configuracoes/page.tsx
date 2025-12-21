@@ -19,7 +19,8 @@ import {
     Loader2,
     Phone,
     Mail,
-    Globe
+    Globe,
+    DollarSign
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -216,6 +217,22 @@ export default function ConfiguracoesPage() {
                                         <div>
                                             <p className="font-semibold">Equipe</p>
                                             <p className="text-caption text-muted-foreground">Gerenciar membros</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Link>
+                        </Card>
+
+                        <Card className="hover:shadow-md transition-shadow">
+                            <Link href="/admin/configuracoes/pricing">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-brandy-rose-100 rounded-lg">
+                                            <DollarSign className="w-5 h-5 text-brandy-rose-500" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold">Preços</p>
+                                            <p className="text-caption text-muted-foreground">Ranges de preço</p>
                                         </div>
                                     </div>
                                 </CardContent>
