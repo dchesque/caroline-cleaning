@@ -31,11 +31,11 @@ CREATE TABLE IF NOT EXISTS areas_atendidas (
 
 -- Inserir áreas padrão
 INSERT INTO areas_atendidas (nome, tipo, ativo) VALUES
-('Miami Beach', 'city', true),
-('Coral Gables', 'city', true),
-('Brickell', 'neighborhood', true),
-('Downtown Miami', 'neighborhood', true),
-('Coconut Grove', 'neighborhood', true);
+('Charlotte', 'city', true),
+('Fort Mill', 'city', true),
+('Ballantyne', 'neighborhood', true),
+('NoDa', 'neighborhood', true),
+('Dilworth', 'neighborhood', true);
 
 -- Tabela de Configurações
 CREATE TABLE IF NOT EXISTS configuracoes (
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS configuracoes (
 -- Inserir config padrão
 INSERT INTO configuracoes (id, settings) VALUES (1, '{
   "business_name": "Caroline Premium Cleaning",
-  "business_phone": "(305) 555-0123",
+  "business_phone": "(551) 389-7394",
   "business_email": "hello@carolinecleaning.com",
   "operating_start": "08:00",
   "operating_end": "18:00",

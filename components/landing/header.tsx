@@ -82,17 +82,23 @@ export function Header() {
                     </nav>
 
                     {/* Desktop Actions */}
-                    <div className="hidden lg:flex items-center gap-4">
+                    <div className="hidden lg:flex items-center gap-6">
+                        <a
+                            href="tel:+15513897394"
+                            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-brandy-rose-600 transition-colors"
+                        >
+                            <Phone className="w-4 h-4 text-brandy-rose-500" />
+                            (551) 389-7394
+                        </a>
                         <Button
                             size="sm"
                             className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
                             onClick={() => {
-                                // Trigger chat widget or SMS
                                 window.dispatchEvent(new CustomEvent('open-chat'))
                             }}
                         >
                             <MessageCircle className="w-4 h-4" />
-                            Text for a Quote
+                            Chat with Carol
                         </Button>
                     </div>
 
@@ -151,7 +157,7 @@ export function Header() {
                                 }}
                             >
                                 <MessageCircle className="w-4 h-4" />
-                                Text for a Quote
+                                Chat with Carol
                             </Button>
                         </nav>
                     </div>

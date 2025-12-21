@@ -26,8 +26,7 @@ CREATE TABLE public.clientes (
   email TEXT,
   endereco_completo TEXT NOT NULL,
   endereco_linha2 TEXT,
-  cidade TEXT,
-  estado TEXT DEFAULT 'FL',
+  estado TEXT DEFAULT 'NC',
   zip_code TEXT,
   latitude DECIMAL(10, 8),
   longitude DECIMAL(11, 8),
@@ -216,7 +215,7 @@ CREATE TABLE public.areas_atendidas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nome TEXT NOT NULL,
   cidade TEXT NOT NULL,
-  estado TEXT NOT NULL DEFAULT 'FL',
+  estado TEXT NOT NULL DEFAULT 'NC',
   zip_codes TEXT[] DEFAULT '{}',
   ativo BOOLEAN DEFAULT TRUE,
   taxa_deslocamento DECIMAL(10, 2) DEFAULT 0,
@@ -710,7 +709,7 @@ CREATE POLICY "Authenticated users can upload public assets" ON storage.objects 
 
 INSERT INTO public.configuracoes (chave, valor, descricao, categoria) VALUES
   ('empresa_nome', '"Caroline Premium Cleaning"', 'Nome da empresa', 'geral'),
-  ('empresa_telefone', '"(305) 555-1234"', 'Telefone principal', 'geral'),
+  ('empresa_telefone', '"(551) 389-7394"', 'Telefone principal', 'geral'),
   ('empresa_email', '"hello@carolinecleaning.com"', 'Email principal', 'geral'),
   ('horario_inicio', '"08:00"', 'Hora de início', 'horarios'),
   ('horario_fim', '"18:00"', 'Hora de fim', 'horarios'),
@@ -718,8 +717,8 @@ INSERT INTO public.configuracoes (chave, valor, descricao, categoria) VALUES
 ON CONFLICT (chave) DO NOTHING;
 
 INSERT INTO public.areas_atendidas (nome, cidade, estado, zip_codes, ativo, ordem) VALUES
-  ('Miami', 'Miami', 'FL', ARRAY['33101','33102','33129','33130','33131'], TRUE, 1),
-  ('Miami Beach', 'Miami Beach', 'FL', ARRAY['33139','33140','33141'], TRUE, 2)
+  ('Charlotte', 'Charlotte', 'NC', ARRAY['28201','28202','28203','28204','28205'], TRUE, 1),
+  ('Fort Mill', 'Fort Mill', 'SC', ARRAY['29708','29715'], TRUE, 2)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.servicos_tipos (codigo, nome, descricao, multiplicador_preco, duracao_base_minutos, cor) VALUES

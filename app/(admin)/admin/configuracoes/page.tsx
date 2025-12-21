@@ -28,7 +28,7 @@ export default function ConfiguracoesPage() {
     const [config, setConfig] = useState({
         // Business Info
         business_name: 'Caroline Premium Cleaning',
-        business_phone: '(305) 555-0123',
+        business_phone: '(551) 389-7394',
         business_email: 'hello@carolinecleaning.com',
         business_address: '123 Ocean Drive, Miami, FL 33139',
         business_website: 'www.carolinecleaning.com',

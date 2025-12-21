@@ -48,23 +48,31 @@ export function Hero() {
                             onClick={openChat}
                         >
                             <MessageCircle className="w-5 h-5" />
-                            Text for a Free Quote
+                            Chat with Carol
                         </Button>
                         <Button
                             variant="outline"
                             size="lg"
                             className="gap-2 h-12 px-8 w-full sm:w-auto text-base border-brandy-rose-200 hover:bg-brandy-rose-50 text-brandy-rose-700"
-                            asChild
+                            onClick={() => {
+                                const element = document.getElementById('services')
+                                if (element) element.scrollIntoView({ behavior: 'smooth' })
+                            }}
                         >
-                            <Link href="#services">
-                                Explore Services
-                            </Link>
+                            Explore Services
                         </Button>
                     </div>
 
-                    {/* Microcopy */}
-                    <p className="text-xs text-muted-foreground mb-12 animate-in fade-in duration-1000 delay-400">
-                        Prefer not to talk on the phone? Perfect — text us and we'll handle the rest.
+                    {/* Microcopy com alternativa SMS */}
+                    <p className="text-sm text-muted-foreground mb-12 animate-in fade-in duration-1000 delay-400">
+                        Get instant answers from Carol, or{' '}
+                        <a
+                            href="sms:+15513897394"
+                            className="text-brandy-rose-600 hover:underline font-medium"
+                        >
+                            text us
+                        </a>
+                        {' '}if you prefer.
                     </p>
 
                     {/* Trust Indicators */}

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Sparkles, Home, Building2, MessageCircle } from 'lucide-react'
+import { Sparkles, Home, Building2, MessageCircle, ArrowRight } from 'lucide-react'
 
 const services = [
     {
@@ -108,25 +108,31 @@ export function Services() {
                                 </ul>
                                 <Button
                                     variant="ghost"
+                                    size="sm"
                                     onClick={openChat}
-                                    className={`w-full justify-between items-center group-hover:bg-brandy-rose-50 text-brandy-rose-600 transition-colors p-0 hover:bg-transparent h-auto font-semibold`}
+                                    className="mt-4 gap-2 text-brandy-rose-600 hover:text-brandy-rose-700 hover:bg-brandy-rose-50 p-0 h-auto font-semibold"
                                 >
-                                    Text for quote
-                                    <MessageCircle className="w-4 h-4 ml-2" />
+                                    Get a Quote
+                                    <ArrowRight className="w-4 h-4" />
                                 </Button>
                             </CardContent>
                         </Card>
                     ))}
                 </div>
 
-                {/* CTA */}
-                <div className="text-center bg-white p-8 rounded-3xl border border-pampas shadow-sm max-w-2xl mx-auto">
-                    <p className="text-base text-muted-foreground mb-6">
-                        Not sure which service fits? Text Carol for a recommendation.
+                {/* Help Card CTA */}
+                <div className="text-center bg-white p-10 rounded-3xl border border-pampas shadow-sm max-w-3xl mx-auto">
+                    <h3 className="text-2xl font-heading font-bold mb-3">Want a Custom Quote?</h3>
+                    <p className="text-lg text-muted-foreground mb-8">
+                        Every home is unique. Tell us about your space and we'll help you find the perfect cleaning service at the best price.
                     </p>
-                    <Button onClick={openChat} size="lg" className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white px-8">
+                    <Button
+                        onClick={openChat}
+                        size="lg"
+                        className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white min-w-[240px] h-14 text-lg"
+                    >
                         <MessageCircle className="w-5 h-5" />
-                        Text Carol Now
+                        Get Your Custom Quote
                     </Button>
                 </div>
             </div>

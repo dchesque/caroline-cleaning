@@ -37,7 +37,7 @@ export function MeetCarol() {
                             onClick={openChat}
                         >
                             <MessageCircle className="w-5 h-5" />
-                            Text for a Free Quote
+                            Chat with Carol
                         </Button>
                     </div>
                 </div>

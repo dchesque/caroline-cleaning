@@ -340,7 +340,7 @@ export function Header() {
               className="flex items-center gap-2 text-body-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <Phone className="w-4 h-4" />
-              (305) 555-1234
+              (551) 389-7394
             </a>
             <Button
               size="sm"
@@ -402,7 +402,7 @@ export function Header() {
                 className="flex items-center gap-2 text-body py-2"
               >
                 <Phone className="w-4 h-4" />
-                (305) 555-1234
+                (551) 389-7394
               </a>
               <Button
                 className="gap-2 w-full"
@@ -1095,7 +1095,7 @@ export function CTASection() {
             >
               <a href="tel:+13055551234">
                 <Phone className="w-5 h-5" />
-                Call (305) 555-1234
+                Call (551) 389-7394
               </a>
             </Button>
           </div>
@@ -1204,7 +1204,7 @@ export function Footer() {
                   className="flex items-center gap-2 text-body-sm text-white/70 hover:text-white transition-colors"
                 >
                   <Phone className="w-4 h-4" />
-                  (305) 555-1234
+                  (551) 389-7394
                 </a>
               </li>
               <li>

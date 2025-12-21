@@ -8,12 +8,16 @@ interface ChatBubbleNotificationProps {
     isVisible: boolean
     onClose: () => void
     onClick: () => void
+    title?: string
+    message?: string
 }
 
 export function ChatBubbleNotification({
     isVisible,
     onClose,
-    onClick
+    onClick,
+    title = "Hi! I'm Carol.",
+    message = "Need help scheduling a cleaning? 😊"
 }: ChatBubbleNotificationProps) {
     if (!isVisible) return null
 
@@ -62,10 +66,10 @@ export function ChatBubbleNotification({
                     {/* Message */}
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground">
-                            Hi! I'm Carol.
+                            {title}
                         </p>
                         <p className="text-sm text-muted-foreground mt-0.5">
-                            Need help scheduling a cleaning? 😊
+                            {message}
                         </p>
                     </div>
                 </div>

@@ -11,40 +11,57 @@ import { cn } from '@/lib/utils'
 export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false)
     const [showBubble, setShowBubble] = useState(false)
+    const [bubbleContent, setBubbleContent] = useState({
+        title: "Hi! I'm Carol.",
+        message: "Need help scheduling a cleaning? 😊"
+    })
     const chat = useChat()
 
-    const BUBBLE_DELAY_MS = 30000 // 30 seconds
+    const INITIAL_DELAY_MS = 15000 // 15 seconds
+    const SECOND_DELAY_MS = 45000 // 45 seconds total
     const BUBBLE_DISMISSED_KEY = 'carol-bubble-dismissed'
 
     useEffect(() => {
-        // Check if already dismissed in this session
         const wasDismissed = sessionStorage.getItem(BUBBLE_DISMISSED_KEY)
-        if (wasDismissed) return
+        if (wasDismissed || isOpen) return
 
-        // Do not show if chat is already open
-        if (isOpen) return
-
-        const timer = setTimeout(() => {
-            // Check again if chat wasn't opened while waiting
+        // First Trigger: 15 seconds
+        const firstTimer = setTimeout(() => {
             if (!isOpen) {
                 setShowBubble(true)
             }
-        }, BUBBLE_DELAY_MS)
+        }, INITIAL_DELAY_MS)
 
-        return () => clearTimeout(timer)
+        // Second Trigger: 45 seconds
+        const secondTimer = setTimeout(() => {
+            if (!isOpen) {
+                setBubbleContent({
+                    title: "Still here! 👋",
+                    message: "I'm still here if you have any questions. Feel free to ask!"
+                })
+                // Re-show bubble if it was closed but not "dismissed"
+                if (!sessionStorage.getItem(BUBBLE_DISMISSED_KEY)) {
+                    setShowBubble(true)
+                }
+            }
+        }, SECOND_DELAY_MS)
+
+        return () => {
+            clearTimeout(firstTimer)
+            clearTimeout(secondTimer)
+        }
     }, [isOpen])
 
-    // Play notification sound when bubble appears
+    // Play notification sound when bubble appears OR updates
     useEffect(() => {
-        if (showBubble) {
+        if (showBubble && !isOpen) {
             const audio = new Audio('/sounds/notification.mp3')
-            audio.volume = 0.5 // Adjust volume for a friendly feel
+            audio.volume = 0.5
             audio.play().catch(e => {
-                // Autoplay might be blocked by browser if no user interaction yet
                 console.warn('Notification sound could not be played:', e)
             })
         }
-    }, [showBubble])
+    }, [showBubble, bubbleContent, isOpen])
 
     // Hide bubble when chat opens
     useEffect(() => {
@@ -92,6 +109,8 @@ export function ChatWidget() {
                     isVisible={showBubble && !isOpen}
                     onClose={handleCloseBubble}
                     onClick={handleBubbleClick}
+                    title={bubbleContent.title}
+                    message={bubbleContent.message}
                 />
 
                 {/* Toggle Button */}

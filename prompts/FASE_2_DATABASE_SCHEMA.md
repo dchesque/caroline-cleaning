@@ -1969,7 +1969,7 @@ CREATE POLICY "Authenticated users can upload public assets"
 INSERT INTO public.configuracoes (chave, valor, descricao, categoria) VALUES
   -- Dados da empresa
   ('empresa_nome', '"Caroline Premium Cleaning"', 'Nome da empresa', 'geral'),
-  ('empresa_telefone', '"(305) 555-1234"', 'Telefone principal', 'geral'),
+  ('empresa_telefone', '"(551) 389-7394"', 'Telefone principal', 'geral'),
   ('empresa_email', '"hello@carolinecleaning.com"', 'Email principal', 'geral'),
   ('empresa_endereco', '"500 Main St, Miami, FL 33139"', 'Endereço base', 'geral'),
   

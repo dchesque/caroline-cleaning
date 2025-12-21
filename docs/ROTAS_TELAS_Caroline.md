@@ -800,7 +800,7 @@ interface DashboardData {
 │  │  ┌──────┐  Sarah Mitchell                    [Editar]  │    │
 │  │  │      │  ●Active · Bi-weekly · Since Jan 2024        │    │
 │  │  │  SM  │                                               │    │
-│  │  │      │  📞 (305) 555-1234                            │    │
+│  │  │      │  📞 (551) 389-7394                            │    │
 │  │  └──────┘  ✉️ sarah@email.com                           │    │
 │  │            📍 123 Ocean Drive, Miami Beach, FL 33139    │    │
 │  │            🏠 3 bed / 2 bath                            │    │

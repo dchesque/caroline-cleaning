@@ -30,15 +30,16 @@ export function AboutUs() {
                             {/* Decorative background */}
                             <div className="absolute -inset-4 bg-gradient-to-br from-brandy-rose-100 to-pot-pourri rounded-3xl -rotate-3" />
 
-                            {/* Main image container - Placeholder Design */}
-                            <div className="relative rounded-2xl overflow-hidden shadow-xl bg-gradient-to-br from-brandy-rose-100 to-pot-pourri aspect-[4/5] flex items-center justify-center">
-                                <div className="text-center p-8">
-                                    <div className="w-24 h-24 rounded-full bg-white/50 flex items-center justify-center mx-auto mb-4">
-                                        <span className="text-5xl" role="img" aria-label="Owner">👩‍🦰</span>
-                                    </div>
-                                    <p className="text-brandy-rose-600 font-medium font-heading text-xl">Thayna</p>
-                                    <p className="text-brandy-rose-400 text-sm">Founder & Owner</p>
-                                </div>
+                            {/* Main image container */}
+                            <div className="relative rounded-2xl overflow-hidden shadow-xl aspect-[4/5]">
+                                <Image
+                                    src="/images/thayna.jpg"
+                                    alt="Thayna - Founder & Owner"
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                    priority
+                                />
                             </div>
 
                             {/* Floating badge */}

@@ -1317,7 +1317,7 @@ ORDER BY mes DESC;
 ```sql
 INSERT INTO public.configuracoes (chave, valor, descricao) VALUES
   ('empresa_nome', '"Caroline Premium Cleaning"', 'Nome da empresa'),
-  ('empresa_telefone', '"(305) 555-1234"', 'Telefone principal'),
+  ('empresa_telefone', '"(551) 389-7394"', 'Telefone principal'),
   ('empresa_email', '"hello@carolinecleaning.com"', 'Email principal'),
   ('empresa_endereco', '"500 Main St, Miami, FL 33139"', 'Endereço base'),
   

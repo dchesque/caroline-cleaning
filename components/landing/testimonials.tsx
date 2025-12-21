@@ -7,21 +7,21 @@ import { Button } from '@/components/ui/button'
 const testimonials = [
     {
         name: 'Sarah M.',
-        role: 'Charlotte area',
+        role: 'Charlotte, NC',
         image: null,
         content: "They're consistent, on time, and detail-focused. Booking by text is incredibly easy.",
         rating: 5,
     },
     {
         name: 'James R.',
-        role: 'Fort Mill area',
+        role: 'Fort Mill, SC',
         image: null,
         content: "Deep clean was worth it — everything felt brand new. Highly recommend their service.",
         rating: 5,
     },
     {
         name: 'Emily C.',
-        role: 'Charlotte region',
+        role: 'Charlotte, NC',
         image: null,
         content: "Our office looks professional every week. Reliable service and great communication.",
         rating: 5,
@@ -38,7 +38,7 @@ export function Testimonials() {
                         What Customers Say
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                        Real feedback from clients in the Charlotte region.
+                        Real feedback from clients in Charlotte, NC & Fort Mill, SC.
                     </p>
                 </div>
 
@@ -77,8 +77,8 @@ export function Testimonials() {
                         onClick={() => window.dispatchEvent(new CustomEvent('open-chat'))}
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
                     >
-                        <MessageCircle className="w-5 h-5" />
-                        Text for a Free Quote
+                        <MessageCircle className="w-4 h-4" />
+                        Chat with Carol
                     </Button>
                 </div>
             </div>

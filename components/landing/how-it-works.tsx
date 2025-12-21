@@ -7,8 +7,8 @@ const steps = [
     {
         number: '01',
         icon: MessageCircle,
-        title: 'Text for a Quote',
-        description: 'Share your space details and what you need. We\'ll send a fast estimate.',
+        title: 'Chat with Carol',
+        description: 'Tell us about your space and cleaning needs. Carol responds instantly to help you get started.',
     },
     {
         number: '02',
@@ -74,8 +74,8 @@ export function HowItWorks() {
                 {/* CTA */}
                 <div className="text-center">
                     <Button size="lg" onClick={openChat} className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white">
-                        <MessageCircle className="w-5 h-5" />
-                        Start Now — It's Free
+                        <MessageCircle className="w-4 h-4" />
+                        Chat with Carol
                     </Button>
                 </div>
             </div>

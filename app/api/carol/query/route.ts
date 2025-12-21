@@ -269,7 +269,7 @@ async function queryBusinessInfo(supabase: any) {
 
     return {
         name: settings.business_name || 'Caroline Premium Cleaning',
-        phone: settings.business_phone || '(305) 555-0123',
+        phone: settings.business_phone || '(551) 389-7394',
         email: settings.business_email || 'hello@carolinecleaning.com',
         hours: {
             start: settings.operating_start || '08:00',

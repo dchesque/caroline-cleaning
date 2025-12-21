@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Facebook, Instagram, Twitter, Phone, Mail, MapPin } from 'lucide-react'
+import { Facebook, Instagram, Twitter, Phone, Mail, MapPin, MessageCircle } from 'lucide-react'
 
 export function Footer() {
     return (
@@ -51,7 +51,15 @@ export function Footer() {
                         <ul className="space-y-4 text-sm">
                             <li className="flex gap-3">
                                 <Phone className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <span>Text: [add later]</span>
+                                <a href="tel:+15513897394" className="hover:text-white transition-colors">
+                                    (551) 389-7394
+                                </a>
+                            </li>
+                            <li className="flex gap-3">
+                                <MessageCircle className="w-5 h-5 text-brandy-rose-500 shrink-0" />
+                                <a href="sms:+15513897394" className="hover:text-white transition-colors">
+                                    Text: (551) 389-7394
+                                </a>
                             </li>
                             <li className="flex gap-3">
                                 <Mail className="w-5 h-5 text-brandy-rose-500 shrink-0" />
@@ -61,15 +69,12 @@ export function Footer() {
                                 <MapPin className="w-5 h-5 text-brandy-rose-500 shrink-0" />
                                 <span>Charlotte, NC • Fort Mill, SC<br />Nearby cities</span>
                             </li>
-                            <li className="text-brandy-rose-200/80 pt-2 border-t border-white/5">
-                                Hours: By appointment
-                            </li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-brandy-rose-200/60">
-                    <p>© 2024 Caroline Premium Cleaning. All rights reserved.</p>
+                    <p>© 2026 Caroline Premium Cleaning. All rights reserved.</p>
                     <div className="flex gap-6">
                         <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
                         <Link href="/terms" className="hover:text-white">Terms of Service</Link>
