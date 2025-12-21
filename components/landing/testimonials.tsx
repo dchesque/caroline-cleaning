@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent } from '@/components/ui/card'
-import { Star, Quote, MessageCircle } from 'lucide-react'
+import { Star, Quote, MessageCircle, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const testimonials = [
@@ -9,21 +9,21 @@ const testimonials = [
         name: 'Sarah M.',
         role: 'Charlotte, NC',
         image: null,
-        content: "They're consistent, on time, and detail-focused. Booking by text is incredibly easy.",
+        content: "I was nervous about strangers in my home, but their background-checked team put me at ease. Three months in and I couldn't be happier.",
         rating: 5,
     },
     {
         name: 'James R.',
         role: 'Fort Mill, SC',
         image: null,
-        content: "Deep clean was worth it — everything felt brand new. Highly recommend their service.",
+        content: "Finally, a cleaning service that doesn't require phone calls! I booked everything through text in about 10 minutes. The deep clean was incredible.",
         rating: 5,
     },
     {
         name: 'Emily C.',
         role: 'Charlotte, NC',
         image: null,
-        content: "Our office looks professional every week. Reliable service and great communication.",
+        content: "Love that there's no contract. I paused service for a month when we traveled, then picked right back up. No hassle at all.",
         rating: 5,
     },
 ]
@@ -37,9 +37,23 @@ export function Testimonials() {
                     <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-4">
                         What Customers Say
                     </h2>
-                    <p className="text-lg text-muted-foreground">
+                    <p className="text-lg text-muted-foreground mb-4">
                         Real feedback from clients in Charlotte, NC & Fort Mill, SC.
                     </p>
+                    <a
+                        href="https://g.page/r/YOUR-GOOGLE-BUSINESS-ID/review"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-brandy-rose-600 hover:text-brandy-rose-700 transition-colors"
+                    >
+                        <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                                <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            ))}
+                        </div>
+                        <span className="font-medium">4.9 from 150+ reviews on Google</span>
+                        <ExternalLink className="w-3 h-3" />
+                    </a>
                 </div>
 
                 {/* Grid */}
@@ -58,7 +72,7 @@ export function Testimonials() {
                                 </div>
 
                                 <blockquote className="text-lg font-heading leading-relaxed text-foreground mb-8 flex-1">
-                                    "{testimonial.content}"
+                                    &quot;{testimonial.content}&quot;
                                 </blockquote>
 
                                 <div>

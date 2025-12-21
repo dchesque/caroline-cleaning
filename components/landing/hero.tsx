@@ -1,8 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { MessageCircle, Star, Shield, Clock, Award } from 'lucide-react'
-import Link from 'next/link'
+import { MessageCircle, Star, Shield } from 'lucide-react'
 
 export function Hero() {
     const openChat = () => {
@@ -64,16 +63,29 @@ export function Hero() {
                     </div>
 
                     {/* Microcopy com alternativa SMS */}
-                    <p className="text-sm text-muted-foreground mb-12 animate-in fade-in duration-1000 delay-400">
-                        Get instant answers from Carol, or{' '}
-                        <a
-                            href="sms:+15513897394"
-                            className="text-brandy-rose-600 hover:underline font-medium"
-                        >
-                            text us
-                        </a>
-                        {' '}if you prefer.
-                    </p>
+                    <div className="flex flex-col items-center gap-4 mb-12 animate-in fade-in duration-1000 delay-400">
+                        <p className="text-sm text-muted-foreground">
+                            Get instant answers from Carol — most quotes within 5 minutes. Or{' '}
+                            <a
+                                href="sms:+15513897394"
+                                className="text-brandy-rose-600 hover:underline font-medium"
+                            >
+                                text us
+                            </a>
+                            {' '}if you prefer.
+                        </p>
+
+                        {/* Reviews Badge */}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="flex">
+                                {[...Array(5)].map((_, i) => (
+                                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                ))}
+                            </div>
+                            <span className="font-medium text-foreground">4.9</span>
+                            <span>from 150+ reviews</span>
+                        </div>
+                    </div>
 
                     {/* Trust Indicators */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 text-sm font-medium text-muted-foreground animate-in fade-in duration-1000 delay-500">

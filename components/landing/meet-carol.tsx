@@ -29,7 +29,8 @@ export function MeetCarol() {
                         </h2>
                         <p className="text-lg text-muted-foreground mb-8 text-balance">
                             Carol helps you get a fast quote, pick the right service, and
-                            schedule in minutes — all by text. Easy, fast, and no phone calls required.
+                            schedule in minutes — all by text. No phone calls, no waiting.
+                            Most clients get their quote in under 5 minutes.
                         </p>
                         <Button
                             size="lg"

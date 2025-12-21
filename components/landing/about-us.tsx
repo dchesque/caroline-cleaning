@@ -6,9 +6,10 @@ import { CheckCircle2 } from 'lucide-react'
 
 const highlights = [
     'Residential & office cleaning',
-    'Insured service for peace of mind',
-    'Vetted, professional team you can trust',
+    'Fully bonded & insured for peace of mind',
+    'Background-checked, professional team',
     '100% Satisfaction guarantee',
+    'We remember your preferences — no repeating yourself',
 ]
 
 export function AboutUs() {
@@ -70,6 +71,10 @@ export function AboutUs() {
                                 — with scheduling that's easy and stress-free. Whether it's your home
                                 or your office, we treat every space with professional care.
                             </p>
+                            <p>
+                                Once you're a client, we keep track of your preferences, special requests,
+                                and home details — so you never have to explain everything again.
+                            </p>
                             <p className="p-4 bg-brandy-rose-50 rounded-2xl border border-brandy-rose-100 text-brandy-rose-700 text-sm">
                                 <strong>Note:</strong> Carol is our virtual assistant — she helps you
                                 schedule fast by text and ensures you get the right service for your needs.
@@ -78,7 +83,7 @@ export function AboutUs() {
 
                         {/* Quote */}
                         <blockquote className="relative mb-10 pl-6 border-l-4 border-brandy-rose-300 italic text-xl text-foreground leading-relaxed">
-                            "Consistent quality and easy scheduling — that's our commitment to the Charlotte & Fort Mill community."
+                            &quot;Consistent quality and easy scheduling &mdash; that&apos;s our commitment to the Charlotte &amp; Fort Mill community.&quot;
                         </blockquote>
 
                         {/* Highlights */}

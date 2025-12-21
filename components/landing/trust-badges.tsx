@@ -3,23 +3,23 @@ import { Shield, UserCheck, Sparkles, Clock } from 'lucide-react'
 const badges = [
     {
         icon: Shield,
-        title: 'Insured Service',
-        description: 'Protection and peace of mind.',
+        title: 'Fully Bonded & Insured',
+        description: 'Complete protection for your home',
     },
     {
         icon: UserCheck,
-        title: 'Background-Checked Team',
-        description: 'Trusted professionals in your space.',
+        title: 'Background-Checked',
+        description: 'Verified through national databases',
     },
     {
         icon: Sparkles,
-        title: 'Satisfaction Guarantee',
-        description: 'If we miss something, we fix it.',
+        title: '100% Satisfaction Guarantee',
+        description: 'Not happy? We\'ll re-clean for free',
     },
     {
         icon: Clock,
-        title: 'Flexible Scheduling',
-        description: 'Easy booking that fits your routine.',
+        title: 'No Contracts Ever',
+        description: 'Cancel or pause anytime',
     },
 ]
 

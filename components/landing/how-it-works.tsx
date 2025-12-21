@@ -8,7 +8,7 @@ const steps = [
         number: '01',
         icon: MessageCircle,
         title: 'Chat with Carol',
-        description: 'Tell us about your space and cleaning needs. Carol responds instantly to help you get started.',
+        description: 'Share your space details and what you need. Most quotes are ready within 5 minutes.',
     },
     {
         number: '02',
