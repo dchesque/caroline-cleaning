@@ -7,20 +7,20 @@ const steps = [
     {
         number: '01',
         icon: MessageCircle,
-        title: 'Chat with Carol',
-        description: 'Tell us about your home and cleaning needs. Carol, our virtual assistant, is available 24/7 to help.',
+        title: 'Text for a Quote',
+        description: 'Share your space details and what you need. We\'ll send a fast estimate.',
     },
     {
         number: '02',
         icon: CalendarCheck,
-        title: 'Book Your Visit',
-        description: 'Schedule a free 15-minute estimate visit. We\'ll assess your home and provide an accurate quote.',
+        title: 'Choose Your Time',
+        description: 'Pick a day and time that fits your schedule — we\'ll confirm the visit.',
     },
     {
         number: '03',
         icon: Sparkles,
-        title: 'Enjoy Your Clean Home',
-        description: 'Relax while our professional team makes your home sparkle. Satisfaction guaranteed!',
+        title: 'Enjoy the Clean',
+        description: 'Walk into a fresh space. If anything\'s missed, we\'ll make it right.',
     },
 ]
 

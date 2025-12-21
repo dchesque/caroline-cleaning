@@ -5,9 +5,10 @@ import Image from 'next/image'
 import { CheckCircle2 } from 'lucide-react'
 
 const highlights = [
-    '5+ years of professional cleaning experience',
-    '500+ happy homes across Miami',
-    'Locally owned & operated with love',
+    'Residential & office cleaning',
+    'Insured service for peace of mind',
+    'Vetted, professional team you can trust',
+    '100% Satisfaction guarantee',
 ]
 
 export function AboutUs() {
@@ -16,12 +17,9 @@ export function AboutUs() {
             <div className="container px-4 md:px-6">
                 {/* Section Header */}
                 <div className="text-center mb-12 md:mb-16">
-                    <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-foreground mb-4">
-                        About Us
+                    <h2 className="font-heading text-3xl md:text-5xl font-bold text-foreground mb-4">
+                        A Cleaning Team You Can Trust
                     </h2>
-                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                        Meet the heart behind the clean
-                    </p>
                 </div>
 
                 {/* Content Grid */}
@@ -47,11 +45,11 @@ export function AboutUs() {
                             <div className="absolute -bottom-4 -right-4 bg-white rounded-2xl shadow-lg p-4 hidden md:block border border-pampas">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-full bg-brandy-rose-100 flex items-center justify-center">
-                                        <span className="text-2xl" role="img" aria-label="Heart">💖</span>
+                                        <span className="text-2xl" role="img" aria-label="Heart">🏠</span>
                                     </div>
                                     <div>
-                                        <p className="font-semibold text-foreground">Locally Owned</p>
-                                        <p className="text-sm text-muted-foreground">Miami, FL</p>
+                                        <p className="font-semibold text-foreground">Locally Focused</p>
+                                        <p className="text-sm text-muted-foreground">Charlotte & Fort Mill</p>
                                     </div>
                                 </div>
                             </div>
@@ -60,35 +58,26 @@ export function AboutUs() {
 
                     {/* Content - Right Side */}
                     <div className="order-2 lg:order-2 text-center lg:text-left">
-                        {/* Greeting */}
-                        <h3 className="font-heading text-2xl md:text-3xl text-foreground mb-4">
-                            Hi, I'm Thayna!
-                        </h3>
-
-                        {/* Story */}
-                        <div className="space-y-4 text-muted-foreground mb-8">
-                            <p>
-                                I started Caroline Premium Cleaning with a simple belief: everyone
-                                deserves to come home to a clean, peaceful space without sacrificing
-                                their precious time.
+                        {/* Company Intro */}
+                        <div className="space-y-6 text-muted-foreground mb-10">
+                            <p className="text-lg text-foreground font-medium">
+                                We're a locally focused cleaning company serving Charlotte, NC,
+                                Fort Mill, SC, and nearby cities.
                             </p>
                             <p>
-                                After years of working in the cleaning industry, I noticed something
-                                was missing – the personal touch. That's why I created a service
-                                that treats every home like my own, with attention to detail and
-                                genuine care.
+                                Our goal is simple: consistent, high-quality cleaning you can rely on
+                                — with scheduling that's easy and stress-free. Whether it's your home
+                                or your office, we treat every space with professional care.
                             </p>
-                            <p>
-                                When you choose Caroline Premium Cleaning, you're not just hiring
-                                a cleaning service – you're welcoming someone who truly cares about
-                                making your life easier.
+                            <p className="p-4 bg-brandy-rose-50 rounded-2xl border border-brandy-rose-100 text-brandy-rose-700 text-sm">
+                                <strong>Note:</strong> Carol is our virtual assistant — she helps you
+                                schedule fast by text and ensures you get the right service for your needs.
                             </p>
                         </div>
 
                         {/* Quote */}
-                        <blockquote className="relative mb-8 pl-4 border-l-4 border-brandy-rose-300 italic text-lg text-foreground">
-                            "My mission is to give you back your time while keeping your home
-                            spotless and welcoming."
+                        <blockquote className="relative mb-10 pl-6 border-l-4 border-brandy-rose-300 italic text-xl text-foreground leading-relaxed">
+                            "Consistent quality and easy scheduling — that's our commitment to the Charlotte & Fort Mill community."
                         </blockquote>
 
                         {/* Highlights */}

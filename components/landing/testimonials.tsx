@@ -1,42 +1,29 @@
 'use client'
 
 import { Card, CardContent } from '@/components/ui/card'
-import { Star, Quote } from 'lucide-react'
+import { Star, Quote, MessageCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 const testimonials = [
     {
-        name: 'Sarah Mitchell',
-        role: 'Homeowner',
+        name: 'Sarah M.',
+        role: 'Charlotte area',
         image: null,
-        content: "Caroline Premium Cleaning has transformed my home! The team was professional, punctual, and left my house sparkling clean. I especially love how easy it is to schedule via chat.",
+        content: "They're consistent, on time, and detail-focused. Booking by text is incredibly easy.",
         rating: 5,
     },
     {
-        name: 'James Rodriguez',
-        role: 'Business Owner',
+        name: 'James R.',
+        role: 'Fort Mill area',
         image: null,
-        content: "We use their office cleaning service weekly. They are reliable and extremely thorough. The best commercial cleaning service we've found in Miami.",
+        content: "Deep clean was worth it — everything felt brand new. Highly recommend their service.",
         rating: 5,
     },
     {
-        name: 'Emily Chen',
-        role: 'Busy Mom',
+        name: 'Emily C.',
+        role: 'Charlotte region',
         image: null,
-        content: "As a mom of three, I rarely have time for deep cleaning. Carol's team came in and worked miracles. The deep cleaning service is worth every penny!",
-        rating: 5,
-    },
-    /* Added minimal logic to render 3 items if needed, or keeping original 3 from file (wait, original had 4 items, but prompt says 3 visible on desktop) 
-       If I use grid-cols-3, the 4th item will wrap to new line or be hidden?
-       Prompt: "Desktop: 3 cards visíveis". 
-       I will just render the grid. If there are 4, 3 on top row, 1 on bottom. Or I can limit to 3. 
-       I will limit to 3 for the "3 cards visible" requirement to keep it clean, or just let it flow. 
-       Let's keep all 4 but in a grid.
-    */
-    {
-        name: 'Michael Torres',
-        role: 'Real Estate Agent',
-        image: null,
-        content: "I recommend Caroline Premium Cleaning to all my clients moving in or out. They make the process seamless and the results are always impressive.",
+        content: "Our office looks professional every week. Reliable service and great communication.",
         rating: 5,
     },
 ]
@@ -48,11 +35,10 @@ export function Testimonials() {
                 {/* Section Header */}
                 <div className="text-center max-w-2xl mx-auto mb-16">
                     <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-4">
-                        What Our Clients Say
+                        What Customers Say
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                        Don't just take our word for it. Read reviews from our satisfied clients
-                        across Miami.
+                        Real feedback from clients in the Charlotte region.
                     </p>
                 </div>
 
@@ -82,6 +68,18 @@ export function Testimonials() {
                             </CardContent>
                         </Card>
                     ))}
+                </div>
+
+                {/* Testimonials CTA */}
+                <div className="mt-16 text-center">
+                    <Button
+                        size="lg"
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-chat'))}
+                        className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
+                    >
+                        <MessageCircle className="w-5 h-5" />
+                        Text for a Free Quote
+                    </Button>
                 </div>
             </div>
         </section>

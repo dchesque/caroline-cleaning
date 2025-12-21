@@ -15,11 +15,10 @@ export function CTASection() {
 
             <div className="container relative text-center">
                 <h2 className="font-heading text-3xl md:text-5xl font-bold mb-6 text-white text-balance">
-                    Ready for a Spotless Home?
+                    Ready for a Spotless Home or Office?
                 </h2>
                 <p className="text-lg md:text-xl text-brandy-rose-100 mb-10 max-w-2xl mx-auto">
-                    Join hundreds of happy customers in Miami. Book your free estimate today
-                    through our chat assistant.
+                    Serving Charlotte, NC, Fort Mill, SC, and nearby cities. Text for a fast quote and flexible scheduling.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -30,7 +29,7 @@ export function CTASection() {
                         onClick={openChat}
                     >
                         <MessageCircle className="w-5 h-5" />
-                        Chat with Carol Now
+                        Text for a Free Quote
                     </Button>
                 </div>
             </div>

@@ -9,24 +9,44 @@ import {
 
 const faqs = [
     {
+        question: "Which areas do you serve?",
+        answer: "We serve Charlotte, NC, Fort Mill, SC, and nearby cities in the surrounding region. Text us your area and we'll confirm availability.",
+    },
+    {
+        question: "Do you clean both homes and offices?",
+        answer: "Yes. We offer residential and office cleaning with flexible scheduling options.",
+    },
+    {
+        question: "Are you insured?",
+        answer: "Yes — our service is insured for peace of mind.",
+    },
+    {
+        question: "Are your cleaners background-checked?",
+        answer: "Yes. We work with vetted professionals you can trust.",
+    },
+    {
+        question: "What's included in a regular cleaning?",
+        answer: "A standard clean covers key living areas, kitchen, bathrooms, dusting, and floors. We confirm your checklist by text.",
+    },
+    {
+        question: "What's the difference between deep cleaning and regular cleaning?",
+        answer: "Deep cleaning focuses on buildup, detail work, edges, and extra scrubbing — ideal for first-time or seasonal resets.",
+    },
+    {
+        question: "Do you bring supplies and equipment?",
+        answer: "Yes — we bring professional supplies and equipment unless you request otherwise.",
+    },
+    {
+        question: "Do you clean homes with pets?",
+        answer: "Yes. Just let us know what pets you have so we can plan accordingly.",
+    },
+    {
         question: "Do I need to be home during the cleaning?",
-        answer: "No, you don't need to be home! Many of our clients provide us with a key or access code. We are fully insured and background checked for your peace of mind.",
+        answer: "Not necessarily. Many clients provide entry instructions. We'll coordinate everything by text.",
     },
     {
-        question: "Are your cleaning products safe for pets and children?",
-        answer: "Yes! We prioritize the health of your family. We use high-quality, eco-friendly products that are effective yet safe for pets and children.",
-    },
-    {
-        question: "How do I pay for the service?",
-        answer: "We accept all major credit cards. Payment is securely processed after the cleaning is completed to your satisfaction.",
-    },
-    {
-        question: "What if I'm not satisfied with the cleaning?",
-        answer: "Your satisfaction is our priority. If you're not happy with any aspect of our service, let us know within 24 hours and we will return to reclean the area for free.",
-    },
-    {
-        question: "Do you bring your own supplies?",
-        answer: "Yes, we bring all necessary professional-grade equipment and supplies. If you have special products you'd like us to use, just let us know!",
+        question: "What if I'm not satisfied?",
+        answer: "We offer a satisfaction guarantee — if we miss something, let us know and we'll make it right.",
     },
 ]
 

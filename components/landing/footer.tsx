@@ -14,7 +14,7 @@ export function Footer() {
                             <span className="font-heading text-2xl text-brandy-rose-400">Premium Cleaning</span>
                         </Link>
                         <p className="text-sm text-brandy-rose-200/80 mb-6">
-                            Professional cleaning services tailored to your lifestyle. experience the difference of a truly premium service.
+                            Serving Charlotte, NC, Fort Mill, SC, and nearby cities with premium cleaning services tailored to your lifestyle.
                         </p>
                         <div className="flex gap-4">
                             <a href="#" className="hover:text-white transition-colors"><Facebook className="w-5 h-5" /></a>
@@ -51,7 +51,7 @@ export function Footer() {
                         <ul className="space-y-4 text-sm">
                             <li className="flex gap-3">
                                 <Phone className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <span>(305) 555-1234</span>
+                                <span>Text: [add later]</span>
                             </li>
                             <li className="flex gap-3">
                                 <Mail className="w-5 h-5 text-brandy-rose-500 shrink-0" />
@@ -59,7 +59,10 @@ export function Footer() {
                             </li>
                             <li className="flex gap-3">
                                 <MapPin className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <span>123 Ocean Drive<br />Miami Beach, FL 33139</span>
+                                <span>Charlotte, NC • Fort Mill, SC<br />Nearby cities</span>
+                            </li>
+                            <li className="text-brandy-rose-200/80 pt-2 border-t border-white/5">
+                                Hours: By appointment
                             </li>
                         </ul>
                     </div>

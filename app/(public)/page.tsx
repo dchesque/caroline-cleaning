@@ -8,16 +8,19 @@ import { Testimonials } from '@/components/landing/testimonials'
 import { FAQ } from '@/components/landing/faq'
 import { CTASection } from '@/components/landing/cta-section'
 import { Footer } from '@/components/landing/footer'
+import { MeetCarol } from '@/components/landing/meet-carol'
+import { WhatsIncluded } from '@/components/landing/whats-included'
 
 export default function HomePage() {
     return (
         <>
-            <Header />
             <main>
                 <Hero />
                 <TrustBadges />
                 <Services />
+                <MeetCarol />
                 <HowItWorks />
+                <WhatsIncluded />
                 <AboutUs />
                 <Testimonials />
                 <FAQ />

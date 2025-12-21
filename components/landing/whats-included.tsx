@@ -1,0 +1,77 @@
+import { Check, Plus } from 'lucide-react'
+
+export function WhatsIncluded() {
+    const standardItems = [
+        'Kitchen wipe-down & sink',
+        'Bathroom surfaces & mirrors',
+        'Dusting and wipe-down of surfaces',
+        'Floors vacuumed and mopped',
+        'Trash removal (as requested)',
+    ]
+
+    const optionalItems = [
+        'Inside fridge / oven',
+        'Inside cabinets (empty)',
+        'Windows (interior)',
+        'Extra attention areas',
+        'Office: after-hours scheduling',
+    ]
+
+    return (
+        <section className="py-20 bg-white">
+            <div className="container">
+                <div className="text-center max-w-3xl mx-auto mb-16">
+                    <h2 className="font-heading text-3xl md:text-5xl font-bold text-foreground mb-6">
+                        What's Included in Your Clean
+                    </h2>
+                    <p className="text-lg text-muted-foreground">
+                        We maintain a high standard for every visit. We'll confirm your exact
+                        checklist by text before your appointment.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    {/* Standard in Every Visit */}
+                    <div className="bg-desert-storm p-8 md:p-10 rounded-3xl border border-pampas shadow-sm">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-2 rounded-xl bg-success/10 text-success">
+                                <Check className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                                Standard in Every Visit
+                            </h3>
+                        </div>
+                        <ul className="space-y-4">
+                            {standardItems.map((item, index) => (
+                                <li key={index} className="flex gap-3 text-base text-muted-foreground italic">
+                                    <span className="text-brandy-rose-400 font-bold">•</span>
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Optional Add-Ons */}
+                    <div className="bg-brandy-rose-50 p-8 md:p-10 rounded-3xl border border-brandy-rose-100 shadow-sm">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-2 rounded-xl bg-brandy-rose-500/10 text-brandy-rose-600">
+                                <Plus className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                                Optional Add-Ons
+                            </h3>
+                        </div>
+                        <ul className="space-y-4">
+                            {optionalItems.map((item, index) => (
+                                <li key={index} className="flex gap-3 text-base text-muted-foreground italic">
+                                    <span className="text-brandy-rose-400 font-bold">•</span>
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    )
+}

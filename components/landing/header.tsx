@@ -29,7 +29,7 @@ export function Header() {
     return (
         <header
             className={cn(
-                'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
+                'sticky top-0 left-0 right-0 z-50 transition-all duration-300',
                 isScrolled
                     ? 'bg-white/95 backdrop-blur-sm shadow-sm'
                     : 'bg-transparent'
@@ -48,7 +48,7 @@ export function Header() {
                     </Link>
 
                     {/* Desktop Navigation */}
-                    <nav className="hidden md:flex items-center gap-8">
+                    <nav className="hidden lg:flex items-center gap-8">
                         <button
                             onClick={() => scrollToSection('services')}
                             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -82,30 +82,23 @@ export function Header() {
                     </nav>
 
                     {/* Desktop Actions */}
-                    <div className="hidden md:flex items-center gap-4">
-                        <a
-                            href="tel:+13055551234"
-                            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <Phone className="w-4 h-4" />
-                            (305) 555-1234
-                        </a>
+                    <div className="hidden lg:flex items-center gap-4">
                         <Button
                             size="sm"
                             className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
                             onClick={() => {
-                                // Trigger chat widget
+                                // Trigger chat widget or SMS
                                 window.dispatchEvent(new CustomEvent('open-chat'))
                             }}
                         >
                             <MessageCircle className="w-4 h-4" />
-                            Chat with Carol
+                            Text for a Quote
                         </Button>
                     </div>
 
                     {/* Mobile Menu Button */}
                     <button
-                        className="md:hidden p-2 text-foreground"
+                        className="lg:hidden p-2 text-foreground"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     >
                         {isMobileMenuOpen ? (
@@ -118,55 +111,47 @@ export function Header() {
 
                 {/* Mobile Menu */}
                 {isMobileMenuOpen && (
-                    <div className="md:hidden absolute top-16 left-0 right-0 bg-white border-b border-pampas shadow-lg animate-in slide-in-from-top-2 duration-200">
+                    <div className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b border-pampas shadow-lg animate-in slide-in-from-top-2 duration-200">
                         <nav className="container py-4 flex flex-col gap-4">
                             <button
                                 onClick={() => scrollToSection('services')}
-                                className="text-base font-medium text-left py-2 text-foreground"
+                                className="text-base font-medium text-left py-2 text-foreground border-b border-pampas/30"
                             >
                                 Services
                             </button>
                             <button
                                 onClick={() => scrollToSection('how-it-works')}
-                                className="text-base font-medium text-left py-2 text-foreground"
+                                className="text-base font-medium text-left py-2 text-foreground border-b border-pampas/30"
                             >
                                 How it Works
                             </button>
                             <button
                                 onClick={() => scrollToSection('about')}
-                                className="text-base font-medium text-left py-2 text-foreground"
+                                className="text-base font-medium text-left py-2 text-foreground border-b border-pampas/30"
                             >
                                 About
                             </button>
                             <button
                                 onClick={() => scrollToSection('testimonials')}
-                                className="text-base font-medium text-left py-2 text-foreground"
+                                className="text-base font-medium text-left py-2 text-foreground border-b border-pampas/30"
                             >
                                 Reviews
                             </button>
                             <button
                                 onClick={() => scrollToSection('faq')}
-                                className="text-base font-medium text-left py-2 text-foreground"
+                                className="text-base font-medium text-left py-2 text-foreground border-b border-pampas/30"
                             >
                                 FAQ
                             </button>
-                            <hr className="border-pampas" />
-                            <a
-                                href="tel:+13055551234"
-                                className="flex items-center gap-2 text-base font-medium py-2 text-foreground"
-                            >
-                                <Phone className="w-4 h-4" />
-                                (305) 555-1234
-                            </a>
                             <Button
-                                className="gap-2 w-full bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
+                                className="gap-2 w-full bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white mt-2"
                                 onClick={() => {
                                     setIsMobileMenuOpen(false)
                                     window.dispatchEvent(new CustomEvent('open-chat'))
                                 }}
                             >
                                 <MessageCircle className="w-4 h-4" />
-                                Chat with Carol
+                                Text for a Quote
                             </Button>
                         </nav>
                     </div>
