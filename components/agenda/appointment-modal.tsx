@@ -1,19 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Users2, Calendar as CalendarIcon, ChevronDown, Loader2 } from 'lucide-react'
+import { Loader2, Search } from 'lucide-react'
+import { format } from 'date-fns'
 
 interface AppointmentModalProps {
     open: boolean
@@ -23,284 +20,296 @@ interface AppointmentModalProps {
     onSuccess?: () => void
 }
 
-const WEEKDAYS = [
-    { value: 'monday', label: 'Monday' },
-    { value: 'tuesday', label: 'Tuesday' },
-    { value: 'wednesday', label: 'Wednesday' },
-    { value: 'thursday', label: 'Thursday' },
-    { value: 'friday', label: 'Friday' },
-    { value: 'saturday', label: 'Saturday' },
-    { value: 'sunday', label: 'Sunday' },
+const TIPOS_SERVICO = [
+    { value: 'visit', label: 'Visita de Orçamento' },
+    { value: 'regular', label: 'Regular Cleaning' },
+    { value: 'deep', label: 'Deep Cleaning' },
+    { value: 'move_in_out', label: 'Move In/Out' },
+    { value: 'office', label: 'Office' },
+    { value: 'airbnb', label: 'Airbnb Turnover' },
 ]
 
-export function AppointmentModal({ open, onOpenChange, selectedDate, appointmentId, onSuccess }: AppointmentModalProps) {
-    const [isLoading, setIsLoading] = useState(false)
-    const [clients, setClients] = useState<any[]>([])
-    const [teamMembers, setTeamMembers] = useState<any[]>([])
-    const [selectedTeam, setSelectedTeam] = useState<string[]>([])
+const STATUS_OPTIONS = [
+    { value: 'agendado', label: 'Agendado' },
+    { value: 'confirmado', label: 'Confirmado' },
+    { value: 'em_andamento', label: 'Em Andamento' },
+    { value: 'concluido', label: 'Concluído' },
+    { value: 'cancelado', label: 'Cancelado' },
+]
 
-    // Recurrence State
-    const [isRecurring, setIsRecurring] = useState(false)
-    const [recurrenceDays, setRecurrenceDays] = useState<string[]>(['monday'])
-    const [dailyServices, setDailyServices] = useState<Record<string, string>>({})
+const HORARIOS = [
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
+    '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'
+]
+
+export function AppointmentModal({
+    open,
+    onOpenChange,
+    selectedDate,
+    appointmentId,
+    onSuccess
+}: AppointmentModalProps) {
+    const [isLoading, setIsLoading] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+    const [clients, setClients] = useState<any[]>([])
+    const [clientSearch, setClientSearch] = useState('')
+    const [selectedClient, setSelectedClient] = useState<any>(null)
 
     const [formData, setFormData] = useState({
         cliente_id: '',
         data: '',
-        horario: '09:00',
-        duracao_estimada: '2',
-        tipo_servico: 'regular',
+        horario_inicio: '09:00',
+        duracao_minutos: '180',
+        tipo: 'regular',
         status: 'agendado',
         valor: '',
-        notas: '',
-        frequencia: 'weekly'
+        notas: ''
     })
 
     const supabase = createClient()
 
+    // Reset form when modal opens/closes
     useEffect(() => {
         if (open) {
             if (selectedDate) {
                 setFormData(prev => ({
                     ...prev,
-                    data: selectedDate.toISOString().split('T')[0]
+                    data: format(selectedDate, 'yyyy-MM-dd')
                 }))
-                // Default recurrence day to selected day
-                const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
-                setRecurrenceDays([dayName])
             }
-            fetchData()
+            setSelectedClient(null)
+            setClientSearch('')
         }
     }, [open, selectedDate])
 
-    const fetchData = async () => {
-        // Fetch Clients
-        const { data: clientsData } = await supabase.from('clientes').select('id, nome').order('nome')
-        if (clientsData) setClients(clientsData)
-
-        // Fetch Team
-        const { data: teamData } = await supabase.from('equipe').select('id, nome, cor').eq('ativo', true).order('nome')
-        if (teamData) setTeamMembers(teamData)
-    }
-
-    const toggleTeamMember = (memberId: string) => {
-        setSelectedTeam(prev =>
-            prev.includes(memberId)
-                ? prev.filter(id => id !== memberId)
-                : [...prev, memberId]
-        )
-    }
-
-    const toggleRecurrenceDay = (day: string) => {
-        setRecurrenceDays(prev => {
-            const newDays = prev.includes(day)
-                ? prev.filter(d => d !== day)
-                : [...prev, day]
-
-            // Initialize service for new day if needed
-            if (!prev.includes(day) && !dailyServices[day]) {
-                setDailyServices(ds => ({ ...ds, [day]: formData.tipo_servico }))
+    // Search clients
+    useEffect(() => {
+        const searchClients = async () => {
+            if (clientSearch.length < 2) {
+                setClients([])
+                return
             }
 
-            return newDays
-        })
+            setIsLoading(true)
+            const { data } = await supabase
+                .from('clientes')
+                .select('id, nome, telefone, endereco_completo')
+                .or(`nome.ilike.%${clientSearch}%,telefone.ilike.%${clientSearch}%`)
+                .limit(5)
+
+            setClients(data || [])
+            setIsLoading(false)
+        }
+
+        const debounce = setTimeout(searchClients, 300)
+        return () => clearTimeout(debounce)
+    }, [clientSearch])
+
+    // Calculate end time
+    const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+        const [hours, minutes] = startTime.split(':').map(Number)
+        const totalMinutes = hours * 60 + minutes + durationMinutes
+        const endHours = Math.floor(totalMinutes / 60)
+        const endMinutes = totalMinutes % 60
+        return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setIsLoading(true)
+
+        if (!selectedClient) {
+            toast.error('Selecione um cliente')
+            return
+        }
+
+        if (!formData.data) {
+            toast.error('Selecione uma data')
+            return
+        }
+
+        setIsSaving(true)
 
         try {
-            if (isRecurring) {
-                // Create Recurrence logic
-                const servicesList = recurrenceDays.map(day => ({
-                    dia: day,
-                    tipo: dailyServices[day] || formData.tipo_servico,
-                    horario: formData.horario, // Simplified: same time for all
-                    valor: parseFloat(formData.valor) || 0
-                }))
+            const durationMinutes = parseInt(formData.duracao_minutos) || 180
+            const horarioFim = calculateEndTime(formData.horario_inicio, durationMinutes)
 
-                const { error } = await supabase
-                    .from('recorrencias')
-                    .insert({
-                        cliente_id: formData.cliente_id,
-                        frequencia: formData.frequencia,
-                        dia_preferido: recurrenceDays[0], // Primary day
-                        dias_semana: recurrenceDays,
-                        servicos_por_dia: servicesList,
-                        tipo_servico: formData.tipo_servico,
-                        horario_preferido: formData.horario,
-                        duracao_estimada_minutos: parseInt(formData.duracao_estimada) * 60,
-                        valor_acordado: parseFloat(formData.valor) || 0,
-                        ativo: true
-                    })
-
-                if (error) throw error
-                toast.success('Recorrência criada com sucesso!')
-
-            } else {
-                // Create Single Appointment
-                const dateTime = new Date(`${formData.data}T${formData.horario}`)
-
-                const payload = {
-                    cliente_id: formData.cliente_id,
-                    data: formData.data,
-                    horario_inicio: formData.horario,
-                    horario_fim_estimado: calculateEndTime(formData.horario, formData.duracao_estimada),
-                    duracao_minutos: parseInt(formData.duracao_estimada) * 60,
-                    tipo: formData.tipo_servico,
-                    status: formData.status,
-                    valor: parseFloat(formData.valor) || null,
-                    notas: formData.notas || null
-                }
-
-                // 1. Insert Appointment
-                const { data: appointment, error } = await supabase
-                    .from('agendamentos')
-                    .insert([payload])
-                    .select()
-                    .single()
-
-                if (error) throw error
-
-                // 2. Insert Team Members
-                if (selectedTeam.length > 0) {
-                    const inserts = selectedTeam.map(memberId => ({
-                        agendamento_id: appointment.id,
-                        membro_id: memberId,
-                        funcao: 'cleaner'
-                    }))
-
-                    const { error: teamError } = await supabase
-                        .from('agendamento_equipe')
-                        .insert(inserts)
-
-                    if (teamError) console.error('Error adding team:', teamError)
-                }
-
-                toast.success('Agendamento criado com sucesso!')
+            // Payload com nomes CORRETOS das colunas do banco
+            const payload = {
+                cliente_id: selectedClient.id,
+                data: formData.data,                          // DATE 'YYYY-MM-DD'
+                horario_inicio: formData.horario_inicio,      // TIME 'HH:MM'
+                horario_fim_estimado: horarioFim,             // TIME 'HH:MM'
+                duracao_minutos: durationMinutes,             // INTEGER
+                tipo: formData.tipo,                          // TEXT (não tipo_servico!)
+                status: formData.status,
+                valor: parseFloat(formData.valor) || null,
+                notas: formData.notas.trim() || null
             }
 
+            const { error } = await supabase
+                .from('agendamentos')
+                .insert([payload])
+
+            if (error) throw error
+
+            toast.success('Agendamento criado com sucesso!')
             onOpenChange(false)
             onSuccess?.()
+
         } catch (error) {
-            console.error(error)
-            toast.error('Erro ao salvar')
+            console.error('Error creating appointment:', error)
+            toast.error('Erro ao criar agendamento')
         } finally {
-            setIsLoading(false)
+            setIsSaving(false)
         }
     }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{isRecurring ? 'Nova Recorrência' : 'Novo Agendamento'}</DialogTitle>
+                    <DialogTitle>Novo Agendamento</DialogTitle>
+                    <DialogDescription>
+                        Preencha os dados para criar um novo agendamento
+                    </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                    <div className="flex items-center gap-2 mb-4 p-2 bg-secondary/20 rounded-lg">
-                        <Switch
-                            checked={isRecurring}
-                            onCheckedChange={setIsRecurring}
-                            id="recurrence-mode"
-                        />
-                        <Label htmlFor="recurrence-mode" className="cursor-pointer">
-                            Configurar como Recorrência/Contrato?
-                        </Label>
-                    </div>
 
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Client Search */}
                     <div className="space-y-2">
-                        <Label>Cliente</Label>
-                        <Select
-                            value={formData.cliente_id}
-                            onValueChange={(v) => setFormData({ ...formData, cliente_id: v })}
-                            required
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione um cliente" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {clients.map(client => (
-                                    <SelectItem key={client.id} value={client.id}>{client.nome}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {!isRecurring ? (
-                        /* Single Appointment Fields */
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Data</Label>
-                                <Input
-                                    type="date"
-                                    value={formData.data}
-                                    onChange={e => setFormData({ ...formData, data: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Horário</Label>
-                                <Input
-                                    type="time"
-                                    value={formData.horario}
-                                    onChange={e => setFormData({ ...formData, horario: e.target.value })}
-                                    required
-                                />
-                            </div>
-                        </div>
-                    ) : (
-                        /* Recurrence Fields */
-                        <div className="space-y-4 border p-3 rounded-md">
-                            <div className="space-y-2">
-                                <Label>Frequência</Label>
-                                <Select
-                                    value={formData.frequencia}
-                                    onValueChange={(v) => setFormData({ ...formData, frequencia: v })}
-                                >
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="weekly">Semanal</SelectItem>
-                                        <SelectItem value="biweekly">Quinzenal</SelectItem>
-                                        <SelectItem value="monthly">Mensal</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Dias da Semana</Label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {WEEKDAYS.map(day => (
-                                        <div key={day.value} className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id={`day-${day.value}`}
-                                                checked={recurrenceDays.includes(day.value)}
-                                                onCheckedChange={() => toggleRecurrenceDay(day.value)}
-                                            />
-                                            <label
-                                                htmlFor={`day-${day.value}`}
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                            >
-                                                {day.label.slice(0, 3)}
-                                            </label>
-                                        </div>
-                                    ))}
+                        <Label>Cliente *</Label>
+                        {selectedClient ? (
+                            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-medium text-green-800">{selectedClient.nome}</p>
+                                        <p className="text-sm text-green-600">{selectedClient.telefone}</p>
+                                        <p className="text-xs text-green-600">{selectedClient.endereco_completo}</p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setSelectedClient(null)}
+                                    >
+                                        Alterar
+                                    </Button>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        ) : (
+                            <>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Input
+                                        value={clientSearch}
+                                        onChange={e => setClientSearch(e.target.value)}
+                                        placeholder="Buscar por nome ou telefone..."
+                                        className="pl-10"
+                                    />
+                                </div>
+                                {isLoading && (
+                                    <div className="flex justify-center py-2">
+                                        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                                    </div>
+                                )}
+                                {clients.length > 0 && (
+                                    <div className="border rounded-lg divide-y max-h-40 overflow-y-auto">
+                                        {clients.map(client => (
+                                            <div
+                                                key={client.id}
+                                                className="p-2 hover:bg-gray-50 cursor-pointer"
+                                                onClick={() => {
+                                                    setSelectedClient(client)
+                                                    setClientSearch('')
+                                                    setClients([])
+                                                }}
+                                            >
+                                                <p className="font-medium text-sm">{client.nome}</p>
+                                                <p className="text-xs text-gray-500">{client.telefone}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
 
-                    {/* Common Fields */}
+                    {/* Date and Time */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Duração (h)</Label>
+                            <Label>Data *</Label>
                             <Input
-                                type="number"
-                                min="1"
-                                value={formData.duracao_estimada}
-                                onChange={e => setFormData({ ...formData, duracao_estimada: e.target.value })}
+                                type="date"
+                                value={formData.data}
+                                onChange={e => setFormData(prev => ({ ...prev, data: e.target.value }))}
+                                required
                             />
                         </div>
+                        <div className="space-y-2">
+                            <Label>Horário *</Label>
+                            <Select
+                                value={formData.horario_inicio}
+                                onValueChange={v => setFormData(prev => ({ ...prev, horario_inicio: v }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {HORARIOS.map(h => (
+                                        <SelectItem key={h} value={h}>{h}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {/* Service Type and Duration */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Tipo de Serviço</Label>
+                            <Select
+                                value={formData.tipo}
+                                onValueChange={v => setFormData(prev => ({ ...prev, tipo: v }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {TIPOS_SERVICO.map(t => (
+                                        <SelectItem key={t.value} value={t.value}>
+                                            {t.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Duração (minutos)</Label>
+                            <Select
+                                value={formData.duracao_minutos}
+                                onValueChange={v => setFormData(prev => ({ ...prev, duracao_minutos: v }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="60">1 hora</SelectItem>
+                                    <SelectItem value="90">1h 30min</SelectItem>
+                                    <SelectItem value="120">2 horas</SelectItem>
+                                    <SelectItem value="150">2h 30min</SelectItem>
+                                    <SelectItem value="180">3 horas</SelectItem>
+                                    <SelectItem value="210">3h 30min</SelectItem>
+                                    <SelectItem value="240">4 horas</SelectItem>
+                                    <SelectItem value="300">5 horas</SelectItem>
+                                    <SelectItem value="360">6 horas</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    {/* Value and Status */}
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Valor ($)</Label>
                             <Input
@@ -308,108 +317,67 @@ export function AppointmentModal({ open, onOpenChange, selectedDate, appointment
                                 min="0"
                                 step="0.01"
                                 value={formData.valor}
-                                onChange={e => setFormData({ ...formData, valor: e.target.value })}
-                                placeholder="0.00"
+                                onChange={e => setFormData(prev => ({ ...prev, valor: e.target.value }))}
+                                placeholder="150.00"
                             />
                         </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Tipo de Serviço (Padrão)</Label>
-                        <Select
-                            value={formData.tipo_servico}
-                            onValueChange={(v) => setFormData({ ...formData, tipo_servico: v })}
-                        >
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="regular">Limpeza Regular</SelectItem>
-                                <SelectItem value="deep">Limpeza Profunda</SelectItem>
-                                <SelectItem value="move_in_out">Move-in/Move-out</SelectItem>
-                                <SelectItem value="visit">Visita de Orçamento</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Team Selection */}
-                    {!isRecurring && (
                         <div className="space-y-2">
-                            <Label>Equipe</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className="w-full justify-between">
-                                        <span className="flex items-center gap-2">
-                                            <Users2 className="w-4 h-4" />
-                                            {selectedTeam.length > 0
-                                                ? `${selectedTeam.length} selecionados`
-                                                : "Selecionar equipe"}
-                                        </span>
-                                        <ChevronDown className="w-4 h-4 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[300px] p-0" align="start">
-                                    <ScrollArea className="h-[200px] p-4">
-                                        <div className="space-y-2">
-                                            {teamMembers.length === 0 && <p className="text-sm text-muted-foreground">Nenhum membro encontrado.</p>}
-                                            {teamMembers.map((member) => (
-                                                <div key={member.id} className="flex items-center space-x-2 p-1 hover:bg-secondary/10 rounded">
-                                                    <Checkbox
-                                                        id={`team-${member.id}`}
-                                                        checked={selectedTeam.includes(member.id)}
-                                                        onCheckedChange={() => toggleTeamMember(member.id)}
-                                                    />
-                                                    <label
-                                                        htmlFor={`team-${member.id}`}
-                                                        className="text-sm font-medium leading-none flex-1 cursor-pointer flex items-center gap-2"
-                                                    >
-                                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: member.cor }} />
-                                                        {member.nome}
-                                                    </label>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </ScrollArea>
-                                </PopoverContent>
-                            </Popover>
-                            {selectedTeam.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                    {selectedTeam.map(id => {
-                                        const member = teamMembers.find(m => m.id === id)
-                                        return member ? (
-                                            <Badge key={id} variant="secondary" className="gap-1 bg-secondary/20">
-                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: member.cor }} />
-                                                {member.nome}
-                                            </Badge>
-                                        ) : null
-                                    })}
-                                </div>
-                            )}
+                            <Label>Status</Label>
+                            <Select
+                                value={formData.status}
+                                onValueChange={v => setFormData(prev => ({ ...prev, status: v }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {STATUS_OPTIONS.map(s => (
+                                        <SelectItem key={s.value} value={s.value}>
+                                            {s.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                    )}
+                    </div>
 
+                    {/* Notes */}
                     <div className="space-y-2">
                         <Label>Notas</Label>
-                        <Input
+                        <Textarea
                             value={formData.notas}
-                            onChange={e => setFormData({ ...formData, notas: e.target.value })}
-                            placeholder="Instruções de entrada, código, etc."
+                            onChange={e => setFormData(prev => ({ ...prev, notas: e.target.value }))}
+                            placeholder="Observações sobre o agendamento..."
+                            rows={3}
                         />
                     </div>
 
-                    <Button type="submit" className="w-full bg-[#C48B7F] hover:bg-[#A66D60] mt-4" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (isRecurring ? 'Criar Recorrência' : 'Agendar')}
-                    </Button>
+                    {/* Submit */}
+                    <div className="flex justify-end gap-3 pt-4">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={isSaving || !selectedClient}
+                            className="bg-[#C48B7F] hover:bg-[#A66D60]"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Salvando...
+                                </>
+                            ) : (
+                                'Criar Agendamento'
+                            )}
+                        </Button>
+                    </div>
                 </form>
             </DialogContent>
         </Dialog>
     )
-}
-
-function calculateEndTime(startTime: string, durationHours: string): string {
-    const [hours, minutes] = startTime.split(':').map(Number)
-    const durationMins = parseFloat(durationHours) * 60
-    const endDate = new Date()
-    endDate.setHours(hours, minutes + durationMins)
-    return endDate.toTimeString().slice(0, 5)
 }

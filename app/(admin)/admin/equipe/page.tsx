@@ -1,4 +1,3 @@
-// app/(admin)/admin/equipe/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -14,6 +13,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog'
 import {
@@ -71,6 +71,19 @@ const CORES = [
     { value: '#C4856B', label: 'Coral' },
 ]
 
+const EMPTY_MEMBER: Membro = {
+    id: '',
+    nome: '',
+    telefone: '',
+    email: '',
+    cargo: 'cleaner',
+    foto_url: null,
+    cor: '#C48B7F',
+    ativo: true,
+    data_admissao: new Date().toISOString().split('T')[0],
+    notas: ''
+}
+
 export default function EquipePage() {
     const [membros, setMembros] = useState<Membro[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -92,6 +105,7 @@ export default function EquipePage() {
             .order('nome')
 
         if (error) {
+            console.error('Error fetching team:', error)
             toast.error('Erro ao carregar equipe')
         } else {
             setMembros(data || [])
@@ -100,18 +114,7 @@ export default function EquipePage() {
     }
 
     const handleCreate = () => {
-        setEditingMembro({
-            id: '',
-            nome: '',
-            telefone: '',
-            email: '',
-            cargo: 'cleaner',
-            foto_url: null,
-            cor: '#C48B7F',
-            ativo: true,
-            data_admissao: new Date().toISOString().split('T')[0],
-            notas: ''
-        })
+        setEditingMembro({ ...EMPTY_MEMBER })
         setIsModalOpen(true)
     }
 
@@ -121,7 +124,7 @@ export default function EquipePage() {
     }
 
     const handleSave = async () => {
-        if (!editingMembro?.nome) {
+        if (!editingMembro?.nome.trim()) {
             toast.error('Nome é obrigatório')
             return
         }
@@ -132,19 +135,37 @@ export default function EquipePage() {
             const { id, ...data } = editingMembro
 
             if (id) {
-                // Atualizar
+                // Update
                 const { error } = await supabase
                     .from('equipe')
-                    .update(data)
+                    .update({
+                        nome: data.nome.trim(),
+                        telefone: data.telefone?.trim() || null,
+                        email: data.email?.trim() || null,
+                        cargo: data.cargo,
+                        cor: data.cor,
+                        ativo: data.ativo,
+                        data_admissao: data.data_admissao,
+                        notas: data.notas?.trim() || null,
+                    })
                     .eq('id', id)
 
                 if (error) throw error
                 toast.success('Membro atualizado!')
             } else {
-                // Criar
+                // Insert
                 const { error } = await supabase
                     .from('equipe')
-                    .insert(data)
+                    .insert({
+                        nome: data.nome.trim(),
+                        telefone: data.telefone?.trim() || null,
+                        email: data.email?.trim() || null,
+                        cargo: data.cargo,
+                        cor: data.cor,
+                        ativo: data.ativo,
+                        data_admissao: data.data_admissao,
+                        notas: data.notas?.trim() || null,
+                    })
 
                 if (error) throw error
                 toast.success('Membro adicionado!')
@@ -153,7 +174,7 @@ export default function EquipePage() {
             setIsModalOpen(false)
             fetchMembros()
         } catch (error) {
-            console.error(error)
+            console.error('Error saving:', error)
             toast.error('Erro ao salvar')
         } finally {
             setIsSaving(false)
@@ -161,7 +182,7 @@ export default function EquipePage() {
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Tem certeza que deseja remover este membro?')) return
+        if (!confirm('Tem certeza que deseja desativar este membro?')) return
 
         try {
             const { error } = await supabase
@@ -170,15 +191,21 @@ export default function EquipePage() {
                 .eq('id', id)
 
             if (error) throw error
-            toast.success('Membro removido!')
+            toast.success('Membro desativado!')
             fetchMembros()
         } catch (error) {
-            toast.error('Erro ao remover')
+            console.error('Error deleting:', error)
+            toast.error('Erro ao desativar')
         }
     }
 
     const getInitials = (nome: string) => {
-        return nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+        return nome
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
     }
 
     return (
@@ -186,12 +213,12 @@ export default function EquipePage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="font-heading text-h2 text-foreground">Equipe</h1>
-                    <p className="text-body text-muted-foreground">
-                        Gerencie os membros da sua equipe
+                    <h1 className="font-heading text-2xl font-bold text-foreground">Equipe</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Gerencie os membros da sua equipe de limpeza
                     </p>
                 </div>
-                <Button onClick={handleCreate}>
+                <Button onClick={handleCreate} className="bg-[#C48B7F] hover:bg-[#A66D60]">
                     <Plus className="w-4 h-4 mr-2" />
                     Novo Membro
                 </Button>
@@ -200,14 +227,14 @@ export default function EquipePage() {
             {/* Grid de Membros */}
             {isLoading ? (
                 <div className="flex justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                    <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                 </div>
             ) : membros.filter(m => m.ativo).length === 0 ? (
                 <Card>
                     <CardContent className="py-12 text-center">
-                        <Users2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">Nenhum membro cadastrado</p>
-                        <Button className="mt-4" onClick={handleCreate}>
+                        <Users2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-4">Nenhum membro cadastrado</p>
+                        <Button onClick={handleCreate} className="bg-[#C48B7F] hover:bg-[#A66D60]">
                             Adicionar Primeiro Membro
                         </Button>
                     </CardContent>
@@ -219,9 +246,17 @@ export default function EquipePage() {
                             <CardContent className="pt-6">
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-4">
-                                        <Avatar className="w-12 h-12" style={{ borderColor: membro.cor, borderWidth: 2 }}>
+                                        <Avatar
+                                            className="w-12 h-12 border-2"
+                                            style={{ borderColor: membro.cor }}
+                                        >
                                             <AvatarImage src={membro.foto_url || undefined} />
-                                            <AvatarFallback style={{ backgroundColor: membro.cor + '20', color: membro.cor }}>
+                                            <AvatarFallback
+                                                style={{
+                                                    backgroundColor: membro.cor + '20',
+                                                    color: membro.cor
+                                                }}
+                                            >
                                                 {getInitials(membro.nome)}
                                             </AvatarFallback>
                                         </Avatar>
@@ -245,16 +280,16 @@ export default function EquipePage() {
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 onClick={() => handleDelete(membro.id)}
-                                                className="text-destructive"
+                                                className="text-red-600"
                                             >
                                                 <Trash2 className="w-4 h-4 mr-2" />
-                                                Remover
+                                                Desativar
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
 
-                                <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                                <div className="mt-4 space-y-2 text-sm text-gray-500">
                                     {membro.telefone && (
                                         <div className="flex items-center gap-2">
                                             <Phone className="w-4 h-4" />
@@ -285,6 +320,9 @@ export default function EquipePage() {
                         <DialogTitle>
                             {editingMembro?.id ? 'Editar Membro' : 'Novo Membro'}
                         </DialogTitle>
+                        <DialogDescription>
+                            Preencha os dados do membro da equipe
+                        </DialogDescription>
                     </DialogHeader>
 
                     {editingMembro && (
@@ -293,7 +331,10 @@ export default function EquipePage() {
                                 <Label>Nome *</Label>
                                 <Input
                                     value={editingMembro.nome}
-                                    onChange={(e) => setEditingMembro({ ...editingMembro, nome: e.target.value })}
+                                    onChange={(e) => setEditingMembro({
+                                        ...editingMembro,
+                                        nome: e.target.value
+                                    })}
                                     placeholder="Nome completo"
                                 />
                             </div>
@@ -303,7 +344,10 @@ export default function EquipePage() {
                                     <Label>Telefone</Label>
                                     <Input
                                         value={editingMembro.telefone || ''}
-                                        onChange={(e) => setEditingMembro({ ...editingMembro, telefone: e.target.value })}
+                                        onChange={(e) => setEditingMembro({
+                                            ...editingMembro,
+                                            telefone: e.target.value
+                                        })}
                                         placeholder="(00) 00000-0000"
                                     />
                                 </div>
@@ -312,7 +356,10 @@ export default function EquipePage() {
                                     <Input
                                         type="email"
                                         value={editingMembro.email || ''}
-                                        onChange={(e) => setEditingMembro({ ...editingMembro, email: e.target.value })}
+                                        onChange={(e) => setEditingMembro({
+                                            ...editingMembro,
+                                            email: e.target.value
+                                        })}
                                         placeholder="email@exemplo.com"
                                     />
                                 </div>
@@ -323,7 +370,10 @@ export default function EquipePage() {
                                     <Label>Cargo</Label>
                                     <Select
                                         value={editingMembro.cargo}
-                                        onValueChange={(v: any) => setEditingMembro({ ...editingMembro, cargo: v })}
+                                        onValueChange={(v: any) => setEditingMembro({
+                                            ...editingMembro,
+                                            cargo: v
+                                        })}
                                     >
                                         <SelectTrigger>
                                             <SelectValue />
@@ -341,7 +391,10 @@ export default function EquipePage() {
                                     <Label>Cor de Identificação</Label>
                                     <Select
                                         value={editingMembro.cor}
-                                        onValueChange={(v) => setEditingMembro({ ...editingMembro, cor: v })}
+                                        onValueChange={(v) => setEditingMembro({
+                                            ...editingMembro,
+                                            cor: v
+                                        })}
                                     >
                                         <SelectTrigger>
                                             <div className="flex items-center gap-2">
@@ -374,7 +427,10 @@ export default function EquipePage() {
                                 <Input
                                     type="date"
                                     value={editingMembro.data_admissao}
-                                    onChange={(e) => setEditingMembro({ ...editingMembro, data_admissao: e.target.value })}
+                                    onChange={(e) => setEditingMembro({
+                                        ...editingMembro,
+                                        data_admissao: e.target.value
+                                    })}
                                 />
                             </div>
                         </div>
@@ -384,9 +440,19 @@ export default function EquipePage() {
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                             Cancelar
                         </Button>
-                        <Button onClick={handleSave} disabled={isSaving}>
-                            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Salvar
+                        <Button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="bg-[#C48B7F] hover:bg-[#A66D60]"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Salvando...
+                                </>
+                            ) : (
+                                'Salvar'
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

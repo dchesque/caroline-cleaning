@@ -26,6 +26,8 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
   - Páginas de Conversão, Satisfação e Tendências com novos gráficos e KPIs.
 - **Módulo Financeiro**:
   - Interface de Receitas e estrutura para Despesas/Relatórios.
+- **Módulo de Equipe**:
+  - Nova página de gestão de equipe (`/admin/equipe`) com CRUD completo, badges de cargo e soft-delete.
 
 ### Modificado
 - Atualização da navegação lateral (Sidebar) para incluir 'Equipe'.
@@ -37,6 +39,8 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
   - Ajuste na lógica de pets (separação entre booleano e text).
   - Correção no payload de criação de Agendamentos (conversão para minutos e cálculo de horário final).
   - Implementação da gravação correta de recorrências ao criar Contratos.
+  - Atualização integral do modal de clientes (client-modal.tsx) para garantir compatibilidade com schema do banco.
+  - Atualização do modal de agendamentos (appointment-modal.tsx) para alinhar campos como datas, horários e duração com o banco.
 
 ---
 
