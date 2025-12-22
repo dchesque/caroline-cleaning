@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Loader2, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 
 interface ClientModalProps {
     open: boolean
@@ -17,11 +19,23 @@ interface ClientModalProps {
     onSuccess?: () => void
 }
 
+interface ServicoTipo {
+    id: string
+    codigo: string
+    nome: string
+    ativo: boolean
+}
+
+interface DiaServico {
+    dia: string
+    servico: string
+}
+
 const STEPS = [
     { id: 1, title: 'Informações Básicas' },
     { id: 2, title: 'Endereço' },
     { id: 3, title: 'Detalhes da Casa' },
-    { id: 4, title: 'Preferências' },
+    { id: 4, title: 'Preferências de Serviço' },
     { id: 5, title: 'Acesso & Pets' },
 ]
 
@@ -31,14 +45,6 @@ const TIPOS_RESIDENCIA = [
     { value: 'condo', label: 'Condomínio' },
     { value: 'townhouse', label: 'Townhouse' },
     { value: 'other', label: 'Outro' },
-]
-
-const TIPOS_SERVICO = [
-    { value: 'regular', label: 'Regular Cleaning' },
-    { value: 'deep', label: 'Deep Cleaning' },
-    { value: 'move_in_out', label: 'Move In/Out' },
-    { value: 'office', label: 'Office' },
-    { value: 'airbnb', label: 'Airbnb' },
 ]
 
 const FREQUENCIAS = [
@@ -69,6 +75,7 @@ const TIPOS_ACESSO = [
 export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps) {
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
+    const [servicosDisponiveis, setServicosDisponiveis] = useState<ServicoTipo[]>([])
     const supabase = createClient()
 
     const [formData, setFormData] = useState({
@@ -86,10 +93,9 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         bedrooms: '3',
         bathrooms: '2',
         square_feet: '',
-        // Step 4 - Preferências
-        tipo_servico_padrao: 'regular',
+        // Step 4 - Preferências (NOVO FORMATO)
         frequencia: 'biweekly',
-        dia_preferido: 'monday',
+        diasServicos: [] as DiaServico[], // Array de {dia, servico}
         // Step 5 - Acesso & Pets
         acesso_tipo: 'client_home',
         acesso_codigo: '',
@@ -99,12 +105,30 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         notas_internas: ''
     })
 
-    // Função para buscar endereço pelo ZIP Code (API gratuita)
+    // Carregar serviços do banco
+    useEffect(() => {
+        const fetchServicos = async () => {
+            const { data, error } = await supabase
+                .from('servicos_tipos')
+                .select('id, codigo, nome, ativo')
+                .eq('ativo', true)
+                .order('ordem')
+
+            if (data && !error) {
+                setServicosDisponiveis(data)
+            }
+        }
+
+        if (open) {
+            fetchServicos()
+        }
+    }, [open])
+
+    // Função para buscar endereço pelo ZIP Code
     const fetchAddressByZip = async (zipCode: string) => {
         if (zipCode.length < 5) return
 
         try {
-            // Usar API Zippopotam.us (gratuita, sem API key)
             const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`)
             if (response.ok) {
                 const data = await response.json()
@@ -122,8 +146,39 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         }
     }
 
-    const handleChange = (key: string, value: string | boolean) => {
+    const handleChange = (key: string, value: string | boolean | DiaServico[]) => {
         setFormData(prev => ({ ...prev, [key]: value }))
+    }
+
+    // Adicionar novo dia/serviço
+    const addDiaServico = () => {
+        // Encontrar o primeiro dia que ainda não foi selecionado
+        const diasUsados = formData.diasServicos.map(ds => ds.dia)
+        const proximoDia = DIAS_SEMANA.find(d => !diasUsados.includes(d.value))?.value || 'monday'
+        const primeiroServico = servicosDisponiveis[0]?.codigo || 'regular'
+
+        setFormData(prev => ({
+            ...prev,
+            diasServicos: [...prev.diasServicos, { dia: proximoDia, servico: primeiroServico }]
+        }))
+    }
+
+    // Remover dia/serviço
+    const removeDiaServico = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            diasServicos: prev.diasServicos.filter((_, i) => i !== index)
+        }))
+    }
+
+    // Atualizar dia/serviço específico
+    const updateDiaServico = (index: number, field: 'dia' | 'servico', value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            diasServicos: prev.diasServicos.map((ds, i) =>
+                i === index ? { ...ds, [field]: value } : ds
+            )
+        }))
     }
 
     const handleNext = () => {
@@ -141,6 +196,12 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         if (step === 2) {
             if (!formData.endereco_completo.trim()) {
                 toast.error('Endereço é obrigatório')
+                return
+            }
+        }
+        if (step === 4) {
+            if (formData.diasServicos.length === 0) {
+                toast.error('Adicione pelo menos um dia de serviço')
                 return
             }
         }
@@ -165,9 +226,8 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
             bedrooms: '3',
             bathrooms: '2',
             square_feet: '',
-            tipo_servico_padrao: 'regular',
             frequencia: 'biweekly',
-            dia_preferido: 'monday',
+            diasServicos: [],
             acesso_tipo: 'client_home',
             acesso_codigo: '',
             acesso_instrucoes: '',
@@ -180,8 +240,13 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
     const handleSubmit = async () => {
         setIsLoading(true)
         try {
-            // Mapeamento correto para o banco de dados
-            const { error } = await supabase.from('clientes').insert([{
+            // Extrair dias e serviço principal (primeiro da lista)
+            const diasSelecionados = formData.diasServicos.map(ds => ds.dia)
+            const servicoPrincipal = formData.diasServicos[0]?.servico || 'regular'
+            const diaPrincipal = formData.diasServicos[0]?.dia || 'monday'
+
+            // 1. Criar o cliente
+            const { data: cliente, error: clienteError } = await supabase.from('clientes').insert([{
                 // Dados pessoais
                 nome: formData.nome.trim(),
                 telefone: formData.telefone.trim(),
@@ -193,23 +258,23 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                 estado: formData.estado,
                 zip_code: formData.zip_code.trim() || null,
 
-                // Detalhes da casa - NOMES CORRETOS DO BANCO
+                // Detalhes da casa
                 tipo_residencia: formData.tipo_residencia,
                 bedrooms: parseInt(formData.bedrooms) || null,
                 bathrooms: parseFloat(formData.bathrooms) || null,
                 square_feet: parseInt(formData.square_feet) || null,
 
-                // Preferências - NOMES CORRETOS DO BANCO
-                tipo_servico_padrao: formData.tipo_servico_padrao,
+                // Preferências (campos legados para compatibilidade)
+                tipo_servico_padrao: servicoPrincipal,
                 frequencia: formData.frequencia,
-                dia_preferido: formData.dia_preferido,
+                dia_preferido: diaPrincipal,
 
-                // Acesso - NOMES CORRETOS DO BANCO
+                // Acesso
                 acesso_tipo: formData.acesso_tipo,
                 acesso_codigo: formData.acesso_codigo.trim() || null,
                 acesso_instrucoes: formData.acesso_instrucoes.trim() || null,
 
-                // Pets - NOMES CORRETOS DO BANCO
+                // Pets
                 tem_pets: formData.tem_pets,
                 pets_detalhes: formData.pets_detalhes.trim() || null,
 
@@ -218,9 +283,27 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
 
                 // Status inicial
                 status: 'lead'
-            }])
+            }]).select().single()
 
-            if (error) throw error
+            if (clienteError) throw clienteError
+
+            // 2. Criar recorrência com múltiplos dias/serviços (se frequência não for avulso)
+            if (formData.frequencia !== 'one_time' && cliente) {
+                const { error: recorrenciaError } = await supabase.from('recorrencias').insert([{
+                    cliente_id: cliente.id,
+                    frequencia: formData.frequencia,
+                    dia_preferido: diaPrincipal,
+                    tipo_servico: servicoPrincipal,
+                    dias_semana: diasSelecionados,
+                    servicos_por_dia: formData.diasServicos,
+                    ativo: true
+                }])
+
+                if (recorrenciaError) {
+                    console.error('Error creating recurrence:', recorrenciaError)
+                    // Não falhar por causa da recorrência
+                }
+            }
 
             toast.success('Cliente cadastrado com sucesso!')
             onOpenChange(false)
@@ -232,6 +315,11 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         } finally {
             setIsLoading(false)
         }
+    }
+
+    // Verificar se um dia já está sendo usado
+    const isDiaUsado = (dia: string, currentIndex: number) => {
+        return formData.diasServicos.some((ds, i) => ds.dia === dia && i !== currentIndex)
     }
 
     return (
@@ -398,27 +486,10 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                     </div>
                 )}
 
-                {/* Step 4: Preferências */}
+                {/* Step 4: Preferências de Serviço (NOVO) */}
                 {step === 4 && (
                     <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Serviço Preferido</Label>
-                            <Select
-                                value={formData.tipo_servico_padrao}
-                                onValueChange={v => handleChange('tipo_servico_padrao', v)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {TIPOS_SERVICO.map(t => (
-                                        <SelectItem key={t.value} value={t.value}>
-                                            {t.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {/* Frequência */}
                         <div className="space-y-2">
                             <Label>Frequência</Label>
                             <Select
@@ -437,24 +508,120 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Dias e Serviços */}
                         <div className="space-y-2">
-                            <Label>Dia Preferido</Label>
-                            <Select
-                                value={formData.dia_preferido}
-                                onValueChange={v => handleChange('dia_preferido', v)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {DIAS_SEMANA.map(d => (
-                                        <SelectItem key={d.value} value={d.value}>
-                                            {d.label}
-                                        </SelectItem>
+                            <div className="flex items-center justify-between">
+                                <Label>Dias e Serviços</Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addDiaServico}
+                                    disabled={formData.diasServicos.length >= 6}
+                                >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Adicionar Dia
+                                </Button>
+                            </div>
+
+                            {formData.diasServicos.length === 0 ? (
+                                <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
+                                    <p className="text-sm text-muted-foreground mb-2">
+                                        Nenhum dia configurado
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={addDiaServico}
+                                    >
+                                        <Plus className="w-4 h-4 mr-1" />
+                                        Adicionar Primeiro Dia
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {formData.diasServicos.map((ds, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg"
+                                        >
+                                            {/* Seletor de Dia */}
+                                            <Select
+                                                value={ds.dia}
+                                                onValueChange={v => updateDiaServico(index, 'dia', v)}
+                                            >
+                                                <SelectTrigger className="w-[130px]">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {DIAS_SEMANA.map(d => (
+                                                        <SelectItem
+                                                            key={d.value}
+                                                            value={d.value}
+                                                            disabled={isDiaUsado(d.value, index)}
+                                                        >
+                                                            {d.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+
+                                            {/* Seletor de Serviço */}
+                                            <Select
+                                                value={ds.servico}
+                                                onValueChange={v => updateDiaServico(index, 'servico', v)}
+                                            >
+                                                <SelectTrigger className="flex-1">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {servicosDisponiveis.map(s => (
+                                                        <SelectItem key={s.codigo} value={s.codigo}>
+                                                            {s.nome}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+
+                                            {/* Botão Remover */}
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => removeDiaServico(index)}
+                                                className="shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     ))}
-                                </SelectContent>
-                            </Select>
+                                </div>
+                            )}
                         </div>
+
+                        {/* Resumo dos dias selecionados */}
+                        {formData.diasServicos.length > 0 && (
+                            <div className="bg-[#FDF8F6] p-3 rounded-lg">
+                                <p className="text-xs text-muted-foreground mb-2">Resumo:</p>
+                                <div className="flex flex-wrap gap-1">
+                                    {formData.diasServicos.map((ds, index) => {
+                                        const diaLabel = DIAS_SEMANA.find(d => d.value === ds.dia)?.label
+                                        const servicoLabel = servicosDisponiveis.find(s => s.codigo === ds.servico)?.nome
+                                        return (
+                                            <Badge
+                                                key={index}
+                                                variant="secondary"
+                                                className="text-xs"
+                                            >
+                                                {diaLabel}: {servicoLabel}
+                                            </Badge>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -504,14 +671,12 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
 
                         <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
+                                <Checkbox
                                     id="tem_pets"
                                     checked={formData.tem_pets}
-                                    onChange={e => handleChange('tem_pets', e.target.checked)}
-                                    className="rounded border-gray-300"
+                                    onCheckedChange={(checked) => handleChange('tem_pets', !!checked)}
                                 />
-                                <Label htmlFor="tem_pets">Tem pets?</Label>
+                                <Label htmlFor="tem_pets" className="cursor-pointer">Tem pets?</Label>
                             </div>
                         </div>
 

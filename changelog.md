@@ -10,6 +10,7 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
   - Soft-delete para preservação de histórico.
 - **Módulo de Clientes**:
   - Busca automática de endereço via ZIP Code (integração Zippopotam.us).
+  - Modal de Cliente Atualizado: Suporte a múltiplos dias da semana com serviços distintos (ex: Segunda: Deep / Quarta: Office).
   - Dropdown avançado: Ações rápidas (Editar, SMS, WhatsApp), alteração de status e exclusão segura.
   - Header da Ficha do Cliente: Botões diretos para SMS/WhatsApp/Ligar, alteração de status via badge e navegação otimizada.
   - Abas da Ficha do Cliente: 
