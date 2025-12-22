@@ -20,7 +20,8 @@ import {
     Phone,
     Mail,
     Globe,
-    DollarSign
+    DollarSign,
+    Package
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -185,6 +186,22 @@ export default function ConfiguracoesPage() {
                                         <div>
                                             <p className="font-semibold">Serviços</p>
                                             <p className="text-caption text-muted-foreground">Gerenciar tipos de serviço</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Link>
+                        </Card>
+
+                        <Card className="hover:shadow-md transition-shadow">
+                            <Link href="/admin/configuracoes/addons">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-brandy-rose-100 rounded-lg">
+                                            <Package className="w-5 h-5 text-brandy-rose-600" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold">Add-ons</p>
+                                            <p className="text-caption text-muted-foreground">Serviços adicionais</p>
                                         </div>
                                     </div>
                                 </CardContent>

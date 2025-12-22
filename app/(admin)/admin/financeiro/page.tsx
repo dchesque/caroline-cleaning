@@ -47,7 +47,7 @@ export default async function FinanceiroPage() {
     const { data: currentExpenses } = await supabase
         .from('financeiro')
         .select('valor')
-        .eq('tipo', 'despesa')
+        .eq('tipo', 'custo')
         .eq('status', 'pago')
         .gte('data', `${currentMonth}-01`)
         .lte('data', `${currentMonth}-31`)

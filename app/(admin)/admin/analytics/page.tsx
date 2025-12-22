@@ -12,10 +12,12 @@ import {
     Calendar,
     DollarSign,
     MessageSquare,
+    MessageSquareText,
     ArrowUpRight,
     ArrowDownRight,
     Download,
-    RefreshCw
+    RefreshCw,
+    Zap
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { OverviewChart } from '@/components/analytics/overview-chart'
@@ -85,6 +87,12 @@ async function getAnalyticsData(supabase: any) {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', startOfMonthStr)
 
+    // Leads capturados
+    const { count: leads } = await supabase
+        .from('contact_leads')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startOfMonthStr)
+
     // Total de leads convertidos
     const { count: convertedLeads } = await supabase
         .from('clientes')
@@ -125,7 +133,13 @@ async function getAnalyticsData(supabase: any) {
             sessions: chatSessions || 0,
             conversions: convertedLeads || 0,
             conversionRate: chatSessions ? ((convertedLeads || 0) / chatSessions * 100) : 0
-        }
+        },
+        funnel: [
+            { label: 'Visitantes', value: chatSessions || 0, percentage: 100, color: '#C48B7F' },
+            { label: 'Leads', value: leads || 0, percentage: chatSessions ? (leads || 0) / chatSessions * 100 : 0, color: '#BE9982' },
+            { label: 'Agendamentos', value: appointments || 0, percentage: chatSessions ? (appointments || 0) / chatSessions * 100 : 0, color: '#C4A35A' },
+            { label: 'Convertidos', value: convertedLeads || 0, percentage: chatSessions ? (convertedLeads || 0) / chatSessions * 100 : 0, color: '#22c55e' },
+        ]
     }
 }
 
@@ -320,7 +334,7 @@ export default async function AnalyticsPage() {
                             </CardHeader>
                             <CardContent>
                                 <Suspense fallback={<Skeleton className="h-[400px]" />}>
-                                    <ConversionFunnel />
+                                    <ConversionFunnel steps={analytics.funnel} />
                                 </Suspense>
                             </CardContent>
                         </Card>
@@ -353,46 +367,80 @@ export default async function AnalyticsPage() {
             </Tabs>
 
             {/* Quick Links */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 <Link href="/admin/analytics/receita">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="hover:shadow-md transition-all cursor-pointer border-pampas-dark/10 hover:border-success/30">
                         <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <DollarSign className="w-5 h-5 text-success" />
-                                <span className="font-medium">Relatório de Receita</span>
+                            <div className="flex flex-col items-center gap-3 text-center">
+                                <div className="p-2 bg-success/10 rounded-full">
+                                    <DollarSign className="w-5 h-5 text-success" />
+                                </div>
+                                <span className="font-medium text-body-sm">Receita</span>
                             </div>
                         </CardContent>
                     </Card>
                 </Link>
 
-                <Link href="/admin/analytics/conversoes">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <Link href="/admin/analytics/conversao">
+                    <Card className="hover:shadow-md transition-all cursor-pointer border-pampas-dark/10 hover:border-info/30">
                         <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <TrendingUp className="w-5 h-5 text-info" />
-                                <span className="font-medium">Análise de Conversões</span>
+                            <div className="flex flex-col items-center gap-3 text-center">
+                                <div className="p-2 bg-info/10 rounded-full">
+                                    <TrendingUp className="w-5 h-5 text-info" />
+                                </div>
+                                <span className="font-medium text-body-sm">Conversão</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                <Link href="/admin/analytics/satisfacao">
+                    <Card className="hover:shadow-md transition-all cursor-pointer border-pampas-dark/10 hover:border-warning/30">
+                        <CardContent className="pt-6">
+                            <div className="flex flex-col items-center gap-3 text-center">
+                                <div className="p-2 bg-warning/10 rounded-full">
+                                    <MessageSquare className="w-5 h-5 text-warning" />
+                                </div>
+                                <span className="font-medium text-body-sm">Satisfação</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                <Link href="/admin/analytics/tendencias">
+                    <Card className="hover:shadow-md transition-all cursor-pointer border-pampas-dark/10 hover:border-primary/30">
+                        <CardContent className="pt-6">
+                            <div className="flex flex-col items-center gap-3 text-center">
+                                <div className="p-2 bg-primary/10 rounded-full">
+                                    <Zap className="w-5 h-5 text-primary" />
+                                </div>
+                                <span className="font-medium text-body-sm">Tendências</span>
                             </div>
                         </CardContent>
                     </Card>
                 </Link>
 
                 <Link href="/admin/analytics/clientes">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="hover:shadow-md transition-all cursor-pointer border-pampas-dark/10 hover:border-secondary/30">
                         <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <Users className="w-5 h-5 text-warning" />
-                                <span className="font-medium">Análise de Clientes</span>
+                            <div className="flex flex-col items-center gap-3 text-center">
+                                <div className="p-2 bg-secondary/10 rounded-full">
+                                    <Users className="w-5 h-5 text-secondary" />
+                                </div>
+                                <span className="font-medium text-body-sm">Clientes</span>
                             </div>
                         </CardContent>
                     </Card>
                 </Link>
 
                 <Link href="/admin/analytics/carol">
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <Card className="hover:shadow-md transition-all cursor-pointer border-pampas-dark/10 hover:border-brandy-rose/30">
                         <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <MessageSquare className="w-5 h-5 text-primary" />
-                                <span className="font-medium">Performance Carol</span>
+                            <div className="flex flex-col items-center gap-3 text-center">
+                                <div className="p-2 bg-brandy-rose/10 rounded-full">
+                                    <MessageSquareText className="w-5 h-5 text-brandy-rose" />
+                                </div>
+                                <span className="font-medium text-body-sm">Performance</span>
                             </div>
                         </CardContent>
                     </Card>

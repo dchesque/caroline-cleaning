@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-    AreaChart,
-    Area,
+    BarChart,
+    Bar,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -12,6 +12,7 @@ import {
     ResponsiveContainer
 } from 'recharts'
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 export function RevenueChart() {
     const [data, setData] = useState<any[]>([])
@@ -21,7 +22,6 @@ export function RevenueChart() {
         const fetchData = async () => {
             const months = []
 
-            // Get last 6 months
             for (let i = 5; i >= 0; i--) {
                 const date = subMonths(new Date(), i)
                 const start = format(startOfMonth(date), 'yyyy-MM-dd')
@@ -38,13 +38,12 @@ export function RevenueChart() {
                 const { data: expenses } = await supabase
                     .from('financeiro')
                     .select('valor')
-                    .eq('tipo', 'despesa')
-                    .eq('status', 'pago')
+                    .eq('tipo', 'custo') // Changed from 'despesa' to 'custo' based on SQL schema
                     .gte('data', start)
                     .lte('data', end)
 
                 months.push({
-                    month: format(date, 'MMM'),
+                    month: format(date, 'MMM', { locale: ptBR }), // Localized month
                     receita: revenue?.reduce((acc, r) => acc + r.valor, 0) || 0,
                     despesa: expenses?.reduce((acc, r) => acc + r.valor, 0) || 0,
                 })
@@ -58,45 +57,47 @@ export function RevenueChart() {
 
     return (
         <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={data}>
-                <defs>
-                    <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorDespesa" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                    </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E8E4E1" />
-                <XAxis dataKey="month" stroke="#9A8478" fontSize={12} />
-                <YAxis stroke="#9A8478" fontSize={12} tickFormatter={(value) => `$${value}`} />
+            <BarChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E8E4E1" vertical={false} />
+                <XAxis
+                    dataKey="month"
+                    stroke="#9A8478"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                />
+                <YAxis
+                    stroke="#9A8478"
+                    fontSize={12}
+                    tickFormatter={(value) => `$${value}`}
+                    tickLine={false}
+                    axisLine={false}
+                />
                 <Tooltip
+                    cursor={{ fill: 'transparent' }}
                     formatter={(value: any) => [`$${Number(value).toFixed(2)}`, '']}
                     contentStyle={{
                         backgroundColor: 'white',
                         border: '1px solid #E8E4E1',
-                        borderRadius: '8px'
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
                     }}
                 />
-                <Area
-                    type="monotone"
+                <Bar
                     dataKey="receita"
-                    stroke="#22c55e"
-                    fillOpacity={1}
-                    fill="url(#colorReceita)"
+                    fill="#C48B7F" // Brand primary
+                    radius={[4, 4, 0, 0]}
                     name="Receita"
+                    barSize={32}
                 />
-                <Area
-                    type="monotone"
+                <Bar
                     dataKey="despesa"
-                    stroke="#ef4444"
-                    fillOpacity={1}
-                    fill="url(#colorDespesa)"
+                    fill="#EAE0D5" // Brand border/muted
+                    radius={[4, 4, 0, 0]}
                     name="Despesa"
+                    barSize={32}
                 />
-            </AreaChart>
+            </BarChart>
         </ResponsiveContainer>
     )
 }

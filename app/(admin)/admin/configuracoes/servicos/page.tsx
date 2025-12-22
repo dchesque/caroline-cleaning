@@ -5,54 +5,90 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
+    DialogFooter,
 } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
     ArrowLeft,
     Plus,
-    Edit,
-    Trash,
     Loader2,
-    GripVertical
+    Pencil,
+    Trash2,
+    Sparkles,
+    Home,
+    Building2,
+    Briefcase,
+    Plane,
+    Star,
+    Save,
+    CheckCircle2,
+    XCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 
+// Interfaces
 interface ServiceType {
     id: string
+    codigo: string
     nome: string
-    descricao: string
-    duracao_padrao: number
-    preco_base: number
+    descricao: string | null
+    multiplicador_preco: number
+    duracao_base_minutos: number
     cor: string
+    icone: string
     ativo: boolean
+    disponivel_agendamento_online: boolean
     ordem: number
 }
 
-export default function ServicosConfigPage() {
+const CORES_SERVICO = [
+    { value: '#6B8E6B', label: 'Verde (Regular)', preview: 'bg-[#6B8E6B]' },
+    { value: '#C4A35A', label: 'Dourado (Deep)', preview: 'bg-[#C4A35A]' },
+    { value: '#7B9EB8', label: 'Azul (Move)', preview: 'bg-[#7B9EB8]' },
+    { value: '#9B8BB8', label: 'Roxo (Office)', preview: 'bg-[#9B8BB8]' },
+    { value: '#C4856B', label: 'Coral (Airbnb)', preview: 'bg-[#C4856B]' },
+    { value: '#8B7355', label: 'Marrom', preview: 'bg-[#8B7355]' },
+]
+
+const ICONES_SERVICO = [
+    { value: 'Sparkles', label: 'Brilho', icon: Sparkles },
+    { value: 'Home', label: 'Casa', icon: Home },
+    { value: 'Building2', label: 'Prédio', icon: Building2 },
+    { value: 'Briefcase', label: 'Escritório', icon: Briefcase },
+    { value: 'Plane', label: 'Viagem', icon: Plane },
+    { value: 'Star', label: 'Estrela', icon: Star },
+]
+
+export default function ServicosPage() {
     const [services, setServices] = useState<ServiceType[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
-    const [editingService, setEditingService] = useState<ServiceType | null>(null)
-
-    const [formData, setFormData] = useState({
-        nome: '',
-        descricao: '',
-        duracao_padrao: '180',
-        preco_base: '',
-        cor: '#BE9982',
-        ativo: true,
-    })
+    const [editingItem, setEditingItem] = useState<ServiceType | null>(null)
 
     const supabase = createClient()
 
@@ -62,64 +98,95 @@ export default function ServicosConfigPage() {
 
     const fetchServices = async () => {
         setIsLoading(true)
-        const { data } = await supabase
-            .from('tipos_servico')
+        const { data, error } = await supabase
+            .from('servicos_tipos')
             .select('*')
-            .order('ordem')
+            .order('ordem', { ascending: true })
 
-        setServices(data || [])
+        if (error) {
+            console.error('Error fetching services:', error)
+            toast.error('Erro ao carregar serviços')
+        } else {
+            setServices(data || [])
+        }
         setIsLoading(false)
     }
 
+    const handleCreate = () => {
+        setEditingItem({
+            id: '',
+            codigo: '',
+            nome: '',
+            descricao: '',
+            multiplicador_preco: 1.0,
+            duracao_base_minutos: 180,
+            cor: CORES_SERVICO[0].value,
+            icone: 'Sparkles',
+            ativo: true,
+            disponivel_agendamento_online: true,
+            ordem: services.length + 1
+        })
+        setIsModalOpen(true)
+    }
+
+    const handleEdit = (item: ServiceType) => {
+        setEditingItem({ ...item })
+        setIsModalOpen(true)
+    }
+
     const handleSave = async () => {
-        if (!formData.nome) {
-            toast.error('Nome é obrigatório')
+        if (!editingItem) return
+
+        // Validate
+        if (!editingItem.codigo || !editingItem.nome) {
+            toast.error('Preencha os campos obrigatórios')
+            return
+        }
+
+        if (!/^[a-z_]+$/.test(editingItem.codigo)) {
+            toast.error('Código deve conter apenas letras minúsculas e underscore')
             return
         }
 
         setIsSaving(true)
         try {
-            const serviceData = {
-                nome: formData.nome,
-                descricao: formData.descricao,
-                duracao_padrao: parseInt(formData.duracao_padrao),
-                preco_base: formData.preco_base ? parseFloat(formData.preco_base) : null,
-                cor: formData.cor,
-                ativo: formData.ativo,
-            }
+            const { id, ...dataToSave } = editingItem
 
-            if (editingService) {
+            if (id) {
+                // Update
                 const { error } = await supabase
-                    .from('tipos_servico')
-                    .update(serviceData)
-                    .eq('id', editingService.id)
+                    .from('servicos_tipos')
+                    .update(dataToSave)
+                    .eq('id', id)
+
                 if (error) throw error
                 toast.success('Serviço atualizado!')
             } else {
+                // Insert
                 const { error } = await supabase
-                    .from('tipos_servico')
-                    .insert({ ...serviceData, ordem: services.length })
+                    .from('servicos_tipos')
+                    .insert(dataToSave)
+
                 if (error) throw error
                 toast.success('Serviço criado!')
             }
 
             setIsModalOpen(false)
-            resetForm()
             fetchServices()
         } catch (error) {
-            console.error('Error:', error)
+            console.error('Error saving service:', error)
             toast.error('Erro ao salvar serviço')
         } finally {
             setIsSaving(false)
         }
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Tem certeza que deseja excluir este serviço?')) return
+    const handleDelete = async (id: string, nome: string) => {
+        if (!confirm(`Tem certeza que deseja excluir o serviço "${nome}"?`)) return
 
         try {
             const { error } = await supabase
-                .from('tipos_servico')
+                .from('servicos_tipos')
                 .delete()
                 .eq('id', id)
 
@@ -127,33 +194,30 @@ export default function ServicosConfigPage() {
             toast.success('Serviço excluído!')
             fetchServices()
         } catch (error) {
+            console.error('Error deleting service:', error)
             toast.error('Erro ao excluir serviço')
         }
     }
 
-    const resetForm = () => {
-        setFormData({
-            nome: '',
-            descricao: '',
-            duracao_padrao: '180',
-            preco_base: '',
-            cor: '#BE9982',
-            ativo: true,
-        })
-        setEditingService(null)
+    const toggleActive = async (item: ServiceType) => {
+        try {
+            const { error } = await supabase
+                .from('servicos_tipos')
+                .update({ ativo: !item.ativo })
+                .eq('id', item.id)
+
+            if (error) throw error
+            toast.success(`Serviço ${!item.ativo ? 'ativado' : 'desativado'}!`)
+            fetchServices()
+        } catch (error) {
+            console.error('Error toggling service status:', error)
+            toast.error('Erro ao atualizar status')
+        }
     }
 
-    const openEditModal = (service: ServiceType) => {
-        setEditingService(service)
-        setFormData({
-            nome: service.nome,
-            descricao: service.descricao || '',
-            duracao_padrao: service.duracao_padrao.toString(),
-            preco_base: service.preco_base?.toString() || '',
-            cor: service.cor || '#BE9982',
-            ativo: service.ativo,
-        })
-        setIsModalOpen(true)
+    const getIconComponent = (iconName: string) => {
+        const iconObj = ICONES_SERVICO.find(i => i.value === iconName)
+        return iconObj ? iconObj.icon : Sparkles
     }
 
     return (
@@ -161,171 +225,267 @@ export default function ServicosConfigPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href="/admin/configuracoes">
+                    <Link href="/admin/configuracoes">
+                        <Button variant="ghost" size="icon">
                             <ArrowLeft className="w-5 h-5" />
-                        </Link>
-                    </Button>
+                        </Button>
+                    </Link>
                     <div>
-                        <h1 className="font-heading text-h2 text-foreground">Tipos de Serviço</h1>
-                        <p className="text-body text-muted-foreground">
+                        <h1 className="font-heading text-2xl font-bold text-foreground">
+                            Tipos de Serviço
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
                             Configure os serviços oferecidos
                         </p>
                     </div>
                 </div>
+                <Button onClick={handleCreate}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Novo Serviço
+                </Button>
+            </div>
 
-                <Dialog open={isModalOpen} onOpenChange={(open) => {
-                    setIsModalOpen(open)
-                    if (!open) resetForm()
-                }}>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2">
-                            <Plus className="w-4 h-4" />
-                            Novo Serviço
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>
-                                {editingService ? 'Editar Serviço' : 'Novo Serviço'}
-                            </DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Nome *</Label>
-                                <Input
-                                    value={formData.nome}
-                                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                                    placeholder="Ex: Limpeza Regular"
-                                />
+            {/* Content */}
+            {isLoading ? (
+                <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </div>
+            ) : (
+                <div className="grid gap-4">
+                    {services.map((service) => {
+                        const Icon = getIconComponent(service.icone)
+
+                        return (
+                            <Card key={service.id} className="hover:shadow-md transition-shadow">
+                                <CardContent className="pt-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div className="flex items-center gap-4">
+
+                                            <div
+                                                className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                                                style={{ backgroundColor: service.cor }}
+                                            >
+                                                <Icon className="w-6 h-6 text-white" />
+                                            </div>
+
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-semibold text-lg">{service.nome}</h3>
+                                                    <Badge variant="outline" className="font-mono text-xs">
+                                                        {service.codigo}
+                                                    </Badge>
+                                                    {!service.ativo && (
+                                                        <Badge variant="destructive">Inativo</Badge>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                                    {service.descricao || 'Sem descrição'}
+                                                </p>
+                                                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                                    <span className="flex items-center gap-1">
+                                                        <span className="font-medium text-foreground">x{service.multiplicador_preco}</span> preço base
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <span className="font-medium text-foreground">{service.duracao_base_minutos}min</span> duração
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 sm:ml-auto">
+                                            <div className="flex flex-col gap-1 mr-4">
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                    {service.disponivel_agendamento_online ? (
+                                                        <CheckCircle2 className="w-3 h-3 text-success" />
+                                                    ) : (
+                                                        <XCircle className="w-3 h-3 text-muted-foreground" />
+                                                    )}
+                                                    Online
+                                                </div>
+                                            </div>
+
+                                            <Switch
+                                                checked={service.ativo}
+                                                onCheckedChange={() => toggleActive(service)}
+                                            />
+
+                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(service)}>
+                                                <Pencil className="w-4 h-4 text-muted-foreground" />
+                                            </Button>
+
+                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(service.id, service.nome)}>
+                                                <Trash2 className="w-4 h-4 text-destructive/70 hover:text-destructive" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+
+                    {services.length === 0 && (
+                        <Card className="border-dashed">
+                            <CardContent className="py-12 flex flex-col items-center justify-center text-center">
+                                <Sparkles className="w-12 h-12 text-muted-foreground/30 mb-4" />
+                                <h3 className="font-semibold text-lg mb-2">Nenhum serviço encontrado</h3>
+                                <p className="text-muted-foreground mb-4">Comece criando o primeiro tipo de serviço.</p>
+                                <Button onClick={handleCreate} variant="outline">
+                                    Criar Serviço
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+            )}
+
+            {/* Modal */}
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {editingItem?.id ? 'Editar Serviço' : 'Novo Serviço'}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {editingItem && (
+                        <div className="grid gap-6 py-4">
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Nome do Serviço</Label>
+                                    <Input
+                                        value={editingItem.nome}
+                                        onChange={e => setEditingItem({ ...editingItem, nome: e.target.value })}
+                                        placeholder="Ex: Regular Cleaning"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Código (Slug)</Label>
+                                    <Input
+                                        value={editingItem.codigo}
+                                        onChange={e => setEditingItem({ ...editingItem, codigo: e.target.value.toLowerCase() })}
+                                        placeholder="Ex: regular_cleaning"
+                                        disabled={!!editingItem.id} // Disable editing code after creation to avoid breaking refs
+                                    />
+                                    <p className="text-[10px] text-muted-foreground">Único, letras minúsculas e underscore</p>
+                                </div>
                             </div>
+
                             <div className="space-y-2">
                                 <Label>Descrição</Label>
                                 <Textarea
-                                    value={formData.descricao}
-                                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                                    placeholder="Descrição do serviço..."
-                                    rows={3}
+                                    value={editingItem.descricao || ''}
+                                    onChange={e => setEditingItem({ ...editingItem, descricao: e.target.value })}
+                                    placeholder="Descrição detalhada do serviço..."
+                                    rows={2}
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Duração Padrão (min)</Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.duracao_padrao}
-                                        onChange={(e) => setFormData({ ...formData, duracao_padrao: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Preço Base ($)</Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.preco_base}
-                                        onChange={(e) => setFormData({ ...formData, preco_base: e.target.value })}
-                                        placeholder="150.00"
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Cor</Label>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            type="color"
-                                            value={formData.cor}
-                                            onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
-                                            className="w-12 h-10 p-1"
-                                        />
-                                        <Input
-                                            value={formData.cor}
-                                            onChange={(e) => setFormData({ ...formData, cor: e.target.value })}
-                                            className="flex-1"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Status</Label>
-                                    <div className="flex items-center gap-2 h-10">
-                                        <Switch
-                                            checked={formData.ativo}
-                                            onCheckedChange={(checked) => setFormData({ ...formData, ativo: checked })}
-                                        />
-                                        <span className="text-body-sm">
-                                            {formData.ativo ? 'Ativo' : 'Inativo'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex justify-end gap-2 pt-4">
-                                <Button variant="outline" onClick={() => {
-                                    setIsModalOpen(false)
-                                    resetForm()
-                                }}>
-                                    Cancelar
-                                </Button>
-                                <Button onClick={handleSave} disabled={isSaving}>
-                                    {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                    {editingService ? 'Salvar' : 'Criar'}
-                                </Button>
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            </div>
 
-            {/* Services List */}
-            <Card>
-                <CardContent className="p-0">
-                    {isLoading ? (
-                        <div className="p-6 text-center text-muted-foreground">Carregando...</div>
-                    ) : services.length === 0 ? (
-                        <div className="p-6 text-center text-muted-foreground">
-                            Nenhum serviço cadastrado
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-pampas">
-                            {services.map((service) => (
-                                <div key={service.id} className="flex items-center gap-4 p-4">
-                                    <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
-                                    <div
-                                        className="w-4 h-4 rounded-full"
-                                        style={{ backgroundColor: service.cor }}
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Multiplicador de Preço</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.1"
+                                        min="0.1"
+                                        value={editingItem.multiplicador_preco}
+                                        onChange={e => setEditingItem({ ...editingItem, multiplicador_preco: parseFloat(e.target.value) })}
                                     />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-medium">{service.nome}</p>
-                                            <Badge variant={service.ativo ? 'success' : 'secondary'}>
-                                                {service.ativo ? 'Ativo' : 'Inativo'}
-                                            </Badge>
-                                        </div>
-                                        <p className="text-caption text-muted-foreground">
-                                            {service.duracao_padrao} min
-                                            {service.preco_base && ` • $${service.preco_base}`}
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => openEditModal(service)}
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleDelete(service.id)}
-                                        >
-                                            <Trash className="w-4 h-4 text-destructive" />
-                                        </Button>
-                                    </div>
+                                    <p className="text-[10px] text-muted-foreground">Ex: 1.5 = 50% mais caro que o base</p>
                                 </div>
-                            ))}
+                                <div className="space-y-2">
+                                    <Label>Duração Base (minutos)</Label>
+                                    <Input
+                                        type="number"
+                                        step="15"
+                                        min="30"
+                                        value={editingItem.duracao_base_minutos}
+                                        onChange={e => setEditingItem({ ...editingItem, duracao_base_minutos: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Cor de Exibição</Label>
+                                    <Select
+                                        value={editingItem.cor}
+                                        onValueChange={val => setEditingItem({ ...editingItem, cor: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione uma cor" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {CORES_SERVICO.map(color => (
+                                                <SelectItem key={color.value} value={color.value}>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-4 h-4 rounded-full ${color.preview.replace('bg-', 'bg-[') + ']'} `} style={{ backgroundColor: color.value }} />
+                                                        {color.label}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Ícone</Label>
+                                    <Select
+                                        value={editingItem.icone}
+                                        onValueChange={val => setEditingItem({ ...editingItem, icone: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecione um ícone" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {ICONES_SERVICO.map(icon => (
+                                                <SelectItem key={icon.value} value={icon.value}>
+                                                    <div className="flex items-center gap-2">
+                                                        <icon.icon className="w-4 h-4" />
+                                                        {icon.label}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                                <div className="flex items-center justify-between border rounded-lg p-3">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-base">Ativo</Label>
+                                        <p className="text-xs text-muted-foreground">Disponível no sistema</p>
+                                    </div>
+                                    <Switch
+                                        checked={editingItem.ativo}
+                                        onCheckedChange={checked => setEditingItem({ ...editingItem, ativo: checked })}
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between border rounded-lg p-3">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-base">Agendamento Online</Label>
+                                        <p className="text-xs text-muted-foreground">Visível no site público</p>
+                                    </div>
+                                    <Switch
+                                        checked={editingItem.disponivel_agendamento_online}
+                                        onCheckedChange={checked => setEditingItem({ ...editingItem, disponivel_agendamento_online: checked })}
+                                    />
+                                </div>
+                            </div>
                         </div>
                     )}
-                </CardContent>
-            </Card>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleSave} disabled={isSaving}>
+                            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Salvar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

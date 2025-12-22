@@ -27,459 +27,447 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
+    DialogFooter,
+    DialogDescription,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
     ArrowLeft,
     Plus,
     Search,
-    CalendarIcon,
     Loader2,
+    DollarSign,
+    TrendingUp,
+    CreditCard,
+    Target,
+    Pencil,
+    Trash2,
     CheckCircle,
-    Clock
+    Filter,
+    MoreHorizontal
 } from 'lucide-react'
-import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
+import { TransactionForm } from '@/components/financeiro/transaction-form'
+import { CATEGORIAS_RECEITA, STATUS_CONFIG, FORMAS_PAGAMENTO } from '@/components/financeiro/constants'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-const STATUS_PAGAMENTO = {
-    pendente: { label: 'Pendente', variant: 'warning' },
-    pago: { label: 'Pago', variant: 'success' },
-    cancelado: { label: 'Cancelado', variant: 'destructive' },
-}
-
-const CATEGORIAS_RECEITA = [
-    { value: 'servico', label: 'Serviço de Limpeza' },
-    { value: 'extra', label: 'Serviço Extra' },
-    { value: 'gorjeta', label: 'Gorjeta' },
-    { value: 'outro', label: 'Outro' },
+// Period Filter Options
+const PERIOD_OPTIONS = [
+    { value: 'this_month', label: 'Este Mês' },
+    { value: 'last_month', label: 'Mês Anterior' },
+    { value: 'last_3_months', label: 'Últimos 3 Meses' },
+    { value: 'this_year', label: 'Este Ano' },
+    { value: 'all', label: 'Todo o Período' },
 ]
 
 export default function ReceitasPage() {
-    const [transactions, setTransactions] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const [isSaving, setIsSaving] = useState(false)
-    const [search, setSearch] = useState('')
-    const [statusFilter, setStatusFilter] = useState('all')
-
-    // Form state
-    const [formData, setFormData] = useState({
-        cliente_id: '',
-        agendamento_id: '',
-        categoria: 'servico',
-        descricao: '',
-        valor: '',
-        data: new Date(),
-        status: 'pago',
-        forma_pagamento: 'pix',
+    const [loading, setLoading] = useState(true)
+    const [receitas, setReceitas] = useState<any[]>([])
+    const [summary, setSummary] = useState({
+        totalReceived: 0,
+        toBeReceived: 0,
+        averageTicket: 0
     })
 
-    // Client search
-    const [clientSearch, setClientSearch] = useState('')
-    const [clients, setClients] = useState<any[]>([])
-    const [selectedClient, setSelectedClient] = useState<any>(null)
+    // Filters
+    const [searchTerm, setSearchTerm] = useState('')
+    const [statusFilter, setStatusFilter] = useState('all')
+    const [categoryFilter, setCategoryFilter] = useState('all')
+    const [periodFilter, setPeriodFilter] = useState('this_month')
+
+    // Modals
+    const [isNewOpen, setIsNewOpen] = useState(false)
+    const [editingItem, setEditingItem] = useState<any | null>(null)
+    const [deletingItem, setDeletingItem] = useState<any | null>(null)
 
     const supabase = createClient()
 
-    // Fetch transactions
-    useEffect(() => {
-        const fetchTransactions = async () => {
-            setIsLoading(true)
-
+    const fetchReceitas = async () => {
+        setLoading(true)
+        try {
             let query = supabase
                 .from('financeiro')
                 .select(`
           *,
-          clientes (id, nome, telefone)
+          clientes (id, nome)
         `)
                 .eq('tipo', 'receita')
                 .order('data', { ascending: false })
 
-            if (statusFilter !== 'all') {
-                query = query.eq('status', statusFilter)
+            // Apply Period Filter
+            const now = new Date()
+            let startDate
+
+            if (periodFilter === 'this_month') {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+            } else if (periodFilter === 'last_month') {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+                const endDate = new Date(now.getFullYear(), now.getMonth(), 0)
+                query = query.lte('data', endDate.toISOString().split('T')[0])
+            } else if (periodFilter === 'last_3_months') {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+            } else if (periodFilter === 'this_year') {
+                startDate = new Date(now.getFullYear(), 0, 1)
             }
 
-            const { data } = await query
-            setTransactions(data || [])
-            setIsLoading(false)
-        }
-
-        fetchTransactions()
-    }, [statusFilter])
-
-    // Search clients
-    useEffect(() => {
-        const searchClients = async () => {
-            if (clientSearch.length < 2) {
-                setClients([])
-                return
+            if (startDate && periodFilter !== 'all') {
+                query = query.gte('data', startDate.toISOString().split('T')[0])
             }
 
-            const { data } = await supabase
-                .from('clientes')
-                .select('id, nome, telefone')
-                .or(`nome.ilike.%${clientSearch}%,telefone.ilike.%${clientSearch}%`)
-                .limit(5)
-
-            setClients(data || [])
-        }
-
-        const debounce = setTimeout(searchClients, 300)
-        return () => clearTimeout(debounce)
-    }, [clientSearch])
-
-    const handleSave = async () => {
-        if (!formData.valor) {
-            toast.error('Informe o valor')
-            return
-        }
-
-        setIsSaving(true)
-
-        try {
-            const transactionData = {
-                tipo: 'receita',
-                cliente_id: selectedClient?.id || null,
-                agendamento_id: formData.agendamento_id || null,
-                categoria: formData.categoria,
-                descricao: formData.descricao || null,
-                valor: parseFloat(formData.valor),
-                data: format(formData.data, 'yyyy-MM-dd'),
-                status: formData.status,
-                forma_pagamento: formData.forma_pagamento,
-            }
-
-            const { error } = await supabase.from('financeiro').insert(transactionData)
+            const { data, error } = await query
 
             if (error) throw error
 
-            toast.success('Receita registrada!')
-            setIsModalOpen(false)
+            // Client-side filtering for Search, Status, Category (could be server-side but keeping it simple for now)
+            let filtered = data || []
 
-            // Reset form
-            setFormData({
-                cliente_id: '',
-                agendamento_id: '',
-                categoria: 'servico',
-                descricao: '',
-                valor: '',
-                data: new Date(),
-                status: 'pago',
-                forma_pagamento: 'pix',
+            if (searchTerm) {
+                const lowerSearch = searchTerm.toLowerCase()
+                filtered = filtered.filter(item =>
+                    item.descricao?.toLowerCase().includes(lowerSearch) ||
+                    item.clientes?.nome?.toLowerCase().includes(lowerSearch)
+                )
+            }
+
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(item => item.status === statusFilter)
+            }
+
+            if (categoryFilter !== 'all') {
+                filtered = filtered.filter(item => item.categoria === categoryFilter)
+            }
+
+            setReceitas(filtered)
+
+            // Calculate Summary Stats from FILTERED data? 
+            // Usually summary is for the period, regardless of other filters, but let's stick to visible data for responsiveness
+            // OR maybe summary should be "This Month" always?
+            // Prompt says: "Total Recebido (este mês)", "A Receber (pendentes)", "Ticket Médio"
+            // I'll calculate based on the "Period" selection at least.
+
+            const received = filtered
+                .filter(r => r.status === 'pago')
+                .reduce((acc, r) => acc + r.valor, 0)
+
+            const pending = filtered
+                .filter(r => r.status === 'pendente')
+                .reduce((acc, r) => acc + r.valor, 0)
+
+            const count = filtered.length
+            const avg = count > 0 ? (received + pending) / count : 0
+
+            setSummary({
+                totalReceived: received,
+                toBeReceived: pending,
+                averageTicket: avg
             })
-            setSelectedClient(null)
-
-            // Refresh list
-            const { data } = await supabase
-                .from('financeiro')
-                .select(`*, clientes (id, nome, telefone)`)
-                .eq('tipo', 'receita')
-                .order('data', { ascending: false })
-            setTransactions(data || [])
 
         } catch (error) {
-            console.error('Error saving:', error)
-            toast.error('Erro ao salvar receita')
+            console.error('Erro ao buscar receitas:', error)
+            toast.error('Erro ao carregar receitas')
         } finally {
-            setIsSaving(false)
+            setLoading(false)
         }
     }
 
-    // Filter by search
-    const filteredTransactions = transactions.filter(t => {
-        if (!search) return true
-        const searchLower = search.toLowerCase()
+    useEffect(() => {
+        fetchReceitas()
+    }, [periodFilter, searchTerm, statusFilter, categoryFilter])
+
+    const handleDelete = async () => {
+        if (!deletingItem) return
+
+        try {
+            const { error } = await supabase
+                .from('financeiro')
+                .delete()
+                .eq('id', deletingItem.id)
+
+            if (error) throw error
+
+            toast.success('Receita excluída com sucesso')
+            setDeletingItem(null)
+            fetchReceitas()
+        } catch (error) {
+            console.error(error)
+            toast.error('Erro ao excluir receita')
+        }
+    }
+
+    const handleMarkAsPaid = async (item: any) => {
+        try {
+            const { error } = await supabase
+                .from('financeiro')
+                .update({
+                    status: 'pago',
+                    data_pagamento: new Date().toISOString().split('T')[0]
+                })
+                .eq('id', item.id)
+
+            if (error) throw error
+
+            toast.success('Marcado como pago')
+            fetchReceitas()
+        } catch (error) {
+            console.error(error)
+            toast.error('Erro ao atualizar status')
+        }
+    }
+
+    const getStatusBadge = (status: string) => {
+        const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pendente
         return (
-            t.clientes?.nome?.toLowerCase().includes(searchLower) ||
-            t.descricao?.toLowerCase().includes(searchLower) ||
-            t.categoria?.toLowerCase().includes(searchLower)
+            <Badge variant="outline" className={`${config.className} border-0`}>
+                {config.label}
+            </Badge>
         )
-    })
+    }
 
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/admin/financeiro">
-                            <ArrowLeft className="w-5 h-5" />
+                            <ArrowLeft className="w-4 h-4" />
                         </Link>
                     </Button>
                     <div>
                         <h1 className="font-heading text-h2 text-foreground">Receitas</h1>
                         <p className="text-body text-muted-foreground">
-                            Gerencie as entradas financeiras
+                            Gerenciamento de todas as entradas
                         </p>
                     </div>
                 </div>
+                <Button onClick={() => setIsNewOpen(true)} className="bg-primary hover:bg-primary/90">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nova Receita
+                </Button>
+            </div>
 
-                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2">
-                            <Plus className="w-4 h-4" />
-                            Nova Receita
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Nova Receita</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            {/* Client Selection */}
-                            <div className="space-y-2">
-                                <Label>Cliente (opcional)</Label>
-                                {selectedClient ? (
-                                    <div className="flex items-center justify-between p-3 bg-desert-storm rounded-lg">
-                                        <div>
-                                            <p className="font-medium">{selectedClient.nome}</p>
-                                            <p className="text-caption text-muted-foreground">{selectedClient.telefone}</p>
-                                        </div>
-                                        <Button variant="ghost" size="sm" onClick={() => setSelectedClient(null)}>
-                                            Alterar
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                        <Input
-                                            placeholder="Buscar cliente..."
-                                            value={clientSearch}
-                                            onChange={(e) => setClientSearch(e.target.value)}
-                                            className="pl-9"
-                                        />
-                                        {clients.length > 0 && (
-                                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-pampas rounded-lg shadow-lg z-10">
-                                                {clients.map((client) => (
-                                                    <button
-                                                        key={client.id}
-                                                        className="w-full px-3 py-2 text-left hover:bg-desert-storm"
-                                                        onClick={() => {
-                                                            setSelectedClient(client)
-                                                            setClientSearch('')
-                                                            setClients([])
-                                                        }}
-                                                    >
-                                                        <p className="font-medium">{client.nome}</p>
-                                                        <p className="text-caption text-muted-foreground">{client.telefone}</p>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+            {/* Summary Cards */}
+            <div className="grid sm:grid-cols-3 gap-4">
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-caption text-muted-foreground">Total Recebido</p>
+                                <p className="text-h3 font-semibold text-success">{formatCurrency(summary.totalReceived)}</p>
                             </div>
-
-                            {/* Category */}
-                            <div className="space-y-2">
-                                <Label>Categoria</Label>
-                                <Select
-                                    value={formData.categoria}
-                                    onValueChange={(value) => setFormData({ ...formData, categoria: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {CATEGORIAS_RECEITA.map((cat) => (
-                                            <SelectItem key={cat.value} value={cat.value}>
-                                                {cat.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Value and Date */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Valor ($)</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="150.00"
-                                        value={formData.valor}
-                                        onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Data</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start">
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {format(formData.data, 'dd/MM/yyyy')}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar
-                                                mode="single"
-                                                selected={formData.data}
-                                                onSelect={(date) => date && setFormData({ ...formData, data: date })}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                            </div>
-
-                            {/* Status and Payment Method */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Status</Label>
-                                    <Select
-                                        value={formData.status}
-                                        onValueChange={(value) => setFormData({ ...formData, status: value })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="pago">Pago</SelectItem>
-                                            <SelectItem value="pendente">Pendente</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Forma de Pagamento</Label>
-                                    <Select
-                                        value={formData.forma_pagamento}
-                                        onValueChange={(value) => setFormData({ ...formData, forma_pagamento: value })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="pix">PIX</SelectItem>
-                                            <SelectItem value="cash">Dinheiro</SelectItem>
-                                            <SelectItem value="card">Cartão</SelectItem>
-                                            <SelectItem value="zelle">Zelle</SelectItem>
-                                            <SelectItem value="venmo">Venmo</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            {/* Description */}
-                            <div className="space-y-2">
-                                <Label>Descrição (opcional)</Label>
-                                <Input
-                                    placeholder="Descrição do pagamento"
-                                    value={formData.descricao}
-                                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                                />
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex justify-end gap-2 pt-4">
-                                <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                                    Cancelar
-                                </Button>
-                                <Button onClick={handleSave} disabled={isSaving}>
-                                    {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                    Salvar
-                                </Button>
+                            <div className="p-3 bg-success/10 rounded-lg">
+                                <TrendingUp className="w-6 h-6 text-success" />
                             </div>
                         </div>
-                    </DialogContent>
-                </Dialog>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-caption text-muted-foreground">A Receber</p>
+                                <p className="text-h3 font-semibold text-warning">{formatCurrency(summary.toBeReceived)}</p>
+                            </div>
+                            <div className="p-3 bg-warning/10 rounded-lg">
+                                <CreditCard className="w-6 h-6 text-warning" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-caption text-muted-foreground">Ticket Médio</p>
+                                <p className="text-h3 font-semibold">{formatCurrency(summary.averageTicket)}</p>
+                            </div>
+                            <div className="p-3 bg-primary/10 rounded-lg">
+                                <Target className="w-6 h-6 text-primary" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1 relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Buscar..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Buscar por descrição ou cliente..."
                         className="pl-9"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[150px]">
-                        <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="pago">Pago</SelectItem>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                    </SelectContent>
-                </Select>
+                <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0">
+                    <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Período" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {PERIOD_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-[150px]">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos Status</SelectItem>
+                            {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                                <SelectItem key={key} value={key}>{config.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                        <SelectTrigger className="w-[150px]">
+                            <SelectValue placeholder="Categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas Cat.</SelectItem>
+                            {CATEGORIAS_RECEITA.map(cat => (
+                                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
             {/* Table */}
-            <Card>
-                <CardContent className="p-0">
-                    <div className="hidden md:block">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead>Cliente</TableHead>
-                                    <TableHead>Categoria</TableHead>
-                                    <TableHead>Valor</TableHead>
-                                    <TableHead>Status</TableHead>
+            <div className="rounded-md border bg-white">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Cliente</TableHead>
+                            <TableHead>Categoria</TableHead>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Forma Pgto</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={8} className="h-24 text-center">
+                                    <div className="flex justify-center">
+                                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : receitas.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={8} className="h-64 text-center">
+                                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                        <DollarSign className="w-12 h-12 mb-4 opacity-20" />
+                                        <p className="font-medium">Nenhuma receita encontrada</p>
+                                        <p className="text-sm">Tente ajustar os filtros ou adicione uma nova receita.</p>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            receitas.map((receita) => (
+                                <TableRow key={receita.id}>
+                                    <TableCell>{formatDate(receita.data)}</TableCell>
+                                    <TableCell>{receita.clientes?.nome || '-'}</TableCell>
+                                    <TableCell>
+                                        {CATEGORIAS_RECEITA.find(c => c.value === receita.categoria)?.label || receita.categoria}
+                                    </TableCell>
+                                    <TableCell className="max-w-[200px] truncate" title={receita.descricao}>
+                                        {receita.descricao}
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                        {formatCurrency(receita.valor)}
+                                    </TableCell>
+                                    <TableCell>{getStatusBadge(receita.status)}</TableCell>
+                                    <TableCell>
+                                        {FORMAS_PAGAMENTO.find(f => f.value === receita.forma_pagamento)?.label || receita.forma_pagamento || '-'}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Open menu</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                <DropdownMenuItem onClick={() => setEditingItem(receita)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                                                </DropdownMenuItem>
+                                                {receita.status !== 'pago' && (
+                                                    <DropdownMenuItem onClick={() => handleMarkAsPaid(receita)}>
+                                                        <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Pago
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    onClick={() => setDeletingItem(receita)}
+                                                    className="text-destructive focus:text-destructive"
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredTransactions.map((transaction) => (
-                                    <TableRow key={transaction.id}>
-                                        <TableCell>{formatDate(transaction.data)}</TableCell>
-                                        <TableCell>
-                                            {transaction.clientes?.nome || '-'}
-                                        </TableCell>
-                                        <TableCell>
-                                            {CATEGORIAS_RECEITA.find(c => c.value === transaction.categoria)?.label || transaction.categoria}
-                                        </TableCell>
-                                        <TableCell className="font-semibold text-success">
-                                            +{formatCurrency(transaction.valor)}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.variant as any}>
-                                                {STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.label}
-                                            </Badge>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
 
-                    {/* Mobile Card View */}
-                    <div className="md:hidden divide-y divide-[#EAE0D5]">
-                        {filteredTransactions.map((transaction) => (
-                            <div key={transaction.id} className="p-4 space-y-3">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="font-medium text-foreground">
-                                            {transaction.clientes?.nome || 'Cliente não identificado'}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {CATEGORIAS_RECEITA.find(c => c.value === transaction.categoria)?.label || transaction.categoria}
-                                        </p>
-                                    </div>
-                                    <Badge variant={STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.variant as any}>
-                                        {STATUS_PAGAMENTO[transaction.status as keyof typeof STATUS_PAGAMENTO]?.label}
-                                    </Badge>
-                                </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <div className="flex items-center gap-1 text-muted-foreground">
-                                        <CalendarIcon className="w-3 h-3" />
-                                        {formatDate(transaction.data)}
-                                    </div>
-                                    <span className="font-semibold text-success text-base">
-                                        +{formatCurrency(transaction.valor)}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+            <TransactionForm
+                type="receita"
+                open={isNewOpen}
+                onOpenChange={setIsNewOpen}
+                onSuccess={fetchReceitas}
+            />
+
+            <TransactionForm
+                type="receita"
+                transaction={editingItem}
+                open={!!editingItem}
+                onOpenChange={(open) => !open && setEditingItem(null)}
+                onSuccess={fetchReceitas}
+            />
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirmar Exclusão</DialogTitle>
+                        <DialogDescription>
+                            Tem certeza que deseja excluir esta receita? Esta ação não pode ser desfeita.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeletingItem(null)}>
+                            Cancelar
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete}>
+                            Excluir
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
