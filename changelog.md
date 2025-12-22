@@ -32,6 +32,8 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 ### Modificado
 - Atualização da navegação lateral (Sidebar) para incluir 'Equipe'.
 - Refatoração de componentes utilitários e rotas de API.
+- **Limpeza de Código**:
+  - Remoção de arquivo duplicado/placeholder de equipe em `configuracoes/equipe`.
 
 ### Corrigido
 - **Compatibilidade de Banco de Dados (Crítico)**:
