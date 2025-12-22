@@ -209,7 +209,8 @@ export function AppointmentModal({
                 return prev
             })
         }
-    }, [dataLoaded, serviceTypes, open])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dataLoaded, open])
 
     // Buscar clientes com debounce
     useEffect(() => {

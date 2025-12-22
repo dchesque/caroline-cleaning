@@ -2,6 +2,30 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+
+
+## [1.3.4] - 2025-12-22
+### Corrigido
+- **Gestão de Mensagens**:
+  - Remoção de código morto: exclusão da pasta obsoleta `app/(admin)/admin/mensagens/[id]` (conflitante com `[sessionId]`).
+
+## [1.3.3] - 2025-12-22
+### Corrigido
+- **Dependências (UI)**:
+  - Downgrade temporário de pacotes Radix UI para estabilizar componentes:
+    - `@radix-ui/react-select` -> `2.2.4`
+    - `@radix-ui/react-dialog` -> `1.1.10`
+
+## [1.3.2] - 2025-12-22
+### Corrigido
+- **Modal de Agendamento**:
+  - Correção de possível loop infinito no `useEffect` removendo `serviceTypes` das dependências e tratando a inicialização do tipo de serviço.
+
+## [1.3.1] - 2025-12-22
+### Corrigido
+- **Dependências (UI)**:
+  - Atualização dos pacotes `@radix-ui/react-presence` e `@radix-ui/react-compose-refs` para resolver problemas de recursão infinita (Maximum update depth exceeded) em componentes de diálogo e modal.
+
 ## [1.3.0] - 2025-12-22
 ### Adicionado
 - **Modal de Agendamento (Refatoração)**:
