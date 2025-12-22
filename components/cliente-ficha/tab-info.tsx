@@ -80,10 +80,18 @@ export async function TabInfo({ client }: TabInfoProps) {
         .from('servicos_tipos')
         .select('codigo, nome')
 
-    const servicosMap = servicosTipos?.reduce((acc: Record<string, string>, s) => ({ ...acc, [s.codigo]: s.nome }), {}) || {}
+    const servicosMap = servicosTipos?.reduce((acc, s) => ({ ...acc, [s.codigo]: s.nome }), {} as Record<string, string>) || {}
 
-    // Parse servicos_por_dia da recorrência
+    // Buscar addons para labels
+    const { data: addonsData } = await supabase
+        .from('addons')
+        .select('codigo, nome')
+
+    const addonsMap = addonsData?.reduce((acc, a) => ({ ...acc, [a.codigo]: a.nome }), {} as Record<string, string>) || {}
+
+    // Parse dados da recorrência
     const servicosPorDia = recorrencia?.servicos_por_dia || []
+    const addonsSelecionados = recorrencia?.addons_selecionados || []
 
     const status = STATUS_LABELS[client.status] || STATUS_LABELS.lead
 
@@ -345,6 +353,20 @@ export async function TabInfo({ client }: TabInfoProps) {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Addons */}
+                            {addonsSelecionados.length > 0 && (
+                                <div className="mt-4">
+                                    <p className="text-sm font-medium mb-2">Serviços Adicionais:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {addonsSelecionados.map((codigo: string) => (
+                                            <Badge key={codigo} className="bg-[#C48B7F]">
+                                                {addonsMap[codigo] || codigo}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </CardContent>

@@ -12,6 +12,13 @@ import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Loader2, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
+import {
+    formatPhoneUS,
+    isValidPhoneUS,
+    isValidEmail,
+    formatZipCode,
+    US_STATES
+} from '@/lib/formatters'
 
 interface ClientModalProps {
     open: boolean
@@ -23,6 +30,14 @@ interface ServicoTipo {
     id: string
     codigo: string
     nome: string
+    ativo: boolean
+}
+
+interface Addon {
+    id: string
+    codigo: string
+    nome: string
+    preco: number
     ativo: boolean
 }
 
@@ -76,6 +91,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [servicosDisponiveis, setServicosDisponiveis] = useState<ServicoTipo[]>([])
+    const [addonsDisponiveis, setAddonsDisponiveis] = useState<Addon[]>([])
     const supabase = createClient()
 
     const [formData, setFormData] = useState({
@@ -93,9 +109,10 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         bedrooms: '3',
         bathrooms: '2',
         square_feet: '',
-        // Step 4 - Preferências (NOVO FORMATO)
+        // Step 4 - Preferências
         frequencia: 'biweekly',
-        diasServicos: [] as DiaServico[], // Array de {dia, servico}
+        diasServicos: [] as DiaServico[],
+        addonsSelecionados: [] as string[], // códigos dos addons
         // Step 5 - Acesso & Pets
         acesso_tipo: 'client_home',
         acesso_codigo: '',
@@ -105,22 +122,20 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         notas_internas: ''
     })
 
-    // Carregar serviços do banco
+    // Carregar serviços e addons do banco
     useEffect(() => {
-        const fetchServicos = async () => {
-            const { data, error } = await supabase
-                .from('servicos_tipos')
-                .select('id, codigo, nome, ativo')
-                .eq('ativo', true)
-                .order('ordem')
+        const fetchData = async () => {
+            const [servicosRes, addonsRes] = await Promise.all([
+                supabase.from('servicos_tipos').select('id, codigo, nome, ativo').eq('ativo', true).order('ordem'),
+                supabase.from('addons').select('id, codigo, nome, preco, ativo').eq('ativo', true).order('ordem')
+            ])
 
-            if (data && !error) {
-                setServicosDisponiveis(data)
-            }
+            if (servicosRes.data) setServicosDisponiveis(servicosRes.data)
+            if (addonsRes.data) setAddonsDisponiveis(addonsRes.data)
         }
 
         if (open) {
-            fetchServicos()
+            fetchData()
         }
     }, [open])
 
@@ -146,13 +161,12 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         }
     }
 
-    const handleChange = (key: string, value: string | boolean | DiaServico[]) => {
+    const handleChange = (key: string, value: any) => {
         setFormData(prev => ({ ...prev, [key]: value }))
     }
 
     // Adicionar novo dia/serviço
     const addDiaServico = () => {
-        // Encontrar o primeiro dia que ainda não foi selecionado
         const diasUsados = formData.diasServicos.map(ds => ds.dia)
         const proximoDia = DIAS_SEMANA.find(d => !diasUsados.includes(d.value))?.value || 'monday'
         const primeiroServico = servicosDisponiveis[0]?.codigo || 'regular'
@@ -181,6 +195,21 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         }))
     }
 
+    // Toggle addon
+    const toggleAddon = (codigo: string) => {
+        setFormData(prev => ({
+            ...prev,
+            addonsSelecionados: prev.addonsSelecionados.includes(codigo)
+                ? prev.addonsSelecionados.filter(c => c !== codigo)
+                : [...prev.addonsSelecionados, codigo]
+        }))
+    }
+
+    // Verificar se um dia já está sendo usado
+    const isDiaUsado = (dia: string, currentIndex: number) => {
+        return formData.diasServicos.some((ds, i) => ds.dia === dia && i !== currentIndex)
+    }
+
     const handleNext = () => {
         // Validações por step
         if (step === 1) {
@@ -190,6 +219,14 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
             }
             if (!formData.telefone.trim()) {
                 toast.error('Telefone é obrigatório')
+                return
+            }
+            if (!isValidPhoneUS(formData.telefone)) {
+                toast.error('Telefone inválido. Use formato americano (10 dígitos)')
+                return
+            }
+            if (formData.email && !isValidEmail(formData.email)) {
+                toast.error('Email inválido')
                 return
             }
         }
@@ -228,6 +265,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
             square_feet: '',
             frequencia: 'biweekly',
             diasServicos: [],
+            addonsSelecionados: [],
             acesso_tipo: 'client_home',
             acesso_codigo: '',
             acesso_instrucoes: '',
@@ -240,54 +278,38 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
     const handleSubmit = async () => {
         setIsLoading(true)
         try {
-            // Extrair dias e serviço principal (primeiro da lista)
             const diasSelecionados = formData.diasServicos.map(ds => ds.dia)
             const servicoPrincipal = formData.diasServicos[0]?.servico || 'regular'
             const diaPrincipal = formData.diasServicos[0]?.dia || 'monday'
 
             // 1. Criar o cliente
             const { data: cliente, error: clienteError } = await supabase.from('clientes').insert([{
-                // Dados pessoais
                 nome: formData.nome.trim(),
                 telefone: formData.telefone.trim(),
                 email: formData.email.trim() || null,
-
-                // Endereço
                 endereco_completo: formData.endereco_completo.trim(),
                 cidade: formData.cidade.trim() || null,
                 estado: formData.estado,
                 zip_code: formData.zip_code.trim() || null,
-
-                // Detalhes da casa
                 tipo_residencia: formData.tipo_residencia,
                 bedrooms: parseInt(formData.bedrooms) || null,
                 bathrooms: parseFloat(formData.bathrooms) || null,
                 square_feet: parseInt(formData.square_feet) || null,
-
-                // Preferências (campos legados para compatibilidade)
                 tipo_servico_padrao: servicoPrincipal,
                 frequencia: formData.frequencia,
                 dia_preferido: diaPrincipal,
-
-                // Acesso
                 acesso_tipo: formData.acesso_tipo,
                 acesso_codigo: formData.acesso_codigo.trim() || null,
                 acesso_instrucoes: formData.acesso_instrucoes.trim() || null,
-
-                // Pets
                 tem_pets: formData.tem_pets,
                 pets_detalhes: formData.pets_detalhes.trim() || null,
-
-                // Notas
                 notas_internas: formData.notas_internas.trim() || null,
-
-                // Status inicial
                 status: 'lead'
             }]).select().single()
 
             if (clienteError) throw clienteError
 
-            // 2. Criar recorrência com múltiplos dias/serviços (se frequência não for avulso)
+            // 2. Criar recorrência com múltiplos dias/serviços e addons
             if (formData.frequencia !== 'one_time' && cliente) {
                 const { error: recorrenciaError } = await supabase.from('recorrencias').insert([{
                     cliente_id: cliente.id,
@@ -296,12 +318,15 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                     tipo_servico: servicoPrincipal,
                     dias_semana: diasSelecionados,
                     servicos_por_dia: formData.diasServicos,
-                    ativo: true
+                    addons_selecionados: formData.addonsSelecionados,
+                    ativo: true,
+                    horario_preferido: '09:00:00', // Valor padrão obrigatório
+                    valor_base: 0 // Valor padrão obrigatório
                 }])
 
                 if (recorrenciaError) {
-                    console.error('Error creating recurrence:', recorrenciaError)
-                    // Não falhar por causa da recorrência
+                    console.error('Error creating recurrence:', JSON.stringify(recorrenciaError, null, 2))
+                    toast.error(`Erro na recorrência: ${recorrenciaError.message}`)
                 }
             }
 
@@ -315,11 +340,6 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         } finally {
             setIsLoading(false)
         }
-    }
-
-    // Verificar se um dia já está sendo usado
-    const isDiaUsado = (dia: string, currentIndex: number) => {
-        return formData.diasServicos.some((ds, i) => ds.dia === dia && i !== currentIndex)
     }
 
     return (
@@ -350,28 +370,31 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                 {step === 1 && (
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label>Nome *</Label>
+                            <Label>Nome Completo *</Label>
                             <Input
                                 value={formData.nome}
                                 onChange={e => handleChange('nome', e.target.value)}
-                                placeholder="Nome completo"
+                                placeholder="John Smith"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Telefone *</Label>
+                            <Label>Telefone * (US)</Label>
                             <Input
                                 value={formData.telefone}
-                                onChange={e => handleChange('telefone', e.target.value)}
-                                placeholder="(000) 000-0000"
+                                onChange={e => handleChange('telefone', formatPhoneUS(e.target.value))}
+                                placeholder="(305) 555-0123"
                             />
+                            <p className="text-xs text-muted-foreground">
+                                Formato: (XXX) XXX-XXXX
+                            </p>
                         </div>
                         <div className="space-y-2">
                             <Label>Email</Label>
                             <Input
                                 type="email"
                                 value={formData.email}
-                                onChange={e => handleChange('email', e.target.value)}
-                                placeholder="email@exemplo.com"
+                                onChange={e => handleChange('email', e.target.value.toLowerCase())}
+                                placeholder="john@example.com"
                             />
                         </div>
                     </div>
@@ -386,7 +409,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                 <Input
                                     value={formData.zip_code}
                                     onChange={e => {
-                                        const value = e.target.value.replace(/\D/g, '').slice(0, 5)
+                                        const value = formatZipCode(e.target.value)
                                         handleChange('zip_code', value)
                                         if (value.length === 5) {
                                             fetchAddressByZip(value)
@@ -420,12 +443,21 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                             </div>
                             <div className="space-y-2">
                                 <Label>Estado</Label>
-                                <Input
+                                <Select
                                     value={formData.estado}
-                                    onChange={e => handleChange('estado', e.target.value)}
-                                    placeholder="FL"
-                                    maxLength={2}
-                                />
+                                    onValueChange={v => handleChange('estado', v)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[200px]">
+                                        {US_STATES.map(state => (
+                                            <SelectItem key={state.value} value={state.value}>
+                                                {state.value} - {state.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </div>
@@ -454,7 +486,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                         </div>
                         <div className="grid grid-cols-3 gap-4">
                             <div className="space-y-2">
-                                <Label>Quartos</Label>
+                                <Label>Bedrooms</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -463,7 +495,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Banheiros</Label>
+                                <Label>Bathrooms</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -473,7 +505,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Área (sqft)</Label>
+                                <Label>Sq. Feet</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -486,7 +518,6 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                     </div>
                 )}
 
-                {/* Step 4: Preferências de Serviço (NOVO) */}
                 {/* Step 4: Preferências de Serviço */}
                 {step === 4 && (
                     <div className="space-y-4">
@@ -530,7 +561,6 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label>Dias e Serviços</Label>
-                                {/* Só mostra botão adicionar se for semanal */}
                                 {formData.frequencia === 'weekly' && (
                                     <Button
                                         type="button"
@@ -567,7 +597,6 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                             key={index}
                                             className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg"
                                         >
-                                            {/* Seletor de Dia */}
                                             <Select
                                                 value={ds.dia}
                                                 onValueChange={v => updateDiaServico(index, 'dia', v)}
@@ -588,7 +617,6 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                                 </SelectContent>
                                             </Select>
 
-                                            {/* Seletor de Serviço */}
                                             <Select
                                                 value={ds.servico}
                                                 onValueChange={v => updateDiaServico(index, 'servico', v)}
@@ -605,7 +633,6 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                                 </SelectContent>
                                             </Select>
 
-                                            {/* Botão Remover - Só mostra se semanal E mais de 1 */}
                                             {formData.frequencia === 'weekly' && formData.diasServicos.length > 1 && (
                                                 <Button
                                                     type="button"
@@ -623,8 +650,40 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                             )}
                         </div>
 
-                        {/* Resumo dos dias selecionados */}
-                        {formData.diasServicos.length > 0 && (
+                        {/* Addons */}
+                        {addonsDisponiveis.length > 0 && (
+                            <div className="space-y-2">
+                                <Label>Serviços Adicionais</Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {addonsDisponiveis.map(addon => (
+                                        <div
+                                            key={addon.codigo}
+                                            onClick={() => toggleAddon(addon.codigo)}
+                                            className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.addonsSelecionados.includes(addon.codigo)
+                                                ? 'border-[#C48B7F] bg-[#FDF8F6]'
+                                                : 'border-gray-200 hover:border-gray-300'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Checkbox
+                                                    checked={formData.addonsSelecionados.includes(addon.codigo)}
+                                                    onChange={() => { }}
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium truncate">{addon.nome}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        +${addon.preco.toFixed(2)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Resumo */}
+                        {(formData.diasServicos.length > 0 || formData.addonsSelecionados.length > 0) && (
                             <div className="bg-[#FDF8F6] p-3 rounded-lg">
                                 <p className="text-xs text-muted-foreground mb-2">Resumo:</p>
                                 <div className="flex flex-wrap gap-1">
@@ -632,12 +691,16 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                         const diaLabel = DIAS_SEMANA.find(d => d.value === ds.dia)?.label
                                         const servicoLabel = servicosDisponiveis.find(s => s.codigo === ds.servico)?.nome
                                         return (
-                                            <Badge
-                                                key={index}
-                                                variant="secondary"
-                                                className="text-xs"
-                                            >
+                                            <Badge key={index} variant="secondary" className="text-xs">
                                                 {diaLabel}: {servicoLabel}
+                                            </Badge>
+                                        )
+                                    })}
+                                    {formData.addonsSelecionados.map(codigo => {
+                                        const addon = addonsDisponiveis.find(a => a.codigo === codigo)
+                                        return (
+                                            <Badge key={codigo} className="text-xs bg-[#C48B7F]">
+                                                +{addon?.nome}
                                             </Badge>
                                         )
                                     })}
@@ -684,7 +747,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                     <Textarea
                                         value={formData.acesso_instrucoes}
                                         onChange={e => handleChange('acesso_instrucoes', e.target.value)}
-                                        placeholder="Lockbox ao lado da porta..."
+                                        placeholder="Lockbox next to the door..."
                                         rows={2}
                                     />
                                 </div>
@@ -698,28 +761,28 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                     checked={formData.tem_pets}
                                     onCheckedChange={(checked) => handleChange('tem_pets', !!checked)}
                                 />
-                                <Label htmlFor="tem_pets" className="cursor-pointer">Tem pets?</Label>
+                                <Label htmlFor="tem_pets" className="cursor-pointer">Has pets?</Label>
                             </div>
                         </div>
 
                         {formData.tem_pets && (
                             <div className="space-y-2">
-                                <Label>Detalhes sobre os Pets</Label>
+                                <Label>Pet Details</Label>
                                 <Textarea
                                     value={formData.pets_detalhes}
                                     onChange={e => handleChange('pets_detalhes', e.target.value)}
-                                    placeholder="2 cachorros, amigáveis..."
+                                    placeholder="2 dogs, friendly..."
                                     rows={2}
                                 />
                             </div>
                         )}
 
                         <div className="space-y-2">
-                            <Label>Notas Internas</Label>
+                            <Label>Internal Notes</Label>
                             <Textarea
                                 value={formData.notas_internas}
                                 onChange={e => handleChange('notas_internas', e.target.value)}
-                                placeholder="Observações sobre o cliente..."
+                                placeholder="Notes about the client..."
                                 rows={3}
                             />
                         </div>
@@ -735,7 +798,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                         disabled={step === 1}
                     >
                         <ChevronLeft className="w-4 h-4 mr-1" />
-                        Voltar
+                        Back
                     </Button>
 
                     {step < STEPS.length ? (
@@ -744,7 +807,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                             onClick={handleNext}
                             className="bg-[#C48B7F] hover:bg-[#A66D60]"
                         >
-                            Próximo
+                            Next
                             <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
                     ) : (
@@ -757,10 +820,10 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                             {isLoading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Salvando...
+                                    Saving...
                                 </>
                             ) : (
-                                'Cadastrar Cliente'
+                                'Create Client'
                             )}
                         </Button>
                     )}

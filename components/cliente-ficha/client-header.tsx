@@ -285,6 +285,7 @@ export function ClientHeader({ client }: ClientHeaderProps) {
                 open={showAppointmentModal}
                 onOpenChange={setShowAppointmentModal}
                 preSelectedClientId={client.id}
+                onSuccess={() => router.refresh()}
             />
         </>
     )

@@ -2,7 +2,39 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
-## [Em Desenvolvimento] - 22 de Dezembro 2024
+## [1.3.0] - 2025-12-22
+### Adicionado
+- **Modal de Agendamento (Refatoração)**:
+  - Integração com tabelas `servicos_tipos` e `addons` para carregamento dinâmico.
+  - Seleção de múltiplos addons com definição de quantidade individual.
+  - Cálculo automático e em tempo real de valores (Base, Addons, Desconto, Total) e duração do serviço.
+  - Salvamento aprimorado de dados com persistência de addons em JSONB na tabela `agendamentos`.
+  - Busca de clientes otimizada com debounce e visualização detalhada.
+
+## [1.2.3] - 2025-12-22
+### Melhorado
+- **Ficha do Cliente (Tab Info)**:
+  - Adicionada exibição visual dos serviços adicionais (addons) contratados.
+  - Correção de tipagem na redução de mapas de serviços e addons.
+- **Modal de Clientes**:
+  - Correção crítica no cadastro de recorrência: Inclusão de campos obrigatórios (`horario_preferido`, `valor_base`) que impediam o salvamento.
+  - Melhoria no sistema de logs de erro.
+
+## [1.2.2] - 2025-12-22
+### Modificado
+- **Modal de Clientes**:
+  - Implementação de validações robustas (Telefone, Email, Zip Code) usando `lib/formatters`.
+  - Integração dinâmica com tabela de Serviços e Addons.
+  - Melhoria na UX com preenchimento automático de endereço via CEP.
+  - Suporte completo a seleção de serviços adicionais (addons) no cadastro.
+
+## [1.2.1] - 2025-12-22
+### Modificado
+- **Página de Serviços**:
+  - Refatoração completa de `/admin/servicos` para utilizar novos componentes UI e biblioteca de formatação.
+  - Melhoria na validação de inputs e feedback visual ao usuário.
+
+## [1.2.0] - 2025-12-22
 ### Adicionado
 - **Módulo de Equipe**:
   - Nova seção administrativa exclusiva para gestão de membros (`/admin/equipe`).
@@ -37,6 +69,8 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
   - Interface de Receitas e estrutura para Despesas/Relatórios.
 - **Módulo de Equipe**:
   - Nova página de gestão de equipe (`/admin/equipe`) com CRUD completo, badges de cargo e soft-delete.
+- **Utilitários**:
+  - Biblioteca centralizada de formatação e validação ('lib/formatters.ts') com suporte a telefones, moedas, ZIP Codes e validações comuns.
 
 ### Modificado
 - Atualização da navegação lateral (Sidebar) para incluir 'Equipe'.
