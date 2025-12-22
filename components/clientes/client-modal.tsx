@@ -487,6 +487,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                 )}
 
                 {/* Step 4: Preferências de Serviço (NOVO) */}
+                {/* Step 4: Preferências de Serviço */}
                 {step === 4 && (
                     <div className="space-y-4">
                         {/* Frequência */}
@@ -494,7 +495,17 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                             <Label>Frequência</Label>
                             <Select
                                 value={formData.frequencia}
-                                onValueChange={v => handleChange('frequencia', v)}
+                                onValueChange={v => {
+                                    handleChange('frequencia', v)
+                                    // Se não for semanal, limitar a um dia/serviço
+                                    if (v !== 'weekly' && formData.diasServicos.length > 1) {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            frequencia: v,
+                                            diasServicos: prev.diasServicos.slice(0, 1)
+                                        }))
+                                    }
+                                }}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
@@ -507,22 +518,31 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {formData.frequencia !== 'weekly' && (
+                                <p className="text-xs text-muted-foreground">
+                                    Para frequência {formData.frequencia === 'biweekly' ? 'quinzenal' : formData.frequencia === 'monthly' ? 'mensal' : 'avulsa'},
+                                    configure apenas um dia de serviço.
+                                </p>
+                            )}
                         </div>
 
                         {/* Dias e Serviços */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label>Dias e Serviços</Label>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={addDiaServico}
-                                    disabled={formData.diasServicos.length >= 6}
-                                >
-                                    <Plus className="w-4 h-4 mr-1" />
-                                    Adicionar Dia
-                                </Button>
+                                {/* Só mostra botão adicionar se for semanal */}
+                                {formData.frequencia === 'weekly' && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={addDiaServico}
+                                        disabled={formData.diasServicos.length >= 6}
+                                    >
+                                        <Plus className="w-4 h-4 mr-1" />
+                                        Adicionar Dia
+                                    </Button>
+                                )}
                             </div>
 
                             {formData.diasServicos.length === 0 ? (
@@ -537,7 +557,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                         onClick={addDiaServico}
                                     >
                                         <Plus className="w-4 h-4 mr-1" />
-                                        Adicionar Primeiro Dia
+                                        Adicionar Dia
                                     </Button>
                                 </div>
                             ) : (
@@ -585,16 +605,18 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                                 </SelectContent>
                                             </Select>
 
-                                            {/* Botão Remover */}
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => removeDiaServico(index)}
-                                                className="shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </Button>
+                                            {/* Botão Remover - Só mostra se semanal E mais de 1 */}
+                                            {formData.frequencia === 'weekly' && formData.diasServicos.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => removeDiaServico(index)}
+                                                    className="shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </Button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

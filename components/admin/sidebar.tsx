@@ -18,12 +18,14 @@ import {
     MessageSquare,
     BarChart3,
     UserPlus,
-    Users2  // Ícone para Equipe
+    Users2,  // Ícone para Equipe
+    Sparkles // Ícone para Serviços
 } from 'lucide-react'
 
 const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Agenda', href: '/admin/agenda', icon: Calendar },
+    { name: 'Nossos Serviços', href: '/admin/servicos', icon: Sparkles },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
     { name: 'Leads', href: '/admin/leads', icon: UserPlus },
     { name: 'Contratos', href: '/admin/contratos', icon: FileText },

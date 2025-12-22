@@ -176,21 +176,7 @@ export default function ConfiguracoesPage() {
 
                     {/* Quick Links */}
                     <div className="grid sm:grid-cols-3 gap-4 mt-6">
-                        <Card className="hover:shadow-md transition-shadow">
-                            <Link href="/admin/configuracoes/servicos">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-primary/10 rounded-lg">
-                                            <Briefcase className="w-5 h-5 text-primary" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">Serviços</p>
-                                            <p className="text-caption text-muted-foreground">Gerenciar tipos de serviço</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Link>
-                        </Card>
+
 
                         <Card className="hover:shadow-md transition-shadow">
                             <Link href="/admin/configuracoes/addons">

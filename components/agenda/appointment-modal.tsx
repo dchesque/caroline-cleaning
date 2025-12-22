@@ -17,17 +17,11 @@ interface AppointmentModalProps {
     onOpenChange: (open: boolean) => void
     selectedDate?: Date
     appointmentId?: string
+    preSelectedClientId?: string
     onSuccess?: () => void
 }
 
-const TIPOS_SERVICO = [
-    { value: 'visit', label: 'Visita de Orçamento' },
-    { value: 'regular', label: 'Regular Cleaning' },
-    { value: 'deep', label: 'Deep Cleaning' },
-    { value: 'move_in_out', label: 'Move In/Out' },
-    { value: 'office', label: 'Office' },
-    { value: 'airbnb', label: 'Airbnb Turnover' },
-]
+// TIPOS_SERVICO removido em favor de busca dinâmica do banco
 
 const STATUS_OPTIONS = [
     { value: 'agendado', label: 'Agendado' },
@@ -48,11 +42,13 @@ export function AppointmentModal({
     onOpenChange,
     selectedDate,
     appointmentId,
+    preSelectedClientId,
     onSuccess
 }: AppointmentModalProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [clients, setClients] = useState<any[]>([])
+    const [serviceTypes, setServiceTypes] = useState<any[]>([])
     const [clientSearch, setClientSearch] = useState('')
     const [selectedClient, setSelectedClient] = useState<any>(null)
 
@@ -61,7 +57,7 @@ export function AppointmentModal({
         data: '',
         horario_inicio: '09:00',
         duracao_minutos: '180',
-        tipo: 'regular',
+        tipo: '',
         status: 'agendado',
         valor: '',
         notas: ''
@@ -69,8 +65,22 @@ export function AppointmentModal({
 
     const supabase = createClient()
 
-    // Reset form when modal opens/closes
+    // Reset form and handle pre-selection when modal opens
     useEffect(() => {
+        const fetchPreSelectedClient = async () => {
+            if (preSelectedClientId) {
+                const { data } = await supabase
+                    .from('clientes')
+                    .select('id, nome, telefone, endereco_completo')
+                    .eq('id', preSelectedClientId)
+                    .single()
+
+                if (data) {
+                    setSelectedClient(data)
+                }
+            }
+        }
+
         if (open) {
             if (selectedDate) {
                 setFormData(prev => ({
@@ -78,10 +88,40 @@ export function AppointmentModal({
                     data: format(selectedDate, 'yyyy-MM-dd')
                 }))
             }
-            setSelectedClient(null)
+
+            // Only reset if NOT pre-selected
+            if (!preSelectedClientId) {
+                setSelectedClient(null)
+            } else {
+                fetchPreSelectedClient()
+            }
+
             setClientSearch('')
         }
-    }, [open, selectedDate])
+    }, [open, selectedDate, preSelectedClientId])
+
+    // Fetch service types
+    useEffect(() => {
+        const fetchServiceTypes = async () => {
+            const { data, error } = await supabase
+                .from('servicos_tipos')
+                .select('codigo, nome, duracao_base_minutos')
+                .eq('ativo', true)
+                .order('ordem')
+
+            if (data) {
+                setServiceTypes(data)
+                // Set first service as default if none selected
+                if (data.length > 0 && !formData.tipo) {
+                    setFormData(prev => ({ ...prev, tipo: data[0].codigo }))
+                }
+            } else if (error) {
+                console.error('Error fetching services:', JSON.stringify(error, null, 2))
+            }
+        }
+
+        fetchServiceTypes()
+    }, [])
 
     // Search clients
     useEffect(() => {
@@ -273,12 +313,12 @@ export function AppointmentModal({
                                 onValueChange={v => setFormData(prev => ({ ...prev, tipo: v }))}
                             >
                                 <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder="Selecione um serviço" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {TIPOS_SERVICO.map(t => (
-                                        <SelectItem key={t.value} value={t.value}>
-                                            {t.label}
+                                    {serviceTypes.map(t => (
+                                        <SelectItem key={t.codigo} value={t.codigo}>
+                                            {t.nome}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

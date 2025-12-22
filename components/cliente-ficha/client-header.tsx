@@ -39,6 +39,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { AppointmentModal } from '@/components/agenda/appointment-modal'
 
 interface ClientHeaderProps {
     client: any
@@ -57,6 +58,7 @@ export function ClientHeader({ client }: ClientHeaderProps) {
     const supabase = createClient()
     const [isDeleting, setIsDeleting] = useState(false)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [showAppointmentModal, setShowAppointmentModal] = useState(false)
     const [currentStatus, setCurrentStatus] = useState(client.status)
 
     const status = STATUS_CONFIG[currentStatus as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.lead
@@ -220,7 +222,7 @@ export function ClientHeader({ client }: ClientHeaderProps) {
                     {/* Schedule Button */}
                     <Button
                         size="sm"
-                        onClick={() => router.push(`/admin/agenda?cliente=${client.id}`)}
+                        onClick={() => setShowAppointmentModal(true)}
                         className="gap-2 bg-[#C48B7F] hover:bg-[#A66D60]"
                     >
                         <Calendar className="h-4 w-4" />
@@ -277,6 +279,13 @@ export function ClientHeader({ client }: ClientHeaderProps) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Appointment Modal */}
+            <AppointmentModal
+                open={showAppointmentModal}
+                onOpenChange={setShowAppointmentModal}
+                preSelectedClientId={client.id}
+            />
         </>
     )
 }

@@ -43,6 +43,32 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 - Refatoração de componentes utilitários e rotas de API.
 - **Limpeza de Código**:
   - Remoção de arquivo duplicado/placeholder de equipe em `configuracoes/equipe`.
+- **Refatoração do Modal de Cliente (Step 4)**:
+  - Implementação rigorosa de regras de frequência: Apenas 'Semanal' permite múltiplos dias/serviços.
+  - Bloqueio automático e feedback visual para frequências quinzenais/mensais/avulsas.
+  - Interface otimizada para seleção de dias e serviços com validação dinâmica.
+- **Refatoração da Tab Informações (Ficha do Cliente)**:
+  - Layout modernizado com cards organizados (Dados Pessoais, Endereço, Residência, Acesso).
+  - Exibição inteligente de recorrências complexas (multi-dias/multi-serviços).
+  - Integração visual com novos badges de status e ícones.
+- **Refatoração da Tab Agendamentos (Ficha do Cliente)**:
+  - Dashboard integrado com 4 KPIs principais e gráficos de resumo.
+  - Separação clara entre "Próximos Agendamentos" (ativos) e "Histórico" (concluídos/cancelados).
+  - Ações rápidas no dropdown: Confirmar, Concluir, Lançar Fatura (Financeiro) e Cancelar.
+  - Integração direta com o Modal de Novo Agendamento.
+- **Refatoração da Tab Financeiro (Ficha do Cliente)**:
+  - Dashboard financeiro pessoal com Totais Recebidos, Pendentes e Último Pagamento.
+  - Destaque automático para Faturas Pendentes no topo da lista.
+  - Tabela histórica completa com ações contextuais: Editar, Marcar como Pago, Cancelar, Reverter e Excluir.
+  - Lógica de atualização de status com tratamento de data de pagamento.
+- **Refatoração da Tab Contratos (Ficha do Cliente)**:
+  - Listagem limpa e objetiva de contratos ativos e históricos.
+  - Status visual com cores semânticas (Pendente, Assinado, Expirado).
+  - Modal placeholder informativo para preparar a próxima fase de desenvolvimento.
+- **Refatoração da Tab Notas (Ficha do Cliente)**:
+  - Separação clara entre Notas Internas (Privadas/Equipe) e Notas Gerais (Públicas).
+  - Edição inline com botões dinâmicos (Editar/Salvar/Cancelar).
+  - Feedback visual e tags de privacidade para cada seção.
 
 ### Corrigido
 - **Compatibilidade de Banco de Dados (Crítico)**:
