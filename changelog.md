@@ -2,28 +2,41 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
-## [Em Desenvolvimento] - 21/22 de Dezembro 2024
+## [Em Desenvolvimento] - 22 de Dezembro 2024
 ### Adicionado
+- **Módulo de Equipe**:
+  - Nova seção administrativa exclusiva para gestão de membros (`/admin/equipe`).
+  - CRUD completo com suporte a cadastro de cores, cargos e status.
+  - Soft-delete para preservação de histórico.
+- **Módulo de Contratos**:
+  - Sistema completo de gestão de contratos (`/admin/contratos`) com suporte a rascunhos e envio.
+  - Página de criação (`/admin/contratos/novo`) com seleção de clientes e cálculo automático.
+- **Gestão de Chat e Histórico**:
+  - Nova página de detalhes da conversa com histórico completo (`/admin/mensagens/[id]`).
+  - Correção na persistência e identificação de mensagens do assistente.
+- **Agendamento Avançado**:
+  - Atualização do modal de agendamento para suportar seleção de equipe.
+  - Suporte a recorrências complexas (multi-dia, multi-serviço).
+- **Integração Frontend**:
+  - Criação de API Pública de Configurações (`/api/config/public`).
+  - Rodapé (Footer) consumindo dados dinâmicos do banco.
 - **Módulo de Configurações**:
-  - Implementação das sub-páginas de Áreas de Atendimento (`/admin/configuracoes/areas`).
-  - Implementação de Add-ons (`/admin/configuracoes/addons`).
-  - Implementação de Gestão de Equipe (`/admin/configuracoes/equipe`).
-  - Interface CRUD para Serviços.
+  - Implementação de Áreas de Atendimento, Add-ons e CRUD de Serviços.
 - **Módulo Analytics**:
-  - Implementação da página de Análise de Conversão com funil detalhado e métricas de leads.
-  - Implementação da página de Satisfação do Cliente com distribuição de notas e histórico de feedbacks.
-  - Implementação da página de Tendências e Projeções com métricas preditivas e insights automáticos.
-  - Criação de novos componentes reutilizáveis: `KPICard`, `PeriodSelector`, `SatisfactionChart` e `TrendsChart`.
-  - Refatoração do dashboard principal de Analytics para melhor integração e navegação.
+  - Páginas de Conversão, Satisfação e Tendências com novos gráficos e KPIs.
 - **Módulo Financeiro**:
-  - Nova interface de Receitas com filtros avançados e listagem detalhada.
-  - Estrutura inicial para Despesas e Relatórios.
-  - Componentes de gráficos (Revenue Chart) e categorias de despesas.
-  - Formulário interativo para transações.
+  - Interface de Receitas e estrutura para Despesas/Relatórios.
 
 ### Modificado
-- Refatoração de funções utilitárias em `lib/utils.ts`.
-- Ajustes na navegação lateral do Admin para incluir as novas rotas de financeiro e configurações.
+- Atualização da navegação lateral (Sidebar) para incluir 'Equipe'.
+- Refatoração de componentes utilitários e rotas de API.
+
+### Corrigido
+- **Compatibilidade de Banco de Dados (Crítico)**:
+  - Correção no mapeamento de colunas no cadastro de Clientes (`bedrooms`, `bathrooms`, `square_feet`).
+  - Ajuste na lógica de pets (separação entre booleano e text).
+  - Correção no payload de criação de Agendamentos (conversão para minutos e cálculo de horário final).
+  - Implementação da gravação correta de recorrências ao criar Contratos.
 
 ---
 

@@ -1,14 +1,14 @@
+// app/(admin)/admin/contratos/novo/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
     Select,
     SelectContent,
@@ -16,163 +16,122 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Checkbox } from '@/components/ui/checkbox'
-import {
-    ArrowLeft,
-    CalendarIcon,
-    Search,
-    User,
-    MapPin,
-    Save,
-    Send,
-    Loader2
-} from 'lucide-react'
-import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
+import { ArrowLeft, Loader2, Save, Send, Search } from 'lucide-react'
 import { toast } from 'sonner'
-import { SERVICE_TYPES, FREQUENCIES, WEEKDAYS } from '@/lib/constants'
+import { formatCurrency } from '@/lib/utils'
+
+const TIPOS_SERVICO = [
+    { value: 'regular', label: 'Regular Cleaning' },
+    { value: 'deep', label: 'Deep Cleaning' },
+    { value: 'move_in_out', label: 'Move In/Out' },
+    { value: 'office', label: 'Office Cleaning' },
+    { value: 'airbnb', label: 'Airbnb Turnover' },
+]
+
+const FREQUENCIAS = [
+    { value: 'weekly', label: 'Semanal' },
+    { value: 'biweekly', label: 'Quinzenal' },
+    { value: 'monthly', label: 'Mensal' },
+    { value: 'one_time', label: 'Avulso' },
+]
 
 export default function NovoContratoPage() {
     const router = useRouter()
-    const searchParams = useSearchParams()
-    const clienteIdParam = searchParams.get('cliente_id')
     const [isLoading, setIsLoading] = useState(false)
-
-    // Client Search State
-    const [clientSearch, setClientSearch] = useState('')
-    const [clients, setClients] = useState<any[]>([])
-    const [selectedClient, setSelectedClient] = useState<any>(null)
-
-    // Form State
+    const [isSaving, setIsSaving] = useState(false)
+    const [clientes, setClientes] = useState<any[]>([])
+    const [searchTerm, setSearchTerm] = useState('')
+    const [selectedCliente, setSelectedCliente] = useState<any>(null)
     const [formData, setFormData] = useState({
-        numero: '',
-        tipo_servico: 'regular_cleaning',
-        frequencia: 'weekly',
+        tipo_servico: 'regular',
+        frequencia: 'biweekly',
+        valor_acordado: '',
+        desconto_percentual: '0',
+        data_inicio: new Date().toISOString().split('T')[0],
+        data_fim: '',
+        renovacao_automatica: true,
         dia_preferido: 'monday',
         horario_preferido: '09:00',
-        valor_acordado: '',
-        data_inicio: new Date(),
-        duracao_estimada_minutos: '180',
-        observacoes: '',
-        termos_aceitos: false,
-        documento_url: null,
     })
 
-    const [isSaving, setIsSaving] = useState(false)
     const supabase = createClient()
 
-    // Initialize
+    // Buscar clientes
     useEffect(() => {
-        // Generate temporary contract number
-        const year = new Date().getFullYear()
-        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
-        setFormData(prev => ({ ...prev, numero: `CC-${year}-${random}` }))
-
-        // Load client if param exists
-        // Load client if param exists
-        if (clienteIdParam) {
-            const loadClient = async () => {
-                const { data } = await supabase
-                    .from('clientes')
-                    .select('*')
-                    .eq('id', clienteIdParam)
-                    .single()
-
-                if (data) {
-                    setSelectedClient(data)
-                    // Prefill logic
-                    setFormData(prev => ({
-                        ...prev,
-                        tipo_servico: data.tipo_servico_padrao || 'regular_cleaning',
-                        frequencia: data.frequencia || 'weekly',
-                        dia_preferido: data.dia_preferido || 'monday',
-                        horario_preferido: data.horario_preferido || '09:00',
-                    }))
-                }
-            }
-            loadClient()
-        }
-    }, [clienteIdParam])
-
-    // Search clients
-    useEffect(() => {
-        const searchClients = async () => {
-            if (clientSearch.length < 2) {
-                setClients([])
-                return
-            }
-
+        const fetchClientes = async () => {
+            setIsLoading(true)
             const { data } = await supabase
                 .from('clientes')
                 .select('id, nome, telefone, email, endereco_completo')
-                .or(`nome.ilike.%${clientSearch}%,email.ilike.%${clientSearch}%`)
-                .limit(5)
+                .ilike('nome', `%${searchTerm}%`)
+                .limit(10)
+                .order('nome')
 
-            setClients(data || [])
+            setClientes(data || [])
+            setIsLoading(false)
         }
 
-        const debounce = setTimeout(searchClients, 300)
-        return () => clearTimeout(debounce)
-    }, [clientSearch])
+        if (searchTerm.length >= 2) {
+            fetchClientes()
+        } else {
+            setClientes([])
+        }
+    }, [searchTerm])
 
-    const handleSave = async (sendToClient: boolean = false) => {
-        if (!selectedClient) {
+    const handleSave = async (enviar: boolean = false) => {
+        if (!selectedCliente) {
             toast.error('Selecione um cliente')
             return
         }
 
         if (!formData.valor_acordado) {
-            toast.error('Defina o valor do contrato')
+            toast.error('Informe o valor acordado')
             return
         }
 
         setIsSaving(true)
 
         try {
-            // 1. Create Contract
-            const { data: contract, error: contractError } = await supabase
+            const { data: contrato, error } = await supabase
                 .from('contratos')
                 .insert({
-                    numero: formData.numero,
-                    cliente_id: selectedClient.id,
+                    cliente_id: selectedCliente.id,
                     tipo_servico: formData.tipo_servico,
                     frequencia: formData.frequencia,
-                    dia_preferido: formData.dia_preferido,
-                    horario_preferido: formData.horario_preferido,
                     valor_acordado: parseFloat(formData.valor_acordado),
-                    data_inicio: format(formData.data_inicio, 'yyyy-MM-dd'),
-                    duracao_estimada_minutos: parseInt(formData.duracao_estimada_minutos),
-                    status: sendToClient ? 'enviado' : 'rascunho',
-                    observacoes: formData.observacoes,
-                    enviado_em: sendToClient ? new Date().toISOString() : null,
+                    desconto_percentual: parseFloat(formData.desconto_percentual),
+                    data_inicio: formData.data_inicio,
+                    data_fim: formData.data_fim || null,
+                    renovacao_automatica: formData.renovacao_automatica,
+                    status: enviar ? 'enviado' : 'pendente',
                 })
                 .select()
                 .single()
 
-            if (contractError) throw contractError
+            if (error) throw error
 
-            // 2. Create Recurrence (if sent)
-            if (sendToClient) {
-                const { error: recurrenceError } = await supabase
-                    .from('recorrencias')
-                    .insert({
-                        cliente_id: selectedClient.id,
-                        frequencia: formData.frequencia,
-                        dia_preferido: formData.dia_preferido,
-                        horario_preferido: formData.horario_preferido,
-                        tipo_servico: formData.tipo_servico,
-                        valor_base: parseFloat(formData.valor_acordado),
-                        ativo: true,
-                        inicio_em: format(formData.data_inicio, 'yyyy-MM-dd'),
-                    })
+            // Atualizar cliente com referência ao contrato
+            await supabase
+                .from('clientes')
+                .update({ contrato_id: contrato.id, status: 'ativo' })
+                .eq('id', selectedCliente.id)
 
-                if (recurrenceError) throw recurrenceError
+            // Create recurrence if needed
+            if (contrato && formData.frequencia !== 'one_time') {
+                await supabase.from('recorrencias').insert({
+                    cliente_id: selectedCliente.id,
+                    frequencia: formData.frequencia,
+                    dia_preferido: formData.dia_preferido,
+                    horario: formData.horario_preferido,
+                    tipo_servico: formData.tipo_servico,
+                    valor_acordado: parseFloat(formData.valor_acordado),
+                    data_inicio: formData.data_inicio,
+                    ativo: true,
+                })
             }
 
-            toast.success(sendToClient ? 'Contrato enviado com sucesso!' : 'Rascunho salvo!')
-            router.push('/admin/contratos')
+            toast.success(enviar ? 'Contrato criado e enviado!' : 'Contrato salvo como rascunho!')
+            router.push(`/admin/contratos/${contrato.id}`)
 
         } catch (error) {
             console.error('Error saving contract:', error)
@@ -186,102 +145,110 @@ export default function NovoContratoPage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="w-5 h-5" />
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/admin/contratos">
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
                 </Button>
                 <div>
                     <h1 className="font-heading text-h2 text-foreground">Novo Contrato</h1>
                     <p className="text-body text-muted-foreground">
-                        {formData.numero}
+                        Crie um novo contrato de serviço
                     </p>
                 </div>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
-                {/* Main Form */}
+                {/* Form */}
                 <div className="lg:col-span-2 space-y-6">
-
-                    {/* Client Selection */}
+                    {/* Buscar Cliente */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-h4">
-                                <User className="w-5 h-5 text-muted-foreground" />
-                                Cliente
-                            </CardTitle>
+                            <CardTitle>Cliente</CardTitle>
+                            <CardDescription>Busque e selecione o cliente</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            {selectedClient ? (
-                                <div className="flex items-start justify-between p-4 bg-desert-storm rounded-lg">
-                                    <div>
-                                        <p className="font-semibold text-h4">{selectedClient.nome}</p>
-                                        <p className="text-body text-muted-foreground">{selectedClient.email}</p>
-                                        <p className="text-body text-muted-foreground">{selectedClient.telefone}</p>
-                                        <div className="flex items-center gap-2 mt-2 text-body-sm text-muted-foreground">
-                                            <MapPin className="w-4 h-4" />
-                                            {selectedClient.endereco_completo}
-                                        </div>
-                                    </div>
-                                    <Button variant="ghost" size="sm" onClick={() => setSelectedClient(null)}>
-                                        Alterar
-                                    </Button>
+                        <CardContent className="space-y-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Buscar por nome..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10"
+                                />
+                            </div>
+
+                            {isLoading && (
+                                <div className="flex justify-center py-4">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
                                 </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                        <Input
-                                            placeholder="Buscar cliente por nome ou email..."
-                                            value={clientSearch}
-                                            onChange={(e) => setClientSearch(e.target.value)}
-                                            className="pl-9"
-                                        />
-                                        {clients.length > 0 && (
-                                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-pampas rounded-lg shadow-lg z-10 max-h-[200px] overflow-y-auto">
-                                                {clients.map((client) => (
-                                                    <button
-                                                        key={client.id}
-                                                        className="w-full px-4 py-3 text-left hover:bg-desert-storm border-b border-pampas last:border-0"
-                                                        onClick={() => {
-                                                            setSelectedClient(client)
-                                                            setClientSearch('')
-                                                            setClients([])
-                                                        }}
-                                                    >
-                                                        <p className="font-medium">{client.nome}</p>
-                                                        <p className="text-caption text-muted-foreground">{client.email}</p>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="text-center text-body-sm text-muted-foreground">
-                                        ou <Link href="/admin/clientes/novo" className="text-brandy-rose-600 hover:underline">cadastre um novo cliente</Link>
+                            )}
+
+                            {clientes.length > 0 && !selectedCliente && (
+                                <div className="border rounded-lg divide-y">
+                                    {clientes.map((cliente) => (
+                                        <div
+                                            key={cliente.id}
+                                            className="p-3 hover:bg-pampas cursor-pointer transition-colors"
+                                            onClick={() => {
+                                                setSelectedCliente(cliente)
+                                                setSearchTerm('')
+                                            }}
+                                        >
+                                            <p className="font-medium">{cliente.nome}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {cliente.telefone} • {cliente.email}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {selectedCliente && (
+                                <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="font-medium text-success">{selectedCliente.nome}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {selectedCliente.telefone}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {selectedCliente.endereco_completo}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setSelectedCliente(null)}
+                                        >
+                                            Alterar
+                                        </Button>
                                     </div>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
 
-                    {/* Service Details */}
+                    {/* Detalhes do Serviço */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-h4">Detalhes do Serviço</CardTitle>
+                            <CardTitle>Detalhes do Serviço</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="grid sm:grid-cols-2 gap-6">
+                        <CardContent className="space-y-4">
+                            <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Tipo de Serviço</Label>
                                     <Select
                                         value={formData.tipo_servico}
-                                        onValueChange={(value) => setFormData({ ...formData, tipo_servico: value })}
+                                        onValueChange={(v) => setFormData({ ...formData, tipo_servico: v })}
                                     >
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {SERVICE_TYPES.map((type) => (
-                                                <SelectItem key={type.value} value={type.value}>
-                                                    {type.label}
+                                            {TIPOS_SERVICO.map((t) => (
+                                                <SelectItem key={t.value} value={t.value}>
+                                                    {t.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -292,179 +259,149 @@ export default function NovoContratoPage() {
                                     <Label>Frequência</Label>
                                     <Select
                                         value={formData.frequencia}
-                                        onValueChange={(value) => setFormData({ ...formData, frequencia: value })}
+                                        onValueChange={(v) => setFormData({ ...formData, frequencia: v })}
                                     >
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {FREQUENCIES.map((freq) => (
-                                                <SelectItem key={freq.value} value={freq.value}>
-                                                    {freq.label}
+                                            {FREQUENCIAS.map((f) => (
+                                                <SelectItem key={f.value} value={f.value}>
+                                                    {f.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
-
-                                <div className="space-y-2">
-                                    <Label>Dia Preferido</Label>
-                                    <Select
-                                        value={formData.dia_preferido}
-                                        onValueChange={(value) => setFormData({ ...formData, dia_preferido: value })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {WEEKDAYS.map((day) => (
-                                                <SelectItem key={day.value} value={day.value}>
-                                                    {day.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Horário Preferido</Label>
-                                    <Input
-                                        type="time"
-                                        value={formData.horario_preferido}
-                                        onChange={(e) => setFormData({ ...formData, horario_preferido: e.target.value })}
-                                    />
-                                </div>
                             </div>
 
-                            <div className="grid sm:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label>Data de Início</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {format(formData.data_inicio, 'dd/MM/yyyy')}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar
-                                                mode="single"
-                                                selected={formData.data_inicio}
-                                                onSelect={(date) => date && setFormData({ ...formData, data_inicio: date })}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                            {/* Recurrence Details */}
+                            {formData.frequencia !== 'one_time' && (
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Dia Preferido</Label>
+                                        <Select
+                                            value={formData.dia_preferido}
+                                            onValueChange={(v) => setFormData({ ...formData, dia_preferido: v })}
+                                        >
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="monday">Segunda-feira</SelectItem>
+                                                <SelectItem value="tuesday">Terça-feira</SelectItem>
+                                                <SelectItem value="wednesday">Quarta-feira</SelectItem>
+                                                <SelectItem value="thursday">Quinta-feira</SelectItem>
+                                                <SelectItem value="friday">Sexta-feira</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Horário Preferido</Label>
+                                        <Input
+                                            type="time"
+                                            value={formData.horario_preferido}
+                                            onChange={(e) => setFormData({ ...formData, horario_preferido: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
+                            )}
 
+                            <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Duração Estimada (min)</Label>
+                                    <Label>Valor Acordado ($)</Label>
                                     <Input
                                         type="number"
-                                        step="30"
-                                        value={formData.duracao_estimada_minutos}
-                                        onChange={(e) => setFormData({ ...formData, duracao_estimada_minutos: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Valor Acordado ($)</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                    <Input
-                                        type="number"
+                                        min="0"
                                         step="0.01"
-                                        className="pl-7"
-                                        placeholder="0.00"
                                         value={formData.valor_acordado}
                                         onChange={(e) => setFormData({ ...formData, valor_acordado: e.target.value })}
+                                        placeholder="150.00"
                                     />
                                 </div>
-                                <p className="text-caption text-muted-foreground">Valor por visita/serviço</p>
+
+                                <div className="space-y-2">
+                                    <Label>Desconto (%)</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={formData.desconto_percentual}
+                                        onChange={(e) => setFormData({ ...formData, desconto_percentual: e.target.value })}
+                                    />
+                                </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Observações Internas</Label>
-                                <Textarea
-                                    placeholder="Instruções especiais, condições, etc."
-                                    value={formData.observacoes}
-                                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                                    rows={3}
-                                />
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Data de Início</Label>
+                                    <Input
+                                        type="date"
+                                        value={formData.data_inicio}
+                                        onChange={(e) => setFormData({ ...formData, data_inicio: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Data de Término (opcional)</Label>
+                                    <Input
+                                        type="date"
+                                        value={formData.data_fim}
+                                        onChange={(e) => setFormData({ ...formData, data_fim: e.target.value })}
+                                    />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Summary Sidebar */}
-                <div className="space-y-6">
+                {/* Sidebar */}
+                <div className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-h4">Resumo</CardTitle>
+                            <CardTitle>Resumo</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-body-sm">
-                                    <span className="text-muted-foreground">Valor por serviço</span>
-                                    <span className="font-medium">
-                                        {formData.valor_acordado ? `$${formData.valor_acordado}` : '-'}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-body-sm">
-                                    <span className="text-muted-foreground">Frequência</span>
-                                    <span className="font-medium">
-                                        {FREQUENCIES.find(f => f.value === formData.frequencia)?.label}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-body-sm">
-                                    <span className="text-muted-foreground">Est. mensal</span>
-                                    <span className="font-semibold text-brandy-rose-600">
-                                        {formData.valor_acordado ?
-                                            `$${(parseFloat(formData.valor_acordado) *
-                                                (formData.frequencia === 'weekly' ? 4 :
-                                                    formData.frequencia === 'biweekly' ? 2 : 1)).toFixed(2)}`
-                                            : '-'}
-                                    </span>
-                                </div>
+                        <CardContent className="space-y-3">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Valor:</span>
+                                <span className="font-medium">
+                                    {formData.valor_acordado ? formatCurrency(parseFloat(formData.valor_acordado)) : '-'}
+                                </span>
                             </div>
-
-                            <div className="pt-4 border-t border-pampas">
-                                <div className="flex items-start space-x-2">
-                                    <Checkbox
-                                        id="termos"
-                                        checked={formData.termos_aceitos}
-                                        onCheckedChange={(checked) =>
-                                            setFormData({ ...formData, termos_aceitos: checked as boolean })
-                                        }
-                                    />
-                                    <Label htmlFor="termos" className="text-caption leading-tight">
-                                        Confirmo que os termos e valores estão corretos e o cliente foi informado.
-                                    </Label>
+                            {parseFloat(formData.desconto_percentual) > 0 && (
+                                <div className="flex justify-between text-success">
+                                    <span>Desconto ({formData.desconto_percentual}%):</span>
+                                    <span>
+                                        -{formatCurrency(parseFloat(formData.valor_acordado) * parseFloat(formData.desconto_percentual) / 100)}
+                                    </span>
                                 </div>
+                            )}
+                            <div className="border-t pt-3 flex justify-between">
+                                <span className="font-medium">Total:</span>
+                                <span className="font-bold text-lg">
+                                    {formData.valor_acordado
+                                        ? formatCurrency(
+                                            parseFloat(formData.valor_acordado) * (1 - parseFloat(formData.desconto_percentual) / 100)
+                                        )
+                                        : '-'
+                                    }
+                                </span>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* Actions */}
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         <Button
                             className="w-full gap-2"
                             onClick={() => handleSave(true)}
-                            disabled={isSaving || !selectedClient || !formData.valor_acordado}
+                            disabled={isSaving || !selectedCliente}
                         >
-                            {isSaving ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <Send className="w-4 h-4" />
-                            )}
+                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                             Criar e Enviar
                         </Button>
                         <Button
                             variant="outline"
                             className="w-full gap-2"
                             onClick={() => handleSave(false)}
-                            disabled={isSaving || !selectedClient}
+                            disabled={isSaving || !selectedCliente}
                         >
                             <Save className="w-4 h-4" />
                             Salvar Rascunho

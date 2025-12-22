@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
 
         const supabase = await createClient()
 
-        // Salvar mensagem do usuário no banco
-        const { data: savedMessage, error: saveError } = await supabase
+        // 1. Salvar mensagem do usuário no banco
+        const { data: savedUserMessage, error: saveError } = await supabase
             .from('mensagens_chat')
             .insert({
                 session_id: sessionId,
@@ -45,11 +45,21 @@ export async function POST(request: NextRequest) {
             console.error('Error saving user message:', saveError)
         }
 
-        // Se n8n está configurado, enviar webhook
+        // 2. Atualizar ou criar sessão
+        await supabase
+            .from('chat_sessions')
+            .upsert({
+                id: sessionId,
+                last_activity: new Date().toISOString(),
+                status: 'active',
+                source: 'website'
+            })
+
+        // 3. Se n8n está configurado, enviar webhook
         if (isWebhookConfigured()) {
             const webhookResult = await sendChatMessage({
                 session_id: sessionId,
-                message_id: savedMessage?.id,
+                message_id: savedUserMessage?.id,
                 content: message,
                 source: 'website',
                 timestamp: new Date().toISOString(),
@@ -57,23 +67,20 @@ export async function POST(request: NextRequest) {
             })
 
             if (webhookResult.success) {
-                // Webhook enviado, resposta virá via /api/webhook/n8n
+                // Resposta virá via webhook callback
                 return NextResponse.json({
                     success: true,
                     processing: true,
-                    message_id: savedMessage?.id,
+                    message_id: savedUserMessage?.id,
                 })
-            } else {
-                console.error('Webhook failed:', webhookResult.error)
-                // Fallback para mock se webhook falhar
             }
         }
 
-        // Fallback: resposta mock (quando n8n não está configurado)
+        // 4. Fallback: resposta mock
         const mockResponse = await getMockResponse(message)
 
-        // Salvar resposta mock no banco
-        await supabase
+        // 5. IMPORTANTE: Salvar resposta da Carol no banco
+        const { data: savedAssistantMessage } = await supabase
             .from('mensagens_chat')
             .insert({
                 session_id: sessionId,
@@ -81,15 +88,14 @@ export async function POST(request: NextRequest) {
                 content: mockResponse,
                 source: 'website',
             })
+            .select()
+            .single()
 
         return NextResponse.json({
             success: true,
-            processing: false,
-            message: {
-                id: `mock-${Date.now()}`,
-                content: mockResponse,
-                timestamp: new Date().toISOString(),
-            },
+            message: mockResponse,
+            user_message_id: savedUserMessage?.id,
+            assistant_message_id: savedAssistantMessage?.id,
         })
 
     } catch (error) {

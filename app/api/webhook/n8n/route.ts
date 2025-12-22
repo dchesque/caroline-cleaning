@@ -110,9 +110,20 @@ async function handleChatResponse(supabase: any, data: any) {
         return NextResponse.json({ error: 'Failed to save message' }, { status: 500 })
     }
 
+    // Atualizar sessão
+    await supabase
+        .from('chat_sessions')
+        .upsert({
+            id: session_id,
+            last_activity: new Date().toISOString(),
+            last_intent: metadata?.intent,
+            status: 'active'
+        })
+
     return NextResponse.json({
         success: true,
         message_id: savedMessage.id,
+        action: 'chat_response_saved'
     })
 }
 
