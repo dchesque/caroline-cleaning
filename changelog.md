@@ -8,6 +8,14 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
   - Nova seção administrativa exclusiva para gestão de membros (`/admin/equipe`).
   - CRUD completo com suporte a cadastro de cores, cargos e status.
   - Soft-delete para preservação de histórico.
+- **Módulo de Clientes**:
+  - Busca automática de endereço via ZIP Code (integração Zippopotam.us).
+  - Dropdown avançado: Ações rápidas (Editar, SMS, WhatsApp), alteração de status e exclusão segura.
+  - Header da Ficha do Cliente: Botões diretos para SMS/WhatsApp/Ligar, alteração de status via badge e navegação otimizada.
+  - Abas da Ficha do Cliente: 
+    - Agendamentos: KPIs, separação Próximos/Histórico, novo agendamento rápido.
+    - Financeiro: Indicadores de receita, pendências e tabela de histórico.
+    - Contratos: Visualização do contrato ativo, recorrência e histórico completo.
 - **Módulo de Contratos**:
   - Sistema completo de gestão de contratos (`/admin/contratos`) com suporte a rascunhos e envio.
   - Página de criação (`/admin/contratos/novo`) com seleção de clientes e cálculo automático.

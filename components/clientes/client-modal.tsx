@@ -99,6 +99,29 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         notas_internas: ''
     })
 
+    // Função para buscar endereço pelo ZIP Code (API gratuita)
+    const fetchAddressByZip = async (zipCode: string) => {
+        if (zipCode.length < 5) return
+
+        try {
+            // Usar API Zippopotam.us (gratuita, sem API key)
+            const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`)
+            if (response.ok) {
+                const data = await response.json()
+                if (data.places && data.places.length > 0) {
+                    const place = data.places[0]
+                    setFormData(prev => ({
+                        ...prev,
+                        cidade: place['place name'],
+                        estado: place['state abbreviation']
+                    }))
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching ZIP:', error)
+        }
+    }
+
     const handleChange = (key: string, value: string | boolean) => {
         setFormData(prev => ({ ...prev, [key]: value }))
     }
@@ -270,6 +293,27 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                 {step === 2 && (
                     <div className="space-y-4">
                         <div className="space-y-2">
+                            <Label>ZIP Code</Label>
+                            <div className="flex gap-2">
+                                <Input
+                                    value={formData.zip_code}
+                                    onChange={e => {
+                                        const value = e.target.value.replace(/\D/g, '').slice(0, 5)
+                                        handleChange('zip_code', value)
+                                        if (value.length === 5) {
+                                            fetchAddressByZip(value)
+                                        }
+                                    }}
+                                    placeholder="33139"
+                                    maxLength={5}
+                                    className="w-32"
+                                />
+                                <p className="text-xs text-muted-foreground self-center">
+                                    Digite o ZIP para preencher automaticamente
+                                </p>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
                             <Label>Endereço Completo *</Label>
                             <Input
                                 value={formData.endereco_completo}
@@ -292,16 +336,9 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                     value={formData.estado}
                                     onChange={e => handleChange('estado', e.target.value)}
                                     placeholder="FL"
+                                    maxLength={2}
                                 />
                             </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>ZIP Code</Label>
-                            <Input
-                                value={formData.zip_code}
-                                onChange={e => handleChange('zip_code', e.target.value)}
-                                placeholder="33139"
-                            />
                         </div>
                     </div>
                 )}

@@ -14,19 +14,19 @@ export function TabInfo({ client }: { client: any }) {
                 <CardContent className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <p className="text-muted-foreground">Tipo</p>
-                        <p className="font-medium capitalize">{client.tipo_residencia}</p>
+                        <p className="font-medium capitalize">{client.tipo_residencia || '-'}</p>
                     </div>
                     <div>
                         <p className="text-muted-foreground">Área</p>
-                        <p className="font-medium">{client.area_sqft} sqft</p>
+                        <p className="font-medium">{client.square_feet || '-'} sqft</p>
                     </div>
                     <div>
                         <p className="text-muted-foreground">Quartos</p>
-                        <p className="font-medium">{client.quartos}</p>
+                        <p className="font-medium">{client.bedrooms || '-'}</p>
                     </div>
                     <div>
                         <p className="text-muted-foreground">Banheiros</p>
-                        <p className="font-medium">{client.banheiros}</p>
+                        <p className="font-medium">{client.bathrooms || '-'}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -41,15 +41,15 @@ export function TabInfo({ client }: { client: any }) {
                 <CardContent className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <p className="text-muted-foreground">Tipo de Serviço</p>
-                        <p className="font-medium capitalize">{client.tipo_servico_pref}</p>
+                        <p className="font-medium capitalize">{client.tipo_servico_padrao || '-'}</p>
                     </div>
                     <div>
                         <p className="text-muted-foreground">Frequência</p>
-                        <p className="font-medium capitalize">{client.frequencia}</p>
+                        <p className="font-medium capitalize">{client.frequencia || '-'}</p>
                     </div>
                     <div>
                         <p className="text-muted-foreground">Dia Preferido</p>
-                        <p className="font-medium capitalize">{client.dia_preferido}</p>
+                        <p className="font-medium capitalize">{client.dia_preferido || '-'}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -64,17 +64,19 @@ export function TabInfo({ client }: { client: any }) {
                 <CardContent className="space-y-4 text-sm">
                     <div>
                         <p className="text-muted-foreground">Tipo de Acesso</p>
-                        <p className="font-medium capitalize">{client.tipo_acesso}</p>
+                        <p className="font-medium capitalize">{client.acesso_tipo || '-'}</p>
                     </div>
-                    {client.codigo_acesso && (
+                    {client.acesso_codigo && (
                         <div>
                             <p className="text-muted-foreground">Código de Acesso</p>
-                            <p className="font-mono bg-gray-100 p-1 rounded inline-block">{client.codigo_acesso}</p>
+                            <p className="font-mono bg-gray-100 p-1 rounded inline-block">{client.acesso_codigo}</p>
                         </div>
                     )}
                     <div>
                         <p className="text-muted-foreground">Pets</p>
-                        <p className="font-medium">{client.pets_info || 'Nenhum'}</p>
+                        <p className="font-medium">
+                            {client.tem_pets ? (client.pets_detalhes || 'Sim') : 'Não'}
+                        </p>
                     </div>
                 </CardContent>
             </Card>

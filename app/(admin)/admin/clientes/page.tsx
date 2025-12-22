@@ -20,23 +20,24 @@ export default function ClientesPage() {
     })
     const supabase = createClient()
 
-    useEffect(() => {
-        const fetchClients = async () => {
-            setIsLoading(true)
-            let query = supabase.from('clientes').select('*')
+    const fetchClients = async () => {
+        setIsLoading(true)
+        let query = supabase.from('clientes').select('*')
 
-            if (filters.search) {
-                query = query.or(`nome.ilike.%${filters.search}%,telefone.ilike.%${filters.search}%`)
-            }
-            if (filters.status !== 'all') {
-                query = query.eq('status', filters.status)
-            }
-            query = query.order(filters.sortBy, { ascending: filters.sortOrder === 'asc' })
-
-            const { data } = await query
-            setClients(data || [])
-            setIsLoading(false)
+        if (filters.search) {
+            query = query.or(`nome.ilike.%${filters.search}%,telefone.ilike.%${filters.search}%`)
         }
+        if (filters.status !== 'all') {
+            query = query.eq('status', filters.status)
+        }
+        query = query.order(filters.sortBy, { ascending: filters.sortOrder === 'asc' })
+
+        const { data } = await query
+        setClients(data || [])
+        setIsLoading(false)
+    }
+
+    useEffect(() => {
         fetchClients()
     }, [filters])
 
@@ -54,11 +55,15 @@ export default function ClientesPage() {
             </div>
 
             <ClientsFilters filters={filters} onChange={setFilters} />
-            <ClientsTable clients={clients} isLoading={isLoading} />
+            <ClientsTable
+                clients={clients}
+                isLoading={isLoading}
+                onRefresh={fetchClients}
+            />
             <ClientModal
                 open={isModalOpen}
                 onOpenChange={setIsModalOpen}
-                onSuccess={() => setFilters(prev => ({ ...prev }))} // Trigger re-fetch
+                onSuccess={fetchClients}
             />
         </div>
     )
