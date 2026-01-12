@@ -10,7 +10,6 @@ export function CTASection() {
 
     return (
         <section className="py-20 md:py-32 bg-brandy-rose-600 text-white overflow-hidden relative">
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-transparent"></div>
 
             <div className="container relative text-center">

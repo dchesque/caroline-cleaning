@@ -38,10 +38,24 @@ import {
     Phone,
     Mail,
     Calendar,
-    Users2
+    Users2,
+    UserX,
+    UserCheck,
+    AlertTriangle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Membro {
     id: string
@@ -90,6 +104,11 @@ export default function EquipePage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [editingMembro, setEditingMembro] = useState<Membro | null>(null)
+    const [filterStatus, setFilterStatus] = useState<'ativos' | 'inativos'>('ativos')
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [isToggleStatusDialogOpen, setIsToggleStatusDialogOpen] = useState(false)
+    const [memberToDelete, setMemberToDelete] = useState<string | null>(null)
+    const [memberToToggle, setMemberToToggle] = useState<Membro | null>(null)
 
     const supabase = createClient()
 
@@ -181,21 +200,45 @@ export default function EquipePage() {
         }
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Tem certeza que deseja desativar este membro?')) return
+    const handleToggleAtivo = async () => {
+        if (!memberToToggle) return
+        const novoStatus = !memberToToggle.ativo
+        const acao = novoStatus ? 'reativar' : 'desativar'
 
         try {
             const { error } = await supabase
                 .from('equipe')
-                .update({ ativo: false })
-                .eq('id', id)
+                .update({ ativo: novoStatus })
+                .eq('id', memberToToggle.id)
 
             if (error) throw error
-            toast.success('Membro desativado!')
+            toast.success(novoStatus ? 'Membro reativado!' : 'Membro desativado!')
+            setIsToggleStatusDialogOpen(false)
+            setMemberToToggle(null)
             fetchMembros()
         } catch (error) {
-            console.error('Error deleting:', error)
-            toast.error('Erro ao desativar')
+            console.error(`Error ${acao}:`, error)
+            toast.error(`Erro ao ${acao}`)
+        }
+    }
+
+    const handleDeletePermanent = async () => {
+        if (!memberToDelete) return
+
+        try {
+            const { error } = await supabase
+                .from('equipe')
+                .delete()
+                .eq('id', memberToDelete)
+
+            if (error) throw error
+            toast.success('Membro excluído permanentemente!')
+            setIsDeleteDialogOpen(false)
+            setMemberToDelete(null)
+            fetchMembros()
+        } catch (error) {
+            console.error('Error deleting permanently:', error)
+            toast.error('Erro ao excluir membro')
         }
     }
 
@@ -218,10 +261,22 @@ export default function EquipePage() {
                         Gerencie os membros da sua equipe de limpeza
                     </p>
                 </div>
-                <Button onClick={handleCreate} className="bg-[#C48B7F] hover:bg-[#A66D60]">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Novo Membro
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Tabs
+                        value={filterStatus}
+                        onValueChange={(v) => setFilterStatus(v as 'ativos' | 'inativos')}
+                        className="w-[200px]"
+                    >
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="ativos">Ativos</TabsTrigger>
+                            <TabsTrigger value="inativos">Inativos</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    <Button onClick={handleCreate} className="bg-[#C48B7F] hover:bg-[#A66D60]">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Novo Membro
+                    </Button>
+                </div>
             </div>
 
             {/* Grid de Membros */}
@@ -229,20 +284,27 @@ export default function EquipePage() {
                 <div className="flex justify-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                 </div>
-            ) : membros.filter(m => m.ativo).length === 0 ? (
+            ) : membros.filter(m => filterStatus === 'ativos' ? m.ativo : !m.ativo).length === 0 ? (
                 <Card>
                     <CardContent className="py-12 text-center">
                         <Users2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500 mb-4">Nenhum membro cadastrado</p>
-                        <Button onClick={handleCreate} className="bg-[#C48B7F] hover:bg-[#A66D60]">
-                            Adicionar Primeiro Membro
-                        </Button>
+                        <p className="text-gray-500 mb-4">
+                            {filterStatus === 'ativos' ? 'Nenhum membro ativo cadastrado' : 'Nenhum membro inativo'}
+                        </p>
+                        {filterStatus === 'ativos' && (
+                            <Button onClick={handleCreate} className="bg-[#C48B7F] hover:bg-[#A66D60]">
+                                Adicionar Primeiro Membro
+                            </Button>
+                        )}
                     </CardContent>
                 </Card>
             ) : (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {membros.filter(m => m.ativo).map((membro) => (
-                        <Card key={membro.id} className="hover:shadow-md transition-shadow">
+                    {membros.filter(m => filterStatus === 'ativos' ? m.ativo : !m.ativo).map((membro) => (
+                        <Card
+                            key={membro.id}
+                            className={`hover:shadow-md transition-shadow ${!membro.ativo ? 'opacity-75 bg-gray-50/50' : ''}`}
+                        >
                             <CardContent className="pt-6">
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-4">
@@ -278,16 +340,48 @@ export default function EquipePage() {
                                                 <Pencil className="w-4 h-4 mr-2" />
                                                 Editar
                                             </DropdownMenuItem>
+                                            {membro.ativo ? (
+                                                <DropdownMenuItem
+                                                    onClick={() => {
+                                                        setMemberToToggle(membro)
+                                                        setIsToggleStatusDialogOpen(true)
+                                                    }}
+                                                    className="text-amber-600 focus:text-amber-600 focus:bg-amber-50"
+                                                >
+                                                    <UserX className="w-4 h-4 mr-2" />
+                                                    Desativar
+                                                </DropdownMenuItem>
+                                            ) : (
+                                                <DropdownMenuItem
+                                                    onClick={() => {
+                                                        setMemberToToggle(membro)
+                                                        setIsToggleStatusDialogOpen(true)
+                                                    }}
+                                                    className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
+                                                >
+                                                    <UserCheck className="w-4 h-4 mr-2" />
+                                                    Reativar
+                                                </DropdownMenuItem>
+                                            )}
                                             <DropdownMenuItem
-                                                onClick={() => handleDelete(membro.id)}
-                                                className="text-red-600"
+                                                onClick={() => {
+                                                    setMemberToDelete(membro.id)
+                                                    setIsDeleteDialogOpen(true)
+                                                }}
+                                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
                                             >
                                                 <Trash2 className="w-4 h-4 mr-2" />
-                                                Desativar
+                                                Excluir Permanentemente
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
+
+                                {!membro.ativo && (
+                                    <div className="mt-2 text-[10px] uppercase tracking-wider font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full inline-block">
+                                        Membro Inativo
+                                    </div>
+                                )}
 
                                 <div className="mt-4 space-y-2 text-sm text-gray-500">
                                     {membro.telefone && (
@@ -457,6 +551,65 @@ export default function EquipePage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Confirmação de Exclusão Permanente */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <div className="flex items-center gap-2 text-red-600 mb-2">
+                            <AlertTriangle className="w-5 h-5" />
+                            <AlertDialogTitle>Excluir Permanentemente?</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. Isso excluirá permanentemente o membro
+                            da equipe e todos os dados associados do nosso banco de dados.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setMemberToDelete(null)}>
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeletePermanent}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Confirmar Exclusão
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Confirmação de Alteração de Status */}
+            <AlertDialog open={isToggleStatusDialogOpen} onOpenChange={setIsToggleStatusDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <div className={`flex items-center gap-2 mb-2 ${memberToToggle?.ativo ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            {memberToToggle?.ativo ? <UserX className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
+                            <AlertDialogTitle>
+                                {memberToToggle?.ativo ? 'Desativar Membro?' : 'Reativar Membro?'}
+                            </AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription>
+                            {memberToToggle?.ativo
+                                ? 'Isso ocultará o membro da lista de ativos, mas seus dados serão preservados.'
+                                : 'Isso tornará o membro visível e ativo na equipe novamente.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setMemberToToggle(null)}>
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleToggleAtivo}
+                            className={memberToToggle?.ativo
+                                ? "bg-amber-600 hover:bg-amber-700 text-white border-none"
+                                : "bg-emerald-600 hover:bg-emerald-700 text-white border-none"}
+                        >
+                            {memberToToggle?.ativo ? 'Confirmar Desativação' : 'Confirmar Reativação'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

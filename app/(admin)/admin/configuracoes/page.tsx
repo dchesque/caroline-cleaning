@@ -211,7 +211,7 @@ export default function ConfiguracoesPage() {
                         </Card>
 
                         <Card className="hover:shadow-md transition-shadow">
-                            <Link href="/admin/configuracoes/equipe">
+                            <Link href="/admin/equipe">
                                 <CardContent className="pt-6">
                                     <div className="flex items-center gap-4">
                                         <div className="p-3 bg-warning/10 rounded-lg">

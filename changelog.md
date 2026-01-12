@@ -12,6 +12,30 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+## [1.3.15] - 2026-01-12
+### Adicionado
+- **Admin (Equipe)**: 
+  - Funcionalidade de exclusão permanente com diálogo de confirmação premium.
+  - Diálogos de confirmação customizados para ativação e desativação de membros.
+### Melhorado
+- **Admin (Equipe)**:
+  - Melhoria visual nos cards de membros inativos com badge de status e opacidade reduzida.
+  - Refinamento do menu de ações com cores semânticas e feedbacks visuais no hover.
+
+## [1.3.14] - 2026-01-12
+### Alterado
+- **Admin (Configurações)**:
+  - O link do card "Equipe" agora aponta diretamente para `/admin/equipe`, facilitando o acesso ao módulo de gestão de membros.
+
+## [1.3.13] - 2026-01-12
+### Adicionado
+- **Admin**:
+  - Nova página de placeholder para Configurações de Equipe (`/admin/configuracoes/equipe`).
+  - Criação do arquivo `roadmap.md` na raiz do projeto, detalhando o plano de desenvolvimento futuro.
+### Melhorado
+- **Admin (Analytics)**:
+  - Placeholder de Analytics de Clientes (`/admin/analytics/clientes`) atualizado com design premium e informações sobre funcionalidades planejadas.
+
 ## [1.3.12] - 2026-01-12
 ### Alterado
 - **Landing Page (About Us)**:
