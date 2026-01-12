@@ -43,7 +43,8 @@ import {
     Trash2,
     CheckCircle,
     Filter,
-    MoreHorizontal
+    MoreHorizontal,
+    Tags
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -75,6 +76,7 @@ export default function ReceitasPage() {
         toBeReceived: 0,
         averageTicket: 0
     })
+    const [dbCategories, setDbCategories] = useState<any[]>([])
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('')
@@ -177,6 +179,20 @@ export default function ReceitasPage() {
         }
     }
 
+    const fetchCategories = async () => {
+        const { data } = await supabase
+            .from('financeiro_categorias')
+            .select('*')
+            .eq('tipo', 'receita')
+            .eq('ativo', true)
+            .order('nome')
+        if (data) setDbCategories(data)
+    }
+
+    useEffect(() => {
+        fetchCategories()
+    }, [])
+
     useEffect(() => {
         fetchReceitas()
     }, [periodFilter, searchTerm, statusFilter, categoryFilter])
@@ -247,10 +263,18 @@ export default function ReceitasPage() {
                         </p>
                     </div>
                 </div>
-                <Button onClick={() => setIsNewOpen(true)} className="bg-primary hover:bg-primary/90">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nova Receita
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/admin/financeiro/categorias">
+                            <Tags className="w-4 h-4 mr-2" />
+                            Gerenciar Categorias
+                        </Link>
+                    </Button>
+                    <Button onClick={() => setIsNewOpen(true)} className="bg-primary hover:bg-primary/90">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nova Receita
+                    </Button>
+                </div>
             </div>
 
             {/* Summary Cards */}
@@ -339,8 +363,8 @@ export default function ReceitasPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Todas Cat.</SelectItem>
-                            {CATEGORIAS_RECEITA.map(cat => (
-                                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                            {dbCategories.map(cat => (
+                                <SelectItem key={cat.id} value={cat.nome}>{cat.nome}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

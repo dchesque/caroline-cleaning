@@ -21,7 +21,8 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
-import { CATEGORIAS_RECEITA, CATEGORIAS_DESPESA, FORMAS_PAGAMENTO } from './constants'
+import { FORMAS_PAGAMENTO } from './constants'
+import { CategoryQuickForm } from './category-quick-form'
 
 interface TransactionFormProps {
     type: 'receita' | 'custo'
@@ -50,6 +51,7 @@ export function TransactionForm({
         cliente_id: 'null' // Optional for receitas
     })
     const [clientes, setClientes] = useState<any[]>([])
+    const [dbCategories, setDbCategories] = useState<any[]>([])
     const supabase = createClient()
 
     useEffect(() => {
@@ -79,6 +81,23 @@ export function TransactionForm({
         }
     }, [transaction, open, type])
 
+    const fetchCategories = async () => {
+        const { data } = await supabase
+            .from('financeiro_categorias')
+            .select('*')
+            .eq('tipo', type)
+            .eq('ativo', true)
+            .order('nome')
+
+        if (data) setDbCategories(data)
+    }
+
+    useEffect(() => {
+        if (open) {
+            fetchCategories()
+        }
+    }, [open, type])
+
     useEffect(() => {
         if (type === 'receita') {
             const fetchClientes = async () => {
@@ -98,12 +117,19 @@ export function TransactionForm({
         setLoading(true)
 
         try {
+            const valor = parseFloat(formData.valor)
+            if (isNaN(valor)) {
+                toast.error('Por favor, insira um valor válido.')
+                setLoading(false)
+                return
+            }
+
             const payload: any = {
                 tipo: type,
                 categoria: formData.categoria,
                 subcategoria: formData.subcategoria || null,
                 descricao: formData.descricao,
-                valor: parseFloat(formData.valor),
+                valor: valor,
                 data: formData.data,
                 forma_pagamento: formData.forma_pagamento,
                 status: formData.status,
@@ -140,7 +166,8 @@ export function TransactionForm({
         }
     }
 
-    const categories = type === 'receita' ? CATEGORIAS_RECEITA : CATEGORIAS_DESPESA
+    // Removido categorias fixas para usar as do banco
+    // const categories = type === 'receita' ? CATEGORIAS_RECEITA : CATEGORIAS_DESPESA
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -178,22 +205,31 @@ export function TransactionForm({
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Categoria</Label>
-                            <Select
-                                value={formData.categoria}
-                                onValueChange={(val) => setFormData({ ...formData, categoria: val })}
-                                required
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categories.map(cat => (
-                                        <SelectItem key={cat.value} value={cat.value}>
-                                            {cat.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className="flex gap-2">
+                                <Select
+                                    value={formData.categoria}
+                                    onValueChange={(val) => setFormData({ ...formData, categoria: val })}
+                                    required
+                                >
+                                    <SelectTrigger className="flex-1">
+                                        <SelectValue placeholder="Selecione" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {dbCategories.map(cat => (
+                                            <SelectItem key={cat.id} value={cat.nome}>
+                                                {cat.nome}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <CategoryQuickForm
+                                    tipo={type}
+                                    onSuccess={(newCat) => {
+                                        setDbCategories(prev => [...prev, newCat].sort((a, b) => a.nome.localeCompare(b.nome)))
+                                        setFormData(prev => ({ ...prev, categoria: newCat.nome }))
+                                    }}
+                                />
+                            </div>
                         </div>
 
                         <div className="space-y-2">

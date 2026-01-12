@@ -12,6 +12,27 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+## [1.3.17] - 2026-01-12
+### Corrigido
+- **Financeiro**:
+  - Correção de erro crítico ao salvar transações (constraint violation para valor nulo).
+- **Clientes**:
+  - Correção de erro na atualização de recorrências (falha PGRST204 no Supabase).
+- **Build**:
+  - Resolução de dependências ausentes (@radix-ui/react-alert-dialog) e assets (noise.png).
+
+## [1.3.16] - 2026-01-12
+### Adicionado
+- **Admin (Financeiro)**:
+  - Sistema completo de gerenciamento de categorias de receitas e despesas.
+  - Nova página de gestão centralizada em `/admin/financeiro/categorias`.
+  - Botão de criação rápida (+) integrado nos formulários de lançamento de transações.
+  - API REST para CRUD de categorias.
+### Melhorado
+- **Admin (Financeiro)**:
+  - Filtros de categoria nas páginas de Despesas e Receitas agora carregam dados dinâmicos do banco de dados.
+  - Dashboard financeiro atualizado com botão de acesso direto ao gerenciador de categorias.
+
 ## [1.3.15] - 2026-01-12
 ### Adicionado
 - **Admin (Equipe)**: 

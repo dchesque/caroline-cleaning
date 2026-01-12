@@ -40,7 +40,8 @@ import {
     MoreHorizontal,
     Pencil,
     Trash2,
-    PieChart as PieChartIcon
+    PieChart as PieChartIcon,
+    Tags
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -83,6 +84,7 @@ export default function DespesasPage() {
         dailyAverage: 0
     })
     const [categoryData, setCategoryData] = useState<any[]>([])
+    const [dbCategories, setDbCategories] = useState<any[]>([])
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('')
@@ -185,6 +187,20 @@ export default function DespesasPage() {
         }
     }
 
+    const fetchCategories = async () => {
+        const { data } = await supabase
+            .from('financeiro_categorias')
+            .select('*')
+            .eq('tipo', 'custo')
+            .eq('ativo', true)
+            .order('nome')
+        if (data) setDbCategories(data)
+    }
+
+    useEffect(() => {
+        fetchCategories()
+    }, [])
+
     useEffect(() => {
         fetchDespesas()
     }, [periodFilter, searchTerm, categoryFilter])
@@ -226,10 +242,18 @@ export default function DespesasPage() {
                         </p>
                     </div>
                 </div>
-                <Button onClick={() => setIsNewOpen(true)} className="bg-destructive hover:bg-destructive/90 text-white">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nova Despesa
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/admin/financeiro/categorias">
+                            <Tags className="w-4 h-4 mr-2" />
+                            Gerenciar Categorias
+                        </Link>
+                    </Button>
+                    <Button onClick={() => setIsNewOpen(true)} className="bg-destructive hover:bg-destructive/90 text-white">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Nova Despesa
+                    </Button>
+                </div>
             </div>
 
             <div className="grid lg:grid-cols-3 gap-6">
@@ -309,8 +333,8 @@ export default function DespesasPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todas</SelectItem>
-                                        {CATEGORIAS_DESPESA.map(cat => (
-                                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                                        {dbCategories.map(cat => (
+                                            <SelectItem key={cat.id} value={cat.nome}>{cat.nome}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>

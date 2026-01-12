@@ -11,7 +11,8 @@ import {
     Plus,
     ArrowUpRight,
     ArrowDownRight,
-    Calendar
+    Calendar,
+    Tags
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -80,6 +81,12 @@ export default async function FinanceiroPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <Button variant="outline" asChild>
+                        <Link href="/admin/financeiro/categorias">
+                            <Tags className="w-4 h-4 mr-2" />
+                            Categorias
+                        </Link>
+                    </Button>
                     <Button variant="outline" asChild>
                         <Link href="/admin/financeiro/despesas">
                             <TrendingDown className="w-4 h-4 mr-2" />

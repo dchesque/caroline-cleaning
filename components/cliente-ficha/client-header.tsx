@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { EditClientModal } from '@/components/clientes/edit-client-modal'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -55,11 +56,19 @@ const STATUS_CONFIG = {
 
 export function ClientHeader({ client }: ClientHeaderProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const supabase = createClient()
     const [isDeleting, setIsDeleting] = useState(false)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [showAppointmentModal, setShowAppointmentModal] = useState(false)
     const [currentStatus, setCurrentStatus] = useState(client.status)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+    useEffect(() => {
+        if (searchParams.get('edit') === 'true') {
+            setIsEditModalOpen(true)
+        }
+    }, [searchParams])
 
     const status = STATUS_CONFIG[currentStatus as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.lead
     const StatusIcon = status.icon
@@ -286,6 +295,21 @@ export function ClientHeader({ client }: ClientHeaderProps) {
                 onOpenChange={setShowAppointmentModal}
                 preSelectedClientId={client.id}
                 onSuccess={() => router.refresh()}
+            />
+
+            {/* Edit Client Modal */}
+            <EditClientModal
+                open={isEditModalOpen}
+                onOpenChange={(open) => {
+                    setIsEditModalOpen(open)
+                    if (!open) {
+                        router.replace(`/admin/clientes/${client.id}`)
+                    }
+                }}
+                clientId={client.id}
+                onSuccess={() => {
+                    router.refresh()
+                }}
             />
         </>
     )

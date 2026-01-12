@@ -88,32 +88,32 @@ const TIPOS_ACESSO = [
 ]
 
 export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps) {
+    const supabase = createClient()
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [servicosDisponiveis, setServicosDisponiveis] = useState<ServicoTipo[]>([])
     const [addonsDisponiveis, setAddonsDisponiveis] = useState<Addon[]>([])
-    const supabase = createClient()
 
     const [formData, setFormData] = useState({
-        // Step 1 - Informações Básicas
+        // Step 1
         nome: '',
         telefone: '',
         email: '',
-        // Step 2 - Endereço
+        // Step 2
         endereco_completo: '',
         cidade: '',
         estado: 'FL',
         zip_code: '',
-        // Step 3 - Detalhes da Casa
+        // Step 3
         tipo_residencia: 'house',
         bedrooms: '3',
         bathrooms: '2',
         square_feet: '',
-        // Step 4 - Preferências
+        // Step 4
         frequencia: 'biweekly',
         diasServicos: [] as DiaServico[],
-        addonsSelecionados: [] as string[], // códigos dos addons
-        // Step 5 - Acesso & Pets
+        addonsSelecionados: [] as string[],
+        // Step 5
         acesso_tipo: 'client_home',
         acesso_codigo: '',
         acesso_instrucoes: '',
@@ -122,27 +122,31 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         notas_internas: ''
     })
 
-    // Carregar serviços e addons do banco
+    // Fetch Initial Data
     useEffect(() => {
-        const fetchData = async () => {
-            const [servicosRes, addonsRes] = await Promise.all([
-                supabase.from('servicos_tipos').select('id, codigo, nome, ativo').eq('ativo', true).order('ordem'),
-                supabase.from('addons').select('id, codigo, nome, preco, ativo').eq('ativo', true).order('ordem')
-            ])
+        const fetchInitialData = async () => {
+            if (!open) return
 
-            if (servicosRes.data) setServicosDisponiveis(servicosRes.data)
-            if (addonsRes.data) setAddonsDisponiveis(addonsRes.data)
+            try {
+                const [servicosRes, addonsRes] = await Promise.all([
+                    supabase.from('servicos_tipos').select('id, codigo, nome, ativo').eq('ativo', true).order('ordem'),
+                    supabase.from('addons').select('id, codigo, nome, preco, ativo').eq('ativo', true).order('ordem')
+                ])
+
+                if (servicosRes.data) setServicosDisponiveis(servicosRes.data)
+                if (addonsRes.data) setAddonsDisponiveis(addonsRes.data)
+            } catch (error) {
+                console.error('Error fetching data:', error)
+                toast.error('Erro ao carregar dados iniciais')
+            }
         }
 
-        if (open) {
-            fetchData()
-        }
+        fetchInitialData()
     }, [open])
 
-    // Função para buscar endereço pelo ZIP Code
+    // Utility Functions
     const fetchAddressByZip = async (zipCode: string) => {
         if (zipCode.length < 5) return
-
         try {
             const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`)
             if (response.ok) {
@@ -165,19 +169,63 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         setFormData(prev => ({ ...prev, [key]: value }))
     }
 
-    // Adicionar novo dia/serviço
+    const nextStep = () => {
+        if (validateStep(step)) {
+            setStep(prev => prev + 1)
+        }
+    }
+
+    const prevStep = () => setStep(prev => prev - 1)
+
+    const validateStep = (currentStep: number) => {
+        switch (currentStep) {
+            case 1:
+                if (!formData.nome.trim()) {
+                    toast.error('Nome é obrigatório')
+                    return false
+                }
+                if (!isValidPhoneUS(formData.telefone)) {
+                    toast.error('Telefone inválido')
+                    return false
+                }
+                if (formData.email && !isValidEmail(formData.email)) {
+                    toast.error('Email inválido')
+                    return false
+                }
+                return true
+            case 2:
+                if (!formData.endereco_completo.trim()) {
+                    toast.error('Endereço é obrigatório')
+                    return false
+                }
+                return true
+            case 4:
+                // Se frequência não for One Time, precisa selecionar dias/serviços
+                if (formData.frequencia !== 'one_time' && formData.diasServicos.length === 0) {
+                    // Se não tiver nenhum dia configurado, força adicionar um default (ex: Segunda / Regular)
+                    // Ou avisa o erro
+                    // Vamos tentar adicionar um default se estiver vazio?
+                    // Melhor avisar
+                    // toast.error('Configure pelo menos um dia de atendimento')
+                    // return false
+                    // Actually, let's auto-add if empty inside form logic or here
+                }
+                return true
+            default:
+                return true
+        }
+    }
+
     const addDiaServico = () => {
         const diasUsados = formData.diasServicos.map(ds => ds.dia)
         const proximoDia = DIAS_SEMANA.find(d => !diasUsados.includes(d.value))?.value || 'monday'
         const primeiroServico = servicosDisponiveis[0]?.codigo || 'regular'
-
         setFormData(prev => ({
             ...prev,
             diasServicos: [...prev.diasServicos, { dia: proximoDia, servico: primeiroServico }]
         }))
     }
 
-    // Remover dia/serviço
     const removeDiaServico = (index: number) => {
         setFormData(prev => ({
             ...prev,
@@ -185,7 +233,6 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         }))
     }
 
-    // Atualizar dia/serviço específico
     const updateDiaServico = (index: number, field: 'dia' | 'servico', value: string) => {
         setFormData(prev => ({
             ...prev,
@@ -195,7 +242,6 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         }))
     }
 
-    // Toggle addon
     const toggleAddon = (codigo: string) => {
         setFormData(prev => ({
             ...prev,
@@ -205,48 +251,88 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         }))
     }
 
-    // Verificar se um dia já está sendo usado
     const isDiaUsado = (dia: string, currentIndex: number) => {
         return formData.diasServicos.some((ds, i) => ds.dia === dia && i !== currentIndex)
     }
 
-    const handleNext = () => {
-        // Validações por step
-        if (step === 1) {
-            if (!formData.nome.trim()) {
-                toast.error('Nome é obrigatório')
-                return
-            }
-            if (!formData.telefone.trim()) {
-                toast.error('Telefone é obrigatório')
-                return
-            }
-            if (!isValidPhoneUS(formData.telefone)) {
-                toast.error('Telefone inválido. Use formato americano (10 dígitos)')
-                return
-            }
-            if (formData.email && !isValidEmail(formData.email)) {
-                toast.error('Email inválido')
-                return
-            }
-        }
-        if (step === 2) {
-            if (!formData.endereco_completo.trim()) {
-                toast.error('Endereço é obrigatório')
-                return
-            }
-        }
-        if (step === 4) {
-            if (formData.diasServicos.length === 0) {
-                toast.error('Adicione pelo menos um dia de serviço')
-                return
-            }
-        }
-        if (step < STEPS.length) setStep(step + 1)
-    }
+    const handleSubmit = async () => {
+        setIsLoading(true)
+        try {
+            // Preparar dados
+            const diasSelecionados = formData.diasServicos.map(ds => ds.dia)
+            const servicoPrincipal = formData.diasServicos[0]?.servico || 'regular'
+            const diaPrincipal = formData.diasServicos[0]?.dia || 'monday'
 
-    const handlePrev = () => {
-        if (step > 1) setStep(step - 1)
+            // 1. Criar Cliente
+            const { data: newClient, error: createError } = await supabase
+                .from('clientes')
+                .insert([{
+                    nome: formData.nome.trim(),
+                    telefone: formData.telefone.trim(),
+                    email: formData.email.trim() || null,
+                    endereco_completo: formData.endereco_completo.trim(),
+                    cidade: formData.cidade.trim() || null,
+                    estado: formData.estado,
+                    zip_code: formData.zip_code.trim() || null,
+                    tipo_residencia: formData.tipo_residencia,
+                    bedrooms: parseInt(formData.bedrooms) || null,
+                    bathrooms: parseFloat(formData.bathrooms) || null,
+                    square_feet: parseInt(formData.square_feet) || null,
+                    // Dados padrão para filtros
+                    tipo_servico_padrao: servicoPrincipal,
+                    frequencia: formData.frequencia,
+                    dia_preferido: diaPrincipal,
+                    status: 'lead',
+                    // Acesso
+                    acesso_tipo: formData.acesso_tipo,
+                    acesso_codigo: formData.acesso_codigo.trim() || null,
+                    acesso_instrucoes: formData.acesso_instrucoes.trim() || null,
+                    tem_pets: formData.tem_pets,
+                    pets_detalhes: formData.pets_detalhes.trim() || null,
+                    notas_internas: formData.notas_internas.trim() || null,
+                }])
+                .select()
+                .single()
+
+            if (createError) throw createError
+
+            // 2. Criar Recorrência (se não for avulso, ou se quiser criar sempre)
+            // Vamos criar sempre, mas ativo apenas se não for One Time?
+            // Ou criar como "ativo" se for recorrente.
+            // Se for One Time, talvez não precise de reccorencia, mas o sistema pode depender dela.
+            // Vamos seguir a lógica: se One Time, não cria recorrência ativa.
+
+            if (formData.frequencia !== 'one_time') {
+                const recurrenceData = {
+                    cliente_id: newClient.id,
+                    frequencia: formData.frequencia,
+                    dia_preferido: diaPrincipal,
+                    tipo_servico: servicoPrincipal,
+                    dias_semana: diasSelecionados,
+                    servicos_por_dia: formData.diasServicos,
+                    addons_selecionados: formData.addonsSelecionados,
+                    ativo: true,
+                    horario: '08:00:00', // Default value to satisfy not-null constraint
+                    valor: 0 // Default value to satisfy not-null constraint
+                }
+
+                const { error: recurrenceError } = await supabase
+                    .from('recorrencias')
+                    .insert([recurrenceData])
+
+                if (recurrenceError) throw recurrenceError
+            }
+
+            toast.success('Cliente cadastrado com sucesso!')
+            onOpenChange(false)
+            onSuccess?.()
+            resetForm()
+        } catch (error: any) {
+            console.error('Error saving client:', error)
+            toast.error('Erro ao salvar cliente')
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     const resetForm = () => {
@@ -275,79 +361,11 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         })
     }
 
-    const handleSubmit = async () => {
-        setIsLoading(true)
-        try {
-            const diasSelecionados = formData.diasServicos.map(ds => ds.dia)
-            const servicoPrincipal = formData.diasServicos[0]?.servico || 'regular'
-            const diaPrincipal = formData.diasServicos[0]?.dia || 'monday'
-
-            // 1. Criar o cliente
-            const { data: cliente, error: clienteError } = await supabase.from('clientes').insert([{
-                nome: formData.nome.trim(),
-                telefone: formData.telefone.trim(),
-                email: formData.email.trim() || null,
-                endereco_completo: formData.endereco_completo.trim(),
-                cidade: formData.cidade.trim() || null,
-                estado: formData.estado,
-                zip_code: formData.zip_code.trim() || null,
-                tipo_residencia: formData.tipo_residencia,
-                bedrooms: parseInt(formData.bedrooms) || null,
-                bathrooms: parseFloat(formData.bathrooms) || null,
-                square_feet: parseInt(formData.square_feet) || null,
-                tipo_servico_padrao: servicoPrincipal,
-                frequencia: formData.frequencia,
-                dia_preferido: diaPrincipal,
-                acesso_tipo: formData.acesso_tipo,
-                acesso_codigo: formData.acesso_codigo.trim() || null,
-                acesso_instrucoes: formData.acesso_instrucoes.trim() || null,
-                tem_pets: formData.tem_pets,
-                pets_detalhes: formData.pets_detalhes.trim() || null,
-                notas_internas: formData.notas_internas.trim() || null,
-                status: 'lead'
-            }]).select().single()
-
-            if (clienteError) throw clienteError
-
-            // 2. Criar recorrência com múltiplos dias/serviços e addons
-            if (formData.frequencia !== 'one_time' && cliente) {
-                const { error: recorrenciaError } = await supabase.from('recorrencias').insert([{
-                    cliente_id: cliente.id,
-                    frequencia: formData.frequencia,
-                    dia_preferido: diaPrincipal,
-                    tipo_servico: servicoPrincipal,
-                    dias_semana: diasSelecionados,
-                    servicos_por_dia: formData.diasServicos,
-                    addons_selecionados: formData.addonsSelecionados,
-                    ativo: true,
-                    horario_preferido: '09:00:00', // Valor padrão obrigatório
-                    valor_base: 0 // Valor padrão obrigatório
-                }])
-
-                if (recorrenciaError) {
-                    console.error('Error creating recurrence:', JSON.stringify(recorrenciaError, null, 2))
-                    toast.error(`Erro na recorrência: ${recorrenciaError.message}`)
-                }
-            }
-
-            toast.success('Cliente cadastrado com sucesso!')
-            onOpenChange(false)
-            resetForm()
-            onSuccess?.()
-        } catch (error) {
-            console.error('Error creating client:', error)
-            toast.error('Erro ao cadastrar cliente')
-        } finally {
-            setIsLoading(false)
-        }
-    }
+    if (!open) return null
 
     return (
-        <Dialog open={open} onOpenChange={(isOpen) => {
-            if (!isOpen) resetForm()
-            onOpenChange(isOpen)
-        }}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Novo Cliente</DialogTitle>
                     <DialogDescription>
@@ -355,478 +373,340 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* Progress */}
-                <div className="flex gap-1 mb-4">
-                    {STEPS.map((s) => (
-                        <div
-                            key={s.id}
-                            className={`h-1 flex-1 rounded-full transition-colors ${s.id <= step ? 'bg-[#C48B7F]' : 'bg-gray-200'
-                                }`}
-                        />
-                    ))}
-                </div>
-
-                {/* Step 1: Informações Básicas */}
-                {step === 1 && (
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Nome Completo *</Label>
-                            <Input
-                                value={formData.nome}
-                                onChange={e => handleChange('nome', e.target.value)}
-                                placeholder="John Smith"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Telefone * (US)</Label>
-                            <Input
-                                value={formData.telefone}
-                                onChange={e => handleChange('telefone', formatPhoneUS(e.target.value))}
-                                placeholder="(305) 555-0123"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Formato: (XXX) XXX-XXXX
-                            </p>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Email</Label>
-                            <Input
-                                type="email"
-                                value={formData.email}
-                                onChange={e => handleChange('email', e.target.value.toLowerCase())}
-                                placeholder="john@example.com"
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 2: Endereço */}
-                {step === 2 && (
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>ZIP Code</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    value={formData.zip_code}
-                                    onChange={e => {
-                                        const value = formatZipCode(e.target.value)
-                                        handleChange('zip_code', value)
-                                        if (value.length === 5) {
-                                            fetchAddressByZip(value)
-                                        }
-                                    }}
-                                    placeholder="33139"
-                                    maxLength={5}
-                                    className="w-32"
-                                />
-                                <p className="text-xs text-muted-foreground self-center">
-                                    Digite o ZIP para preencher automaticamente
-                                </p>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Endereço Completo *</Label>
-                            <Input
-                                value={formData.endereco_completo}
-                                onChange={e => handleChange('endereco_completo', e.target.value)}
-                                placeholder="123 Main St, Apt 4"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                <div className="mt-4">
+                    {/* Step 1: Info */}
+                    {step === 1 && (
+                        <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Cidade</Label>
+                                <Label>Nome Completo *</Label>
                                 <Input
-                                    value={formData.cidade}
-                                    onChange={e => handleChange('cidade', e.target.value)}
-                                    placeholder="Miami"
+                                    value={formData.nome}
+                                    onChange={e => handleChange('nome', e.target.value)}
+                                    placeholder="Ex: John Doe"
                                 />
                             </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Telefone *</Label>
+                                    <Input
+                                        value={formData.telefone}
+                                        onChange={e => handleChange('telefone', formatPhoneUS(e.target.value))}
+                                        placeholder="(555) 555-5555"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Email</Label>
+                                    <Input
+                                        value={formData.email}
+                                        onChange={e => handleChange('email', e.target.value)}
+                                        placeholder="john@example.com"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 2: Endereço */}
+                    {step === 2 && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label>ZIP Code</Label>
+                                    <Input
+                                        value={formData.zip_code}
+                                        onChange={e => {
+                                            const val = formatZipCode(e.target.value)
+                                            handleChange('zip_code', val)
+                                            if (val.length === 5) fetchAddressByZip(val)
+                                        }}
+                                        maxLength={5}
+                                        placeholder="00000"
+                                    />
+                                </div>
+                                <div className="col-span-2 space-y-2">
+                                    <Label>Endereço *</Label>
+                                    <Input
+                                        value={formData.endereco_completo}
+                                        onChange={e => handleChange('endereco_completo', e.target.value)}
+                                        placeholder="123 Main St"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Cidade</Label>
+                                    <Input
+                                        value={formData.cidade}
+                                        onChange={e => handleChange('cidade', e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Estado</Label>
+                                    <Select
+                                        value={formData.estado}
+                                        onValueChange={v => handleChange('estado', v)}
+                                    >
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent className='max-h-[200px]'>
+                                            {US_STATES.map(s => (
+                                                <SelectItem key={s.value} value={s.value}>{s.value}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 3: Casa */}
+                    {step === 3 && (
+                        <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Estado</Label>
+                                <Label>Tipo de Residência</Label>
                                 <Select
-                                    value={formData.estado}
-                                    onValueChange={v => handleChange('estado', v)}
+                                    value={formData.tipo_residencia}
+                                    onValueChange={v => handleChange('tipo_residencia', v)}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-[200px]">
-                                        {US_STATES.map(state => (
-                                            <SelectItem key={state.value} value={state.value}>
-                                                {state.value} - {state.label}
-                                            </SelectItem>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {TIPOS_RESIDENCIA.map(t => (
+                                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Step 3: Detalhes da Casa */}
-                {step === 3 && (
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Tipo de Residência</Label>
-                            <Select
-                                value={formData.tipo_residencia}
-                                onValueChange={v => handleChange('tipo_residencia', v)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {TIPOS_RESIDENCIA.map(t => (
-                                        <SelectItem key={t.value} value={t.value}>
-                                            {t.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label>Bedrooms</Label>
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    value={formData.bedrooms}
-                                    onChange={e => handleChange('bedrooms', e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Bathrooms</Label>
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    value={formData.bathrooms}
-                                    onChange={e => handleChange('bathrooms', e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Sq. Feet</Label>
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    value={formData.square_feet}
-                                    onChange={e => handleChange('square_feet', e.target.value)}
-                                    placeholder="1500"
-                                />
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Quartos</Label>
+                                    <Input
+                                        type="number"
+                                        value={formData.bedrooms}
+                                        onChange={e => handleChange('bedrooms', e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Banheiros</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.5"
+                                        value={formData.bathrooms}
+                                        onChange={e => handleChange('bathrooms', e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Sq. Feet</Label>
+                                    <Input
+                                        type="number"
+                                        value={formData.square_feet}
+                                        onChange={e => handleChange('square_feet', e.target.value)}
+                                        placeholder="ex: 2000"
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Step 4: Preferências de Serviço */}
-                {step === 4 && (
-                    <div className="space-y-4">
-                        {/* Frequência */}
-                        <div className="space-y-2">
-                            <Label>Frequência</Label>
-                            <Select
-                                value={formData.frequencia}
-                                onValueChange={v => {
-                                    handleChange('frequencia', v)
-                                    // Se não for semanal, limitar a um dia/serviço
-                                    if (v !== 'weekly' && formData.diasServicos.length > 1) {
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            frequencia: v,
-                                            diasServicos: prev.diasServicos.slice(0, 1)
-                                        }))
-                                    }
-                                }}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {FREQUENCIAS.map(f => (
-                                        <SelectItem key={f.value} value={f.value}>
-                                            {f.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {formData.frequencia !== 'weekly' && (
-                                <p className="text-xs text-muted-foreground">
-                                    Para frequência {formData.frequencia === 'biweekly' ? 'quinzenal' : formData.frequencia === 'monthly' ? 'mensal' : 'avulsa'},
-                                    configure apenas um dia de serviço.
-                                </p>
-                            )}
-                        </div>
+                    {/* Step 4: Serviços */}
+                    {step === 4 && (
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Frequência</Label>
+                                <Select
+                                    value={formData.frequencia}
+                                    onValueChange={v => {
+                                        handleChange('frequencia', v)
+                                        // Se mudar pra weekly ou biweekly, resetar dias?
+                                        // Não necessariamente.
+                                        // Mas se for weekly, pode ter múltiplos dias. Outros tipos geralmente 1?
+                                        // Vamos deixar flexível.
+                                        if (v !== 'weekly' && formData.diasServicos.length > 1) {
+                                            // Se não for weekly, segura apenas o primeiro dia
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                frequencia: v,
+                                                diasServicos: prev.diasServicos.slice(0, 1)
+                                            }))
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {FREQUENCIAS.map(f => (
+                                            <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        {/* Dias e Serviços */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label>Dias e Serviços</Label>
-                                {formData.frequencia === 'weekly' && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={addDiaServico}
-                                        disabled={formData.diasServicos.length >= 6}
-                                    >
-                                        <Plus className="w-4 h-4 mr-1" />
-                                        Adicionar Dia
-                                    </Button>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label>Dias e Serviços</Label>
+                                    {formData.frequencia === 'weekly' && (
+                                        <Button type="button" variant="outline" size="sm" onClick={addDiaServico}>
+                                            <Plus className="w-4 h-4 mr-1" /> Adicionar
+                                        </Button>
+                                    )}
+                                </div>
+                                {formData.diasServicos.length === 0 ? (
+                                    <div className="border border-dashed p-4 rounded text-center text-sm text-gray-500">
+                                        <p>Nenhum dia configurado.</p>
+                                        <Button type="button" variant="link" onClick={addDiaServico}>Adicionar Dia</Button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {formData.diasServicos.map((ds, index) => (
+                                            <div key={index} className="flex gap-2 items-center bg-gray-50 p-2 rounded">
+                                                <Select
+                                                    value={ds.dia}
+                                                    onValueChange={v => updateDiaServico(index, 'dia', v)}
+                                                >
+                                                    <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {DIAS_SEMANA.map(d => (
+                                                            <SelectItem key={d.value} value={d.value} disabled={isDiaUsado(d.value, index)}>{d.label}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Select
+                                                    value={ds.servico}
+                                                    onValueChange={v => updateDiaServico(index, 'servico', v)}
+                                                >
+                                                    <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {servicosDisponiveis.map(s => (
+                                                            <SelectItem key={s.codigo} value={s.codigo}>{s.nome}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                {/* Botão remover apenas se tiver mais de 1 ou se permitir remover o único */}
+                                                <Button variant="ghost" size="icon" onClick={() => removeDiaServico(index)}>
+                                                    <X className="w-4 h-4 text-red-500" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
 
-                            {formData.diasServicos.length === 0 ? (
-                                <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
-                                    <p className="text-sm text-muted-foreground mb-2">
-                                        Nenhum dia configurado
-                                    </p>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={addDiaServico}
-                                    >
-                                        <Plus className="w-4 h-4 mr-1" />
-                                        Adicionar Dia
-                                    </Button>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    {formData.diasServicos.map((ds, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg"
-                                        >
-                                            <Select
-                                                value={ds.dia}
-                                                onValueChange={v => updateDiaServico(index, 'dia', v)}
-                                            >
-                                                <SelectTrigger className="w-[130px]">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {DIAS_SEMANA.map(d => (
-                                                        <SelectItem
-                                                            key={d.value}
-                                                            value={d.value}
-                                                            disabled={isDiaUsado(d.value, index)}
-                                                        >
-                                                            {d.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-
-                                            <Select
-                                                value={ds.servico}
-                                                onValueChange={v => updateDiaServico(index, 'servico', v)}
-                                            >
-                                                <SelectTrigger className="flex-1">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {servicosDisponiveis.map(s => (
-                                                        <SelectItem key={s.codigo} value={s.codigo}>
-                                                            {s.nome}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-
-                                            {formData.frequencia === 'weekly' && formData.diasServicos.length > 1 && (
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => removeDiaServico(index)}
-                                                    className="shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Addons */}
-                        {addonsDisponiveis.length > 0 && (
                             <div className="space-y-2">
-                                <Label>Serviços Adicionais</Label>
+                                <Label>Add-ons</Label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {addonsDisponiveis.map(addon => (
                                         <div
                                             key={addon.codigo}
                                             onClick={() => toggleAddon(addon.codigo)}
-                                            className={`p-3 border rounded-lg cursor-pointer transition-all ${formData.addonsSelecionados.includes(addon.codigo)
-                                                ? 'border-[#C48B7F] bg-[#FDF8F6]'
-                                                : 'border-gray-200 hover:border-gray-300'
-                                                }`}
+                                            className={`p-2 border rounded cursor-pointer flex items-center gap-2 ${formData.addonsSelecionados.includes(addon.codigo) ? 'bg-[#FDF8F6] border-[#C48B7F]' : 'hover:bg-gray-50'}`}
                                         >
-                                            <div className="flex items-center gap-2">
-                                                <Checkbox
-                                                    checked={formData.addonsSelecionados.includes(addon.codigo)}
-                                                    onChange={() => { }}
-                                                />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium truncate">{addon.nome}</p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        +${addon.preco.toFixed(2)}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                            <Checkbox checked={formData.addonsSelecionados.includes(addon.codigo)} />
+                                            <span className="text-sm">{addon.nome} (+${addon.preco})</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                        )}
-
-                        {/* Resumo */}
-                        {(formData.diasServicos.length > 0 || formData.addonsSelecionados.length > 0) && (
-                            <div className="bg-[#FDF8F6] p-3 rounded-lg">
-                                <p className="text-xs text-muted-foreground mb-2">Resumo:</p>
-                                <div className="flex flex-wrap gap-1">
-                                    {formData.diasServicos.map((ds, index) => {
-                                        const diaLabel = DIAS_SEMANA.find(d => d.value === ds.dia)?.label
-                                        const servicoLabel = servicosDisponiveis.find(s => s.codigo === ds.servico)?.nome
-                                        return (
-                                            <Badge key={index} variant="secondary" className="text-xs">
-                                                {diaLabel}: {servicoLabel}
-                                            </Badge>
-                                        )
-                                    })}
-                                    {formData.addonsSelecionados.map(codigo => {
-                                        const addon = addonsDisponiveis.find(a => a.codigo === codigo)
-                                        return (
-                                            <Badge key={codigo} className="text-xs bg-[#C48B7F]">
-                                                +{addon?.nome}
-                                            </Badge>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Step 5: Acesso & Pets */}
-                {step === 5 && (
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Tipo de Acesso</Label>
-                            <Select
-                                value={formData.acesso_tipo}
-                                onValueChange={v => handleChange('acesso_tipo', v)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {TIPOS_ACESSO.map(t => (
-                                        <SelectItem key={t.value} value={t.value}>
-                                            {t.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                         </div>
-
-                        {formData.acesso_tipo !== 'client_home' && (
-                            <>
-                                <div className="space-y-2">
-                                    <Label>Código de Acesso</Label>
-                                    <Input
-                                        value={formData.acesso_codigo}
-                                        onChange={e => handleChange('acesso_codigo', e.target.value)}
-                                        placeholder="1234"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Instruções de Acesso</Label>
-                                    <Textarea
-                                        value={formData.acesso_instrucoes}
-                                        onChange={e => handleChange('acesso_instrucoes', e.target.value)}
-                                        placeholder="Lockbox next to the door..."
-                                        rows={2}
-                                    />
-                                </div>
-                            </>
-                        )}
-
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="tem_pets"
-                                    checked={formData.tem_pets}
-                                    onCheckedChange={(checked) => handleChange('tem_pets', !!checked)}
-                                />
-                                <Label htmlFor="tem_pets" className="cursor-pointer">Has pets?</Label>
-                            </div>
-                        </div>
-
-                        {formData.tem_pets && (
-                            <div className="space-y-2">
-                                <Label>Pet Details</Label>
-                                <Textarea
-                                    value={formData.pets_detalhes}
-                                    onChange={e => handleChange('pets_detalhes', e.target.value)}
-                                    placeholder="2 dogs, friendly..."
-                                    rows={2}
-                                />
-                            </div>
-                        )}
-
-                        <div className="space-y-2">
-                            <Label>Internal Notes</Label>
-                            <Textarea
-                                value={formData.notas_internas}
-                                onChange={e => handleChange('notas_internas', e.target.value)}
-                                placeholder="Notes about the client..."
-                                rows={3}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* Navigation Buttons */}
-                <div className="flex justify-between mt-6">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handlePrev}
-                        disabled={step === 1}
-                    >
-                        <ChevronLeft className="w-4 h-4 mr-1" />
-                        Back
-                    </Button>
-
-                    {step < STEPS.length ? (
-                        <Button
-                            type="button"
-                            onClick={handleNext}
-                            className="bg-[#C48B7F] hover:bg-[#A66D60]"
-                        >
-                            Next
-                            <ChevronRight className="w-4 h-4 ml-1" />
-                        </Button>
-                    ) : (
-                        <Button
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={isLoading}
-                            className="bg-[#C48B7F] hover:bg-[#A66D60]"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                'Create Client'
-                            )}
-                        </Button>
                     )}
+
+                    {/* Step 5: Acesso */}
+                    {step === 5 && (
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Tipo de Acesso</Label>
+                                <Select
+                                    value={formData.acesso_tipo}
+                                    onValueChange={v => handleChange('acesso_tipo', v)}
+                                >
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {TIPOS_ACESSO.map(t => (
+                                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {formData.acesso_tipo !== 'client_home' && (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label>Código</Label>
+                                        <Input
+                                            value={formData.acesso_codigo}
+                                            onChange={e => handleChange('acesso_codigo', e.target.value)}
+                                            placeholder="Ex: 1234"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Instruções</Label>
+                                        <Textarea
+                                            value={formData.acesso_instrucoes}
+                                            onChange={e => handleChange('acesso_instrucoes', e.target.value)}
+                                            placeholder="Onde encontrar a chave, etc."
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            <div className="space-y-2 pt-2 border-t">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="tem_pets"
+                                        checked={formData.tem_pets}
+                                        onCheckedChange={c => handleChange('tem_pets', !!c)}
+                                    />
+                                    <Label htmlFor="tem_pets">Possui Pets?</Label>
+                                </div>
+                            </div>
+                            {formData.tem_pets && (
+                                <div className="space-y-2">
+                                    <Label>Detalhes dos Pets</Label>
+                                    <Textarea
+                                        value={formData.pets_detalhes}
+                                        onChange={e => handleChange('pets_detalhes', e.target.value)}
+                                        placeholder="Ex: 1 cachorro grande, dócil."
+                                    />
+                                </div>
+                            )}
+                            <div className="space-y-2">
+                                <Label>Notas Internas</Label>
+                                <Textarea
+                                    value={formData.notas_internas}
+                                    onChange={e => handleChange('notas_internas', e.target.value)}
+                                    placeholder="Observações gerais sobre o cliente..."
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Footer Actions */}
+                    <div className="flex justify-between mt-8 pt-4 border-t">
+                        {step > 1 ? (
+                            <Button variant="outline" onClick={prevStep}>
+                                <ChevronLeft className="w-4 h-4 mr-2" />
+                                Anterior
+                            </Button>
+                        ) : (
+                            <div />
+                        )}
+
+                        {step < STEPS.length ? (
+                            <Button onClick={nextStep} className="bg-[#C48B7F] hover:bg-[#A66D60]">
+                                Próximo
+                                <ChevronRight className="w-4 h-4 ml-2" />
+                            </Button>
+                        ) : (
+                            <Button onClick={handleSubmit} disabled={isLoading} className="bg-[#C48B7F] hover:bg-[#A66D60]">
+                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                Finalizar Cadastro
+                            </Button>
+                        )}
+                    </div>
+
+                    {/* Stepper Indicator */}
+                    <div className="flex justify-center gap-2 mt-4">
+                        {STEPS.map(s => (
+                            <div
+                                key={s.id}
+                                className={`h-2 w-2 rounded-full ${s.id === step ? 'bg-[#C48B7F]' : (s.id < step ? 'bg-[#C48B7F]/50' : 'bg-gray-200')}`}
+                            />
+                        ))}
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
