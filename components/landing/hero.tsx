@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { MessageCircle, Star, Shield } from 'lucide-react'
+import { MessageCircle, Star, Shield, ExternalLink } from 'lucide-react'
 
 export function Hero() {
     const openChat = () => {
@@ -73,8 +73,21 @@ export function Hero() {
                             </a>
                             .
                         </p>
-                        <span className="font-medium text-foreground">4.9</span>
-                        <span>from 150+ reviews</span>
+                        <a
+                            href="https://g.page/r/YOUR-GOOGLE-BUSINESS-ID/review"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-sm text-brandy-rose-600 hover:text-brandy-rose-700 transition-colors"
+                        >
+                            <div className="flex">
+                                {[...Array(5)].map((_, i) => (
+                                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                ))}
+                            </div>
+                            <span className="font-medium text-foreground">4.9</span>
+                            <span className="text-muted-foreground">based on 150+ reviews</span>
+                            <ExternalLink className="w-3 h-3" />
+                        </a>
                     </div>
                 </div>
 

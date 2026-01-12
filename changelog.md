@@ -4,6 +4,12 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+
+## [1.3.5] - 2026-01-12
+### Alterado
+- **Landing Page (Hero)**:
+  - Uniformização do design de avaliações na Hero Section para corresponder ao formato horizontal e clicável da seção de depoimentos.
+
 ## [1.3.4] - 2025-12-22
 ### Corrigido
 - **Gestão de Mensagens**:
