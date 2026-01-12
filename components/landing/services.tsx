@@ -114,7 +114,7 @@ export function Services() {
                                     onClick={openChat}
                                     className="mt-4 gap-2 text-brandy-rose-600 hover:text-brandy-rose-700 hover:bg-brandy-rose-50 p-0 h-auto font-semibold"
                                 >
-                                    Request a quote
+                                    Schedule Visit Now
                                     <ArrowRight className="w-4 h-4" />
                                 </Button>
                             </CardContent>
@@ -134,7 +134,7 @@ export function Services() {
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white min-w-[240px] h-14 text-lg"
                     >
                         <MessageCircle className="w-5 h-5" />
-                        Request a Quote
+                        Schedule Visit Now
                     </Button>
                     <p className="mt-4 text-sm text-muted-foreground italic">Get a quote now.</p>
                 </div>

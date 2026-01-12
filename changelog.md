@@ -9,6 +9,18 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+
+
+## [1.3.11] - 2026-01-12
+### Alterado
+- **Global**:
+  - Padronização de todos os botões de CTA residuais: alteração de "Request a Quote" para "Schedule Visit Now" nos componentes `Services`, `Testimonials` e `Pricing`.
+
+## [1.3.10] - 2026-01-12
+### Alterado
+- **Landing Page (Services)**:
+  - Alteração do label do botão no card "Need a Custom Quote?" de "Request a Quote" para "Schedule Visit Now".
+
 ## [1.3.9] - 2026-01-12
 ### Alterado
 - **Landing Page (Services)**:

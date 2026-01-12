@@ -92,7 +92,7 @@ export function Testimonials() {
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
                     >
                         <MessageCircle className="w-4 h-4" />
-                        Request a Quote
+                        Schedule Visit Now
                     </Button>
                 </div>
             </div>

@@ -154,7 +154,7 @@ export function Pricing() {
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
                     >
                         <MessageCircle className="w-5 h-5" />
-                        Request a Quote
+                        Schedule Visit Now
                     </Button>
                 </div>
             </div>
