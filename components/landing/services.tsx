@@ -136,7 +136,7 @@ export function Services() {
                         <MessageCircle className="w-5 h-5" />
                         Request a Quote
                     </Button>
-                    <p className="mt-4 text-sm text-muted-foreground italic">Get a quote today.</p>
+                    <p className="mt-4 text-sm text-muted-foreground italic">Get a quote now.</p>
                 </div>
             </div>
         </section>

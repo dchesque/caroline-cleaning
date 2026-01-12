@@ -8,6 +8,12 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+
+## [1.3.9] - 2026-01-12
+### Alterado
+- **Landing Page (Services)**:
+  - Alteração de texto no bloco "Need a Custom Quote?" de "Get a quote today." para "Get a quote now."
+
 ## [1.3.8] - 2026-01-12
 ### Alterado
 - **Landing Page (Header)**:
