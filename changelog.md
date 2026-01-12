@@ -6,6 +6,20 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+
+
+## [1.3.8] - 2026-01-12
+### Alterado
+- **Landing Page (Header)**:
+  - Simplificação do bloco de contato no desktop: remoção do prefixo "Text to:" e do link extra.
+  - Atualização do texto do botão principal para "Schedule Visit Now".
+
+## [1.3.7] - 2026-01-12
+### Alterado
+- **Landing Page (Header)**:
+  - Refinamento do contato: ícone de SMS (`MessageSquare`) adicionado entre o prefixo "Text to:" e o número.
+  - Inversão das labels: o gatilho de texto agora é "Schedule Visit now" e o botão de chat é "Talk to Carol".
+
 ## [1.3.6] - 2026-01-12
 ### Alterado
 - **Landing Page (Header)**:

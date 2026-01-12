@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Phone, MessageCircle, Menu, X } from 'lucide-react'
+import { MessageSquare, MessageCircle, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function Header() {
@@ -88,16 +88,9 @@ export function Header() {
                                 href="sms:+15513897394"
                                 className="flex items-center gap-2 hover:text-brandy-rose-600 transition-colors"
                             >
-                                <Phone className="w-4 h-4 text-brandy-rose-500" />
-                                text (551) 389-7394
+                                <MessageSquare className="w-4 h-4 text-brandy-rose-500" />
+                                (551) 389-7394
                             </a>
-                            <span className="text-muted-foreground/30">—</span>
-                            <button
-                                onClick={() => window.dispatchEvent(new CustomEvent('open-chat'))}
-                                className="hover:text-brandy-rose-600 transition-colors outline-none"
-                            >
-                                Talk to Carol
-                            </button>
                         </div>
                         <Button
                             size="sm"
@@ -107,7 +100,7 @@ export function Header() {
                             }}
                         >
                             <MessageCircle className="w-4 h-4" />
-                            Schedule a Visit
+                            Schedule Visit Now
                         </Button>
                     </div>
 
