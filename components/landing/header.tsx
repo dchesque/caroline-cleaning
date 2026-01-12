@@ -83,13 +83,22 @@ export function Header() {
 
                     {/* Desktop Actions */}
                     <div className="hidden lg:flex items-center gap-6">
-                        <a
-                            href="tel:+15513897394"
-                            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-brandy-rose-600 transition-colors"
-                        >
-                            <Phone className="w-4 h-4 text-brandy-rose-500" />
-                            (551) 389-7394 — Talk to Carol
-                        </a>
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                            <a
+                                href="sms:+15513897394"
+                                className="flex items-center gap-2 hover:text-brandy-rose-600 transition-colors"
+                            >
+                                <Phone className="w-4 h-4 text-brandy-rose-500" />
+                                text (551) 389-7394
+                            </a>
+                            <span className="text-muted-foreground/30">—</span>
+                            <button
+                                onClick={() => window.dispatchEvent(new CustomEvent('open-chat'))}
+                                className="hover:text-brandy-rose-600 transition-colors outline-none"
+                            >
+                                Talk to Carol
+                            </button>
+                        </div>
                         <Button
                             size="sm"
                             className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"

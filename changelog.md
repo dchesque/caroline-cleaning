@@ -5,6 +5,14 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+
+## [1.3.6] - 2026-01-12
+### Alterado
+- **Landing Page (Header)**:
+  - Alteração do link do telefone para `sms:`.
+  - Adição do prefixo "text " ao número de telefone.
+  - Transformação do "Talk to Carol" em um gatilho para o chat.
+
 ## [1.3.5] - 2026-01-12
 ### Alterado
 - **Landing Page (Hero)**:
