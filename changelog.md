@@ -11,6 +11,12 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+
+## [1.3.12] - 2026-01-12
+### Alterado
+- **Landing Page (About Us)**:
+  - Alteração do título da seção de "Commitment to Quality & Trust" para "A Cleaning Team You Can Trust".
+
 ## [1.3.11] - 2026-01-12
 ### Alterado
 - **Global**:
