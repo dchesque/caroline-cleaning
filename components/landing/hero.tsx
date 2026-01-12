@@ -22,21 +22,20 @@ export function Hero() {
                     {/* Badge */}
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <span className="flex items-center gap-1.5 text-sm font-medium text-brandy-rose-600">
-                            Locally focused • Insured • Satisfaction guarantee
+                            Premium cleaning services in Charlotte, NC & Fort Mill, SC
                         </span>
                     </div>
 
                     {/* Headline */}
                     <h1 className="font-heading text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight text-foreground mb-6 text-balance animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                        Premium House Cleaning for
+                        Premium Cleaning for Homes &
                         <br />
-                        <span className="text-brandy-rose-500">Charlotte & Fort Mill</span>
+                        <span className="text-brandy-rose-500">Offices in Charlotte & Fort Mill</span>
                     </h1>
 
                     {/* Subheadline */}
                     <p className="text-sm sm:text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-                        Reliable residential and office cleaning with vetted professionals,
-                        flexible scheduling, and consistent results. Scheduled in minutes.
+                        Reliable residential and commercial cleaning services with carefully selected professionals, flexible scheduling, and consistent results. Schedule in just a few minutes.
                     </p>
 
                     {/* CTAs */}
@@ -47,7 +46,7 @@ export function Hero() {
                             onClick={openChat}
                         >
                             <MessageCircle className="w-5 h-5" />
-                            Chat with Carol
+                            Schedule a Visit
                         </Button>
                         <Button
                             variant="outline"
@@ -58,61 +57,52 @@ export function Hero() {
                                 if (element) element.scrollIntoView({ behavior: 'smooth' })
                             }}
                         >
-                            Explore Services
+                            Services
                         </Button>
                     </div>
 
                     {/* Microcopy com alternativa SMS */}
                     <div className="flex flex-col items-center gap-4 mb-12 animate-in fade-in duration-1000 delay-400">
                         <p className="text-sm text-muted-foreground">
-                            Get instant answers from Carol — most quotes within 5 minutes. Or{' '}
+                            Talk to Carol and schedule a visit — usually within 5 minutes. Or, if you prefer,{' '}
                             <a
                                 href="sms:+15513897394"
                                 className="text-brandy-rose-600 hover:underline font-medium"
                             >
-                                text us
+                                send us a message
                             </a>
-                            {' '}if you prefer.
+                            .
                         </p>
-
-                        {/* Reviews Badge */}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <div className="flex">
-                                {[...Array(5)].map((_, i) => (
-                                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                ))}
-                            </div>
-                            <span className="font-medium text-foreground">4.9</span>
-                            <span>from 150+ reviews</span>
-                        </div>
+                        <span className="font-medium text-foreground">4.9</span>
+                        <span>from 150+ reviews</span>
                     </div>
+                </div>
 
-                    {/* Trust Indicators */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 text-sm font-medium text-muted-foreground animate-in fade-in duration-1000 delay-500">
-                        <div className="flex items-center gap-2 justify-center sm:justify-start">
-                            <div className="p-1 rounded-full bg-success/10 text-success">
-                                <Shield className="w-4 h-4" />
-                            </div>
-                            <span>Charlotte & Fort Mill Region</span>
+                {/* Trust Indicators */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 text-sm font-medium text-muted-foreground animate-in fade-in duration-1000 delay-500">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <div className="p-1 rounded-full bg-success/10 text-success">
+                            <Shield className="w-4 h-4" />
                         </div>
-                        <div className="flex items-center gap-2 justify-center sm:justify-start">
-                            <div className="p-1 rounded-full bg-success/10 text-success">
-                                <Shield className="w-4 h-4" />
-                            </div>
-                            <span>Insured & Bonded</span>
+                        <span>Local service in Charlotte & Fort Mill</span>
+                    </div>
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <div className="p-1 rounded-full bg-success/10 text-success">
+                            <Shield className="w-4 h-4" />
                         </div>
-                        <div className="flex items-center gap-2 justify-center sm:justify-start">
-                            <div className="p-1 rounded-full bg-success/10 text-success">
-                                <Shield className="w-4 h-4" />
-                            </div>
-                            <span>Background-Checked Team</span>
+                        <span>Trusted professionals</span>
+                    </div>
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <div className="p-1 rounded-full bg-success/10 text-success">
+                            <Shield className="w-4 h-4" />
                         </div>
-                        <div className="flex items-center gap-2 justify-center sm:justify-start">
-                            <div className="p-1 rounded-full bg-success/10 text-success">
-                                <Shield className="w-4 h-4" />
-                            </div>
-                            <span>Text to Schedule Anytime</span>
+                        <span>Premium cleaning standards</span>
+                    </div>
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <div className="p-1 rounded-full bg-success/10 text-success">
+                            <Shield className="w-4 h-4" />
                         </div>
+                        <span>Fast, personalized scheduling</span>
                     </div>
                 </div>
             </div>

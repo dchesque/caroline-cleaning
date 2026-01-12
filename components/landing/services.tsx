@@ -9,40 +9,40 @@ const services = [
     {
         icon: Sparkles,
         title: 'Regular Cleaning',
-        idealFor: 'Busy households who need consistent upkeep.',
+        idealFor: 'Occupied homes that require ongoing maintenance.',
         badge: 'Most Popular',
         badgeVariant: 'default' as const,
         color: 'text-[#6B8E6B]',
         bgColor: 'bg-[#E8F0E8]',
-        features: ['Kitchen & bathrooms', 'Dusting & surfaces', 'Floors vacuumed & mopped'],
+        features: ['Kitchen cleaning (external faces)', 'Full bathroom cleaning', 'Accessible surfaces', 'Vacuuming & mopping', 'Trash removal'],
     },
     {
         icon: Sparkles,
         title: 'Deep Cleaning',
-        idealFor: 'First-time or seasonal resets needing extra detail.',
+        idealFor: 'First-time cleanings or spaces that need extra attention.',
         badge: 'Best Value',
         badgeVariant: 'secondary' as const,
         color: 'text-[#C4A35A]',
         bgColor: 'bg-[#FAF6EB]',
-        features: ['Inside appliances', 'Baseboards & blinds', 'Detailed scrubbing'],
+        features: ['Everything in Regular', 'Detailed kitchen/bath', 'Baseboard cleaning', 'Doors & handles', 'Heavy buildup removal'],
     },
     {
         icon: Home,
         title: 'Move-in/Move-out',
-        idealFor: 'Empty homes ready for new beginnings.',
+        idealFor: 'Empty homes preparing for new occupants.',
         badge: null,
         color: 'text-[#7B9EB8]',
         bgColor: 'bg-[#F0F5F8]',
-        features: ['Inside all cabinets', 'Appliance cleaning', 'Window tracks'],
+        features: ['Full room cleaning', 'Inside empty cabinets', 'Inside appliances', 'Detailed kitchen/bath', 'Window/door tracks'],
     },
     {
         icon: Building2,
         title: 'Office Cleaning',
-        idealFor: 'Professional teams who value a fresh workplace.',
+        idealFor: 'Professional environments that value cleanliness.',
         badge: null,
         color: 'text-[#9B8BB8]',
         bgColor: 'bg-[#F5F3F8]',
-        features: ['Workstation cleaning', 'Common areas', 'Trash removal'],
+        features: ['Workstations & desks', 'Common areas', 'Bathroom & kitchen', 'Vacuuming & floor cleaning', 'Trash removal'],
     },
 ]
 
@@ -60,9 +60,11 @@ export function Services() {
                         Cleaning Services
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                        From recurring upkeep to detailed deep cleans, we tailor every visit
-                        to your space — home or office.
+                        From routine care to detailed deep cleaning, each service is customized to meet the specific needs of your space.
                     </p>
+                    <div className="mt-8 font-heading text-2xl font-bold text-foreground">
+                        Most Requested Services
+                    </div>
                 </div>
 
                 {/* Services Grid */}
@@ -112,7 +114,7 @@ export function Services() {
                                     onClick={openChat}
                                     className="mt-4 gap-2 text-brandy-rose-600 hover:text-brandy-rose-700 hover:bg-brandy-rose-50 p-0 h-auto font-semibold"
                                 >
-                                    Get a Quote
+                                    Request a quote
                                     <ArrowRight className="w-4 h-4" />
                                 </Button>
                             </CardContent>
@@ -122,9 +124,9 @@ export function Services() {
 
                 {/* Help Card CTA */}
                 <div className="text-center bg-white p-10 rounded-3xl border border-pampas shadow-sm max-w-3xl mx-auto">
-                    <h3 className="text-2xl font-heading font-bold mb-3">Want a Custom Quote?</h3>
+                    <h3 className="text-2xl font-heading font-bold mb-3">Need a Custom Quote?</h3>
                     <p className="text-lg text-muted-foreground mb-8">
-                        Every home is unique. Tell us about your space and we'll help you find the perfect cleaning service at the best price.
+                        Every space is unique. Tell us about your home or business, and we’ll help you find the perfect cleaning service at the best price.
                     </p>
                     <Button
                         onClick={openChat}
@@ -132,8 +134,9 @@ export function Services() {
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white min-w-[240px] h-14 text-lg"
                     >
                         <MessageCircle className="w-5 h-5" />
-                        Get Your Custom Quote
+                        Request a Quote
                     </Button>
+                    <p className="mt-4 text-sm text-muted-foreground italic">Get a quote today.</p>
                 </div>
             </div>
         </section>

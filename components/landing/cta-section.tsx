@@ -29,7 +29,7 @@ export function CTASection() {
                         onClick={openChat}
                     >
                         <MessageCircle className="w-5 h-5" />
-                        Chat with Carol Now
+                        Request a Visit
                     </Button>
                 </div>
 

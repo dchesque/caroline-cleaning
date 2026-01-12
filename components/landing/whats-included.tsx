@@ -2,19 +2,20 @@ import { Check, Plus } from 'lucide-react'
 
 export function WhatsIncluded() {
     const standardItems = [
-        'Kitchen wipe-down & sink',
-        'Bathroom surfaces & mirrors',
-        'Dusting and wipe-down of surfaces',
-        'Floors vacuumed and mopped',
-        'Trash removal (as requested)',
+        'Kitchen cleaning (sinks and external surfaces)',
+        'Bathroom cleaning (sinks, toilets, mirrors, and surfaces)',
+        'Cleaning of accessible surfaces',
+        'Vacuuming of floors and carpets',
+        'Floor cleaning (when applicable)',
+        'Trash removal (upon request)',
     ]
 
     const optionalItems = [
-        'Inside fridge / oven',
-        'Inside cabinets (empty)',
-        'Windows (interior)',
-        'Extra attention areas',
-        'Office: after-hours scheduling',
+        'Interior oven or refrigerator cleaning',
+        'Interior cleaning of empty cabinets',
+        'Interior window cleaning',
+        'Areas requiring extra attention',
+        'Office cleaning outside business hours',
     ]
 
     return (
@@ -22,11 +23,10 @@ export function WhatsIncluded() {
             <div className="container">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="font-heading text-3xl md:text-5xl font-bold text-foreground mb-6">
-                        What's Included in Your Clean
+                        What’s Included in Every Cleaning
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                        We maintain a high standard for every visit. We'll confirm your exact
-                        checklist by text before your appointment.
+                        We follow a consistent cleaning standard for every visit. Final details are always confirmed by message before the service.
                     </p>
                 </div>
 
@@ -38,7 +38,7 @@ export function WhatsIncluded() {
                                 <Check className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl md:text-2xl font-bold text-foreground">
-                                Standard in Every Visit
+                                Included in Every Cleaning
                             </h3>
                         </div>
                         <ul className="space-y-4">
@@ -58,7 +58,7 @@ export function WhatsIncluded() {
                                 <Plus className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl md:text-2xl font-bold text-foreground">
-                                Optional Add-Ons
+                                Additional Services (Extras)
                             </h3>
                         </div>
                         <ul className="space-y-4">

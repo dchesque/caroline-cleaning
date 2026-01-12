@@ -3,23 +3,23 @@ import { Shield, UserCheck, Sparkles, Clock } from 'lucide-react'
 const badges = [
     {
         icon: Shield,
-        title: 'Fully Bonded & Insured',
-        description: 'Complete protection for your home',
+        title: 'Local company',
+        description: 'Serving Charlotte & Fort Mill with pride',
     },
     {
         icon: UserCheck,
-        title: 'Background-Checked',
-        description: 'Verified through national databases',
+        title: 'Verified professionals',
+        description: 'Trusted and background-checked team',
     },
     {
         icon: Sparkles,
-        title: '100% Satisfaction Guarantee',
-        description: 'Not happy? We\'ll re-clean for free',
+        title: 'Premium standards',
+        description: 'Consistent high-quality cleaning',
     },
     {
         icon: Clock,
-        title: 'No Contracts Ever',
-        description: 'Cancel or pause anytime',
+        title: 'Flexible scheduling',
+        description: 'No contracts, pause anytime',
     },
 ]
 

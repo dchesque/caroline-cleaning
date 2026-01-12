@@ -5,11 +5,10 @@ import Image from 'next/image'
 import { CheckCircle2 } from 'lucide-react'
 
 const highlights = [
-    'Residential & office cleaning',
-    'Fully bonded & insured for peace of mind',
-    'Background-checked, professional team',
-    '100% Satisfaction guarantee',
-    'We remember your preferences — no repeating yourself',
+    'Experienced professionals',
+    'Well-defined processes',
+    'Commitment to excellence',
+    'Freedom to pause or cancel anytime',
 ]
 
 export function AboutUs() {
@@ -19,7 +18,7 @@ export function AboutUs() {
                 {/* Section Header */}
                 <div className="text-center mb-12 md:mb-16">
                     <h2 className="font-heading text-3xl md:text-5xl font-bold text-foreground mb-4">
-                        A Cleaning Team You Can Trust
+                        Commitment to Quality & Trust
                     </h2>
                 </div>
 
@@ -63,27 +62,19 @@ export function AboutUs() {
                         {/* Company Intro */}
                         <div className="space-y-6 text-muted-foreground mb-10">
                             <p className="text-lg text-foreground font-medium">
-                                We're a locally focused cleaning company serving Charlotte, NC,
-                                Fort Mill, SC, and nearby cities.
+                                Every cleaning follows a rigorous quality standard with close attention to detail.
                             </p>
                             <p>
-                                Our goal is simple: consistent, high-quality cleaning you can rely on
-                                — with scheduling that's easy and stress-free. Whether it's your home
-                                or your office, we treat every space with professional care.
-                            </p>
-                            <p>
-                                Once you're a client, we keep track of your preferences, special requests,
-                                and home details — so you never have to explain everything again.
+                                If anything does not meet your expectations, we will make the necessary adjustments.
                             </p>
                             <p className="p-4 bg-brandy-rose-50 rounded-2xl border border-brandy-rose-100 text-brandy-rose-700 text-sm">
-                                <strong>Note:</strong> Carol is our virtual assistant — she helps you
-                                schedule fast by text and ensures you get the right service for your needs.
+                                <strong>Note:</strong> We proudly serve Charlotte, NC & Fort Mill, SC with a local focus and personalized service. Once you become a client, we keep your preferences on file to ensure consistency at every visit.
                             </p>
                         </div>
 
                         {/* Quote */}
                         <blockquote className="relative mb-10 pl-6 border-l-4 border-brandy-rose-300 italic text-xl text-foreground leading-relaxed">
-                            &quot;Consistent quality and easy scheduling &mdash; that&apos;s our commitment to the Charlotte &amp; Fort Mill community.&quot;
+                            &quot;Our goal is simple: deliver high-quality cleaning with trust and no complications.&quot;
                         </blockquote>
 
                         {/* Highlights */}

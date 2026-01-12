@@ -6,24 +6,24 @@ import { Button } from '@/components/ui/button'
 
 const testimonials = [
     {
-        name: 'Sarah M.',
-        role: 'Charlotte, NC',
+        name: 'Client Feedback',
+        role: 'Verified Review',
         image: null,
-        content: "I was nervous about strangers in my home, but their background-checked team put me at ease. Three months in and I couldn't be happier.",
+        content: "At first, I was hesitant to hire a cleaning service, but the experience was great. Three months in, and I’m still extremely satisfied.",
         rating: 5,
     },
     {
-        name: 'James R.',
-        role: 'Fort Mill, SC',
+        name: 'Client Feedback',
+        role: 'Verified Review',
         image: null,
-        content: "Finally, a cleaning service that doesn't require phone calls! I booked everything through text in about 10 minutes. The deep clean was incredible.",
+        content: "Everything was handled by message — fast, simple, and very convenient.",
         rating: 5,
     },
     {
-        name: 'Emily C.',
-        role: 'Charlotte, NC',
+        name: 'Client Feedback',
+        role: 'Verified Review',
         image: null,
-        content: "Love that there's no contract. I paused service for a month when we traveled, then picked right back up. No hassle at all.",
+        content: "I love the flexibility. I paused service during a trip and restarted without any issues. Excellent flexibility. No contracts and no hassle.",
         rating: 5,
     },
 ]
@@ -35,7 +35,7 @@ export function Testimonials() {
                 {/* Section Header */}
                 <div className="text-center max-w-2xl mx-auto mb-16">
                     <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-4">
-                        What Customers Say
+                        What Our Clients Say
                     </h2>
                     <p className="text-lg text-muted-foreground mb-4">
                         Real feedback from clients in Charlotte, NC & Fort Mill, SC.
@@ -51,7 +51,7 @@ export function Testimonials() {
                                 <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                             ))}
                         </div>
-                        <span className="font-medium">4.9 from 150+ reviews on Google</span>
+                        <span className="font-medium">Average rating 4.9 based on 150+ reviews</span>
                         <ExternalLink className="w-3 h-3" />
                     </a>
                 </div>
@@ -92,7 +92,7 @@ export function Testimonials() {
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
                     >
                         <MessageCircle className="w-4 h-4" />
-                        Chat with Carol
+                        Request a Quote
                     </Button>
                 </div>
             </div>

@@ -7,20 +7,20 @@ const steps = [
     {
         number: '01',
         icon: MessageCircle,
-        title: 'Chat with Carol',
-        description: 'Share your space details and what you need. Most quotes are ready within 5 minutes.',
+        title: 'Talk to Carol',
+        description: 'Send details about your space and the service you need. Most visits are scheduled quickly.',
     },
     {
         number: '02',
         icon: CalendarCheck,
-        title: 'Choose Your Time',
-        description: 'Pick a day and time that fits your schedule — we\'ll confirm the visit.',
+        title: 'Choose the Best Time',
+        description: 'Select the day and time that work best for you. We confirm everything by message.',
     },
     {
         number: '03',
         icon: Sparkles,
-        title: 'Enjoy the Clean',
-        description: 'Walk into a fresh space. If anything\'s missed, we\'ll make it right.',
+        title: 'Enjoy the Cleaning',
+        description: 'Enjoy a clean, organized space. If anything isn’t as expected, we’ll adjust it at no extra cost.',
     },
 ]
 
@@ -35,11 +35,10 @@ export function HowItWorks() {
                 {/* Section Header */}
                 <div className="text-center max-w-2xl mx-auto mb-16">
                     <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-4">
-                        How It Works
+                        How Scheduling Works
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                        Getting your home cleaned has never been easier.
-                        Three simple steps to a spotless space.
+                        Keeping your space clean has never been easier.
                     </p>
                 </div>
 
@@ -75,7 +74,7 @@ export function HowItWorks() {
                 <div className="text-center">
                     <Button size="lg" onClick={openChat} className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white">
                         <MessageCircle className="w-4 h-4" />
-                        Chat with Carol
+                        Request a Visit
                     </Button>
                 </div>
             </div>

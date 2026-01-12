@@ -84,11 +84,11 @@ export function Header() {
                     {/* Desktop Actions */}
                     <div className="hidden lg:flex items-center gap-6">
                         <a
-                            href="sms:+15513897394"
+                            href="tel:+15513897394"
                             className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-brandy-rose-600 transition-colors"
                         >
-                            <MessageCircle className="w-4 h-4 text-brandy-rose-500" />
-                            (551) 389-7394
+                            <Phone className="w-4 h-4 text-brandy-rose-500" />
+                            (551) 389-7394 — Talk to Carol
                         </a>
                         <Button
                             size="sm"
@@ -98,7 +98,7 @@ export function Header() {
                             }}
                         >
                             <MessageCircle className="w-4 h-4" />
-                            Chat with Carol
+                            Schedule a Visit
                         </Button>
                     </div>
 
