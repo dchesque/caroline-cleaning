@@ -13,6 +13,10 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+## [1.9.2] - 2026-01-14
+### Corrigido
+- **API (Financeiro)**: Correção de erro de build no Next.js 15 ao tratar parâmetros de rota dinâmica (`params`) como Promise assíncrona no endpoint de categorias financeiras.
+
 ## [1.9.1] - 2026-01-14
 ### Adicionado
 - **Admin (Trackeamento)**:
