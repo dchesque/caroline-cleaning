@@ -5,8 +5,10 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { MessageSquare, MessageCircle, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useBusinessSettings } from '@/lib/context/business-settings-context'
 
 export function Header() {
+    const settings = useBusinessSettings()
     const [isScrolled, setIsScrolled] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -37,14 +39,37 @@ export function Header() {
         >
             <div className="container">
                 <div className="flex items-center justify-between h-16 md:h-20">
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2">
-                        <span className="font-heading text-xl md:text-2xl font-semibold text-brandy-rose-600">
-                            Caroline
-                        </span>
-                        <span className="hidden sm:inline font-heading text-xl md:text-2xl text-foreground">
+                    {/* Desktop Logo */}
+                    <Link href="/" className="hidden lg:flex items-center gap-2">
+                        {settings.business_logo ? (
+                            <img
+                                src={settings.business_logo}
+                                alt={settings.business_name}
+                                className="h-8 w-auto object-contain"
+                            />
+                        ) : (
+                            <span className="font-heading text-xl md:text-2xl font-semibold text-brandy-rose-600">
+                                {settings.business_name}
+                            </span>
+                        )}
+                        {/* <span className="hidden sm:inline font-heading text-xl md:text-2xl text-foreground">
                             Premium Cleaning
-                        </span>
+                        </span> */}
+                    </Link>
+
+                    {/* Mobile Logo */}
+                    <Link href="/" className="lg:hidden flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                        {settings.business_logo ? (
+                            <img
+                                src={settings.business_logo}
+                                alt={settings.business_name}
+                                className="h-8 w-auto object-contain"
+                            />
+                        ) : (
+                            <span className="font-heading text-xl font-semibold text-brandy-rose-600">
+                                {settings.business_name}
+                            </span>
+                        )}
                     </Link>
 
                     {/* Desktop Navigation */}
@@ -85,11 +110,11 @@ export function Header() {
                     <div className="hidden lg:flex items-center gap-6">
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                             <a
-                                href="sms:+15513897394"
+                                href={`sms:${settings.business_phone}`}
                                 className="flex items-center gap-2 hover:text-brandy-rose-600 transition-colors"
                             >
                                 <MessageSquare className="w-4 h-4 text-brandy-rose-500" />
-                                (551) 389-7394
+                                {settings.business_phone_display}
                             </a>
                         </div>
                         <Button
@@ -100,7 +125,7 @@ export function Header() {
                             }}
                         >
                             <MessageCircle className="w-4 h-4" />
-                            Schedule Visit Now
+                            {settings.hero_cta_text}
                         </Button>
                     </div>
 
@@ -159,7 +184,7 @@ export function Header() {
                                 }}
                             >
                                 <MessageCircle className="w-4 h-4" />
-                                Chat with Carol
+                                Chat with {settings.chat_bot_name}
                             </Button>
                         </nav>
                     </div>

@@ -1,13 +1,14 @@
 import Link from 'next/link'
-import { Facebook, Instagram, Twitter, Phone, Mail, MapPin, MessageCircle } from 'lucide-react'
+import { Facebook, Instagram, Twitter, MapPin, Phone, Mail, Clock, MessageCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
-async function getConfig() {
+import { getBusinessSettingsServer } from '@/lib/business-config-server'
+import { Button } from '@/components/ui/button'
+
+async function getFooterData() {
     const supabase = await createClient()
 
-    const { data: config } = await supabase
-        .from('configuracoes')
-        .select('chave, valor')
+    const settings = await getBusinessSettingsServer()
 
     const { data: areas } = await supabase
         .from('areas_atendidas')
@@ -16,13 +17,13 @@ async function getConfig() {
         .order('nome')
 
     return {
-        config: config?.reduce((acc, c) => ({ ...acc, [c.chave]: c.valor }), {} as Record<string, string>) || {},
+        config: settings,
         areas: areas || []
     }
 }
 
 export async function Footer() {
-    const { config, areas } = await getConfig()
+    const { config, areas } = await getFooterData()
 
     return (
         <footer className="bg-foreground text-brandy-rose-100 py-12 md:py-16">

@@ -3,7 +3,11 @@
 import { Button } from '@/components/ui/button'
 import { MessageCircle } from 'lucide-react'
 
+import { useBusinessSettings } from '@/lib/context/business-settings-context'
+
 export function CTASection() {
+    const settings = useBusinessSettings()
+
     const openChat = () => {
         window.dispatchEvent(new CustomEvent('open-chat'))
     }
@@ -35,10 +39,10 @@ export function CTASection() {
                 <p className="text-sm text-brandy-rose-200 mt-4">
                     Prefer texting?{' '}
                     <a
-                        href="sms:+15513897394"
+                        href={`sms:${settings.business_phone}`}
                         className="text-white hover:underline font-medium"
                     >
-                        Text us at (551) 389-7394
+                        Text us at {settings.business_phone_display}
                     </a>
                 </p>
             </div>

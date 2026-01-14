@@ -12,6 +12,25 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+## [1.8.0] - 2026-01-14
+### Adicionado
+- **Admin (Configurações)**:
+  - Novo sistema de navegação da página de configurações com abas ("Empresa", "Horários", "Áreas", "Pricing", "Notificações", "Agendamento").
+  - Funcionalidade de **Banner de Anúncio** editável na aba "Empresa".
+  - Upload e remoção de logo da empresa.
+  - Abas "Áreas" e "Pricing" integradas diretamente na página de configurações para melhor experiência.
+
+### Modificado
+- **Admin (Configurações)**:
+  - Remoção da seção "Quick Links" e do card "Equipe" para simplificar a interface.
+  - Atualização visual dos cards de configuração com novos ícones e layouts.
+  - Limpeza de dependências e imports não utilizados no código (`lucide-react`, wrappers de servidor).
+
+### Corrigido
+- **Admin (Configurações)**:
+  - Correção de erro de execução (_runtime error_) ao usar hooks de cliente em componentes renderizados no servidor (`announcement-bar`).
+  - Resolução de erros de linting (tipos implícitos `any`) e imports quebrados.
+
 ## [1.7.1] - 2026-01-14
 ### Corrigido
 - **Admin (Dashboard)**: Adicionada diretiva `'use client'` que causava erro de execução ao usar hooks de internacionalização no servidor.

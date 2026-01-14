@@ -1,7 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Bell, AlertTriangle, CheckCircle } from 'lucide-react'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 export function AlertsPanel() {
+    const { t } = useAdminI18n()
+    const dashboardT = t('dashboard')
     // Placeholder mock alerts
     const alerts = [
         { title: 'Payment Overdue', message: 'Client #1024 has pending invoices', type: 'warning' },
@@ -13,7 +16,7 @@ export function AlertsPanel() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Bell className="w-5 h-5" />
-                    Alertas
+                    {dashboardT.alerts.title}
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -29,7 +32,7 @@ export function AlertsPanel() {
                             </div>
                         </div>
                     ))}
-                    {alerts.length === 0 && <p className="text-sm text-muted-foreground">Sem novos alertas.</p>}
+                    {alerts.length === 0 && <p className="text-sm text-muted-foreground">{dashboardT.alerts.empty}</p>}
                 </div>
             </CardContent>
         </Card>

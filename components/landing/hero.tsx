@@ -2,8 +2,11 @@
 
 import { Button } from '@/components/ui/button'
 import { MessageCircle, Star, Shield, ExternalLink } from 'lucide-react'
+import { useBusinessSettings } from '@/lib/context/business-settings-context'
 
 export function Hero() {
+    const settings = useBusinessSettings()
+
     const openChat = () => {
         window.dispatchEvent(new CustomEvent('open-chat'))
     }
@@ -27,15 +30,16 @@ export function Hero() {
                     </div>
 
                     {/* Headline */}
+                    {/* Headline */}
                     <h1 className="font-heading text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight text-foreground mb-6 text-balance animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                        Premium Cleaning for Homes &
+                        {settings.hero_title_1}
                         <br />
-                        <span className="text-brandy-rose-500">Offices in Charlotte & Fort Mill</span>
+                        <span className="text-brandy-rose-500">{settings.hero_title_2}</span>
                     </h1>
 
                     {/* Subheadline */}
                     <p className="text-sm sm:text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-                        Reliable residential and commercial cleaning services with carefully selected professionals, flexible scheduling, and consistent results. Schedule in just a few minutes.
+                        {settings.hero_subtitle}
                     </p>
 
                     {/* CTAs */}
@@ -46,7 +50,7 @@ export function Hero() {
                             onClick={openChat}
                         >
                             <MessageCircle className="w-5 h-5" />
-                            Schedule a Visit
+                            {settings.hero_cta_text}
                         </Button>
                         <Button
                             variant="outline"
@@ -64,9 +68,9 @@ export function Hero() {
                     {/* Microcopy com alternativa SMS */}
                     <div className="flex flex-col items-center gap-4 mb-12 animate-in fade-in duration-1000 delay-400">
                         <p className="text-sm text-muted-foreground">
-                            Talk to Carol and schedule a visit — usually within 5 minutes. Or, if you prefer,{' '}
+                            Talk to {settings.chat_bot_name} and schedule a visit — usually within 5 minutes. Or, if you prefer,{' '}
                             <a
-                                href="sms:+15513897394"
+                                href={`sms:${settings.business_phone}`}
                                 className="text-brandy-rose-600 hover:underline font-medium"
                             >
                                 send us a message

@@ -1,32 +1,51 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { startOfDay, endOfDay } from 'date-fns'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Clock } from 'lucide-react'
+import { MapPin, Clock, Loader2 } from 'lucide-react'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
-export async function TodaySchedule() {
-    const supabase = await createClient()
-    const today = new Date()
+export function TodaySchedule() {
+    const { t } = useAdminI18n()
+    const dashboardT = t('dashboard')
+    const [isLoading, setIsLoading] = useState(true)
+    const [appointments, setAppointments] = useState<any[]>([])
+    const supabase = createClient()
 
-    const { data: appointments } = await supabase
-        .from('agendamentos')
-        .select(`
-        *,
-        cliente:clientes(nome, endereco_completo)
-    `)
-        .gte('data', startOfDay(today).toISOString())
-        .lte('data', endOfDay(today).toISOString())
-        .order('data', { ascending: true })
+    useEffect(() => {
+        async function fetchAppointments() {
+            const today = new Date()
+            const { data } = await supabase
+                .from('agendamentos')
+                .select(`
+                    *,
+                    cliente:clientes(nome, endereco_completo)
+                `)
+                .gte('data', startOfDay(today).toISOString())
+                .lte('data', endOfDay(today).toISOString())
+                .order('data', { ascending: true })
+
+            setAppointments(data || [])
+            setIsLoading(false)
+        }
+        fetchAppointments()
+    }, [])
 
     return (
         <Card className="h-full border-none shadow-sm">
             <CardHeader>
-                <CardTitle>Agenda de Hoje</CardTitle>
+                <CardTitle>{dashboardT.todaySchedule.title}</CardTitle>
             </CardHeader>
             <CardContent>
-                {!appointments?.length ? (
-                    <p className="text-muted-foreground text-sm">Nenhum agendamento para hoje.</p>
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-brandy-rose-600" />
+                    </div>
+                ) : !appointments?.length ? (
+                    <p className="text-muted-foreground text-sm">{dashboardT.todaySchedule.empty}</p>
                 ) : (
                     <div className="space-y-4">
                         {appointments.map((appointment: any) => (
@@ -38,13 +57,13 @@ export async function TodaySchedule() {
                                         </span>
                                     </div>
                                     <div className="min-w-0">
-                                        <h4 className="font-medium text-foreground truncate">{appointment.cliente?.nome || 'Cliente Desconhecido'}</h4>
+                                        <h4 className="font-medium text-foreground truncate">{appointment.cliente?.nome || dashboardT.todaySchedule.unknownClient}</h4>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                             <Clock className="w-3 h-3 shrink-0" />
                                             <span>{appointment.duracao_estimada || 2}h</span>
                                             <span className="text-xs">•</span>
                                             <MapPin className="w-3 h-3 shrink-0" />
-                                            <span className="truncate max-w-[150px]">{appointment.cliente?.endereco_completo || 'Endereço não informado'}</span>
+                                            <span className="truncate max-w-[150px]">{appointment.cliente?.endereco_completo || dashboardT.todaySchedule.addressNotProvided}</span>
                                         </div>
                                     </div>
                                 </div>

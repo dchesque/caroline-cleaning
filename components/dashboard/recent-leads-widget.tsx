@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button'
 import { UserPlus, Phone } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 export function RecentLeadsWidget() {
+    const { t } = useAdminI18n()
+    const dashboardT = t('dashboard')
     const [leads, setLeads] = useState<any[]>([])
     const [stats, setStats] = useState<any>(null)
     const supabase = createClient()
@@ -39,18 +42,18 @@ export function RecentLeadsWidget() {
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                     <UserPlus className="w-5 h-5 text-brandy-rose-500" />
-                    Leads Recentes
+                    {dashboardT.recentLeads.title}
                 </CardTitle>
                 {stats?.novos > 0 && (
                     <Badge className="bg-blue-100 text-blue-800">
-                        {stats.novos} novos
+                        {stats.novos} {dashboardT.recentLeads.newBadge}
                     </Badge>
                 )}
             </CardHeader>
             <CardContent>
                 {leads.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                        Nenhum lead novo
+                        {dashboardT.recentLeads.empty}
                     </p>
                 ) : (
                     <div className="space-y-3">
@@ -72,7 +75,7 @@ export function RecentLeadsWidget() {
                 )}
                 <Link href="/admin/leads" className="block mt-4">
                     <Button variant="outline" size="sm" className="w-full">
-                        Ver todos os leads
+                        {dashboardT.recentLeads.viewAll}
                     </Button>
                 </Link>
             </CardContent>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,62 +11,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import {
     Building2,
-    MapPin,
-    Briefcase,
-    Users,
     Save,
     Loader2,
     Phone,
-    Mail,
-    Globe,
-    DollarSign,
-    Package
+    Laptop,
+    Share2,
+    MessageSquareMore,
+    Trash2
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { AreasTab } from '@/components/admin/config/areas-tab'
+import { PricingTab } from '@/components/admin/config/pricing-tab'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
+import { getBusinessSettingsClient, saveBusinessSettings, DEFAULT_SETTINGS } from '@/lib/business-config'
 
 export default function ConfiguracoesPage() {
     const { t } = useAdminI18n()
     const settingsT = t('settings')
     const common = t('common')
     const [isLoading, setIsLoading] = useState(false)
-    const [config, setConfig] = useState({
-        // Business Info
-        business_name: 'Caroline Premium Cleaning',
-        business_phone: '(551) 389-7394',
-        business_email: 'hello@carolinecleaning.com',
-        business_address: '123 Ocean Drive, Miami, FL 33139',
-        business_website: 'www.carolinecleaning.com',
-
-        // Operating Hours
-        operating_start: '08:00',
-        operating_end: '18:00',
-        operating_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
-
-        // Notifications
-        notify_new_booking: true,
-        notify_cancellation: true,
-        notify_reminder: true,
-        reminder_hours: 24,
-
-        // Booking Settings
-        min_booking_notice: 24,
-        max_booking_advance: 30,
-        default_duration: 180,
-    })
+    const [isUploading, setIsUploading] = useState(false)
+    const [config, setConfig] = useState<any>(DEFAULT_SETTINGS)
 
     const supabase = createClient()
 
     useEffect(() => {
         // Load config from database
         const loadConfig = async () => {
-            const { data } = await supabase
-                .from('configuracoes')
-                .select('*')
-                .single()
-
-            if (data) {
-                setConfig(prev => ({ ...prev, ...data.settings }))
+            const settings = await getBusinessSettingsClient()
+            if (settings) {
+                setConfig(settings)
             }
         }
         loadConfig()
@@ -76,21 +49,43 @@ export default function ConfiguracoesPage() {
     const handleSave = async () => {
         setIsLoading(true)
         try {
-            const { error } = await supabase
-                .from('configuracoes')
-                .upsert({
-                    id: 1,
-                    settings: config,
-                    updated_at: new Date().toISOString()
-                })
-
-            if (error) throw error
+            await saveBusinessSettings(config)
             toast.success(common.save)
         } catch (error) {
             console.error('Error saving config:', error)
             toast.error(common.error)
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setIsUploading(true)
+        try {
+            const fileExt = file.name.split('.').pop()
+            const fileName = `logo-${Math.random()}.${fileExt}`
+            const filePath = `${fileName}`
+
+            const { error: uploadError } = await supabase.storage
+                .from('company-assets')
+                .upload(filePath, file)
+
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('company-assets')
+                .getPublicUrl(filePath)
+
+            setConfig((prev: any) => ({ ...prev, business_logo: publicUrl }))
+            toast.success('Logo uploaded successfully')
+        } catch (error) {
+            console.error('Error uploading logo:', error)
+            toast.error('Error uploading logo')
+        } finally {
+            setIsUploading(false)
         }
     }
 
@@ -118,134 +113,270 @@ export default function ConfiguracoesPage() {
                 <TabsList className="w-full justify-start overflow-x-auto">
                     <TabsTrigger value="empresa">{settingsT.tabs.company}</TabsTrigger>
                     <TabsTrigger value="horarios">{settingsT.tabs.hours}</TabsTrigger>
+                    <TabsTrigger value="areas">{settingsT.company.areas}</TabsTrigger>
+                    <TabsTrigger value="pricing">{settingsT.company.pricing}</TabsTrigger>
                     <TabsTrigger value="notificacoes">{settingsT.tabs.notifications}</TabsTrigger>
                     <TabsTrigger value="agendamento">{settingsT.tabs.booking}</TabsTrigger>
                 </TabsList>
 
                 {/* Company Info */}
-                <TabsContent value="empresa">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Building2 className="w-5 h-5" />
-                                {settingsT.company.title}
-                            </CardTitle>
-                            <CardDescription>
-                                {settingsT.company.description}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid sm:grid-cols-2 gap-4">
+                <TabsContent value="empresa" className="space-y-6">
+                    <div className="grid lg:grid-cols-2 gap-6">
+                        {/* Identidade e Contato */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Building2 className="w-5 h-5 text-brandy-rose-600" />
+                                    {settingsT.company.title}
+                                </CardTitle>
+                                <CardDescription>
+                                    {settingsT.company.description}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>{settingsT.company.name}</Label>
                                     <Input
+                                        className="bg-white border-input shadow-sm"
                                         value={config.business_name}
                                         onChange={(e) => setConfig({ ...config, business_name: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>{settingsT.company.phone}</Label>
-                                    <Input
-                                        value={config.business_phone}
-                                        onChange={(e) => setConfig({ ...config, business_phone: e.target.value })}
-                                    />
+                                    <Label>{settingsT.company.logo}</Label>
+                                    <div className="flex gap-4 items-start">
+                                        <div className="flex-1 space-y-2">
+                                            <Input
+                                                type="file"
+                                                accept="image/*"
+                                                className="bg-white border-input shadow-sm cursor-pointer"
+                                                onChange={handleLogoUpload}
+                                                disabled={isUploading}
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                {settingsT.company.logoDimensions}
+                                            </p>
+                                        </div>
+                                        {isUploading ? (
+                                            <div className="w-20 h-10 flex items-center justify-center border border-pampas rounded bg-white">
+                                                <Loader2 className="w-5 h-5 animate-spin text-brandy-rose-500" />
+                                            </div>
+                                        ) : config.business_logo ? (
+                                            <div className="relative group">
+                                                <div className="w-20 h-10 relative rounded border border-pampas overflow-hidden shrink-0 bg-white">
+                                                    <img
+                                                        src={config.business_logo}
+                                                        alt="Logo Preview"
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={() => setConfig({ ...config, business_logo: '' })}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                                    title={settingsT.company?.removeLogo || "Remove Logo"}
+                                                    type="button"
+                                                >
+                                                    <Trash2 className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ) : null}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company.phone} (WhatsApp/SMS)</Label>
+                                        <Input
+                                            className="bg-white border-input shadow-sm"
+                                            value={config.business_phone}
+                                            onChange={(e) => setConfig({ ...config, business_phone: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company.phoneDisplay}</Label>
+                                        <Input
+                                            className="bg-white border-input shadow-sm"
+                                            value={config.business_phone_display}
+                                            onChange={(e) => setConfig({ ...config, business_phone_display: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company.email}</Label>
+                                        <Input
+                                            className="bg-white border-input shadow-sm"
+                                            type="email"
+                                            value={config.business_email}
+                                            onChange={(e) => setConfig({ ...config, business_email: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company.website}</Label>
+                                        <Input
+                                            className="bg-white border-input shadow-sm"
+                                            value={config.business_website}
+                                            onChange={(e) => setConfig({ ...config, business_website: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
                                 <div className="space-y-2">
-                                    <Label>{settingsT.company.email}</Label>
+                                    <Label>{settingsT.company.address}</Label>
                                     <Input
-                                        type="email"
-                                        value={config.business_email}
-                                        onChange={(e) => setConfig({ ...config, business_email: e.target.value })}
+                                        className="bg-white border-input shadow-sm"
+                                        value={config.business_address}
+                                        onChange={(e) => setConfig({ ...config, business_address: e.target.value })}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>{settingsT.company.website}</Label>
-                                    <Input
-                                        value={config.business_website}
-                                        onChange={(e) => setConfig({ ...config, business_website: e.target.value })}
-                                    />
+                                <div className="pt-4 border-t border-pampas">
+                                    <div className="space-y-2">
+                                        <Label className="flex items-center gap-2">
+                                            <MessageSquareMore className="w-4 h-4 text-brandy-rose-500" />
+                                            {settingsT.company.botName}
+                                        </Label>
+                                        <Input
+                                            className="bg-white border-input shadow-sm"
+                                            value={config.chat_bot_name}
+                                            onChange={(e) => setConfig({ ...config, chat_bot_name: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>{settingsT.company.address}</Label>
-                                <Input
-                                    value={config.business_address}
-                                    onChange={(e) => setConfig({ ...config, business_address: e.target.value })}
-                                />
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
 
-                    {/* Quick Links */}
-                    <div className="grid sm:grid-cols-3 gap-4 mt-6">
+                        <div className="space-y-6">
+                            {/* Hero & Announcement */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Laptop className="w-5 h-5 text-brandy-rose-600" />
+                                        Hero & Announcement
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Customization of the top bar and hero section
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company?.announcement}</Label>
+                                        <Input
+                                            className="bg-white border-input shadow-sm"
+                                            value={config.announcement_text}
+                                            onChange={(e) => setConfig({ ...config, announcement_text: e.target.value })}
+                                            placeholder="Serving Charlotte, NC..."
+                                        />
+                                        <p className="text-xs text-muted-foreground">{settingsT.company?.announcementDesc}</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company.heroTitle1}</Label>
+                                        <Input
+                                            className="bg-white border-input shadow-sm"
+                                            value={config.hero_title_1}
+                                            onChange={(e) => setConfig({ ...config, hero_title_1: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company.heroTitle2}</Label>
+                                        <Input
+                                            className="bg-white border-input shadow-sm"
+                                            value={config.hero_title_2}
+                                            onChange={(e) => setConfig({ ...config, hero_title_2: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company.heroSubtitle}</Label>
+                                        <Textarea
+                                            className="bg-white border-input shadow-sm resize-none rounded-lg border-pampas-300 focus:border-brandy-rose-500 focus:ring-brandy-rose-500 min-h-[100px]"
+                                            value={config.hero_subtitle}
+                                            onChange={(e) => setConfig({ ...config, hero_subtitle: e.target.value })}
+                                            rows={3}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company.heroCta}</Label>
+                                        <Input
+                                            className="bg-white border-input shadow-sm"
+                                            value={config.hero_cta_text}
+                                            onChange={(e) => setConfig({ ...config, hero_cta_text: e.target.value })}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
 
-
-                        <Card className="hover:shadow-md transition-shadow">
-                            <Link href="/admin/configuracoes/addons">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-brandy-rose-100 rounded-lg">
-                                            <Package className="w-5 h-5 text-brandy-rose-600" />
+                            {/* Rodapé e Redes Sociais */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Share2 className="w-5 h-5 text-brandy-rose-600" />
+                                        {settingsT.company.socialFacebook.split(' ')[0]}
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Configure as informações do rodapé e redes sociais
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>{settingsT.company.footerDescription}</Label>
+                                        <Textarea
+                                            className="bg-white border-input shadow-sm resize-none rounded-lg border-pampas-300 focus:border-brandy-rose-500 focus:ring-brandy-rose-500 min-h-[80px]"
+                                            value={config.business_description}
+                                            onChange={(e) => setConfig({ ...config, business_description: e.target.value })}
+                                            rows={3}
+                                        />
+                                    </div>
+                                    <div className="grid gap-3">
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">{settingsT.company.socialFacebook}</Label>
+                                            <Input
+                                                className="h-8 text-xs bg-white border-input shadow-sm"
+                                                size={1}
+                                                value={config.social_facebook}
+                                                onChange={(e) => setConfig({ ...config, social_facebook: e.target.value })}
+                                                placeholder="https://facebook.com/..."
+                                            />
                                         </div>
-                                        <div>
-                                            <p className="font-semibold">{settingsT.company.addons}</p>
-                                            <p className="text-caption text-muted-foreground">{settingsT.company.addonsDesc}</p>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">{settingsT.company.socialInstagram}</Label>
+                                            <Input
+                                                className="h-8 text-xs bg-white border-input shadow-sm"
+                                                size={1}
+                                                value={config.social_instagram}
+                                                onChange={(e) => setConfig({ ...config, social_instagram: e.target.value })}
+                                                placeholder="https://instagram.com/..."
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">{settingsT.company.socialTwitter}</Label>
+                                            <Input
+                                                className="h-8 text-xs bg-white border-input shadow-sm"
+                                                size={1}
+                                                value={config.social_twitter}
+                                                onChange={(e) => setConfig({ ...config, social_twitter: e.target.value })}
+                                                placeholder="https://twitter.com/..."
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">{settingsT.company.socialGoogle}</Label>
+                                            <Input
+                                                className="h-8 text-xs bg-white border-input shadow-sm"
+                                                size={1}
+                                                value={config.social_google}
+                                                onChange={(e) => setConfig({ ...config, social_google: e.target.value })}
+                                                placeholder="https://g.page/..."
+                                            />
                                         </div>
                                     </div>
                                 </CardContent>
-                            </Link>
-                        </Card>
-
-                        <Card className="hover:shadow-md transition-shadow">
-                            <Link href="/admin/configuracoes/areas">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-success/10 rounded-lg">
-                                            <MapPin className="w-5 h-5 text-success" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">{settingsT.company.areas}</p>
-                                            <p className="text-caption text-muted-foreground">{settingsT.company.areasDesc}</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Link>
-                        </Card>
-
-                        <Card className="hover:shadow-md transition-shadow">
-                            <Link href="/admin/equipe">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-warning/10 rounded-lg">
-                                            <Users className="w-5 h-5 text-warning" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">{settingsT.company.team}</p>
-                                            <p className="text-caption text-muted-foreground">{settingsT.company.teamDesc}</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Link>
-                        </Card>
-
-                        <Card className="hover:shadow-md transition-shadow">
-                            <Link href="/admin/configuracoes/pricing">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-3 bg-brandy-rose-100 rounded-lg">
-                                            <DollarSign className="w-5 h-5 text-brandy-rose-500" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">{settingsT.company.pricing}</p>
-                                            <p className="text-caption text-muted-foreground">{settingsT.company.pricingDesc}</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Link>
-                        </Card>
+                            </Card>
+                        </div>
                     </div>
+                </TabsContent>
+
+                <TabsContent value="areas">
+                    <AreasTab />
+                </TabsContent>
+
+                <TabsContent value="pricing">
+                    <PricingTab />
                 </TabsContent>
 
                 {/* Operating Hours */}
@@ -295,7 +426,7 @@ export default function ConfiguracoesPage() {
                                             size="sm"
                                             onClick={() => {
                                                 const days = config.operating_days.includes(day.value)
-                                                    ? config.operating_days.filter(d => d !== day.value)
+                                                    ? config.operating_days.filter((d: string) => d !== day.value)
                                                     : [...config.operating_days, day.value]
                                                 setConfig({ ...config, operating_days: days })
                                             }}
