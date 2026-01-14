@@ -12,6 +12,21 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+## [1.9.0] - 2026-01-14
+### Adicionado
+- **Admin (Configurações)**:
+  - Reestruturação completa do módulo de configurações em 3 páginas distintas: Empresa, Página Inicial e Sistema.
+  - Implementação de submenus colapsáveis na barra lateral (Sidebar) para acesso direto às novas seções.
+  - Novo componente `ConfigLinkCard` para uma interface de navegação premium e visual na visão geral de configurações.
+  - Adição de campos estendidos para customização da Landing Page (Hero, Badges, Chat IA e SEO).
+  - Implementação de suporte a grupos (`empresa`, `pagina_inicial`, `sistema`) na tabela de configurações para melhor organização e performance de consulta.
+  - Novas chaves de tradução i18n em Português e Inglês cobrindo todas as novas seções e campos.
+
+### Modificado
+- **Admin (Sidebar)**: Refatoração da navegação lateral para suportar itens com submenus e animações suaves de abertura/fechamento.
+- **Admin (Configurações)**: Conversão da página principal de configurações em um dashboard de visão geral (Overview) com cards de acesso rápido.
+- **Lib (Business Config)**: Expansão da lógica de mapeamento e salvamento para suportar os novos grupos e campos de configuração.
+
 ## [1.8.0] - 2026-01-14
 ### Adicionado
 - **Admin (Configurações)**:

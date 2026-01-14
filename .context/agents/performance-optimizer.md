@@ -1,140 +1,160 @@
 # Performance Optimizer Agent Playbook
 
 ## Mission
-The Performance Optimizer Agent identifies, diagnoses, and resolves performance bottlenecks in the Carolinas Premium application—a Next.js app with Supabase backend, admin dashboard (e.g., configuracoes, analytics), landing pages, public terms, chat features, Carol AI queries, webhook services, and financial/client tools. Engage this agent when:
-- Page loads exceed 2s (Lighthouse score <90).
-- API responses >500ms (e.g., `/api/carol/query`).
-- High CPU/memory in utils/formatters or Supabase queries.
-- Slowness in admin panels (clientes, servicos, financeiro), chat, or public pages.
-- Production metrics spike (Vercel/Supabase); before releases.
+Profile, diagnose, and optimize performance bottlenecks in the Carolinas Premium Next.js app (183 files, 284 symbols: 44 .ts, 137 .tsx, 2 .mjs). Prioritize slow page loads (Lighthouse <90, >2s), API latencies (>500ms, e.g., `/api/carol/query`), high CPU/memory in utils/formatters (43 symbols in `lib/`), Supabase queries, admin dashboards (`configuracoes/servicos`), agenda components, webhooks, landing pages, terms, and real-time features. Trigger on Vercel/Supabase metrics spikes, pre-release audits, or user complaints.
+
+## Focus Areas
+- **Utils Layer** (`lib/utils.ts`, `lib/formatters.ts`): 43 symbols (e.g., `cn`, `formatCurrency`, `formatPhoneUS`, `isValidEmail`). Heavy regex/string ops in loops/lists—profile for hot paths.
+- **Services Layer** (`lib/services/`): Sparse (85% Service pattern confidence)—`WebhookService` only; extend for orchestration (servicos/pricing).
+- **API Routes** (`app/api/carol/query/route.ts`): `queryServicePricing`, `queryServiceAreas`—Supabase-heavy, uncached/paginated queries.
+- **Admin Pages** (`app/(admin)/admin/configuracoes/servicos/page.tsx`): `ServiceType` lists—large fetches, client re-renders.
+- **Components** (137 .tsx): `components/agenda/appointment-form/service-section.tsx` (`ServiceSectionProps`)—forms/lists with formatters.
+- **Public/Static** (`app/(public)/terms/page.tsx`): `TermsOfServicePage`—ensure static rendering.
+- **Supabase Integration** (`lib/supabase/`): Clients, queries in APIs/pages—projections/indexes critical.
+- **Cross-Cutting**: Re-renders in .tsx, bundling bloat, webhook timeouts.
 
 ## Responsibilities
-- Profile pages, APIs (e.g., Carol query), components, and utils (formatters).
-- Optimize Supabase queries, webhook processing, and service configs.
-- Implement caching for pricing/areas queries, utils in lists, and static pages.
-- Improve Core Web Vitals; reduce re-renders in TSX-heavy components (118 files).
-- Tune real-time (chat) and async services (webhooks).
-- Audit utils (31 symbols) for hot-path efficiency.
+- **Profiling**: Lighthouse/Vercel Analytics for pages/APIs; Supabase Profiler for queries; DevTools for components/utils.
+- **Optimizations**: Caching (`unstable_cache`/SWR), memoization (`useMemo`/React.memo), Supabase tuning (projections/indexes/RPC), bundling/tree-shaking, virtualization.
+- **Metrics Targets**: Lighthouse ≥90, API ≤300ms, utils <10ms/100 calls, Core Web Vitals (LCP <2.5s, CLS <0.1).
+- **Audits**: Hot utils (`formatCurrency` in lists), regex (`isValidPhoneUS`), Supabase in `queryServicePricing`, webhook batching.
 
-## Best Practices
-Derived from codebase analysis:
-- **Measure First**: Vercel Analytics, Lighthouse CI, Supabase profiler. Use `console.time` around utils (e.g., `formatCurrency`) and queries.
-- **Server-Side Data**: Next.js Server Components in `app/` (e.g., `fetchData`); parallel `Promise.all` for servicos/pricing.
-- **Supabase Opts**: `.select()` projections (e.g., only needed fields in `queryServicePricing`), early `.eq()` filters, `.limit(50)`, indexes via `supabase/migrations`.
+## Best Practices (Derived from Codebase)
+- **Measurement**:
+  - `console.time('formatCurrency-1000')` in `lib/formatters.ts`.
+  - Lighthouse CI: `lighthouse-ci app/(admin)/admin/configuracoes/servicos`.
+  - Vercel Analytics/Supabase Query Perf; Next.js `reportWebVitals`.
+- **Next.js App Router**:
+  - Server Components: `export const revalidate = 3600;` (e.g., `terms/page.tsx`); `Promise.all` for parallel fetches.
+  - `Suspense` boundaries; `dynamic = 'force-static'`.
+- **Supabase**:
+  - Projections: `.select('id,name,price')`; filters `.eq('active', true).limit(50)`.
+  - RPC batching/indexes (migrations/); e.g., `queryServicePricing` → `rpc('get_servicos_pricing')`.
 - **Caching**:
-  - API: `unstable_cache` for `queryServicePricing`/`queryServiceAreas` (revalidate 300s).
-  - Client: SWR with `revalidateOnFocus: false`; `React.cache` for utils.
-  - Static: `export const revalidate = 3600` on terms/config pages.
-- **Utils Efficiency** (lib/utils.ts, lib/formatters.ts): `useMemo` formatters (e.g., `formatCurrencyUSD`) in lists; tree-shake unused exports (cn, formatPhoneUS).
-- **Components (118 .tsx)**: `React.memo`, `useCallback` for props; `Suspense` in admin (e.g., servicos page); virtualize lists.
-- **Services**: Extend `WebhookService` with timeouts/queues; batch queries in sparse service layer.
-- **Bundle**: Analyze TSX bloat; lazy-load charts/filters.
-- **Conventions**: Tailwind `cn`; named exports; async services—add perf comments (e.g., "// Memoized to avoid 100ms formatter lag").
-- **Test**: Playwright Lighthouse; benchmark utils with Jest.
-
-## Key Project Resources
-- [docs/README.md](../docs/README.md)
-- [agents/README.md](./README.md)
-- [AGENTS.md](../../AGENTS.md)
-- [CONTRIBUTING.md](../../CONTRIBUTING.md)
-- Perf tools: Vercel Dashboard, Supabase Query Profiler, Sentry.
-
-## Repository Starting Points
-- `app/` : App router—focus admin (configuracoes/servicos), api/carol/query, public/terms.
-- `components/` : UI (118 .tsx)—filters, chat, financeiro; memoize.
-- `lib/` : Utils (formatters), services (webhook), supabase clients—cache wrappers.
-- `supabase/` : Indexes for servicos/clientes queries.
-- `types/` : Ensure types guide efficient code.
+  | Layer | Pattern | Codebase Example |
+  |-------|---------|------------------|
+  | Server API | `unstable_cache(supabase.from('servicos').select(), ['pricing'], {revalidate: 300})` | `/api/carol/query` |
+  | Client | SWR `{revalidateOnFocus: false, dedupingInterval: 60000}` | Agenda/clientes lists |
+  | Utils | `React.cache(formatCurrency)` | Formatter loops |
+- **Utils/Formatters** (43 symbols): `useMemo(() => items.map(formatCurrencyUSD), [items])`; tree-shake unused (`formatPhoneUS` if form-only); regex opt in `isValidPhoneUS`/`parseCurrency`.
+- **Components** (.tsx): `React.memo`; `useCallback` handlers; virtualization (`react-window`) for `ServiceType` lists; lazy `Suspense`.
+- **Services**: `WebhookService`—`AbortSignal.timeout(5000)`; `Promise.allSettled` for batching.
+- **Conventions**: Tailwind `cn()`; async/await APIs; perf comments `// Opt: memoized, -200ms`; `no-store` only for mutations.
+- **Bundle**: `@next/bundle-analyzer`; code-split admin/charts.
+- **Testing**: Jest perf suites (`it('formatters 1000x <50ms')`); Playwright Lighthouse.
 
 ## Key Files and Purposes
-### High-Priority for Perf
 | File/Path | Purpose | Perf Focus |
 |-----------|---------|------------|
-| `lib/services/webhookService.ts` | `WebhookService` class (ServiceType integration). | Async timeouts (`getWebhookTimeout`); queue payloads; cache service configs. |
-| `lib/utils.ts` | Utils: `cn`, `formatCurrency`, `formatDate`. | Memoize in render loops; tree-shake. |
-| `lib/formatters.ts` | Formatters: `formatPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `parseCurrency`. | `useMemo` for lists/transactions; profile regex/parsers. |
-| `app/api/carol/query/route.ts` | Carol AI: `queryServicePricing`, `queryServiceAreas`. | Cache static data; paginate; limit RPC. |
-| `app/(admin)/admin/configuracoes/servicos/page.tsx` | Admin services config (`ServiceType`). | Server pagination; Suspense for lists; memo filters. |
-| `app/(public)/terms/page.tsx` | `TermsOfServicePage`. | Static revalidate; optimize any dynamic fetches. |
-| `lib/supabase/server.ts` | Supabase client. | Cache wrappers; profile all calls. |
-| `app/(admin)/admin/analytics/*/page.tsx` | Dashboards/charts. | Parallel fetches; virtualize. |
-| `components/chat/*` | Chat UI. | Debounce; limit history. |
-| `components/clientes/clients-filters.tsx` | Client filters. | Server-side search. |
+| `lib/services/webhookService.ts` | `WebhookService` class: Webhook handling with `ServiceType`. | Timeouts/batching (`AbortController`, `Promise.allSettled`); cache payloads. |
+| `lib/utils.ts` | Utils: `cn`, `formatCurrency`, `formatDate`. | Memo in renders; profile loops (e.g., lists). |
+| `lib/formatters.ts` | Formatters: `formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `formatCurrencyInput`, `parseCurrency`. | Regex benchmarks; `useMemo`/cache wrappers; tree-shake. |
+| `app/api/carol/query/route.ts` | Carol queries: `queryServicePricing`, `queryServiceAreas`. | `unstable_cache`; projections/pagination/indexes on `servicos`. |
+| `app/(admin)/admin/configuracoes/servicos/page.tsx` | Admin services page: `ServiceType` management/lists. | Server pagination/Suspense; virtualized lists. |
+| `components/agenda/appointment-form/service-section.tsx` | UI for services: `ServiceSectionProps`. | Memo props; debounce formatters. |
+| `app/(public)/terms/page.tsx` | Static terms: `TermsOfServicePage`. | `force-static`; no fetches. |
+| `lib/supabase/server.ts` (implied) | Supabase server client. | Global projections/caching wrappers. |
 
-### Patterns
-- **Service Layer**: Classes (`WebhookService`)—85% confidence; add perf (batched queries).
-- **Utils**: 31 exported symbols—efficient strings/regex; audit hot paths.
-- **API**: Streaming `NextRequest`; no-store judiciously.
-
-## Architecture Context
-- **Utils**: Dominant (31 symbols)—formatters in financeiro/clientes.
-- **Services**: Sparse (1: WebhookService)—extend for orchestration.
-- **TSX Heavy**: 118 files—admin/public renders; server-first.
-- **Data Flow**: Supabase → API/services → pages; cache at each layer.
-
-## Key Symbols for This Agent
-- `WebhookService` : Async webhooks—optimize timeouts.
-- `ServiceType` : Services config—paginate lists.
-- `queryServicePricing`/`queryServiceAreas` : Cache pricing/areas.
-- Formatters (`formatCurrencyInput`, `isValidPhoneUS`) : Memo in forms/lists.
-- Supabase patterns : Projections/filters.
+## Key Symbols (Perf-Critical)
+- **Utils**: `cn`, `formatCurrency`, `formatCurrencyUSD`, `isValidPhoneUS` (regex), `parseCurrency`.
+- **Services**: `WebhookService`.
+- **API**: `queryServicePricing`, `queryServiceAreas`.
+- **Types/Components**: `ServiceType`, `ServiceSectionProps`.
 
 ## Workflows for Common Tasks
-### 1. Profile & Diagnose
-1. Build/start: `npm run build && npm run start`.
-2. Lighthouse: Admin servicos/terms pages.
-3. Supabase: Queries >100ms (pricing/servicos).
-4. Logs: Utils/formatters in devtools profiler.
-5. `console.time('formatCurrency-list')`.
 
-### 2. Optimize API (e.g., `/api/carol/query`)
-1. Limit `.select('id,price,area')`.
-2. `const cachedPricing = unstable_cache(async () => queryServicePricing(), ['pricing'], { revalidate: 300 });`.
-3. Benchmark: `curl -w "%{time_total}"`.
-4. Add indexes: `supabase/migrations/add_servicos_index.sql`.
+### 1. Profile & Diagnose (15-30min)
+1. Run `npm run build && npm run start`.
+2. Lighthouse: `npx lighthouse http://localhost:3000/(admin)/admin/configuracoes/servicos --preset=performance --output=html`.
+3. Supabase: Dashboard → Queries >100ms (sort `servicos`, `pricing`).
+4. DevTools → Performance → Record interactions (lists/forms) → Flame (formatters).
+5. Utils: `console.time('formatters'); Array(1000).fill(0).forEach(formatCurrencyUSD); console.timeEnd()`.
+6. API: `curl -w "%{time_total}s" localhost:3000/api/carol/query`.
+7. Bundle: `ANALYZE=true npm run build`.
 
-### 3. Optimize Page (e.g., servicos/page.tsx)
-1. Server: `export const revalidate = 60; await Promise.all([fetchServices(), fetchPricing()])`.
-2. Client: `<Suspense><ServicesList memoizedFilters /></Suspense>`.
-3. Utils: `const formatted = useMemo(() => prices.map(formatCurrencyUSD), [prices]);`.
+### 2. Optimize Supabase/API (`/api/carol/query`)
+1. Projections/filters: `supabase.from('servicos').select('id,name,price').eq('active',true).limit(20).order('price')`.
+2. Cache/RPC:
+   ```ts
+   import { unstable_cache } from 'next/cache';
+   export const queryServicePricing = unstable_cache(
+     async () => supabase.rpc('get_servicos_pricing'),
+     ['servicos-pricing'], { revalidate: 300 }
+   )();
+   ```
+3. Index migration: `supabase/migrations/add_servicos_price_active_idx.sql` → `CREATE INDEX ON servicos (price, active);`.
+4. Test: `ab -n 100 -c 10 localhost:3000/api/carol/query` (Apache Bench).
+5. Large responses: `return new ReadableStream({ ... })`.
 
-### 4. Utils/Services Tune
-1. WebhookService: `setTimeout`; queue with `Promise.allSettled`.
-2. Formatters: `React.memo` components using them.
-3. Audit: `searchCode` for utils in loops.
+### 3. Optimize Page/Component (e.g., `servicos/page.tsx`, `service-section.tsx`)
+1. Server:
+   ```tsx
+   export const revalidate = 60;
+   export default async function Page({ searchParams }: { searchParams: { page?: string } }) {
+     const page = parseInt(searchParams.page ?? '1');
+     const [{ services }, { areas }] = await Promise.all([
+       queryServicePricing(),
+       queryServiceAreas()
+     ]);
+     return (
+       <Suspense fallback={<Loader />}>
+         <ServicesList data={services} />
+       </Suspense>
+     );
+   }
+   ```
+2. Client:
+   ```tsx
+   const ServicesList = React.memo(({ data }: { data: ServiceType[] }) => {
+     const formatted = useMemo(() => data.map(s => ({ ...s, price: formatCurrencyUSD(s.price) })), [data]);
+     return <FixedSizeList height={600} itemCount={formatted.length} itemSize={50}>{/* render */}</FixedSizeList>;
+   });
+   ```
+3. Filters: Server-side via `searchParams`.
 
-### 5. Caching Rollout
-1. Static (terms): Full cache.
-2. Dynamic (servicos): SWRInfinite pagination.
-3. Sessions: Local + realtime subscribe once.
+### 4. Optimize Utils/Services
+1. Formatters: 
+   ```ts
+   const cachedFormat = React.cache(formatCurrencyUSD);
+   useMemo(() => items.map(i => ({ ...i, price: cachedFormat(i.price) })), [items]);
+   ```
+2. WebhookService:
+   ```ts
+   async handleWebhook(payloads: Payload[], signal?: AbortSignal) {
+     const controller = new AbortController(signal);
+     setTimeout(() => controller.abort(), 10000);
+     await Promise.allSettled(payloads.map(p => this.process(p, controller.signal)));
+   }
+   ```
+3. Audit: `grep -r "formatCurrency\|isValid" . --include="*.tsx" | xargs -I {} echo "memoize in {}"`.
 
-### 6. Bundle Audit
-1. `@next/bundle-analyzer`.
-2. Optimize images in public/terms.
-3. Remove unused formatters.
+### 5. Client-Side & Real-Time
+1. SWR: `useSWR('/api/carol/query', fetcher, { revalidateOnFocus: false, dedupingInterval: 60000 })`.
+2. Realtime: `useEffect(() => { const ch = supabase.channel('servicos').subscribe(); return () => ch.unsubscribe(); }, [])`.
+3. Virtualization: `react-window`/`react-virtualized` for admin lists.
 
-### 7. Validation & Hand-Off
-1. Metrics: Lighthouse >90, API <300ms.
-2. Tests: Playwright perf.spec.ts.
-3. PR: Before/after traces.
-4. Docs: Update perf sections.
+### 6. Bundle & Tree-Shake
+1. Install/Run: `npm i -D @next/bundle-analyzer`; `next.config.js`: `bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })`.
+2. Dynamic: `const HeavyChart = dynamic(() => import('./charts'), { ssr: false, loading: () => <Loader /> })`.
+3. Images: `next/image` with `sizes="(max-width: 768px) 100vw, 50vw"`.
 
-## Documentation Touchpoints
-- [docs/README.md](../docs/README.md) — Perf guide.
-- [docs/architecture.md](../docs/architecture.md) — Cache diagrams.
-- [docs/data-flow.md](../docs/data-flow.md) — Query opts.
+### 7. Validate & Deploy
+1. Benchmarks: Lighthouse ≥90; API <300ms; utils <50ms/1000.
+2. Tests: `npm test -- perf`; Playwright: `expect(await page.metric('Lighthouse score')).toBeGreaterThan(90)`.
+3. PR: Before/after screenshots (Lighthouse, traces); `perf-gains: 2.1s → 420ms`.
+4. Deploy: Vercel Preview → Monitor 24h; Supabase alerts.
 
-## Collaboration Checklist
-1. Check issues/PRs for perf reports.
-2. Update docs post-changes.
-3. Share metrics.
+## Resources
+- **Docs**: `README.md`, `AGENTS.md`, `CONTRIBUTING.md`.
+- **Tools**: Vercel/Supabase Dashboards, Sentry, Bundle Analyzer.
+- **Config**: `lib/config/`, `next.config.js`, `supabase/migrations/`.
 
-## Hand-off Notes
-- Outcomes: Files + gains (e.g., "servicos: 2.5s → 600ms").
-- Risks: Stale caches—short TTLs.
-- Follow-ups: Prod monitor 1 week.
+## Hand-off
+- **Changes**: List files + metrics (e.g., "queryServicePricing: 800ms → 120ms").
+- **Risks**: Cache invalidation; over-optimization (premature).
+- **Next**: Prod monitoring; A/B Lighthouse.
 
 ---
-status: filled
-generated: 2024-10-02
+status: comprehensive
+generated: 2024-10-04
 ---

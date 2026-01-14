@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -20,11 +20,26 @@ import {
     MessageSquare,
     BarChart3,
     UserPlus,
-    Users2,  // Ícone para Equipe
-    Sparkles // Ícone para Serviços
+    Users2,
+    Sparkles,
+    Building2,
+    Layout,
+    Cog,
+    ChevronDown
 } from 'lucide-react'
 
-const navigation: { key: keyof TranslationKeys['sidebar'], href: string, icon: any }[] = [
+type NavigationItem = {
+    key: keyof TranslationKeys['sidebar']
+    href: string
+    icon: any
+    submenu?: {
+        key: keyof TranslationKeys['sidebar']
+        href: string
+        icon: any
+    }[]
+}
+
+const navigation: NavigationItem[] = [
     { key: 'overview', href: '/admin', icon: LayoutDashboard },
     { key: 'scheduling', href: '/admin/agenda', icon: Calendar },
     { key: 'services', href: '/admin/servicos', icon: Sparkles },
@@ -35,7 +50,16 @@ const navigation: { key: keyof TranslationKeys['sidebar'], href: string, icon: a
     { key: 'messages', href: '/admin/mensagens', icon: MessageSquare },
     { key: 'team', href: '/admin/equipe', icon: Users2 },
     { key: 'analytics', href: '/admin/analytics', icon: BarChart3 },
-    { key: 'settings', href: '/admin/configuracoes', icon: Settings },
+    {
+        key: 'settings',
+        href: '/admin/configuracoes',
+        icon: Settings,
+        submenu: [
+            { key: 'settingsCompany', href: '/admin/configuracoes/empresa', icon: Building2 },
+            { key: 'settingsLanding', href: '/admin/configuracoes/pagina-inicial', icon: Layout },
+            { key: 'settingsSystem', href: '/admin/configuracoes/sistema', icon: Cog },
+        ]
+    },
 ]
 
 interface SidebarContentProps {
@@ -46,6 +70,13 @@ interface SidebarContentProps {
 function SidebarContent({ pathname, onLinkClick }: SidebarContentProps) {
     const { t } = useAdminI18n();
     const sidebar = t('sidebar');
+    const [isSettingsOpen, setIsSettingsOpen] = useState(pathname.startsWith('/admin/configuracoes'))
+
+    useEffect(() => {
+        if (pathname.startsWith('/admin/configuracoes')) {
+            setIsSettingsOpen(true)
+        }
+    }, [pathname])
 
     return (
         <div className="flex flex-col h-full bg-white">
@@ -58,8 +89,59 @@ function SidebarContent({ pathname, onLinkClick }: SidebarContentProps) {
             <ScrollArea className="flex-1 py-4">
                 <nav className="px-3 space-y-1">
                     {navigation.map((item) => {
+                        const hasSubmenu = !!item.submenu
                         const isActive = pathname === item.href ||
                             (item.href !== '/admin' && pathname.startsWith(item.href))
+
+                        if (hasSubmenu) {
+                            return (
+                                <div key={item.key} className="space-y-1">
+                                    <button
+                                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                        className={cn(
+                                            'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                                            isActive && !isSettingsOpen
+                                                ? 'bg-[#FDF8F6] text-[#C48B7F]'
+                                                : 'text-gray-600 hover:bg-gray-50'
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <item.icon className="w-5 h-5" />
+                                            {sidebar[item.key]}
+                                        </div>
+                                        <ChevronDown className={cn(
+                                            "w-4 h-4 transition-transform duration-200",
+                                            isSettingsOpen && "rotate-180"
+                                        )} />
+                                    </button>
+
+                                    {isSettingsOpen && (
+                                        <div className="pl-4 space-y-1">
+                                            {item.submenu?.map((subitem) => {
+                                                const isSubActive = pathname === subitem.href
+                                                return (
+                                                    <Link
+                                                        key={subitem.key}
+                                                        href={subitem.href}
+                                                        onClick={onLinkClick}
+                                                        className={cn(
+                                                            'flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors',
+                                                            isSubActive
+                                                                ? 'bg-[#FDF8F6] text-[#C48B7F]'
+                                                                : 'text-gray-500 hover:bg-gray-50'
+                                                        )}
+                                                    >
+                                                        <subitem.icon className="w-4 h-4" />
+                                                        {sidebar[subitem.key]}
+                                                    </Link>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        }
+
                         return (
                             <Link
                                 key={item.key}
@@ -118,3 +200,4 @@ export function Sidebar() {
         </>
     )
 }
+

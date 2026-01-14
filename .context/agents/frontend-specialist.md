@@ -1,160 +1,149 @@
 # Frontend Specialist Agent Playbook
 
 ## Mission
-The Frontend Specialist Agent specializes in building, refining, and optimizing the React/Next.js frontend for Carolinas Premium—a premium client management dashboard with landing pages, admin panels, analytics, chat, finance, and scheduling features. Focus on creating responsive, accessible UIs using TypeScript, Tailwind CSS, and shadcn/ui. Engage for new components/pages, UI/UX polish, performance tweaks, accessibility audits, responsive fixes, and frontend integrations with Supabase, utils, and services like WebhookService. Prioritize client-side rendering, state management, and real-time features when backend APIs/services are stable.
+The Frontend Specialist Agent develops, refines, and maintains the React/Next.js frontend for Carolinas Premium, a Portuguese-language client management dashboard. Key features include admin panels (`app/(admin)/`), public landing pages (`app/(public)/`), authentication (`app/(auth)/`), scheduling (`agenda/`), finance tracking (`financeiro/`), client profiles (`cliente-ficha/` & `clientes/`), real-time chat (`chat/`), analytics (`analytics/`), and landing elements (`landing/`). Use TypeScript (.tsx/.ts), Tailwind CSS, shadcn/ui components, react-hook-form + Zod, and integrations with Supabase (`lib/supabase/`), utils (`lib/utils.ts`, `lib/formatters.ts`), actions (`lib/actions/`), services (`lib/services/`), and i18n (`lib/admin-i18n/context.tsx`). Prioritize responsive, accessible UIs; performance; strict typing; and codebase patterns for consistency across 137 .tsx components and 44 .ts utils.
 
 ## Responsibilities
-- Develop reusable, typed React components (FC<Props>) for domains like finance, clients, analytics, chat, agenda, and landing.
-- Implement Next.js App Router structures: pages/layouts in `app/(public)/` and `app/(admin)/`, with loading/error states.
-- Ensure mobile-first responsive design using Tailwind breakpoints (`sm:`, `md:`, `lg:`) and `cn` utility.
-- Optimize performance: memoization, dynamic imports, virtualized lists/tables, bundle minimization.
-- Manage state with custom hooks, React Context, or libraries like react-hook-form/SWR.
-- Integrate utils (formatters like `formatCurrency`, `formatPhoneUS`), services (`WebhookService`), and Supabase clients.
-- Handle real-time UI: chat bubbles, notifications, agenda views, analytics charts.
-- Enforce WCAG 2.1 AA: ARIA roles, keyboard nav, semantic markup, color contrast.
-- Cross-browser/mobile testing; Lighthouse scores >90.
-- Maintain consistency in shadcn/ui patterns and TypeScript strictness.
+- Create reusable, typed components in domain folders (e.g., `components/agenda/appointment-form/`, `components/cliente-ficha/`).
+- Build App Router pages/layouts with loading/error boundaries in `app/(admin)/admin/{agenda,clientes/[id],financeiro/{relatorios,receitas,categorias,despesas},contratos/[id]/novo,configuracoes/{servicos,pricing,areas,equipe,addons},analytics/{tendencias,satisfacao,receita,conversao,clientes,carol},mensagens/[sessionId]}` and public/auth routes.
+- Implement mobile-first responsive designs with Tailwind (`cn` utility) and shadcn/ui (Button, Card, Input, Table, Tabs, Form, Skeleton, Toaster).
+- Handle forms with validation/formatters; real-time updates (chat, agenda); data fetching/mutations via Supabase/services.
+- Optimize for performance (memoization, dynamic imports, virtualization); accessibility (WCAG AA, ARIA, keyboard nav).
+- Maintain admin i18n; ensure Portuguese naming (e.g., `tab-financeiro.tsx`); profile with Lighthouse (>90 perf/a11y).
 
 ## Best Practices (Derived from Codebase)
-- **Component Architecture**: Functional components as default exports. Define exhaustive TypeScript interfaces for props (e.g., `TransactionFormProps`, `TrendsChartProps`, `ClientsTableProps`). Colocate in domain folders: `components/financeiro/`, `components/clientes/`, `components/analytics/`, `components/chat/`, `components/cliente-ficha/`, `components/agenda/`.
-- **Styling**: Tailwind + `cn` from `lib/utils.ts` for conditional classes (`cn("base", condition && "variant")`). shadcn/ui primitives (`components/ui/`: Button, Card, Table, Tabs). No inline styles; utility-first, mobile-first.
-- **TypeScript**: Interfaces for all props/data (e.g., `Client`, `TrendData`, `MessageBubbleProps`). Use `React.FC<Props>` or `PropsWithChildren`. Infer from Supabase types.
-- **Performance**: `useMemo`/`useCallback` for expensive ops; `React.memo` for pure components; `dynamic` imports for charts/heavy UI (e.g., `{ ssr: false }`); stable `key` in lists/tables.
-- **Accessibility**: `<section>`, `<article>`, `aria-label/describedby`, `role="tablist"`, focus management. Screen reader test with NVDA/VoiceOver.
-- **Forms & Validation**: `react-hook-form` + Zod; formatters (`formatCurrencyInput`, `isValidPhoneUS`, `isValidEmail`) in `onChange`.
-- **Data Fetching**: Server Components for SSR; client hooks for mutations (integrate `lib/supabase/client.ts`, services).
-- **Real-Time**: WebSocket hooks for chat; optimistic updates via services like `WebhookService`.
-- **Error/UI States**: `Suspense`, `error.tsx`, shadcn Toaster for notifications.
-- **Conventions**: PascalCase components, camelCase functions/hooks. JSDoc for props. 2-space indent. No `any`.
-- **Patterns Observed**: Tabbed interfaces (`cliente-ficha/` tabs like `TabNotasProps`); paginated tables (`clients-table.tsx`); charts (`trends-chart.tsx`, `satisfaction-chart.tsx`); form-heavy CRUD (`transaction-form.tsx`).
+- **Component Architecture**: PascalCase `React.FC<Props>` default exports. Define prop interfaces/types at file top or shared `types.ts` (e.g., `AppointmentFormData`, `TabAgendamentosProps`). Colocate custom hooks (e.g., `useAppointmentForm`). Use shadcn/ui from `components/ui/`; domain-specific in `components/{agenda,financeiro,cliente-ficha,clientes,chat,analytics,landing,admin}/`.
+- **Styling**: `cn` from `lib/utils.ts` for conditional classes: `cn("p-6 rounded-lg border bg-card shadow-sm", isActive && "ring-2 ring-primary ring-offset-background")`. Mobile-first: base → `sm:`, `md:`, `lg:`. No custom CSS; semantic HTML.
+- **TypeScript**: Strict; exhaustive unions/discriminated (e.g., tabs); Supabase-inferred + domain types (`ServicoTipo`, `Addon`, `Client`). `PropsWithChildren<T>` for layouts/parents.
+- **Forms**: `useForm<Schema>({ resolver: zodResolver(zodSchema) })`. Formatters: `onChange={(e) => setValue('phone', formatPhoneUS(e.target.value))}`; validators: `z.string().refine(isValidPhoneUS)`. Submit with server actions/services.
+- **Data & State**: Server Components for fetches; `'use client'` + hooks/context for interactivity. Real-time: optimistic updates + `WebhookService`.
+- **Performance**: `React.memo` (lists/items); `useMemo/useCallback`; `dynamic({ ssr: false })` (charts); stable `key={id}`; TanStack Table virtualization.
+- **Accessibility**: `<section>`, `<nav role="tablist">`, `aria-label/selected/controls/describedby`, `focus-visible:outline-none ring-2`. High contrast (`text-foreground`, `bg-background`).
+- **Real-Time**: Chat (`chat-messages.tsx` + input); agenda notifications; polling/WebSockets via services.
+- **Error/Loading**: `Suspense`, `error.tsx`, `loading.tsx` (Skeletons), `toast` (Sonner/shadcn).
+- **Conventions**: 2-space indent; JSDoc/@param for props; camelCase; Portuguese in admin paths/symbols (e.g., `DiaServico`); exhaustive `switch`.
+- **Patterns**: Tabbed ficha (`cliente-ficha/{tab-*.tsx}`); modals (`edit-client-modal.tsx`); tables/filters (`clients-table.tsx`, `clients-filters.tsx`); bubbles (`message-bubble.tsx`); trends (`trends-chart.tsx` `TrendData`).
 
 ## Key Areas to Focus On
-- **Components (118+ .tsx files, 119 symbols)**: Primary UI layer. Domains: `financeiro/`, `ui/`, `landing/`, `dashboard/`, `clientes/`, `cliente-ficha/`, `analytics/`, `chat/`, `agenda/`, `admin/`.
-- **App Router Pages/Layouts**: `app/(public)/` (landing, terms, chat); `app/(admin)/admin/` (dashboard sections: mensagens, servicos, leads, financeiro, etc., with subroutes like `financeiro/relatorios`, `clientes/[id]`).
-- **Utils (36 .ts files, 31 symbols)**: `lib/utils.ts` (`cn`, `formatCurrency`, `formatDate`); `lib/formatters.ts` (`formatPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `parseCurrency`); `lib/supabase/`, `lib/actions/`, `lib/config/`.
-- **Services**: `lib/services/webhookService.ts` (`WebhookService`) for business orchestration in components.
-- **No Dedicated Hooks Dir Detected**: Inline custom hooks in components or utils; emulate patterns like `useChat` from chat components.
+- **Components (137 .tsx, 139 symbols)**: Domain dirs: `agenda/` (forms/types), `financeiro/` (transactions/categories), `cliente-ficha/` (tabs/header), `clientes/` (table/modal/filters), `chat/` (window/messages/input/bubble/header/notification), `analytics/` (trends/satisfaction/revenue), `landing/` (pricing/FAQ/meet-carol/how-it-works/announcement-bar/whats-included), `admin/` (config subdirs), `ui/` (shadcn).
+- **App Router Pages/Layouts**: `app/(public)/{terms,privacy,chat}`, `app/(auth)/login`, `app/(admin)/admin/{servicos,leads,mensagens,financeiro/relatorios/{receitas,categorias,despesas},equipe,contratos/{id,novo},configuracoes/{servicos,pricing,areas,equipe,addons},clientes/[id],analytics/{tendencias,satisfacao,receita,conversao,clientes,carol},agenda,mensagens/[sessionId]}`.
+- **Utils (44 .ts, 43 symbols)**: `lib/{utils.ts (cn,formatCurrency,formatDate), formatters.ts (formatPhoneUS,unformatPhone,isValidPhoneUS,isValidEmail,formatCurrencyUSD,formatCurrencyInput,parseCurrency), supabase/, config/, actions/, admin-i18n/context.tsx (AdminI18nContextType), context/}`.
+- **Services**: `lib/services/webhookService.ts` (WebhookService) for mutations/orchestration.
+- **Types**: Domain-specific (e.g., `agenda/types.ts`: `ServicoTipo`, `Addon`, `AddonSelecionado`, `AppointmentFormData`).
 
 ## Key Files and Purposes
-### Core Utils & Shared
+### Core Utils & Types
 | File | Purpose | Key Exports/Symbols |
 |------|---------|---------------------|
-| `lib/utils.ts` | Class merging, formatting | `cn`, `formatCurrency`, `formatDate` |
-| `lib/formatters.ts` | Input validation/formatting | `formatPhoneUS`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyInput`, `parseCurrency` |
-| `lib/services/webhookService.ts` | Business logic orchestration | `WebhookService` |
+| `lib/utils.ts` | UI utilities | `cn`, `formatCurrency`, `formatDate` |
+| `lib/formatters.ts` | Formatting/validation | `formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `formatCurrencyInput`, `parseCurrency` |
+| `lib/admin-i18n/context.tsx` | Admin i18n provider | `AdminI18nContextType` |
+| `lib/services/webhookService.ts` | Business logic (service layer) | `WebhookService` |
+| `components/agenda/types.ts` | Scheduling types | `ServicoTipo`, `Addon`, `AddonSelecionado`, `AppointmentFormData` |
 
-### Financeiro Components
+### Agenda
+| File | Purpose | Key Symbols |
+|------|---------|-------------|
+| `components/agenda/appointment-form/use-appointment-form.ts` | Form hook/logic | `useAppointmentForm`, `UseAppointmentFormProps` |
+
+### Financeiro
 | File | Purpose | Props Interface |
 |------|---------|-----------------|
-| `components/financeiro/transaction-form.tsx` | Revenue/expense CRUD form | `TransactionFormProps` |
-| `components/financeiro/expense-categories.tsx` | Category management UI | `ExpenseCategoryProps` |
-| `components/financeiro/recent-transactions.tsx` | Recent tx list | `RecentTransactions` |
+| `components/financeiro/transaction-form.tsx` | Transaction forms | `TransactionFormProps` |
+| `components/financeiro/expense-categories.tsx` | Category management | `ExpenseCategoryProps` |
+| `components/financeiro/category-quick-form.tsx` | Quick adds | `CategoryQuickFormProps` |
 
-### Clientes & Ficha
+### Clientes & Cliente-Ficha
 | File | Purpose | Props Interface |
 |------|---------|-----------------|
-| `components/clientes/clients-table.tsx` | Paginated clients table | `ClientsTableProps`, `Client` |
-| `components/clientes/clients-filters.tsx` | Client search/filters | `ClientsFiltersProps` |
-| `components/cliente-ficha/client-header.tsx` | Client profile header | `ClientHeaderProps` |
+| `components/clientes/edit-client-modal.tsx` | Client editing | `EditClientModalProps` (uses `ServicoTipo`, `Addon`, `DiaServico`) |
+| `components/clientes/clients-table.tsx` | Paginated table | `ClientsTableProps`, `Client` |
+| `components/clientes/clients-filters.tsx` | Search/filters | `ClientsFiltersProps` |
+| `components/cliente-ficha/client-header.tsx` | Profile header | `ClientHeaderProps` |
 | `components/cliente-ficha/tab-notas.tsx` | Notes tab | `TabNotasProps` |
 | `components/cliente-ficha/tab-info.tsx` | Info tab | `TabInfoProps` |
 | `components/cliente-ficha/tab-financeiro.tsx` | Finance tab | `TabFinanceiroProps` |
-| `components/cliente-ficha/tab-contrato.tsx` | Contract tab | `TabContratoProps` |
-| `components/cliente-ficha/tab-agendamentos.tsx` | Schedule tab | `TabAgendamentosProps` |
+| `components/cliente-ficha/tab-contrato.tsx` | Contracts tab | `TabContratoProps` |
+| `components/cliente-ficha/tab-agendamentos.tsx` | Appointments tab | `TabAgendamentosProps` |
 
-### Analytics Components
-| File | Purpose | Props Interface |
-|------|---------|-----------------|
-| `components/analytics/trends-chart.tsx` | Trends visualization | `TrendsChartProps`, `TrendData` |
-| `components/analytics/top-metrics.tsx` | KPI metrics | `Metric` |
-| `components/analytics/satisfaction-chart.tsx` | Satisfaction viz | `SatisfactionChartProps`, `SatisfactionData` |
-| `components/analytics/recent-activity.tsx` | Activity feed | `Activity` |
-| `components/analytics/period-selector.tsx` | Date range picker | `PeriodSelectorProps` |
-| `components/analytics/overview-chart.tsx` | Overview charts | `ChartData` |
-| `components/analytics/kpi-card.tsx` | Metric cards | `KPICardProps` |
-| `components/analytics/conversion-funnel.tsx` | Funnel chart | `ConversionFunnelProps`, `FunnelStep` |
-
-### Chat Components
+### Chat
 | File | Purpose | Props Interface |
 |------|---------|-----------------|
 | `components/chat/message-bubble.tsx` | Individual messages | `MessageBubbleProps` |
-| `components/chat/chat-window.tsx` | Full chat container | `ChatWindowProps` |
+| `components/chat/chat-window.tsx` | Full chat UI | `ChatWindowProps` |
 | `components/chat/chat-messages.tsx` | Messages list | `ChatMessagesProps` |
 | `components/chat/chat-input.tsx` | Input composer | `ChatInputProps` |
-| `components/chat/chat-header.tsx` | Chat header | `ChatHeaderProps` |
-| `components/chat/chat-bubble-notification.tsx` | Notification bubble | `ChatBubbleNotificationProps` |
+| `components/chat/chat-header.tsx` | Header | `ChatHeaderProps` |
+| `components/chat/chat-bubble-notification.tsx` | Unread notifications | `ChatBubbleNotificationProps` |
 
-### Landing & Other
-| File | Purpose | Props Interface |
-|------|---------|-----------------|
+### Analytics & Landing
+| File | Purpose | Props/Data |
+|------|---------|------------|
+| `components/analytics/trends-chart.tsx` | Trend visualizations | `TrendData` |
 | `components/landing/pricing.tsx` | Pricing tiers | `PricingItem` |
-| `components/agenda/week-view.tsx` | Weekly schedule view | `WeekViewProps` |
-
-### App Router Examples
-- `app/(public)/page.tsx`: Marketing landing.
-- `app/(admin)/admin/financeiro/relatorios/page.tsx`: Finance reports.
-- `app/(admin)/admin/clientes/[id]/page.tsx`: Client detail (uses ficha tabs).
-- `app/(admin)/admin/analytics/[view]/page.tsx`: Analytics subpages.
+| `components/landing/meet-carol.tsx` | Intro section | `MeetCarol` |
+| `components/landing/how-it-works.tsx` | Workflow steps | `HowItWorks` |
+| `components/landing/faq.tsx` | Accordion FAQ | `FAQ` |
+| `components/landing/announcement-bar.tsx` | Top bar | `AnnouncementBar` |
+| `components/landing/whats-included.tsx` | Features list | `WhatsIncluded` |
 
 ## Workflows for Common Tasks
-### 1. Create Reusable Component (e.g., New Analytics Card)
-1. Identify similar: Review `components/analytics/kpi-card.tsx` or `top-metrics.tsx`.
-2. Create `components/[domain]/[name].tsx`: Define `interface [Name]Props { ... }`; `const [Name]: React.FC<[Name]Props> = ({ ... }) => { ... }`; `export default [Name]`.
-3. Style: `cn("flex flex-col p-6 rounded-lg border", variant && "bg-muted")`.
-4. Add types/data shapes matching codebase (e.g., `Metric[]`).
-5. Integrate utils: `formatCurrency(data.value)`.
-6. Export & use in parent (e.g., page or composite component).
+### 1. New Domain Component (e.g., `tab-historico.tsx` in `cliente-ficha/`)
+1. Analyze similar: Review `tab-agendamentos.tsx`/`tab-financeiro.tsx` patterns (TabsContent, Table/Card lists).
+2. Create: `components/cliente-ficha/tab-historico.tsx`.
+3. Define: `interface TabHistoricoProps { history: HistoryItem[]; onEdit: (id: string) => void; }`.
+4. Implement: `const TabHistorico: React.FC<TabHistoricoProps> = memo(({ history, onEdit }) => ( <TabsContent className={cn("space-y-4")}> {history.map(item => <Card key={item.id}> <p>{formatDate(item.date)}</p> <Button onClick={() => onEdit(item.id)}>Editar</Button> </Card> )} </TabsContent> ));`.
+5. Style/A11y: Tailwind responsive; `aria-label="Histórico do Cliente"`.
+6. Integrate: Export; use in `cliente-ficha/page.tsx` `<Tabs><TabsTrigger value="historico">Histórico</TabsTrigger>...</Tabs>`.
+7. Test: Types, responsive, empty state.
 
-### 2. Build New Admin Page (e.g., /admin/equipe/[id])
-1. Create dir: `app/(admin)/admin/equipe/[id]/page.tsx`.
-2. Server fetch: Import from `lib/supabase/server.ts`; `async function Page({ params }: { params: { id: string } }) { const data = await fetchTeam(params.id); }`.
-3. Add `loading.tsx`, `error.tsx`, `not-found.tsx`.
-4. Client parts: `'use client'`; use hooks/services for mutations.
-5. Layout: `<div className="container mx-auto p-4 space-y-6 lg:px-8">`; responsive grid.
-6. Metadata: `export const metadata = { title: 'Equipe Detail' };`.
-7. Test responsive: DevTools viewports.
+### 2. New Admin Page (e.g., `/admin/analytics/equipe`)
+1. Dir: `app/(admin)/admin/analytics/equipe/page.tsx`.
+2. Server fetch: `async function Page({ searchParams }: { searchParams: { period?: string } }) { const data = await fetchEquipeTrends(searchParams.period); return <EquipeTrendsChart data={data} />; }`.
+3. Add siblings: `loading.tsx` (Skeletons), `error.tsx`.
+4. Client interactivity: `'use client'` for filters/charts; use `useSearchParams`.
+5. Layout: `<Container className="py-8 space-y-6"><PageHeader title="Equipe Analytics" /><Filters /><Chart /> </Container>`.
+6. Metadata/i18n: `export const metadata = { title: 'Analytics Equipe' };` + `useAdminI18n`.
 
-### 3. Implement Form (e.g., New Service Pricing Form)
-1. Use shadcn Form: `Form`, `FormField`, `useForm`.
-2. Schema: Zod object with utils validators.
-3. Fields: `<Input onChange={(e) => formatCurrencyInput(e)} />`.
-4. Submit: `onSubmit={async (data) => { await WebhookService.createPricing(data); }}`.
-5. States: Loading spinner, success toast.
-6. Props: Pass `initialData?: PricingItem`.
+### 3. Typed Form (e.g., Update `transaction-form.tsx`)
+1. Schema: Zod with formatters (`z.string().transform(parseCurrency).refine(n => n > 0)`).
+2. Hook: Extend patterns from `useAppointmentForm`.
+3. JSX: `<FormField control={control} name="amount" render={({ field }) => <Input type="text" {...field} onChange={formatCurrencyInput} placeholder="R$ 0,00" />} />`.
+4. Submit: `onSubmit={handleSubmit(async (data: TransactionFormData) => { await WebhookService.createTransaction(data); refetch(); })}`.
+5. Validation/UI: Errors via `formState.errors`; loading spinner.
 
-### 4. Add Real-Time Chat Feature
-1. Container: `<ChatWindow sessionId={id} />`.
-2. Messages: `<ChatMessages messages={data} />` with `MessageBubble`.
-3. Input: `<ChatInput onSend={useSendMessage} />`.
-4. Service: Integrate `WebhookService` for sends/notifications.
-5. Optimistic: Local state + invalidate queries.
+### 4. Real-Time Chat Update (e.g., New Notification)
+1. Container: `app/(public)/chat/page.tsx` → `<ChatWindow sessionId={id}><ChatHeader /><ChatMessages /><ChatInput /></ChatWindow>`.
+2. State: `const [messages, setMessages] = useState<Message[]>([]);` optimistic `setMessages(prev => [...prev, newMsg]);`.
+3. Service: `WebhookService.sendMessage(msg)` + subscribe for incoming.
+4. Render: `<VirtualizedList data={messages} renderItem={({ item }) => <MessageBubble key={item.id} {...item} isOwn={item.senderId === user.id} />} />`.
+5. Notify: `<ChatBubbleNotification unread={unreadCount} onClick={openChat} />`.
 
-### 5. Optimize Large List/Table (e.g., Clients Table)
-1. Virtualize: TanStack Virtual or `react-window` if >100 items.
-2. Memo rows: `const Row = React.memo(({ client }: { client: Client }) => ...)`.
-3. Filters: `<ClientsFilters onFilter={setFilters} />`; debounce search.
-4. Pagination: Server-side via params.
+### 5. Optimize Table (e.g., Enhance `clients-table.tsx`)
+1. TanStack: `<Table data={clients} columns={columns} />` with server pagination (`pageIndex`, `pageSize`).
+2. Filters: Integrate `<ClientsFilters onFiltersChange={setFilters} />` + debounce.
+3. Row: `const ClientRow = memo(({ client }: { client: Client }) => <TableRow key={client.id}> <TableCell>{formatPhoneUS(client.phone)}</TableCell> ... </TableRow>);`.
+4. Virtual: `@tanstack/react-virtual` for large N.
 
-### 6. Analytics Chart Update
-1. Data: Server-fetch `TrendData[]`.
-2. Component: Extend `trends-chart.tsx`; Recharts inferred (LineChart, responsive container).
-3. Controls: `<PeriodSelector onChange={refetch} />`.
-4. Responsive: `h-[300px] md:h-[400px]`.
+### 6. New Analytics Chart (e.g., `equipe-chart.tsx`)
+1. Data: Server `TrendData[]` prop.
+2. Impl: `dynamic(() => import('recharts').then(mod => ({ default: mod.ResponsiveContainer })), { ssr: false })`.
+3. JSX: `<ResponsiveContainer className="h-80 lg:h-96"><LineChart data={data}><XAxis dataKey="date" /><YAxis tickFormatter={formatCurrencyUSD} /><Line dataKey="value" stroke="hsl(var(--primary))" /> </LineChart></ResponsiveContainer>`.
+4. Controls: Period buttons → refetch.
 
-### 7. Accessibility Audit & Fix
-1. Run Lighthouse.
-2. Add ARIA: `role="tabpanel" aria-labelledby="tab-1"`.
-3. Keyboard: `onKeyDown` for Enter/Escape.
-4. Contrast: Tailwind analyzer tools.
+### 7. Responsive/A11y/Perf Audit
+1. Tailwind: DevTools → toggle devices; ensure `grid-cols-1 md:grid-cols-2`.
+2. A11y: `role="tablist" aria-selected`; `screenreader-only`; Lighthouse/axe.
+3. Perf: Memo callbacks; `why-did-you-render`; `npm run build` → `npx @next/bundle-analyzer`.
 
-## Collaboration & QA Checklist
-- Lint: `npm run lint -- --fix`.
-- Perf: Bundle analyzer; Lighthouse mobile/desktop.
-- Test: Manual E2E (Cypress patterns); component isolation.
-- PR: Screenshots (desktop/mobile), before/after metrics.
-- Docs: Update key files/symbols if new patterns.
+## QA & Collaboration Checklist
+- **Build/Lint**: `npm run build`, `npm run lint -- --fix`, `tsc --noEmit`.
+- **Metrics**: Lighthouse (perf≥90, a11y≥95, best-practices≥90); Core Web Vitals.
+- **Tests**: Responsive (mobile/tablet/desktop); keyboard (Tab/Enter); empty/error/loading states; form validation.
+- **Visual**: Before/after screenshots; Figma if specs.
+- **PR**: Changed files/symbols; metrics delta; edge cases (no data, invalid phone/currency).
 
 ## Hand-off Notes
-- **Deliverables**: New/updated files list, Lighthouse delta, responsive screenshots.
-- **Risks**: Re-render loops in real-time; Tailwind purge misses.
-- **Next**: Backend for new data needs; full E2E suite.
+- **Artifacts**: File diffs, new types/props, UI screenshots, Lighthouse JSON.
+- **Risks**: Re-renders (no memo) → lag; prop drilling → Context; Tailwind purge misses.
+- **Escalate**: Supabase schema updates; service logic changes; i18n keys.

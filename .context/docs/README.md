@@ -4,12 +4,13 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8.svg?logo=tailwindcss)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-DB%20%2B%20Auth-f03c15.svg?logo=supabase)](https://supabase.com/)
+[![Shadcn/UI](https://img.shields.io/badge/shadcn/ui-000000.svg?logo=shadcn)](https://ui.shadcn.com/)
 
-**Carolinas Premium** is a full-stack Next.js application for managing premium salon/spa services. It features an admin dashboard for clients (`Cliente`), appointments (`Agendamento`), finances (`Financeiro`), analytics, and contracts (`Contrato`), alongside customer-facing landing pages, AI chat (`ChatWidget`), and integrations with Supabase and n8n webhooks.
+**Carolinas Premium** is a production-ready, full-stack Next.js 14 (App Router) application for managing premium salon/spa services. It features an admin dashboard for clients (`Cliente`), appointments (`Agendamento`), finances (`Financeiro`), analytics, contracts (`Contrato`), feedback, and configurations. Includes customer-facing landing pages, AI-powered chat widget (`ChatWidget`), Supabase auth/DB, n8n webhooks for notifications, and export tools.
 
-- **Files**: 156 | **Symbols**: 247 (119 components, 40 controllers/API routes, 31 utils)
-- **Languages**: TypeScript (.ts/.tsx), minor .mjs
-- **Deployment**: Vercel-ready (App Router), Docker support
+- **Files**: 183 | **Components**: 139 | **API Routes**: 44 | **Utils**: 43 | **Services**: 2
+- **Languages**: .tsx (137), .ts (44), .mjs (2)
+- **Deployment**: Vercel-optimized, Docker, Turbopack dev server
 
 ## 🚀 Quick Start
 
@@ -23,160 +24,180 @@ npm install
 ### 2. Environment Variables
 Copy `.env.example` to `.env.local`:
 ```env
-# Supabase
+# Supabase (required)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Webhooks (n8n)
-N8N_WEBHOOK_SECRET=your-secret
+# n8n Webhooks (required for notifications)
 N8N_WEBHOOK_URL=https://your-n8n.app/webhook/carolinas
+N8N_WEBHOOK_SECRET=your-hmac-secret
 
-# Optional: OpenAI for chat
+# Optional: OpenAI for ChatWidget
 OPENAI_API_KEY=sk-...
 
-# Exports/Stripe (if enabled)
-STRIPE_SECRET_KEY=sk_test_...
+# Optional: Business Config
+BUSINESS_NAME="Carolinas Premium"
+BUSINESS_CURRENCY="USD"
 ```
-Validate: `npm run validate-env` ([lib/env.ts](lib/env.ts)).
+Run `npm run validate-env` to check ([lib/env.ts](lib/env.ts#L20)).
 
-### 3. Run Development Server
+### 3. Database Setup
 ```bash
-npm run dev
+npm run db:generate  # Generate types/supabase.ts
 ```
-- Landing: [http://localhost:3000](http://localhost:3000)
-- Admin: [http://localhost:3000/admin](http://localhost:3000/admin) (login required)
+Uses Supabase for auth, RLS, and schema (`Cliente`, `Agendamento`, etc.).
 
-### 4. Build & Production
+### 4. Development Server
 ```bash
-npm run build
-npm start
+npm run dev  # http://localhost:3000 (Turbopack + HMR)
 ```
+- Landing: [/](http://localhost:3000)
+- Admin: [/admin](http://localhost:3000/admin) (Supabase auth)
+- API Health: [/api/health](http://localhost:3000/api/health)
 
-### Key Scripts
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Dev server (Turbopack) |
+### 5. Scripts
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev server |
 | `npm run build` | Production build |
-| `npm run lint` | ESLint + Prettier |
-| `npm run lint:fix` | Auto-fix linting |
-| `npm run db:generate` | Regenerate Supabase types ([types/supabase.ts](types/supabase.ts)) |
-| `npm run validate-env` | Check required env vars |
-| `docker compose up` | Local Supabase + app |
+| `npm run start` | Production server |
+| `npm run lint:fix` | Lint + format |
+| `npm run db:generate` | Update Supabase types |
+| `docker compose up` | Local stack (app + Supabase) |
 
-## 📁 Repository Structure
+## 📁 Project Structure
 
 ```
 carolinas-premium/
-├── app/                    # Next.js 14 App Router
-│   ├── (admin)/            # Protected admin ([AdminLayout](app/(admin)/layout.tsx))
-│   │   └── admin/          # Pages: ClientesPage, AgendaPage, Analytics
-│   ├── (auth)/             # Auth pages ([AuthLayout](app/(auth)/layout.tsx))
-│   ├── api/                # API routes
-│   │   ├── chat/route.ts   # POST /api/chat ([useChat](hooks/use-chat.ts))
-│   │   ├── webhook/n8n/    # POST /api/webhook/n8n (n8n events)
-│   │   └── notifications/  # POST /api/notifications/send
-│   └── layout.tsx          # Root layout
-├── components/             # 119 React components (Shadcn/UI + Tailwind)
-│   ├── admin/              # AdminHeader, AdminLayout
-│   ├── agenda/             # CalendarView (imported 4x), WeekView, DayView
-│   ├── analytics/          # TrendsChart, ConversionFunnel, DashboardStats
-│   ├── chat/               # ChatWidget, ChatWindow (imported 3x), MessageBubble
-│   ├── clientes/           # ClientsTable, ClientsFilters
-│   ├── cliente-ficha/      # Client detail tabs (Info, Financeiro, Agendamentos)
-│   ├── financeiro/         # TransactionForm, ExpenseCategories
-│   └── landing/            # AboutUs, AnnouncementBar, FAQ, Pricing
-├── hooks/                  # Custom hooks
-│   ├── use-chat.ts         # useChat, ChatMessage
-│   └── use-webhook.ts      # useNotifyAppointmentCreated, etc.
-├── lib/                    # 31 utilities
-│   ├── utils.ts            # cn (clsx/twm), formatCurrency
-│   ├── formatters.ts       # formatPhoneUS, formatCurrencyUSD
-│   ├── supabase/           # createClient (server/client)
-│   ├── export-utils.ts     # exportToExcel, exportToPDF
-│   └── config/webhooks.ts  # getWebhookSecret, getWebhookUrl
-├── types/                  # Shared TypeScript types
-│   ├── index.ts            # Cliente, Agendamento, DashboardStats
-│   └── webhook.ts          # WebhookPayloads (AppointmentCreatedPayload, etc.)
-├── docs/                   # Documentation (this folder)
-├── public/                 # Static assets (logos, images)
-├── prompts/                # AI chat system prompts
-└── ...                     # Config: next.config.ts, middleware.ts, tsconfig.json
+├── app/                          # App Router: pages + 44 API routes
+│   ├── (admin)/                  # AdminLayout ([layout.tsx](app/(admin)/layout.tsx))
+│   │   └── admin/                # AgendaPage, ClientesPage, CategoriasPage
+│   ├── (auth)/                   # AuthLayout ([layout.tsx](app/(auth)/layout.tsx))
+│   ├── api/                      # /api/chat, /api/webhook/n8n, /api/slots
+│   └── layout.tsx                # Root: providers, i18n
+├── components/ (139)             # Shadcn/UI + Tailwind
+│   ├── agenda/                   # CalendarView (5 imports), AppointmentModal (8 imports)
+│   ├── chat/                     # ChatWidget (2 imports), ChatWindow (3 imports)
+│   ├── clientes/                 # ClientsTable, ClientsFilters
+│   ├── cliente-ficha/            # TabAgendamentos, TabFinanceiro
+│   ├── financeiro/               # TransactionForm (2 imports), ExpenseCategories
+│   └── landing/                  # AnnouncementBar, AboutUs
+├── hooks/                        # useChat, useWebhook notifiers
+├── lib/ (43 utils)               # cn, formatters, supabase clients, webhooks
+│   ├── actions/                  # auth.ts (getUser, signOut)
+│   ├── config/                   # webhooks.ts (getWebhookSecret)
+│   ├── supabase/                 # server.ts, client.ts (createClient)
+│   └── services/                 # WebhookService
+├── types/                        # Cliente, Agendamento, WebhookPayloads
+│   ├── index.ts                  # Core domain types
+│   └── webhook.ts                # 12+ event payloads
+├── docs/                         # This README, architecture.md
+├── public/                       # Assets
+└── ...                           # next.config.ts, middleware.ts (rateLimit)
 ```
 
-## ✨ Key Features & Public API
+**Top Imports**:
+- `components/agenda/appointment-modal.tsx` (8 files)
+- `components/agenda/calendar-view.tsx` (5 files)
+- `components/chat/chat-window.tsx` (3 files)
 
-### Core Types ([types/index.ts](types/index.ts))
+## ✨ Core Features
+
+### Domain Types ([types/index.ts](types/index.ts))
 ```ts
-export interface Cliente { id: string; nome: string; /* ... */ }
-export interface Agendamento { id: string; cliente_id: string; data: Date; /* ... */ }
-export type DashboardStats = { clientes: number; agendamentos: number; receita: number };
+export interface Cliente { id: string; nome: string; email?: string; telefone?: string; }
+export interface Agendamento {
+  id: string;
+  cliente_id: string;
+  data: string;
+  servico_tipo: ServicoTipo;
+  addons?: Addon[];
+}
+export interface DashboardStats { clientes: number; agendamentos: number; receita: number; }
 ```
 
-### Utilities ([lib/utils.ts](lib/utils.ts), [lib/formatters.ts](lib/formatters.ts))
+### Utilities
 ```ts
-import { cn } from '@/lib/utils';  // Tailwind class merger
-import { formatCurrency } from '@/lib/utils';  // $1,234.56
-import { formatPhoneUS } from '@/lib/formatters';  // (123) 456-7890
+// lib/utils.ts, lib/formatters.ts
+import { cn, formatCurrency } from '@/lib/utils';
+import { formatPhoneUS, formatCurrencyUSD, parseCurrency } from '@/lib/formatters';
 
-const formatted = formatCurrency(1234.56);  // "$1,234.56"
+cn('flex gap-2 p-4', 'bg-primary/10');  // Tailwind merge
+formatPhoneUS('1234567890');  // "(123) 456-7890"
+formatCurrencyUSD(1234.56, true);  // "$1,234.56"
 ```
 
-### Hooks
-- `useChat` ([hooks/use-chat.ts](hooks/use-chat.ts)): AI chat state/messages.
-- `useWebhook` ([hooks/use-webhook.ts](hooks/use-webhook.ts)): Notifications like `useNotifyAppointmentCreated(payload)`.
-
-### Components
-- `ChatWidget` ([components/chat/chat-widget.tsx](components/chat/chat-widget.tsx)): Embeddable chat.
-- `ClientsFilters` + `ClientsTable` ([components/clientes/](components/clientes/)): Client management.
-- `CalendarView` ([components/agenda/calendar-view.tsx](components/agenda/calendar-view.tsx)): Agenda (multi-view).
-
-### API Routes
-| Endpoint | Method | Purpose | Auth |
-|----------|--------|---------|------|
-| `/api/chat` | POST | Send chat message | None |
-| `/api/webhook/n8n` | POST | n8n events (verified via [getWebhookSecret](lib/config/webhooks.ts)) | Secret |
-| `/api/notifications/send` | POST | Push notifications | Admin |
-| `/api/slots` | GET | Available slots | None |
-
-**Exports**: [lib/export-utils.ts](lib/export-utils.ts)
+**Exports** ([lib/export-utils.ts](lib/export-utils.ts)):
 ```ts
-import { exportToExcel } from '@/lib/export-utils';
+import { exportToExcel, exportToPDF } from '@/lib/export-utils';
 exportToExcel(data, 'clientes.xlsx');  // Browser download
 ```
 
+### Hooks
+- **Chat** ([hooks/use-chat.ts](hooks/use-chat.ts)):
+  ```ts
+  const { messages, append, reload } = useChat();
+  // messages: ChatMessage[]
+  ```
+- **Webhooks** ([hooks/use-webhook.ts](hooks/use-webhook.ts)):
+  ```ts
+  const notifyAppointmentCreated = useNotifyAppointmentCreated();
+  notifyAppointmentCreated({ agendamento: agendamentoData });
+  // 12+ notifiers: AppointmentCancelledPayload, ClientBirthdayPayload, etc.
+  ```
+
+### Components (Key Exports)
+| Export | Path | Notes |
+|--------|------|-------|
+| `ChatWidget` | [components/chat/chat-widget.tsx](components/chat/chat-widget.tsx) | Embeddable AI chat |
+| `CalendarView` | [components/agenda/calendar-view.tsx](components/agenda/calendar-view.tsx) | Day/Week views |
+| `ClientsFilters` | [components/clientes/clients-filters.tsx](components/clientes/clients-filters.tsx) | Filter `ClientsTable` |
+| `TransactionForm` | [components/financeiro/transaction-form.tsx](components/financeiro/transaction-form.tsx) | Income/expenses |
+| `AnnouncementBar` | [components/landing/announcement-bar.tsx](components/landing/announcement-bar.tsx) | Marketing banner |
+
+### API Routes
+| Endpoint | Method | Payload/Type | Auth |
+|----------|--------|--------------|------|
+| `/api/chat` | POST | `ChatRequest` | None |
+| `/api/webhook/n8n` | POST | `IncomingWebhookPayload` | HMAC ([getWebhookSecret](lib/config/webhooks.ts)) |
+| `/api/slots` | GET | - | None |
+| `/api/financeiro/categorias/[id]` | DELETE | - | Admin |
+| `/api/health` | GET | - | None |
+
+**Webhook Payloads** ([types/webhook.ts](types/webhook.ts)):
+```ts
+export interface AppointmentCreatedPayload {
+  agendamento: Agendamento;
+  cliente: Cliente;
+}
+```
+
 ### Integrations
-- **Supabase**: Auth/DB ([lib/supabase/](lib/supabase/)), types auto-generated.
-- **n8n Webhooks**: Events like `AppointmentCreatedPayload` → notifications.
-- **Chat AI**: OpenAI-powered ([app/api/chat/route.ts](app/api/chat/route.ts)).
-- **Middleware**: Rate limiting ([middleware.ts](middleware.ts)).
+- **Supabase**: [createClient](lib/supabase/server.ts) (server/client), auto-types ([types/supabase.ts](types/supabase.ts))
+- **n8n**: Events like `WebhookEventType.AppointmentCreated`
+- **AI**: OpenAI via `/api/chat`
+- **Middleware**: [rateLimit](middleware.ts#L9), session auth
 
-## 📖 Documentation Guides
-
-| Guide | Description |
-|-------|-------------|
-| [Project Overview](docs/project-overview.md) | Features, roadmap, personas |
-| [Architecture](docs/architecture.md) | Layers, data flow diagrams |
-| [Development Workflow](docs/development-workflow.md) | Git, CI/CD, PRs |
-| [Domain Glossary](docs/glossary.md) | Cliente, Agendamento, webhook payloads |
-| [Security](docs/security.md) | RLS, secrets, rate limits |
-| [Deploy](docs/deploy.md) | Vercel, Docker, Easypanel |
+## 📖 Further Reading
+- [Architecture](docs/architecture.md): Layers, data flow
+- [Glossary](docs/glossary.md): `Cliente`, `ServicoTipo`
+- [Deployment](docs/deploy.md): Vercel/Docker
+- [Security](docs/security.md): RLS, secrets
 
 ## 🤝 Contributing
+1. `git checkout -b feat/your-feature`
+2. `npm run lint:fix`
+3. Test: Admin agenda/clients, chat widget
+4. PR: Update changelog.md if breaking
+5. Code: English; Domain: Portuguese (`Agendamento`)
 
-1. Branch: `feat/admin-analytics`, PR to `main`.
-2. Lint: `npm run lint:fix`.
-3. Test changes: Focus on no-regression for admin/client flows.
-4. Update [changelog.md](changelog.md) for releases.
-5. Domain terms: Portuguese (`Cliente`, `Agendamento`).
+**Search**: IDE "Go to Symbol" (284 total) or `grep -r "useChat" .`
 
-Search codebase: `grep -r "useChat" .` or use IDE symbols.
+## 🔒 Production Notes
+- **Auth**: Supabase + [lib/actions/auth.ts](lib/actions/auth.ts) (`getUser`)
+- **Logging**: [Logger](lib/logger.ts)
+- **Limits**: [middleware.ts](middleware.ts)
+- Validate: `npm run validate-env`
 
-## 🔒 Security & Production Notes
-
-- **Auth**: Supabase RLS + middleware checks.
-- **Rate Limits**: [middleware.ts](middleware.ts) → `rateLimit`.
-- **Secrets**: Never commit `.env`; use Vercel dashboard.
-- **Health Check**: `GET /api/health`.
-
-**Last Updated**: October 2024 | **Generated from 156 files, 247 symbols**. Questions? Open an issue!
+**Generated**: From 183 files, 284 symbols. [Issues](https://github.com/your-repo/issues).

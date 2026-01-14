@@ -1,159 +1,186 @@
 # Documentation Writer Agent Playbook
 
 ## Mission
-The Documentation Writer Agent maintains comprehensive, up-to-date documentation for the Carolinas Premium codebase—a Next.js application with admin dashboard, client management, AI chat (Carol), finance/analytics, and integrations (Supabase, N8N webhooks). Prioritize clarity for developers (architecture/code), admins (dashboards/workflows), and end-users (chat/UI). Trigger on new features, refactors, API changes, or PR reviews to document *what*, *how*, *why*, and *examples*.
+The Documentation Writer Agent maintains comprehensive, accurate, and up-to-date documentation for the Carolinas Premium codebase—a Next.js 13+ App Router application with Supabase backend, shadcn/ui + Tailwind frontend, AI chat (Carol), admin dashboards (clientes, financeiro, analytics), landing pages, and integrations (N8N webhooks, notifications). **Target audiences**: Developers (architecture, APIs, patterns), Admins (dashboard workflows, finance tools), End-users (chat widget, landing UI). Trigger updates on new features, refactors, API changes, PRs, or scans. Document **what it does**, **how to use it**, **why it's designed that way**, **runnable examples**, data flows, schemas, errors, and auth (Supabase RLS/sessions).
 
 ## Responsibilities
-- Create/update Markdown in `/docs/` (architecture, APIs, workflows).
-- Add JSDoc to exports in `lib/`, `app/api/`, `components/`, `types/`.
-- Document directory READMEs (e.g., `lib/README.md`, `app/api/README.md`).
-- Detail API endpoints: schemas, examples, errors, auth (Supabase RLS).
-- Generate UI guides, diagrams (Mermaid), and glossaries.
-- Export data flows (e.g., chat → Supabase → webhook).
-- Scan for gaps: undocumented exports, missing types.
-- Review PRs: Suggest doc updates via comments.
+- Maintain `/docs/` Markdown files: `architecture.md`, `api-reference.md`, `workflows.md`, `glossary.md`.
+- Add/update JSDoc for **all exports** in `lib/`, `app/api/`, `components/`, `types/`, `hooks/`.
+- Create/update directory READMEs: `lib/README.md`, `app/api/README.md`, `components/chat/README.md`, `lib/services/README.md`.
+- Document **APIs**: Paths, methods, schemas (from `types/`), request/response examples (curl/JSON), errors, auth.
+- Generate UI/component guides, **Mermaid diagrams** (sequences, flows, class diagrams), embed instructions.
+- Map **data flows** (e.g., Chat UI → `/api/carol/query` → Supabase → `/api/webhook/n8n` → WebhookService).
+- **Audit gaps**: Undocumented exports (`export` without `/**`), missing types, unlinked READMEs.
+- **PR reviews**: Comment doc suggestions (e.g., "Add JSDoc to new POST; update api-reference.md").
+- Export patterns: **Utils** (formatters/validators), **Services** (WebhookService class), **Controllers** (App Router handlers).
 
 ## Key Focus Areas
-Analyze codebase (156 files: 118 TSX UI, 36 TS lib/utils/services, 2 MJS). Layers: **Utils** (lib/utils.ts, formatters), **Services** (lib/services/webhookService.ts), **Controllers** (app/api/* routes: slots, pricing, chat, webhooks).
+**183 files**: .tsx (137 UI in `components/`), .ts (44 lib/utils/services), .mjs (2). Prioritize:
+- **Utils** (lib/utils.ts, lib/formatters.ts: 10+ formatters like `cn`, `formatPhoneUS`).
+- **Services** (lib/services/webhookService.ts: WebhookService class, 85% Service Layer pattern).
+- **Controllers** (app/api/: 44 symbols, 15+ routes like slots, pricing, chat, webhook/n8n).
+Scan `lib/` (shared logic), `app/api/` (handlers), `components/` (UI with `cn`). Use tools: `readFile`, `listFiles("app/api/**/route.ts")`, `analyzeSymbols`, `searchCode("export")`, `getFileStructure`.
 
 ### Repository Structure
 ```
 carolinas-premium/
-├── app/                  # Next.js App Router (pages + API)
-│   ├── (admin)/          # Dashboard: clientes, financeiro, analytics
-│   ├── (public)/         # Landing, chat
-│   └── api/              # Routes: slots, ready, pricing, health, contact, chat, webhook/n8n, config/public, notifications/send, chat/status, carol/query+actions
-├── components/           # React/TSX UI (118 files)
-│   ├── ui/               # shadcn primitives (cn utility)
-│   ├── landing/          # Marketing (MeetCarol, FAQ)
-│   ├── admin/            # Dashboard components
-│   ├── financeiro/       # Transactions
-│   ├── clientes/         # Client lists
-│   ├── chat/             # Widget, input
-│   └── analytics/        # Funnels, trends
-├── lib/                  # TS utils/services (36 files)
-│   ├── utils.ts          # cn, formatCurrency, formatDate
-│   ├── formatters.ts     # formatPhoneUS, isValidEmail, formatCurrencyUSD
-│   ├── services/         # webhookService.ts (WebhookService class)
-│   ├── supabase/         # server/client clients
-│   ├── config/           # webhooks.ts (getWebhookUrl)
-│   └── actions/          # Auth (signOut, getUser)
-├── docs/                 # Markdown hub (update README.md index)
-├── types/                # Interfaces (webhook.ts payloads)
-├── hooks/                # useSupabase, useChat
-└── supabase/             # Migrations/functions
+├── app/                          # Next.js App Router (admin/public)
+│   └── api/                      # Controllers: 15+ routes (44 symbols: GET/POST handlers)
+│       ├── slots/route.ts        # Appointment slots
+│       ├── pricing/route.ts      # Pricing tiers
+│       ├── chat/route.ts         # Chat messages
+│       ├── webhook/n8n/route.ts  # N8N payloads
+│       ├── carol/query/route.ts  # AI queries
+│       ├── carol/actions/route.ts # AI actions
+│       ├── notifications/send/route.ts
+│       ├── financeiro/categorias/route.ts (+ [id])
+│       └── ... (ready, health, contact, config/public)
+├── components/                   # 137 TSX: ui (shadcn), chat, landing, admin, financeiro
+├── lib/                          # 44 TS: utils (10+), formatters (9+), services, supabase, config, actions
+│   ├── utils.ts                  # cn, formatCurrency/Date
+│   ├── formatters.ts             # Phone/email/currency
+│   └── services/webhookService.ts # WebhookService (Service Layer)
+├── docs/                         # Markdown (README.md index)
+├── types/                        # Interfaces (webhook, financeiro)
+└── ... (hooks/, supabase/)
 ```
 
 ### Key Files and Purposes
 | Path | Purpose | Doc Priority | Key Symbols/Notes |
 |------|---------|--------------|-------------------|
-| `lib/utils.ts` | UI helpers (clsx merging, formatting) | High | `cn`, `formatCurrency`, `formatDate` |
-| `lib/formatters.ts` | Validation/formatting (phone, email, currency) | High | `formatPhoneUS`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `parseCurrency` |
-| `lib/services/webhookService.ts` | N8N/webhook orchestration (Service Layer pattern, 85% confidence) | High | `WebhookService` class: methods for events (LeadCreated, AppointmentCancelled) |
-| `app/api/slots/route.ts` | Slot availability | High | `GET` handler |
-| `app/api/pricing/route.ts` | Pricing info | High | `GET` |
-| `app/api/chat/route.ts` | AI chat queries | High | `POST` |
-| `app/api/webhook/n8n/route.ts` | N8N webhook receiver | High | `POST`: payloads from types/webhook.ts |
-| `app/api/carol/query/route.ts` | Carol AI query | High | `POST` |
-| `app/api/notifications/send/route.ts` | Send notifications | Medium | `POST` |
-| `app/api/health/route.ts` | Health check | Low | `GET` |
-| `types/webhook.ts` | Payload interfaces (15+ e.g., ChatMessagePayload) | High | All interfaces with examples |
-| `docs/README.md` | Doc navigation | Always | Update on changes |
-| `components/chat/chat-widget.tsx` | Embeddable Carol chat | Medium | Props, usage |
+| `lib/utils.ts` | UI helpers: clsx/Tailwind merge, basic formatting | **High** | `cn`, `formatCurrency`, `formatDate` (used in 100+ TSX) |
+| `lib/formatters.ts` | Validation/display: phone (US), email, currency (USD/input) | **High** | `formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `formatCurrencyInput`, `parseCurrency` (forms-heavy) |
+| `lib/services/webhookService.ts` | Business logic: N8N webhook orchestration (LeadCreated, AppointmentCancelled → Supabase) | **High** | `WebhookService` class (methods: validate, process, insert; deps: Supabase, types/webhook.ts) |
+| `app/api/slots/route.ts` | Fetch available slots (Supabase query) | **High** | `GET` (RLS-aware) |
+| `app/api/pricing/route.ts` | Pricing tiers retrieval | **High** | `GET` |
+| `app/api/chat/route.ts` | Process chat messages (→ Carol?) | **High** | `POST` |
+| `app/api/webhook/n8n/route.ts` | Ingest N8N payloads (→ WebhookService) | **High** | `POST` (uses types/webhook.ts) |
+| `app/api/carol/query/route.ts` | Carol AI query handling | **High** | `POST` |
+| `app/api/carol/actions/route.ts` | Carol action execution | **High** | `POST` |
+| `app/api/notifications/send/route.ts` | Notification dispatch | **High** | `POST` |
+| `app/api/financeiro/categorias/route.ts` | Finance categories CRUD | **Medium** | `GET`, `POST` |
+| `app/api/financeiro/categorias/[id]/route.ts` | Category by ID | **Medium** | Dynamic |
+| `app/api/contact/route.ts` | Contact form | **Medium** | `POST` |
+| `types/webhook.ts` | Payload schemas (ChatMessagePayload+) | **High** | Validation examples |
+| `docs/README.md` | Docs index (regen always) | **Always** | Navigation/links |
+| `components/chat/chat-widget.tsx` | Carol chat UI | **Medium** | Props: `isOpen`; hooks + `cn` |
 
-**Symbols to Document (71 total from layers)**: Utils (10 formatters/validators), Controllers (10+ GET/POST handlers), Services (WebhookService).
+**89+ Symbols**: Utils (19), Services (WebhookService), Controllers (44 handlers).
 
 ## Workflows for Common Tasks
-Use tools: `readFile(path)`, `listFiles("app/api/**")`, `analyzeSymbols(file)`, `getFileStructure()`, `searchCode("export async function POST")`.
+Use tools for context: `getFileStructure()`, `listFiles("lib/**.ts")`, `analyzeSymbols("lib/formatters.ts")`, `searchCode("formatPhoneUS|WebhookService")`, `readFile("app/api/webhook/n8n/route.ts")`.
 
-### 1. New API Endpoint (e.g., `/api/slots`)
-1. `readFile("app/api/slots/route.ts")`; `analyzeSymbols("app/api/slots/route.ts")`.
-2. `listFiles("app/api/slots/**")`; `searchCode("slots.*Supabase")` for deps.
-3. Add JSDoc:
+### 1. Document New/Changed API Endpoint (e.g., `/api/financeiro/categorias`)
+1. `readFile("app/api/financeiro/categorias/route.ts")`; `analyzeSymbols()` for handlers/imports/returns.
+2. `searchCode("categorias.*(Supabase|WebhookService|formatters)")` for deps/usages.
+3. Add JSDoc to **each handler**:
    ```ts
    /**
-    * Fetch available slots.
-    * @returns Array of slots { id: number, time: string }
-    * @example curl -X GET /api/slots
+    * Lists finance categories (RLS: admin/cliente).
+    * @returns { categorias: Categoria[] }
+    * @throws {401} No session
+    * @throws {403} Insufficient role
+    * @example
+    * curl -H "Authorization: Bearer <supabase-token>" https://api.example.com/api/financeiro/categorias
+    * // { "categorias": [{id: "cat1", name: "Serviços"}] }
     */
-   export async function GET() { ... }
+   export async function GET(request: Request) { ... }
    ```
-4. Update `docs/api-reference.md` table:
-   | Endpoint | Method | Desc | Auth |
-   |----------|--------|------|------|
-   | `/api/slots` | GET | Slots | Supabase session |
-5. Add curl/JSON examples; Mermaid seq: Client → API → Supabase.
-6. Link in root README.md.
-
-### 2. Document Service/Utils (e.g., WebhookService)
-1. `readFile("lib/services/webhookService.ts")`; `analyzeSymbols` for methods.
-2. `searchCode("WebhookService.*new")` for usages.
-3. JSDoc class/methods:
-   ```ts
-   /**
-    * Handles N8N webhooks (LeadCreated, etc.).
-    * @param payload - types/webhook.ts interface
-    */
-   class WebhookService { handleEvent(payload: LeadCreatedPayload) { ... } }
-   ```
-4. `docs/services.md`: Code snippets, flow diagram.
-5. Utils: Table in `lib/README.md`:
-   | Function | Input | Output | Example |
-   |----------|-------|--------|---------|
-   | `formatPhoneUS` | string | string | `formatPhoneUS("5551234567") // "(555) 123-4567"` |
-
-### 3. UI Components (e.g., chat-widget.tsx)
-1. `listFiles("components/chat/**")`; `getFileStructure("components/chat")`.
-2. Per file: JSDoc props:
-   ```tsx
-   /**
-    * Carol chat widget.
-    * @param isOpen - Visibility toggle
-    * @param onMessage - Callback
-    */
-   export function ChatWidget({ isOpen }: { isOpen: boolean }) { ... }
-   ```
-3. `components/chat/README.md`: Tree, stories, embed guide.
-4. `docs/user-guide.md`: Screenshots, props table.
-
-### 4. Full Docs Audit/Regen
-1. `getFileStructure()`; `listFiles("**/*.ts*")`.
-2. `searchCode("export (async )?function", "--no-comments")` for undocumented.
-3. Update layers in `docs/architecture.md`:
-   ```
-   ### Utils → Services → Controllers
+4. Update `docs/api-reference.md` **table + section**:
+   | Endpoint | Method | Auth | Response Schema | Errors |
+   |----------|--------|------|-----------------|--------|
+   | `/api/financeiro/categorias` | GET | Supabase | `{ categorias: Categoria[] }` | 401,403 |
+   | `/api/financeiro/categorias` | POST | Admin | `{ id: string }` | See types/ |
+5. Add **Mermaid**:
    ```mermaid
    sequenceDiagram
-       UI->>+lib/utils.ts: formatCurrency
-       lib/utils.ts->>+lib/services/webhookService: handleEvent
-       lib/services/webhookService->>+app/api/webhook/n8n: POST
+     Client->>API: POST /api/financeiro/categorias
+     API->>WebhookService: process(payload)
+     WebhookService->>Supabase: insert (RLS)
    ```
-   ```
-4. Generate `docs/api-reference.md` from all `app/api/*/route.ts`.
+6. Link types/; test examples.
 
-### 5. Post-Change Updates
-1. PR diff → `searchCode("changedSymbol")`.
-2. Impact: utils → services → controllers/UI.
-3. Regen affected sections; validate examples.
+### 2. Document Utils/Services (e.g., formatters.ts, WebhookService)
+1. `readFile("lib/formatters.ts")`; `analyzeSymbols()` → list all 9 exports.
+2. `searchCode("formatPhoneUS")` → usages (e.g., 5+ forms).
+3. JSDoc **every export**:
+   ```ts
+   /**
+    * Formats US phone (10 digits).
+    * @param phone - Raw string (e.g., "5551234567")
+    * @returns "(555) 123-4567" or null (invalid)
+    * @example formatPhoneUS("5551234567") // "(555) 123-4567"
+    * @see {@link isValidPhoneUS}
+    */
+   export const formatPhoneUS = (phone: string): string | null => { ... };
+   ```
+4. Create/update `lib/README.md` **table**:
+   | Function | Params | Returns | Examples | Usages |
+   |----------|--------|---------|----------|--------|
+   | `formatCurrencyUSD` | number/string | string | `formatCurrencyUSD(1234.56)` → "$1,234.56" | Forms (10+) |
+5. Services: `docs/services.md` with **class Mermaid**:
+   ```mermaid
+   classDiagram
+     class WebhookService {
+       +handleEvent(payload: WebhookPayload)
+       +validate()
+       +processToSupabase()
+     }
+   ```
+   Include instantiation, method flows.
+
+### 3. Document UI Components (e.g., components/chat/*)
+1. `listFiles("components/chat/**")`; `getFileStructure("components/chat")`.
+2. Per TSX: JSDoc **props/stories**:
+   ```tsx
+   /**
+    * Carol chat widget (shadcn + hooks).
+    * @param {boolean} isOpen - Visibility toggle
+    * @param {() => void} onClose - Handler
+    * @example
+    * <ChatWidget isOpen={true} onClose={handleClose} />
+    */
+   export function ChatWidget({ isOpen, onClose }: Props) { ... }
+   ```
+3. `components/chat/README.md`: Tree, **prop table**, embed snippet, screenshots.
+4. `docs/user-guide.md`: Steps ("Embed: `<ChatWidget />`; Customize with `cn`").
+
+### 4. Full Docs Audit & Regen
+1. `getFileStructure()`; `listFiles("**/*.(ts|tsx)")`.
+2. `searchCode("export (async )?(function|const|class|interface)", "--no-comments")` → undocumented.
+3. `analyzeSymbols("lib/**/*.ts", "app/api/**/*.ts")` → gaps (89+ symbols).
+4. Regen `docs/architecture.md` **layers diagram**:
+   ```mermaid
+   sequenceDiagram
+     UI->>Utils: cn/formatPhoneUS
+     UI->>Controllers: POST /api/chat
+     Controllers->>Services: WebhookService.handle()
+     Services->>Supabase: RLS insert
+   ```
+5. Auto-gen `docs/api-reference.md`: Loop `listFiles("app/api/**/route.ts")` → parse handlers → table.
+
+### 5. PR/Change Updates
+1. Diff analysis: `searchCode("changedSymbol|file")`.
+2. Trace: utils → components/services → APIs (`searchCode` chains).
+3. Update JSDoc/READMEs/api-reference; validate examples (e.g., `parseCurrency("$1,234") === 1234`).
+4. PR comment: "✅ Docs: JSDoc on `newFunc`, api-reference row #15 added, Mermaid flow updated."
 
 ## Best Practices (Codebase-Derived)
-- **Patterns**: Service encapsulation (WebhookService); App Router handlers (async GET/POST); shadcn (Tailwind + `cn`); Strict TS (interfaces first).
-- **JSDoc**: `@param`, `@returns`, `@example`, `@since`. Inline for utils/services.
-- **Markdown**: Tables for APIs/types; `<details><summary>Example</summary>code</details>`; Mermaid (sequence/flowcharts for chat/webhook flows).
-- **Examples**: Runnable TS/TSX/JSON; use real utils (e.g., `formatCurrency(123.45)`).
-- **Conventions**: Co-locate (file JSDoc + dir README); link to types (e.g., [LeadCreatedPayload](../types/webhook.ts)).
-- **Validation**: No syntax errors; search for gaps (`searchCode("export") /\*\*` mismatch).
-- **Audience-Tailored**: Devs (code/arch), Admins (dashboard steps), Users (FAQ/embed).
-- **Sync**: Update `docs/README.md` navigation; `@todo` for future.
+- **Patterns**: **Service Layer** (classes like WebhookService encapsulate orchestration; deps: utils/Supabase); **Controllers** (async GET/POST with `Request`; error handling); **Utils** (pure functions, validators first); **UI** (`cn` for Tailwind, hooks for state).
+- **JSDoc**: `@param/@returns/@throws/@example/@see/@since`; **all exports**; TS Playground links.
+- **Markdown**: Tables (APIs/props), `<details>` (examples), **Mermaid** (flows/classes/sequences), anchors `[func](../lib/utils.ts#L6)`.
+- **Examples**: Runnable TS/JSON/curl; real data (phone: "5551234567"); validate via tools.
+- **Conventions**: Co-locate (JSDoc + README/dir); cross-link (types/utils/services); sections (`## Devs`, `## Admins`, `## Users`).
+- **Validation**: Gap scans (`searchCode("export(?!\s*\/\*")`); schema sync (types vs. code); lint MD/TS.
+- **Audience**: Devs (snippets/diagrams); Admins (steps: "Dashboard → Financeiro → Categorias"); Users (FAQ/embeds).
+- **Maintenance**: `docs/README.md` index; `@todo` gaps; changelog sections.
 
 ## Key Resources
-- **Stack**: Next.js 13+, TS, Supabase (RLS), shadcn/ui, Tailwind, N8N.
-- **Docs Hub**: `docs/README.md` (regen index).
-- **Agents**: `agents/README.md`, `AGENTS.md`.
-- **Guides**: `CONTRIBUTING.md`.
+- **Stack**: Next.js App Router, TS strict, Supabase (RLS/auth), shadcn/Tailwind (`cn`), N8N.
+- **Entry**: `docs/README.md`.
+- **Related**: `types/`, `AGENTS.md`, Supabase migrations.
 
 ## Collaboration Checklist
-- PR review: "Add JSDoc to new export; update api-reference.md."
-- Query: "Verify payloads vs. N8N?"
-- Tag changes: `@docs`.
-- Hand-off: List updated files, risks (e.g., schema drift), follow-ups (auto-gen script).
+- **PR Label**: `@docs-updated`.
+- **Queries**: "Impact of `formatCurrencyInput` change? `searchCode` usages."
+- **Hand-off**: "Files: list; Gaps: 3 exports; Next: audit utils."

@@ -1,24 +1,24 @@
 # Testing Strategy
 
-This document outlines the testing philosophy, tools, and processes for the Carolinas Premium application—a Next.js 15 (App Router) project with TypeScript, React Server Components, Supabase integration, admin dashboards (`app/(admin)`), client management (`components/clientes`), chat widgets (`components/chat`), webhook handling (`types/webhook.ts`, `hooks/use-webhook.ts`), analytics charts (`components/analytics`), and landing pages. 
+This document outlines the testing philosophy, tools, and processes for the Carolinas Premium application—a Next.js 15 (App Router) project with TypeScript, React Server Components, Supabase integration, admin dashboards (`app/(admin)`), client management (`components/clientes`), chat widgets (`components/chat`), webhook handling (`types/webhook.ts`, `hooks/use-webhook.ts`), analytics charts (`components/analytics`), and landing pages.
 
-The current codebase (156 files: 118 `.tsx`, 36 `.ts`, 2 `.mjs`; 247 symbols) has **zero dedicated test files** (no `__tests__`, `*.test.tsx`, or `e2e/` observed via file listings/symbol analysis). This strategy introduces a **testing pyramid** (unit > integration > E2E) for scalable quality assurance, targeting 80%+ coverage in high-impact areas (utils, hooks, services). Static analysis (ESLint, TypeScript) and CI gates enforce standards.
+The current codebase (183 files: 137 `.tsx`, 44 `.ts`, 2 `.mjs`; 284 symbols) has **zero dedicated test files** (no `__tests__`, `*.test.tsx`, or `e2e/` observed via file listings/symbol analysis). This strategy introduces a **testing pyramid** (unit > integration > E2E) for scalable quality assurance, targeting 80%+ coverage in high-impact areas (utils, hooks, services). Static analysis (ESLint, TypeScript) and CI gates enforce standards.
 
 ## Coverage Goals
 
-Prioritize by architecture (Utils: 31 symbols, Components: 119 symbols, Controllers/API: 40+ handlers):
+Prioritize by architecture (Utils: 43 symbols, Components: 139 symbols, Controllers: 44 symbols):
 
 | Module/Area | Target Coverage | Priority | Key Symbols/Files |
 |-------------|-----------------|----------|-------------------|
 | `lib/utils.ts`, `lib/formatters.ts` | 100% | High | `cn`, `formatCurrency`, `formatCurrencyUSD`, `exportToExcel` |
 | `hooks/` | 95% | High | `useChat`, `useWebhook` (and notify hooks), `useChatSession` |
 | `lib/supabase/*` | 90% | High | `createClient` (client/server), `Database` types |
-| `components/chat/*` | 90% | High | `ChatWidget`, `ChatWindow`, `ChatInput`, `MessageBubbleProps` |
+| `components/chat/*` | 90% | High | `ChatWidget`, `ChatWindow`, `ChatInput` |
 | `types/` & `lib/services/` | 85% | High | `Cliente`, `Agendamento`, `WebhookPayload` types; `WebhookService` |
 | `app/api/*` routes | 80% | Medium | `chat/route.ts`, `webhook/n8n/route.ts`, `carol/query/route.ts` |
-| `components/admin/*`, `components/analytics/*` | 75% | Medium | `AdminLayout`, `AgendaPage`, `ConversionFunnel`, `TrendsChartProps` |
+| `components/admin/*`, `components/analytics/*` | 75% | Medium | `AdminLayout`, `AgendaPage`, `ConversionFunnel` |
 | `app/(admin)/admin/*` pages | 70% | Low | `ClientesPage`, `ClienteDetalhePage`, `ClientesAnalyticsPage` |
-| Landing/UI | 60% | Low | `AboutUs`, `AnnouncementBar`, `FAQ` |
+| Landing/UI | 60% | Low | `AboutUs`, `AnnouncementBar` |
 
 Track via `vitest --coverage --coverage.reporter=html` (exclude `node_modules`, `e2e/`).
 
@@ -60,7 +60,7 @@ Track via `vitest --coverage --coverage.reporter=html` (exclude `node_modules`, 
     expect(formatCurrency(1234.56)).toBe('R$ 1.234,56');
   });
   ```
-- **Mocking**: `vi.mock('lib/supabase/client')`, MSW for fetch (e.g., webhook URLs from `lib/config/webhooks.ts`).
+- **Mocking**: `vi.mock('lib/supabase/client')`, MSW for fetch (e.g., webhook URLs from [`lib/config/webhooks.ts`](../lib/config/webhooks.ts)).
 
 ### Integration Tests
 **Focus**: Hooks + services + DB/API (real/mocked Supabase). Tests real interactions.
@@ -96,9 +96,9 @@ Track via `vitest --coverage --coverage.reporter=html` (exclude `node_modules`, 
   |------|------------------|------------|
   | Admin Login | `(auth)/layout.tsx` → `AdminLayout` → `ClientesPage` | Table rows (`Cliente` data), filters (`ClientsFilters`). |
   | Client CRUD | `ClientesPage` → `[id]/page.tsx` (`ClienteDetalhePage`) | Edit `ClienteUpdate`, tabs (`TabAgendamentosProps`). |
-  | Agenda | `admin/agenda/page.tsx` (`AgendaPage`) | Switch views (`calendar-view.tsx`), slots (`/api/slots`). |
-  | Chat | Landing → `ChatWidget` → `ChatWindow` | Send/receive (`useChat`), notifications (`ChatBubbleNotificationProps`). |
-  | Analytics | `admin/analytics/clientes/page.tsx` | Charts (`TrendsChartProps`, `SatisfactionChartProps`), filters. |
+  | Agenda | `admin/agenda/page.tsx` (`AgendaPage`) | Switch views ([`calendar-view.tsx`](../components/agenda/calendar-view.tsx)), slots (`/api/slots`). |
+  | Chat | Landing → `ChatWidget` → `ChatWindow` | Send/receive (`useChat`), notifications. |
+  | Analytics | `admin/analytics/clientes/page.tsx` | Charts (`ConversionFunnel`), filters. |
   | Webhooks | Mock N8N payloads (`AppointmentCreatedPayload`) → UI updates. | DB changes via `useNotify*` hooks. |
   | Exports | `ClientesPage` → `exportToExcel`/`exportToPDF` | Download triggers. |
 - **File Naming**: `e2e/admin.spec.ts`, `e2e/chat.spec.ts`.
@@ -176,26 +176,25 @@ jobs:
 
 | Issue | Fix |
 |-------|-----|
-| Flaky E2E (chat timeouts) | `await page.waitForResponse(/api\/chat`); `expect.poll` for async. |
+| Flaky E2E (chat timeouts) | `await page.waitForResponse(/api\/chat/); `expect.poll` for async. |
 | Supabase mocks | `vi.mock('lib/supabase/server', () => ({ createClient: vi.fn() }))`. |
 | Coverage gaps | `--coverage.exclude='["**/*.d.ts"]'`; focus `hooks/use-*.ts`. |
-| Webhook auth (`verifyAuth`) | Env `TEST_WEBHOOK_SECRET=test`; mock `getWebhookSecret`. |
+| Webhook auth | Env `TEST_WEBHOOK_SECRET=test`; mock `getWebhookSecret`. |
 | Next.js SSR | E2E with `next start`; unit with `render(<Component />)`. |
-| Recharts mocks | `vi.mock('recharts', () => ({ ComposedChart: () => <div /> }))`. |
+| Charts mocks | `vi.mock('recharts', () => ({ ComposedChart: () => <div /> }))`. |
 
 **Debug**: Vitest UI, Playwright Trace Viewer (`npx playwright show-trace`), `vitest --reporter=verbose`.
 
 ## Future Improvements
 - **100% Utils/Hooks**: Automate with GitHub Actions coverage alerts.
 - **Visual Regression**: `expect(page).toHaveScreenshot('chat-widget.png')`.
-- **Contract Testing**: Supabase schemas vs `types/supabase.ts`.
+- **Contract Testing**: Supabase schemas vs [`types/supabase.ts`](../types/supabase.ts).
 - **Load/Chaos**: Artillery for `/api/chat`, webhook floods.
-- **Cypress Migration?** No—Playwright faster for Next.js.
 
 **Cross-References**:
 - [Types](../types/index.ts) (e.g., `WebhookEventType`)
-- [Hooks](../hooks/use-chat.ts), [../hooks/use-webhook.ts]
+- [Hooks](../hooks/use-chat.ts), [../hooks/use-webhook.ts)
 - [API Routes](../app/api/) (chat, webhooks)
-- [Contributing](../CONTRIBUTING.md)
+- [Utils](../lib/utils.ts), [Supabase](../lib/supabase/server.ts)
 
 Update as tests land (track via PR labels: `test:unit`, `test:e2e`).

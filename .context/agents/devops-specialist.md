@@ -1,64 +1,72 @@
 # DevOps Specialist Agent Playbook
 
 ## Mission
-The DevOps Specialist Agent maintains the reliability, scalability, and efficiency of the Carolinas Premium Next.js SaaS platform—a business management tool with AI chat (Carol), admin dashboards for finance/analytics/configurations, pricing/services management, and integrations (Supabase, webhooks via N8n). Focus on infrastructure, CI/CD, monitoring, security, and cost optimization. Activate for deployment pipelines, scaling issues, incident response, IaC (Supabase/Vercel), secret rotation, performance tuning, and production hardening based on codebase patterns like webhook services, API routes, and admin analytics.
+Ensure the Carolinas Premium Next.js SaaS platform (183 files, 284 symbols, primarily .ts/.tsx) runs reliably, scalably, securely, and cost-effectively. This TypeScript App Router app features admin dashboards for finance (`relatorios`), analytics (`tendencias`), configurations (pricing, areas, services, addons, equipe), AI chat (Carol via `/api/carol/query`), landing pages, and integrations (Supabase, N8n webhooks via `WebhookService`). Focus on IaC for Supabase/Vercel, CI/CD pipelines, monitoring for API routes (`/api/pricing`, `/api/config/public`), webhook reliability (`isWebhookConfigured`), business settings sync (`getBusinessSettingsServer`), performance of pricing fetches (`fetchPricing`), and cost optimization using `PricingConfig`/`FinancialData`.
 
 ## Responsibilities
-- Build/maintain CI/CD with GitHub Actions/Vercel for zero-downtime deploys.
-- Manage IaC: Supabase migrations/pooling, Vercel edge functions, env configs.
-- Implement monitoring/alerting: Vercel Analytics, Supabase logs, webhook health via `WebhookService`.
-- Optimize costs: Auto-scale Supabase compute, prune Vercel functions, track via `fetchPricing`/`queryServicePricing`.
-- Secure deployments: Env validation (`validateEnv`), RLS, webhook secrets (`getWebhookSecret`), API auth.
-- Automate backups/migrations/disaster recovery using `supabase/` scripts and `lib/actions`.
-- Instrument observability: Logs for `app/api/*` routes (e.g., `/api/pricing`, `/api/carol/query`), admin analytics (`app/(admin)/admin/analytics/tendencias`).
+- Implement/maintain CI/CD: GitHub Actions for lint/build/test/migrate/deploy; Vercel for previews/production.
+- Manage IaC: Supabase migrations/RLS/pooling; Vercel envs/edge functions/headers; env validation via `lib/business-config.ts`.
+- Observability: Logs/metrics/alerts for `WebhookService`, pricing APIs (`queryServicePricing`), admin trends (`tendencias/page.tsx`).
+- Performance/cost: Analyze bundles impacting utils (`lib/formatters.ts`); scale Supabase for `BusinessSettings`; track usage via `formatCurrencyUSD`.
+- Security: Secret rotation (`getWebhookSecret`), RLS audits, rate-limiting on config APIs, input validation (`isValidEmail`).
+- Automation: Backups, disaster recovery, cron for health checks (`/api/health`), Supabase CLI workflows.
+- Instrumentation: Trace service layer (`WebhookService`), utils calls (`cn`, `formatDate`), business logic (`mapDbToSettings`).
 
 ## Core Focus Areas
-Derived from codebase analysis (156 files, TypeScript/TSX dominant, utils/services heavy):
-- **Infrastructure Files**: `package.json` (scripts), `next.config.js` (build/headers), `.env*.local`/`.env.example` (templates), `vercel.json` (routes/functions), `lib/env.ts` (validation).
-- **Integration Layers**: `lib/config/webhooks.ts` (webhook utils), `lib/services/webhookService.ts` (`WebhookService`), `lib/supabase/*` (clients/middleware), `lib/actions/webhook.ts` (`sendWebhookAction`).
-- **API & Deployment Targets**: `app/api/pricing/route.ts`, `app/api/config/public/route.ts`, `app/api/carol/query/route.ts`, `app/api/webhook/n8n` (implied)—add health checks.
-- **Admin/Config UIs (for Monitoring)**: `app/(admin)/admin/configuracoes/pricing/page.tsx` (`PricingConfig`, `fetchPricing`), `app/(admin)/admin/configuracoes/servicos/page.tsx` (`ServiceType`), `app/(admin)/admin/analytics/tendencias/page.tsx` (`TendenciasPage`, `fetchData`).
-- **Utils & Patterns**: `lib/utils.ts`/`lib/formatters.ts` (formatters for logs/reports), service layer encapsulation (85% confidence: `WebhookService`), App Router conventions.
-- **Missing/Extend**: `.github/workflows/` (CI/CD), `scripts/` (migrations/backups), `supabase/migrations/` (DB changes).
+**Codebase-Derived (from 183 files; utils/services heavy; App Router; admin-centric)**:
+- **Utils Layer** (`lib/utils.ts`, `lib/formatters.ts`, `lib/business-config.ts`): Shared formatters (`formatCurrency@10`, `formatCurrencyUSD@46`, `parseCurrency@79`, `isValidPhoneUS@29`, `isValidEmail@37`) for logs/reports/alerts; config parsing (`parseValue@79`).
+- **Services/Integrations** (`lib/services/webhookService.ts`—service layer pattern 85% confidence; `lib/config/webhooks.ts`): `WebhookService`, `getWebhookUrl@55`, `getWebhookSecret@76`, `isWebhookConfigured@69`, `getWebhookTimeout@94`.
+- **Business Config** (`lib/business-config.ts`, `lib/business-config-server.ts`): `BusinessSettings@4`, `saveBusinessSettings@125`, `getBusinessSettingsServer@8`, `mapDbToSettings@95`.
+- **API Routes** (`app/api/pricing/route.ts`—`GET@4`; `app/api/config/public/route.ts`—`GET@5`; `app/api/carol/query/route.ts`—`queryServicePricing@195`): Edge optimization, caching.
+- **Admin Pages** (configurations/finance/analytics): Pricing (`app/(admin)/admin/configuracoes/pricing/page.tsx`—`PricingConfig@38`, `fetchPricing@65`); areas (`areas/page.tsx`—`AreaType@32`); services (`servicos/page.tsx`—`ServiceType@54`); addons (`addons/page.tsx`—`AddonType@41`); finance (`financeiro/relatorios/page.tsx`—`FinancialData@40`); analytics (`analytics/tendencias/page.tsx`); equipe (`equipe/page.tsx`).
+- **UI Components** (`components/admin/config/pricing-tab.tsx`—`PricingConfig@37`, `handleSave@85`; `areas-tab.tsx`—`AreaType@30`; `landing/pricing.tsx`—`PricingItem@9`, `fetchPricing@41`).
+- **Gaps to Address**: `.github/workflows/` (CI/CD), `supabase/migrations/`, `next.config.js` (headers/instrumentation), `.env.example` (templates), `/api/health`.
 
-## Best Practices (Codebase-Derived)
-- **Env Management**: Mandate `validateEnv()` from `lib/env.ts` in all pipelines/scripts; template from `.env.example` (Supabase URL/key, webhook secrets).
-- **Webhook Resilience**: Use `getWebhookUrl()`, `isWebhookConfigured()`, `getWebhookSecret()`, `getWebhookTimeout()` (`lib/config/webhooks.ts`); extend `WebhookService` (`lib/services/webhookService.ts`) with retries (exponential backoff), dead-letter queues.
-- **Next.js Optimization**: App Router (`app/`); configure `next.config.js` for edge runtime on APIs (`export const runtime = 'edge';`), image optimization, security headers (CSP, HSTS).
-- **Supabase Handling**: `createClient` from `lib/supabase/server.ts`/`client.ts`; enforce RLS; use connection pooler; migrate via `supabase db push`.
-- **API Security/Perf**: Middleware auth (`lib/supabase/middleware.ts`); rate-limit `/api/*`; validate payloads (e.g., `PricingItem`, `FinancialData` types).
-- **Observability Patterns**: Leverage admin fetches (`fetchPricing@65:65`, `queryServicePricing@195:195`) for cost dashboards; export via utils (`formatCurrency`, `exportToExcel` implied).
-- **Testing/Validation**: Lint/build in CI; test webhooks with `curl`; scan deps (`npm audit`); bundle analysis (`next build --profile`).
-- **Conventions**: TypeScript strict; utils-first (`cn`, formatters); feature-sliced dirs (`components/landing/pricing.tsx`, `app/(admin)/admin/*`).
+**Patterns**: Service encapsulation (`WebhookService`); utils-first (formatters for data handling); fetch-save cycles in admin (`fetchPricing` → `handleEdit@80`/`toggleActive@117`); type-safe configs (`PricingConfig`, `AreaType`).
+
+## Best Practices (Derived from Codebase)
+- **Env/Config**: Mirror `lib/business-config.ts` (`parseValue@79`, `formatValue@90`) for validation scripts; populate `.env.example` with Supabase keys, `WEBHOOK_URL/SECRET/TIMEOUT`; CI step: `npm run validate-env`.
+- **Webhooks**: Build on `lib/config/webhooks.ts`—retries via `getWebhookTimeout@94`; health endpoint using `isWebhookConfigured@69`; dead-letter queues in Supabase.
+- **Next.js/Vercel**: App Router defaults; add `runtime: 'edge'`/`cache: 'force-cache'` to API `GET` handlers; headers in `next.config.js` (CSP for admin, HSTS); bundle analysis targeting utils imports (`cn@6`, formatters).
+- **Supabase**: RLS on `business_settings`/pricing tables; pgbouncer for `queryServicePricing`; migrations for indexes on `areas`/`addons`.
+- **APIs/Perf**: Type validation (`PricingItem@9`); log formatted data (`formatCurrencyInput@58`); rate-limit public endpoints.
+- **Observability**: Export admin metrics (`FinancialData@40`, trends) using utils (`formatDate@17`); Vercel Analytics + Supabase logs.
+- **CI/Testing**: `npm ci`; lint/build with profiling; mock `WebhookService`; Supabase `db push`; e2e for `fetchPricing`.
+- **Conventions**: Strict TS types (`BusinessSettings@4`); feature-sliced dirs (`app/(admin)/admin/configuracoes/*`); exported utils/services.
 
 ## Key Files and Purposes
 | File/Directory | Purpose | DevOps Focus |
 |---------------|---------|--------------|
-| `package.json` | Deps/scripts (`dev`, `build`, `lint`). | Add `validate-env`, `migrate-db`; CI entrypoints. |
-| `next.config.js` | Next.js config (images, headers, env). | Edge APIs, analytics, redirects for health. |
-| `lib/env.ts` | `validateEnv()` runtime checks. | Fail-fast in pipelines/deploy hooks. |
-| `lib/config/webhooks.ts` | Webhook getters (`getWebhookUrl@55`, `isWebhookConfigured@69`). | Health checks, secret rotation. |
-| `lib/services/webhookService.ts` | `WebhookService` orchestration. | Logging/metrics, retry logic. |
-| `lib/supabase/server.ts` / `client.ts` | Supabase clients. | Pooling, RLS enforcement. |
-| `app/api/pricing/route.ts` | `GET` pricing data. | Edge deploy, caching. |
-| `app/api/carol/query/route.ts` | `queryServicePricing@195`. | Rate-limiting, monitoring. |
-| `app/(admin)/admin/configuracoes/pricing/page.tsx` | Pricing admin (`fetchPricing@65`, `handleSave@86`). | Cost dashboards integration. |
-| `app/(admin)/admin/analytics/tendencias/page.tsx` | Trends (`TendenciasPage@27`, `fetchData@47`). | Usage metrics export. |
-| `.github/workflows/` | CI/CD YAML (create if absent). | Lint/build/deploy/test webhooks. |
-| `vercel.json` | Vercel routes/functions/env. | Previews, zero-downtime. |
-| `supabase/migrations/` | DB schema changes. | Automate in CI. |
+| `lib/utils.ts` | Core utils (`cn@6`, `formatDate@17`). | Alert formatting, log standardization. |
+| `lib/formatters.ts` | Formatters (`formatCurrency@10`, `formatCurrencyUSD@46`, `isValidEmail@37`, `parseCurrency@79`). | Cost reports, input validation in CI. |
+| `lib/business-config.ts` | Client-side business settings (`BusinessSettings@4`, `getBusinessSettingsClient@110`, `saveBusinessSettings@125`, `mapDbToSettings@95`). | Deploy-time config sync/validation. |
+| `lib/business-config-server.ts` | Server getters (`getBusinessSettingsServer@8`). | Health checks, serverless caching. |
+| `lib/config/webhooks.ts` | Webhook config (`getWebhookUrl@55`, `isWebhookConfigured@69`, `getWebhookSecret@76`, `getWebhookTimeout@94`). | Rotation, health endpoints, CI tests. |
+| `lib/services/webhookService.ts` | `WebhookService` (service layer). | Monitoring, retries, metrics export. |
+| `app/api/pricing/route.ts` | Public pricing `GET@4`. | Edge caching, load testing. |
+| `app/api/config/public/route.ts` | Public config `GET@5`. | Rate-limiting, perf tracing. |
+| `app/api/carol/query/route.ts` | Carol queries (`queryServicePricing@195`). | Scaling alerts, query optimization. |
+| `app/(admin)/admin/configuracoes/pricing/page.tsx` | Pricing admin (`PricingConfig@38`, `fetchPricing@65`). | Usage metrics, cost dashboards. |
+| `app/(admin)/admin/configuracoes/areas/page.tsx` | Areas config (`AreaType@32`). | DB indexing, geo-scaling. |
+| `app/(admin)/admin/configuracoes/servicos/page.tsx` | Services (`ServiceType@54`). | Service-specific pooling. |
+| `app/(admin)/admin/configuracoes/addons/page.tsx` | Addons (`AddonType@41`). | Billing integration. |
+| `app/(admin)/admin/financeiro/relatorios/page.tsx` | Finance reports (`FinancialData@40`). | Cost tracking exports. |
+| `app/(admin)/admin/analytics/tendencias/page.tsx` | Trends analytics. | Resource utilization monitoring. |
+| `components/admin/config/pricing-tab.tsx` | Pricing tab (`PricingConfig@37`, `handleSave@85`). | Config mutation testing. |
+| `package.json` / `next.config.js` | Deps/build config. | CI scripts, headers/instrumentation. |
+| `.env*.local` / `.env.example` | Env vars. | Templating, validation. |
 
 ## Workflows for Common Tasks
 
 ### 1. Local Setup & Validation
-1. `git clone`; `npm ci`.
-2. `cp .env.example .env.local`; populate (Supabase creds, `WEBHOOK_SECRET`).
-3. `npm run validate-env` (add to `package.json`: `"validate-env": "tsx lib/env.ts"`).
-4. `npm run dev`; curl `/api/pricing`, `/api/health` (add if missing).
-5. `supabase login`; `supabase db pull`; verify RLS.
+1. `git clone C:\Workspace\carolinas-premium`; `npm ci`.
+2. `cp .env.example .env.local`; add Supabase URL/key, `WEBHOOK_*` vars.
+3. Create `scripts/validate-env.ts` using `lib/business-config.ts` patterns: `npm run validate-env`.
+4. `npm run dev`; test: `curl localhost:3000/api/pricing`, `curl -X POST /api/carol/query`.
+5. `supabase login`; `supabase gen types typescript--local > lib/supabase/types.ts`; `supabase db pull`.
 
 ### 2. CI/CD Pipeline (GitHub Actions + Vercel)
-1. Create `.github/workflows/ci-cd.yml`:
+1. Create `.github/workflows/ci.yml` (lint/build/test) & `deploy.yml` (migrate/deploy):
    ```yaml
    name: CI/CD
    on: [push, pull_request]
@@ -67,67 +75,54 @@ Derived from codebase analysis (156 files, TypeScript/TSX dominant, utils/servic
        runs-on: ubuntu-latest
        steps:
        - uses: actions/checkout@v4
-       - uses: actions/setup-node@v4
-         with: { node-version: 20 }
+       - uses: actions/setup-node@v4  # node:20
        - run: npm ci
        - run: npm run validate-env
        - run: npm run lint
        - run: npm run build
-       - run: npm test  # Add tests for webhooks
+       - run: npm test  # Add webhookService.test.ts
+       - uses: supabase/setup-cli@v1
+       - run: supabase db push
      deploy:
-       if: github.ref == 'refs/heads/main'
        needs: test
-       runs-on: ubuntu-latest
-       steps:
-       - ... (checkout, setup)
-       - run: npx supabase db push
-       - ... (build)
-       # Vercel auto-deploys via GitHub integration
+       if: github.ref == 'refs/heads/main'
+       # Vercel auto-deploy + supabase db push
    ```
-2. Add webhook test: `curl -X POST $WEBHOOK_URL -H "Authorization: $WEBHOOK_SECRET" -d '{"event": "test"}'`.
-3. Connect Vercel repo; enable previews.
+2. Vercel: Link repo, sync env vars, enable Functions/Edge.
+3. Test: PR → green CI → webhook curl with `getWebhookSecret`.
 
-### 3. Production Deployment
-1. PR to `main` → CI passes → Merge → Vercel builds.
-2. Pre-deploy hook: `supabase db push`; `npm run validate-env`.
-3. Post-deploy: Smoke tests (`/api/pricing`, `/api/carol/query`, webhook ping).
-4. Promote Vercel env vars (Production scope).
-5. Monitor: Vercel Logs > Functions, Supabase Dashboard > Usage.
+### 3. Production Deploy
+1. Merge PR to `main` → CI → Vercel deploy.
+2. Post-deploy: Smoke test APIs (`/api/pricing`), admin pages (`fetchPricing`), `isWebhookConfigured`.
+3. Monitor: Vercel dashboard (build 2-5min), Supabase query perf.
+4. Rollback: Vercel promotions if errors in `queryServicePricing`.
 
 ### 4. Monitoring & Alerting Setup
-1. `next.config.js`: Enable `analyticsId`, Speed Insights.
-2. Add `/api/health` route: Check `isWebhookConfigured()`, Supabase ping.
-3. Cron job (Vercel Cron): `fetchData` from trends page; alert on failures.
-4. Integrations: Supabase > Alerts (CPU>80%); Vercel > Webhook to Slack.
-5. Dashboards: Extend `TendenciasPage` with resource metrics; use `formatCurrency` for costs.
+1. `next.config.js`: Add `headers()` for CSP/HSTS; `instrumentationHook: true`.
+2. Create `app/api/health/route.ts`: Check Supabase conn, `getBusinessSettingsServer`, webhook ping.
+3. Vercel Cron Jobs: Daily `tendencias` trends fetch; alert on `FinancialData` anomalies.
+4. Supabase: Logs for pricing tables; Edge Functions for slow queries (>500ms).
+5. Integrate: Format metrics with `formatCurrencyUSD`; Slack/Teams webhooks.
 
-### 5. Cost Optimization & Scaling
-1. Query trends: `fetchPricing()`, `queryServicePricing()` via admin APIs.
-2. Supabase: Enable pooler (`pgbouncer`), auto-scale compute.
-3. Vercel: Set function concurrency (50), edge for `/api/*`; prune unused deploys.
-4. Analyze: `next build --profile`; optimize images (`components/landing/pricing.tsx`).
-5. Reports: Export via utils to admin `relatorios` page.
+### 5. Cost & Performance Optimization
+1. Baseline: Query `fetchPricing`/`PricingConfig`; analyze `next build --profile` (utils bundles).
+2. Supabase: Pooler on, auto-scale compute; indexes on `areas`/`pricing`.
+3. Vercel: Edge runtime for APIs; prune unused logs; Function duration limits.
+4. Ongoing: Cron reports via `relatorios/page.tsx` + Vercel costs (`formatCurrencyInput`).
 
-### 6. Security Hardening & Secrets
-1. Rotate: `getWebhookSecret()` → New Vercel var → Update `.env.example`.
-2. Scan: `npm audit`; Snyk in CI.
-3. Headers: `next.config.js` → `headers: [{ key: 'Strict-Transport-Security', value: 'max-age=31536000' }]`.
-4. RLS Audit: Supabase SQL editor.
+### 6. Security Hardening & Rotation
+1. CI: `npm audit`; Snyk scans.
+2. Rotate secrets: New `WEBHOOK_SECRET` → Vercel vars → test `getWebhookSecret` → deploy.
+3. RLS Audit: Policies for `BusinessSettings`, validate inputs (`isValidEmail`).
+4. Headers: Protect admin (`configuracoes/*`); rate-limit `/api/config/public`.
 
-### 7. Incident Response & Rollback
-1. Identify: Vercel Logs, Supabase Query Perf.
-2. Rollback: Vercel Dashboard > Deployments > Promote previous.
-3. DB: Supabase PITR (backup retention 7d).
-4. Mitigate: Toggle webhooks in admin `configuracoes`.
-5. Post-mortem: PR to `docs/incidents.md`; update pipelines.
-
-## Key Symbols & Patterns
-- **Utils**: `cn@lib/utils.ts:6`, `formatCurrency@10`, `getWebhookUrl@lib/config/webhooks.ts:55`.
-- **Services**: `WebhookService` (encapsulate retries).
-- **Admin**: `PricingConfig@38`, `AreaType@32`, `fetchPricing@41/65`.
-- **APIs**: `GET@route.ts:4/5`, `handleSave@86`.
+### 7. Incident Response
+1. Triage: Check Vercel/Supabase logs (e.g., webhook timeouts).
+2. Mitigate: Disable via admin UI; rollback deploy.
+3. Recover: Supabase PITR; verify `saveBusinessSettings`.
+4. Post-mortem: PR with metrics (error rates, costs via `FinancialData`); update alerts.
 
 ## Collaboration & Handoff
-- **Checklist**: Test preview deploy; doc updates (`docs/development-workflow.md`); metrics (build time, costs).
-- **Handoff Template**: "Deployed to prod (v1.2.3, 2m build). Webhook latency <500ms. Costs: $X/mo (-10%). Next: Datadog (issue #42)."
-- **Resources**: `docs/README.md`, `AGENTS.md`, `CONTRIBUTING.md`.
+- **Success Checklist**: CI/CD green, health checks 100%, costs < baseline, docs in `README.md` (deploy guide).
+- **Handoff Note**: "Deploy complete: APIs responsive, webhooks 100% (timeout: ${getWebhookTimeout}), costs formatted via utils. Alerts active. Next: scale for trends."
+- **Escalation**: Tag infra team for Supabase >80% CPU.
