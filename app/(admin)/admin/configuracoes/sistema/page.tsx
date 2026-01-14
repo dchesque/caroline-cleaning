@@ -104,7 +104,7 @@ export default function SistemaConfigPage() {
                         <p className="text-sm text-muted-foreground">{settingsT.system.subtitle}</p>
                     </div>
                 </div>
-                <Button onClick={handleSave} disabled={isSaving} className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600">
+                <Button onClick={handleSave} disabled={isSaving} className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 shadow-sm">
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     {settingsT.saveChanges}
                 </Button>
@@ -112,35 +112,37 @@ export default function SistemaConfigPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Horários de Operação */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
+                        <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                             <Clock className="w-5 h-5 text-brandy-rose-500" />
                             {settingsT.system.sections.hours}
                         </CardTitle>
-                        <CardDescription>{settingsT.system.sections.hoursDesc}</CardDescription>
+                        <CardDescription className="text-gray-500">{settingsT.system.sections.hoursDesc}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>{settingsT.system.fields.operatingStart}</Label>
+                                <Label className="text-gray-700">{settingsT.system.fields.operatingStart}</Label>
                                 <Input
                                     type="time"
                                     value={config.operating_start}
                                     onChange={(e) => setConfig({ ...config, operating_start: e.target.value })}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>{settingsT.system.fields.operatingEnd}</Label>
+                                <Label className="text-gray-700">{settingsT.system.fields.operatingEnd}</Label>
                                 <Input
                                     type="time"
                                     value={config.operating_end}
                                     onChange={(e) => setConfig({ ...config, operating_end: e.target.value })}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <Label>{settingsT.system.fields.operatingDays}</Label>
+                            <Label className="text-gray-700">{settingsT.system.fields.operatingDays}</Label>
                             <div className="flex flex-wrap gap-2">
                                 {days.map((day) => {
                                     const active = config.operating_days?.includes(day.id)
@@ -151,8 +153,8 @@ export default function SistemaConfigPage() {
                                             size="sm"
                                             onClick={() => toggleDay(day.id)}
                                             className={cn(
-                                                "h-8 px-3 text-[10px] font-semibold transition-all",
-                                                active && "bg-brandy-rose-500 hover:bg-brandy-rose-600"
+                                                "h-8 px-3 text-[10px] font-semibold transition-all shadow-sm",
+                                                active ? "bg-brandy-rose-500 hover:bg-brandy-rose-600 border-transparent text-white" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
                                             )}
                                         >
                                             {day.label}
@@ -165,123 +167,127 @@ export default function SistemaConfigPage() {
                 </Card>
 
                 {/* Regras de Agendamento */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
+                        <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                             <CalendarCheck className="w-5 h-5 text-brandy-rose-500" />
                             {settingsT.system.sections.booking}
                         </CardTitle>
-                        <CardDescription>{settingsT.system.sections.bookingDesc}</CardDescription>
+                        <CardDescription className="text-gray-500">{settingsT.system.sections.bookingDesc}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>{settingsT.system.fields.bookingMinNotice}</Label>
+                                <Label className="text-gray-700">{settingsT.system.fields.bookingMinNotice}</Label>
                                 <div className="flex items-center gap-2">
                                     <Input
                                         type="number"
                                         value={config.booking_min_notice_hours}
                                         onChange={(e) => setConfig({ ...config, booking_min_notice_hours: parseInt(e.target.value) })}
-                                        className="w-20"
+                                        className="w-24 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
-                                    <span className="text-xs text-muted-foreground">hours</span>
+                                    <span className="text-xs text-muted-foreground font-medium">hours</span>
                                 </div>
+                                <p className="text-[10px] text-gray-400">{settingsT.system.fields.bookingMinNoticeHelp}</p>
                             </div>
                             <div className="space-y-2">
-                                <Label>{settingsT.system.fields.bookingMaxAdvance}</Label>
+                                <Label className="text-gray-700">{settingsT.system.fields.bookingMaxAdvance}</Label>
                                 <div className="flex items-center gap-2">
                                     <Input
                                         type="number"
                                         value={config.booking_max_advance_days}
                                         onChange={(e) => setConfig({ ...config, booking_max_advance_days: parseInt(e.target.value) })}
-                                        className="w-20"
+                                        className="w-24 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
-                                    <span className="text-xs text-muted-foreground">days</span>
+                                    <span className="text-xs text-muted-foreground font-medium">days</span>
                                 </div>
+                                <p className="text-[10px] text-gray-400">{settingsT.system.fields.bookingMaxAdvanceHelp}</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>{settingsT.system.fields.bookingDefaultDuration}</Label>
+                                <Label className="text-gray-700">{settingsT.system.fields.bookingDefaultDuration}</Label>
                                 <div className="flex items-center gap-2">
                                     <Input
                                         type="number"
                                         step="15"
                                         value={config.booking_default_duration}
                                         onChange={(e) => setConfig({ ...config, booking_default_duration: parseInt(e.target.value) })}
-                                        className="w-20"
+                                        className="w-24 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
-                                    <span className="text-xs text-muted-foreground">min</span>
+                                    <span className="text-xs text-muted-foreground font-medium">min</span>
                                 </div>
+                                <p className="text-[10px] text-gray-400">{settingsT.system.fields.bookingDefaultDurationHelp}</p>
                             </div>
                             <div className="space-y-2">
-                                <Label>{settingsT.system.fields.bookingBuffer}</Label>
+                                <Label className="text-gray-700">{settingsT.system.fields.bookingBuffer}</Label>
                                 <div className="flex items-center gap-2">
                                     <Input
                                         type="number"
                                         step="5"
                                         value={config.booking_buffer_minutes}
                                         onChange={(e) => setConfig({ ...config, booking_buffer_minutes: parseInt(e.target.value) })}
-                                        className="w-20"
+                                        className="w-24 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
-                                    <span className="text-xs text-muted-foreground">min</span>
+                                    <span className="text-xs text-muted-foreground font-medium">min</span>
                                 </div>
+                                <p className="text-[10px] text-gray-400">{settingsT.system.fields.bookingBufferHelp}</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Notificações */}
-                <Card className="shadow-sm border-gray-100 lg:col-span-2">
+                <Card className="shadow-sm border-gray-100 bg-white lg:col-span-2">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
+                        <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
                             <Bell className="w-5 h-5 text-brandy-rose-500" />
                             {settingsT.system.sections.notifications}
                         </CardTitle>
-                        <CardDescription>{settingsT.system.sections.notificationsDesc}</CardDescription>
+                        <CardDescription className="text-gray-500">{settingsT.system.sections.notificationsDesc}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                             <div className="space-y-6">
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
                                     <BadgeInfo className="w-3 h-3" />
-                                    Automated Alerts
+                                    {settingsT.system.fields.automatedAlerts}
                                 </h4>
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between p-3 rounded-lg border border-gray-50 bg-gray-50/30 hover:bg-white hover:border-gray-100 transition-all">
                                         <div className="space-y-0.5">
-                                            <Label>{settingsT.system.fields.notificationNewBooking}</Label>
-                                            <p className="text-[10px] text-muted-foreground">Alert admins on new appointments</p>
+                                            <Label className="text-gray-700 cursor-pointer">{settingsT.system.fields.notificationNewBooking}</Label>
+                                            <p className="text-[10px] text-muted-foreground">{settingsT.system.fields.notificationNewBookingDesc}</p>
                                         </div>
                                         <Switch
                                             checked={config.notification_new_booking}
                                             onCheckedChange={(val) => setConfig({ ...config, notification_new_booking: val })}
                                         />
                                     </div>
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between p-3 rounded-lg border border-gray-50 bg-gray-50/30 hover:bg-white hover:border-gray-100 transition-all">
                                         <div className="space-y-0.5">
-                                            <Label>{settingsT.system.fields.notificationCancellation}</Label>
-                                            <p className="text-[10px] text-muted-foreground">Alert admins on cancellations</p>
+                                            <Label className="text-gray-700 cursor-pointer">{settingsT.system.fields.notificationCancellation}</Label>
+                                            <p className="text-[10px] text-muted-foreground">{settingsT.system.fields.notificationCancellationDesc}</p>
                                         </div>
                                         <Switch
                                             checked={config.notification_cancellation}
                                             onCheckedChange={(val) => setConfig({ ...config, notification_cancellation: val })}
                                         />
                                     </div>
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between p-3 rounded-lg border border-gray-50 bg-gray-50/30 hover:bg-white hover:border-gray-100 transition-all">
                                         <div className="space-y-0.5">
-                                            <Label>{settingsT.system.fields.notificationReminder24h}</Label>
-                                            <p className="text-[10px] text-muted-foreground">Send reminder one day before</p>
+                                            <Label className="text-gray-700 cursor-pointer">{settingsT.system.fields.notificationReminder24h}</Label>
+                                            <p className="text-[10px] text-muted-foreground">{settingsT.system.fields.notificationReminder24hDesc}</p>
                                         </div>
                                         <Switch
                                             checked={config.notification_reminder_24h}
                                             onCheckedChange={(val) => setConfig({ ...config, notification_reminder_24h: val })}
                                         />
                                     </div>
-                                    <div className="flex items-center justify-between">
+                                    <div className="flex items-center justify-between p-3 rounded-lg border border-gray-50 bg-gray-50/30 hover:bg-white hover:border-gray-100 transition-all">
                                         <div className="space-y-0.5">
-                                            <Label>{settingsT.system.fields.notificationReminder2h}</Label>
-                                            <p className="text-[10px] text-muted-foreground">Final reminder 2h before</p>
+                                            <Label className="text-gray-700 cursor-pointer">{settingsT.system.fields.notificationReminder2h}</Label>
+                                            <p className="text-[10px] text-muted-foreground">{settingsT.system.fields.notificationReminder2hDesc}</p>
                                         </div>
                                         <Switch
                                             checked={config.notification_reminder_2h}
@@ -294,39 +300,52 @@ export default function SistemaConfigPage() {
                             <div className="space-y-6">
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2">
                                     <Smartphone className="w-3 h-3" />
-                                    Communication Channels
+                                    {settingsT.system.fields.communicationChannels}
                                 </h4>
-                                <div className="space-y-4 p-4 rounded-xl bg-gray-50 border border-gray-100">
-                                    <div className="flex items-start space-x-3">
-                                        <Checkbox
-                                            id="sms-channel"
-                                            checked={config.notification_channel_sms}
-                                            onCheckedChange={(val) => setConfig({ ...config, notification_channel_sms: !!val })}
-                                        />
+                                <div className="space-y-4 p-5 rounded-xl bg-white border border-gray-200 shadow-sm">
+                                    <div className="flex items-start space-x-3 group">
+                                        <div className="pt-0.5">
+                                            <Checkbox
+                                                id="sms-channel"
+                                                checked={config.notification_channel_sms}
+                                                onCheckedChange={(val) => setConfig({ ...config, notification_channel_sms: !!val })}
+                                                className="border-gray-300 data-[state=checked]:bg-brandy-rose-500 data-[state=checked]:border-brandy-rose-500"
+                                            />
+                                        </div>
                                         <div className="grid gap-1.5 leading-none">
-                                            <Label htmlFor="sms-channel" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                SMS (Twilio/AWS SNS)
+                                            <Label htmlFor="sms-channel" className="text-sm font-semibold text-gray-800 leading-none cursor-pointer group-hover:text-brandy-rose-600 transition-colors">
+                                                {settingsT.system.fields.notificationChannelSms}
                                             </Label>
-                                            <p className="text-xs text-muted-foreground">
-                                                Higher engagement, costs per message.
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                {settingsT.system.fields.notificationChannelSmsDesc}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-start space-x-3">
-                                        <Checkbox
-                                            id="email-channel"
-                                            checked={config.notification_channel_email}
-                                            onCheckedChange={(val) => setConfig({ ...config, notification_channel_email: !!val })}
-                                        />
+                                    <div className="pt-2 border-t border-gray-100"></div>
+                                    <div className="flex items-start space-x-3 group">
+                                        <div className="pt-0.5">
+                                            <Checkbox
+                                                id="email-channel"
+                                                checked={config.notification_channel_email}
+                                                onCheckedChange={(val) => setConfig({ ...config, notification_channel_email: !!val })}
+                                                className="border-gray-300 data-[state=checked]:bg-brandy-rose-500 data-[state=checked]:border-brandy-rose-500"
+                                            />
+                                        </div>
                                         <div className="grid gap-1.5 leading-none">
-                                            <Label htmlFor="email-channel" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                Email (Resend/SendGrid)
+                                            <Label htmlFor="email-channel" className="text-sm font-semibold text-gray-800 leading-none cursor-pointer group-hover:text-brandy-rose-600 transition-colors">
+                                                {settingsT.system.fields.notificationChannelEmail}
                                             </Label>
-                                            <p className="text-xs text-muted-foreground">
-                                                Free or low cost, perfect for confirmations.
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                {settingsT.system.fields.notificationChannelEmailDesc}
                                             </p>
                                         </div>
                                     </div>
+                                </div>
+                                <div className="p-4 rounded-lg bg-brandy-rose-50/50 border border-brandy-rose-100 flex gap-3">
+                                    <BadgeInfo className="w-5 h-5 text-brandy-rose-500 shrink-0" />
+                                    <p className="text-[11px] text-brandy-rose-800 leading-relaxed">
+                                        {settingsT.tracking.tips.tip2}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -335,33 +354,34 @@ export default function SistemaConfigPage() {
             </div>
 
             {/* Links Relacionados */}
-            <div className="pt-6 border-t border-gray-100">
-                <h2 className="text-lg font-semibold mb-4 text-gray-800">{settingsT.system.relatedLinks.title}</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="pt-10 border-t border-gray-100">
+                <h2 className="text-xl font-heading font-semibold mb-6 text-gray-900">{settingsT.system.relatedLinks.title}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <ConfigLinkCard
                         href="/admin/equipe"
                         icon={Users}
                         title={settingsT.system.relatedLinks.team}
                         description={settingsT.system.relatedLinks.teamDesc}
-                        className="py-4"
+                        className="py-6 bg-white border-gray-200"
                     />
                     <ConfigLinkCard
                         href="/admin/financeiro"
                         icon={DollarSign}
                         title={settingsT.system.relatedLinks.pricing}
                         description={settingsT.system.relatedLinks.pricingDesc}
-                        className="py-4"
+                        className="py-6 bg-white border-gray-200"
                     />
                     <ConfigLinkCard
                         href="/admin/agenda"
                         icon={ShieldCheck}
-                        title="Policies & Terms"
-                        description="Review cancellation and booking policies"
-                        className="py-4"
+                        title={settingsT.system.relatedLinks.policies}
+                        description={settingsT.system.relatedLinks.policiesDesc}
+                        className="py-6 bg-white border-gray-200"
                     />
                 </div>
             </div>
         </div>
     )
 }
+
 

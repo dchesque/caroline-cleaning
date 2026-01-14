@@ -12,6 +12,25 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+
+## [1.9.1] - 2026-01-14
+### Adicionado
+- **Admin (Trackeamento)**:
+  - Nova página de configurações de trackeamento em `/admin/configuracoes/trackeamento`.
+  - Suporte a múltiplos canais: Meta Ads (Pixel & CAPI), Google Ads, GA4, GTM, TikTok e UTMify.
+  - Campos para scripts personalizados nos blocos `<head>` e `<body>`.
+  - Seção de dicas de implementação e links relacionados.
+  - Migração de banco de dados (`05_tracking_config.sql`) para inicializar chaves de trackeamento.
+  - Adição do item de trackeamento na Sidebar e card na visão geral de configurações.
+
+### Modificado
+- **Lib (Business Config)**: Expansão da interface `BusinessSettings` e `DEFAULT_SETTINGS` para incluir campos de trackeamento.
+- **Admin (Configurações)**: Padronização visual de todos os inputs e textareas nas páginas de Empresa, Página Inicial e Sistema para um estilo premium com fundo branco, bordas suaves e melhor contraste.
+- **Admin (Sistema)**: Refinamento das traduções e organização visual dos campos de notificações e horários.
+
+### Corrigido
+- **Admin (Sistema)**: Correção de erro de linting relacionado ao acesso de chaves de tradução aninhadas e correção de textos em inglês.
+
 ## [1.9.0] - 2026-01-14
 ### Adicionado
 - **Admin (Configurações)**:

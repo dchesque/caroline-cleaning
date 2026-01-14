@@ -58,6 +58,7 @@ const navigation: NavigationItem[] = [
             { key: 'settingsCompany', href: '/admin/configuracoes/empresa', icon: Building2 },
             { key: 'settingsLanding', href: '/admin/configuracoes/pagina-inicial', icon: Layout },
             { key: 'settingsSystem', href: '/admin/configuracoes/sistema', icon: Cog },
+            { key: 'settingsTracking', href: '/admin/configuracoes/trackeamento', icon: BarChart3 },
         ]
     },
 ]

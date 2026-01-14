@@ -34,6 +34,7 @@ import {
     Box
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { getBusinessSettingsByGrupo, saveBusinessSettings, DEFAULT_SETTINGS } from '@/lib/business-config'
 import { ConfigLinkCard } from '@/components/admin/config-link-card'
@@ -48,6 +49,7 @@ export default function PaginaInicialConfigPage() {
     const [config, setConfig] = useState<any>(DEFAULT_SETTINGS)
 
     const supabase = createClient()
+    const inputClasses = "bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
 
     useEffect(() => {
         const loadConfig = async () => {
@@ -144,7 +146,7 @@ export default function PaginaInicialConfigPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Announcement Bar */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Megaphone className="w-5 h-5 text-brandy-rose-500" />
@@ -167,6 +169,7 @@ export default function PaginaInicialConfigPage() {
                                 value={config.announcement_text}
                                 onChange={(e) => setConfig({ ...config, announcement_text: e.target.value })}
                                 placeholder="Free estimate 24/7..."
+                                className={inputClasses}
                             />
                         </div>
                         <div className="space-y-2">
@@ -176,12 +179,12 @@ export default function PaginaInicialConfigPage() {
                                     type="color"
                                     value={config.announcement_bg_color}
                                     onChange={(e) => setConfig({ ...config, announcement_bg_color: e.target.value })}
-                                    className="w-12 h-10 p-1"
+                                    className={cn(inputClasses, "w-12 h-10 p-1")}
                                 />
                                 <Input
                                     value={config.announcement_bg_color}
                                     onChange={(e) => setConfig({ ...config, announcement_bg_color: e.target.value })}
-                                    className="flex-1 font-mono uppercase"
+                                    className={cn(inputClasses, "flex-1 font-mono uppercase")}
                                 />
                             </div>
                         </div>
@@ -189,7 +192,7 @@ export default function PaginaInicialConfigPage() {
                 </Card>
 
                 {/* Hero Section */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Monitor className="w-5 h-5 text-brandy-rose-500" />
@@ -203,6 +206,7 @@ export default function PaginaInicialConfigPage() {
                             <Input
                                 value={config.hero_title}
                                 onChange={(e) => setConfig({ ...config, hero_title: e.target.value })}
+                                className={inputClasses}
                             />
                         </div>
                         <div className="space-y-2">
@@ -210,7 +214,7 @@ export default function PaginaInicialConfigPage() {
                             <Textarea
                                 value={config.hero_subtitle}
                                 onChange={(e) => setConfig({ ...config, hero_subtitle: e.target.value })}
-                                className="min-h-[80px]"
+                                className={cn(inputClasses, "min-h-[80px]")}
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -219,6 +223,7 @@ export default function PaginaInicialConfigPage() {
                                 <Input
                                     value={config.hero_cta_text}
                                     onChange={(e) => setConfig({ ...config, hero_cta_text: e.target.value })}
+                                    className={inputClasses}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -226,6 +231,7 @@ export default function PaginaInicialConfigPage() {
                                 <Input
                                     value={config.hero_cta_secondary}
                                     onChange={(e) => setConfig({ ...config, hero_cta_secondary: e.target.value })}
+                                    className={inputClasses}
                                 />
                             </div>
                         </div>
@@ -233,7 +239,7 @@ export default function PaginaInicialConfigPage() {
                 </Card>
 
                 {/* Badges de Confiança */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Star className="w-5 h-5 text-brandy-rose-500" />
@@ -257,6 +263,7 @@ export default function PaginaInicialConfigPage() {
                                     value={config.badges_rating}
                                     onChange={(e) => setConfig({ ...config, badges_rating: e.target.value })}
                                     placeholder="4.9"
+                                    className={inputClasses}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -265,6 +272,7 @@ export default function PaginaInicialConfigPage() {
                                     value={config.badges_reviews_count}
                                     onChange={(e) => setConfig({ ...config, badges_reviews_count: e.target.value })}
                                     placeholder="200+"
+                                    className={inputClasses}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -273,6 +281,7 @@ export default function PaginaInicialConfigPage() {
                                     value={config.badges_years_experience}
                                     onChange={(e) => setConfig({ ...config, badges_years_experience: e.target.value })}
                                     placeholder="5+"
+                                    className={inputClasses}
                                 />
                             </div>
                         </div>
@@ -282,13 +291,14 @@ export default function PaginaInicialConfigPage() {
                                 value={config.badges_google_reviews_url}
                                 onChange={(e) => setConfig({ ...config, badges_google_reviews_url: e.target.value })}
                                 placeholder="https://g.page/..."
+                                className={inputClasses}
                             />
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Chat/IA Carol */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <MessageSquare className="w-5 h-5 text-brandy-rose-500" />
@@ -311,6 +321,7 @@ export default function PaginaInicialConfigPage() {
                                 <Input
                                     value={config.ai_name}
                                     onChange={(e) => setConfig({ ...config, ai_name: e.target.value })}
+                                    className={inputClasses}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -335,6 +346,7 @@ export default function PaginaInicialConfigPage() {
                             <Textarea
                                 value={config.ai_greeting}
                                 onChange={(e) => setConfig({ ...config, ai_greeting: e.target.value })}
+                                className={inputClasses}
                             />
                         </div>
                         <div className="space-y-2">
@@ -356,7 +368,7 @@ export default function PaginaInicialConfigPage() {
                 </Card>
 
                 {/* SEO Settings */}
-                <Card className="lg:col-span-2 shadow-sm border-gray-100">
+                <Card className="lg:col-span-2 shadow-sm border-gray-100 bg-white">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Search className="w-5 h-5 text-brandy-rose-500" />
@@ -372,6 +384,7 @@ export default function PaginaInicialConfigPage() {
                                     <Input
                                         value={config.seo_title}
                                         onChange={(e) => setConfig({ ...config, seo_title: e.target.value })}
+                                        className={inputClasses}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -379,6 +392,7 @@ export default function PaginaInicialConfigPage() {
                                     <Textarea
                                         value={config.seo_description}
                                         onChange={(e) => setConfig({ ...config, seo_description: e.target.value })}
+                                        className={inputClasses}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -387,6 +401,7 @@ export default function PaginaInicialConfigPage() {
                                         value={config.seo_keywords}
                                         onChange={(e) => setConfig({ ...config, seo_keywords: e.target.value })}
                                         placeholder="cleaning, home, charlotte..."
+                                        className={inputClasses}
                                     />
                                 </div>
                             </div>

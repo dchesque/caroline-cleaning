@@ -68,6 +68,38 @@ export interface BusinessSettings {
     notification_channel_sms: boolean;
     notification_channel_email: boolean;
 
+    // Trackeamento - Meta
+    tracking_meta_enabled: boolean;
+    tracking_meta_pixel_id: string;
+    tracking_meta_access_token: string;
+    tracking_meta_capi_enabled: boolean;
+    tracking_meta_test_event_code: string;
+
+    // Trackeamento - Google Ads
+    tracking_google_ads_enabled: boolean;
+    tracking_google_ads_id: string;
+    tracking_google_ads_label: string;
+
+    // Trackeamento - GA4
+    tracking_ga4_enabled: boolean;
+    tracking_ga4_measurement_id: string;
+
+    // Trackeamento - GTM
+    tracking_gtm_enabled: boolean;
+    tracking_gtm_id: string;
+
+    // Trackeamento - TikTok
+    tracking_tiktok_enabled: boolean;
+    tracking_tiktok_pixel_id: string;
+
+    // Trackeamento - UTMify
+    tracking_utmfy_enabled: boolean;
+    tracking_utmfy_pixel_id: string;
+
+    // Scripts Customizados
+    tracking_custom_head_scripts: string;
+    tracking_custom_body_scripts: string;
+
     // Legacy/Others (keep for compatibility)
     [key: string]: any;
 }
@@ -130,6 +162,26 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     notification_cancellation: true,
     notification_channel_sms: true,
     notification_channel_email: true,
+
+    // Tracking Defaults
+    tracking_meta_enabled: false,
+    tracking_meta_pixel_id: '',
+    tracking_meta_access_token: '',
+    tracking_meta_capi_enabled: false,
+    tracking_meta_test_event_code: '',
+    tracking_google_ads_enabled: false,
+    tracking_google_ads_id: '',
+    tracking_google_ads_label: '',
+    tracking_ga4_enabled: false,
+    tracking_ga4_measurement_id: '',
+    tracking_gtm_enabled: false,
+    tracking_gtm_id: '',
+    tracking_tiktok_enabled: false,
+    tracking_tiktok_pixel_id: '',
+    tracking_utmfy_enabled: false,
+    tracking_utmfy_pixel_id: '',
+    tracking_custom_head_scripts: '',
+    tracking_custom_body_scripts: '',
 };
 
 // Mapping between Frontend Keys and Database Keys

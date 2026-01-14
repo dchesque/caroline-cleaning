@@ -25,6 +25,7 @@ import {
     Map
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { getBusinessSettingsByGrupo, saveBusinessSettings, DEFAULT_SETTINGS } from '@/lib/business-config'
 import { ConfigLinkCard } from '@/components/admin/config-link-card'
@@ -39,6 +40,7 @@ export default function EmpresaConfigPage() {
     const [config, setConfig] = useState<any>(DEFAULT_SETTINGS)
 
     const supabase = createClient()
+    const inputClasses = "bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
 
     useEffect(() => {
         const loadConfig = async () => {
@@ -127,7 +129,7 @@ export default function EmpresaConfigPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Informações Básicas */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Building2 className="w-5 h-5 text-brandy-rose-500" />
@@ -142,7 +144,7 @@ export default function EmpresaConfigPage() {
                                 id="businessName"
                                 value={config.business_name}
                                 onChange={(e) => setConfig({ ...config, business_name: e.target.value })}
-                                className="bg-white"
+                                className={inputClasses}
                             />
                         </div>
                         <div className="space-y-2">
@@ -151,7 +153,7 @@ export default function EmpresaConfigPage() {
                                 id="businessDescription"
                                 value={config.business_description}
                                 onChange={(e) => setConfig({ ...config, business_description: e.target.value })}
-                                className="bg-white min-h-[100px]"
+                                className={cn(inputClasses, "min-h-[100px]")}
                                 rows={4}
                             />
                         </div>
@@ -159,7 +161,7 @@ export default function EmpresaConfigPage() {
                 </Card>
 
                 {/* Marca (Logo) */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Sparkles className="w-5 h-5 text-brandy-rose-500" />
@@ -218,7 +220,7 @@ export default function EmpresaConfigPage() {
                 </Card>
 
                 {/* Contato */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Phone className="w-5 h-5 text-brandy-rose-500" />
@@ -236,6 +238,7 @@ export default function EmpresaConfigPage() {
                                 <Input
                                     value={config.business_phone}
                                     onChange={(e) => setConfig({ ...config, business_phone: e.target.value })}
+                                    className={inputClasses}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -246,6 +249,7 @@ export default function EmpresaConfigPage() {
                                 <Input
                                     value={config.business_phone_display}
                                     onChange={(e) => setConfig({ ...config, business_phone_display: e.target.value })}
+                                    className={inputClasses}
                                 />
                             </div>
                         </div>
@@ -259,6 +263,7 @@ export default function EmpresaConfigPage() {
                                     type="email"
                                     value={config.business_email}
                                     onChange={(e) => setConfig({ ...config, business_email: e.target.value })}
+                                    className={inputClasses}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -269,6 +274,7 @@ export default function EmpresaConfigPage() {
                                 <Input
                                     value={config.business_website}
                                     onChange={(e) => setConfig({ ...config, business_website: e.target.value })}
+                                    className={inputClasses}
                                 />
                             </div>
                         </div>
@@ -280,13 +286,14 @@ export default function EmpresaConfigPage() {
                             <Input
                                 value={config.business_address}
                                 onChange={(e) => setConfig({ ...config, business_address: e.target.value })}
+                                className={inputClasses}
                             />
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Redes Sociais */}
-                <Card className="shadow-sm border-gray-100">
+                <Card className="shadow-sm border-gray-100 bg-white">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Share2 className="w-5 h-5 text-brandy-rose-500" />
@@ -302,6 +309,7 @@ export default function EmpresaConfigPage() {
                                     value={config.social_facebook}
                                     onChange={(e) => setConfig({ ...config, social_facebook: e.target.value })}
                                     placeholder="https://facebook.com/..."
+                                    className={inputClasses}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -310,6 +318,7 @@ export default function EmpresaConfigPage() {
                                     value={config.social_instagram}
                                     onChange={(e) => setConfig({ ...config, social_instagram: e.target.value })}
                                     placeholder="https://instagram.com/..."
+                                    className={inputClasses}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -318,6 +327,7 @@ export default function EmpresaConfigPage() {
                                     value={config.social_twitter}
                                     onChange={(e) => setConfig({ ...config, social_twitter: e.target.value })}
                                     placeholder="https://twitter.com/..."
+                                    className={inputClasses}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -326,6 +336,7 @@ export default function EmpresaConfigPage() {
                                     value={config.social_google}
                                     onChange={(e) => setConfig({ ...config, social_google: e.target.value })}
                                     placeholder="https://g.page/..."
+                                    className={inputClasses}
                                 />
                             </div>
                         </div>
