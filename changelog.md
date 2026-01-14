@@ -12,6 +12,10 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+## [1.7.1] - 2026-01-14
+### Corrigido
+- **Admin (Dashboard)**: Adicionada diretiva `'use client'` que causava erro de execução ao usar hooks de internacionalização no servidor.
+
 ## [1.7.0] - 2026-01-14
 ### Adicionado
 - **Admin (Internacionalização)**:

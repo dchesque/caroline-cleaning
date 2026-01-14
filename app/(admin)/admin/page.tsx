@@ -1,3 +1,5 @@
+'use client'
+
 import { Suspense } from 'react'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { TodaySchedule } from '@/components/dashboard/today-schedule'
