@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -88,6 +89,10 @@ export default function LeadsPage() {
     const [isDetailOpen, setIsDetailOpen] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
 
+    const { t } = useAdminI18n()
+    const leadsT = t('leads')
+    const common = t('common')
+
     const supabase = createClient()
 
     useEffect(() => {
@@ -110,7 +115,7 @@ export default function LeadsPage() {
         const { data, error } = await query
 
         if (error) {
-            toast.error('Erro ao carregar leads')
+            toast.error(common.noResults) // Or generic error
             console.error(error)
         } else {
             setLeads(data || [])
@@ -187,15 +192,15 @@ export default function LeadsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="font-heading text-2xl font-bold text-foreground">
-                        Leads de Contato
+                        {leadsT.title}
                     </h1>
                     <p className="text-sm text-muted-foreground">
-                        Pessoas que solicitaram callback pelo formulário
+                        {leadsT.subtitle}
                     </p>
                 </div>
                 <Button onClick={() => { fetchLeads(); fetchStats() }} variant="outline" size="sm">
                     <RefreshCw className="w-4 h-4 mr-2" />
-                    Atualizar
+                    {common.update}
                 </Button>
             </div>
 
@@ -207,7 +212,7 @@ export default function LeadsPage() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-2xl font-bold text-blue-600">{stats.novos}</p>
-                                    <p className="text-xs text-muted-foreground">Novos</p>
+                                    <p className="text-xs text-muted-foreground">{leadsT.stats.new}</p>
                                 </div>
                                 <UserPlus className="w-8 h-8 text-blue-200" />
                             </div>
@@ -218,9 +223,9 @@ export default function LeadsPage() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-2xl font-bold text-yellow-600">{stats.contatados}</p>
-                                    <p className="text-xs text-muted-foreground">Contatados</p>
+                                    <p className="text-xs text-muted-foreground">{leadsT.stats.contacted}</p>
                                 </div>
-                                <Phone className="w-8 h-8 text-yellow-200" />
+                                <UserPlus className="w-8 h-8 text-yellow-200" />
                             </div>
                         </CardContent>
                     </Card>
@@ -229,7 +234,7 @@ export default function LeadsPage() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-2xl font-bold text-green-600">{stats.convertidos}</p>
-                                    <p className="text-xs text-muted-foreground">Convertidos</p>
+                                    <p className="text-xs text-muted-foreground">{leadsT.stats.converted}</p>
                                 </div>
                                 <CheckCircle2 className="w-8 h-8 text-green-200" />
                             </div>
@@ -240,7 +245,7 @@ export default function LeadsPage() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-2xl font-bold text-foreground">{stats.hoje}</p>
-                                    <p className="text-xs text-muted-foreground">Hoje</p>
+                                    <p className="text-xs text-muted-foreground">{common.today}</p>
                                 </div>
                                 <Clock className="w-8 h-8 text-muted-foreground/20" />
                             </div>
@@ -254,7 +259,7 @@ export default function LeadsPage() {
                 <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                        placeholder="Buscar por nome, telefone ou cidade..."
+                        placeholder={leadsT.filters.search}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="pl-9"
@@ -263,14 +268,14 @@ export default function LeadsPage() {
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-[180px]">
                         <Filter className="w-4 h-4 mr-2" />
-                        <SelectValue placeholder="Filtrar status" />
+                        <SelectValue placeholder={leadsT.filters.statusPlaceholder} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="novo">Novos</SelectItem>
-                        <SelectItem value="contatado">Contatados</SelectItem>
-                        <SelectItem value="convertido">Convertidos</SelectItem>
-                        <SelectItem value="descartado">Descartados</SelectItem>
+                        <SelectItem value="all">{common.all}</SelectItem>
+                        <SelectItem value="novo">{leadsT.stats.new}</SelectItem>
+                        <SelectItem value="contatado">{leadsT.stats.contacted}</SelectItem>
+                        <SelectItem value="convertido">{leadsT.stats.converted}</SelectItem>
+                        <SelectItem value="descartado">{leadsT.stats.dropped}</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
@@ -285,18 +290,18 @@ export default function LeadsPage() {
                     ) : filteredLeads.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground">
                             <Users className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                            <p>Nenhum lead encontrado</p>
+                            <p>{common.noResults}</p>
                         </div>
                     ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Nome</TableHead>
-                                    <TableHead>Telefone</TableHead>
-                                    <TableHead>Cidade</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Recebido</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
+                                    <TableHead>{leadsT.table.name}</TableHead>
+                                    <TableHead>{leadsT.table.phone}</TableHead>
+                                    <TableHead>{leadsT.table.city}</TableHead>
+                                    <TableHead>{leadsT.table.status}</TableHead>
+                                    <TableHead>{leadsT.table.received}</TableHead>
+                                    <TableHead className="text-right">{common.actions}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -350,7 +355,7 @@ export default function LeadsPage() {
             <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Detalhes do Lead</DialogTitle>
+                        <DialogTitle>{leadsT.modal.title}</DialogTitle>
                     </DialogHeader>
 
                     {selectedLead && (
@@ -375,14 +380,14 @@ export default function LeadsPage() {
                                         className="flex items-center gap-2 p-3 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
                                     >
                                         <Phone className="w-4 h-4" />
-                                        <span className="text-sm font-medium">Ligar</span>
+                                        <span className="text-sm font-medium">{leadsT.modal.call}</span>
                                     </a>
                                     <a
                                         href={`sms:${selectedLead.telefone}`}
                                         className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
                                     >
                                         <MessageSquare className="w-4 h-4" />
-                                        <span className="text-sm font-medium">SMS</span>
+                                        <span className="text-sm font-medium">{leadsT.modal.sms}</span>
                                     </a>
                                 </div>
 
@@ -402,7 +407,7 @@ export default function LeadsPage() {
 
                             {/* Status */}
                             <div className="space-y-2">
-                                <Label>Status</Label>
+                                <Label>{common.status}</Label>
                                 <Select
                                     value={selectedLead.status}
                                     onValueChange={(value) => updateLeadStatus(selectedLead.id, value)}
@@ -412,19 +417,19 @@ export default function LeadsPage() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="novo">Novo</SelectItem>
-                                        <SelectItem value="contatado">Contatado</SelectItem>
-                                        <SelectItem value="convertido">Convertido</SelectItem>
-                                        <SelectItem value="descartado">Descartados</SelectItem>
+                                        <SelectItem value="novo">{leadsT.stats.new}</SelectItem>
+                                        <SelectItem value="contatado">{leadsT.stats.contacted}</SelectItem>
+                                        <SelectItem value="convertido">{leadsT.stats.converted}</SelectItem>
+                                        <SelectItem value="descartado">{leadsT.stats.dropped}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             {/* Notes */}
                             <div className="space-y-2">
-                                <Label>Notas</Label>
+                                <Label>{common.notes}</Label>
                                 <Textarea
-                                    placeholder="Adicionar notas sobre este lead..."
+                                    placeholder={leadsT.modal.notesPlaceholder}
                                     defaultValue={selectedLead.notas || ''}
                                     onBlur={(e) => {
                                         if (e.target.value !== selectedLead.notas) {
@@ -447,7 +452,7 @@ export default function LeadsPage() {
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
-                            Fechar
+                            {common.close}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

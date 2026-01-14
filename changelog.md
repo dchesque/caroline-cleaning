@@ -12,6 +12,27 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+## [1.7.0] - 2026-01-14
+### Adicionado
+- **Admin (Internacionalização)**:
+  - Tradução completa das páginas: Serviços, Mensagem, Analytics e Configurações.
+  - Implementação de suporte multi-idioma para métricas dinâmicas e modais complexos de add-ons.
+  - Conversão da página de Analytics para Client Component para suporte total a i18n.
+  - Tradução de todos os diálogos de configuração de horários, notificações e regras de agendamento.
+
+### Corrigido
+- **Admin (Serviços)**: 
+  - Correção de bug no toggle de status de serviço (uso correto de `servico.id`).
+  - Ajuste de tradução nas métricas de multiplicador e duração nos cards de serviço.
+
+## [1.6.0] - 2026-01-14
+### Adicionado
+- **Admin (Internacionalização)**:
+  - Sistema bi-língue (Português-BR e Inglês-USA) para o painel administrativo.
+  - Seletor de idioma no header com bandeiras (Brasil e EUA) e persistência em `localStorage`.
+  - `AdminI18nProvider` com suporte a dicionário dinâmico e hook `useAdminI18n`.
+  - Tradução completa da barra lateral (Sidebar) e do cabeçalho (Header).
+
 ## [1.5.0] - 2026-01-14
 ### Adicionado
 - **Admin (Agenda)**:

@@ -19,6 +19,7 @@ import {
     formatZipCode,
     US_STATES
 } from '@/lib/formatters'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface ClientModalProps {
     open: boolean
@@ -46,48 +47,53 @@ interface DiaServico {
     servico: string
 }
 
-const STEPS = [
-    { id: 1, title: 'Informações Básicas' },
-    { id: 2, title: 'Endereço' },
-    { id: 3, title: 'Detalhes da Casa' },
-    { id: 4, title: 'Preferências de Serviço' },
-    { id: 5, title: 'Acesso & Pets' },
-]
-
-const TIPOS_RESIDENCIA = [
-    { value: 'house', label: 'Casa' },
-    { value: 'apartment', label: 'Apartamento' },
-    { value: 'condo', label: 'Condomínio' },
-    { value: 'townhouse', label: 'Townhouse' },
-    { value: 'other', label: 'Outro' },
-]
-
-const FREQUENCIAS = [
-    { value: 'weekly', label: 'Semanal' },
-    { value: 'biweekly', label: 'Quinzenal' },
-    { value: 'monthly', label: 'Mensal' },
-    { value: 'one_time', label: 'Avulso' },
-]
-
-const DIAS_SEMANA = [
-    { value: 'monday', label: 'Segunda' },
-    { value: 'tuesday', label: 'Terça' },
-    { value: 'wednesday', label: 'Quarta' },
-    { value: 'thursday', label: 'Quinta' },
-    { value: 'friday', label: 'Sexta' },
-    { value: 'saturday', label: 'Sábado' },
-]
-
-const TIPOS_ACESSO = [
-    { value: 'client_home', label: 'Cliente em casa' },
-    { value: 'garage_code', label: 'Código da garagem' },
-    { value: 'lockbox', label: 'Lockbox' },
-    { value: 'key_hidden', label: 'Chave escondida' },
-    { value: 'doorman', label: 'Porteiro' },
-    { value: 'other', label: 'Outro' },
-]
+// Constantes movidas para dentro do componente para usar i18n
 
 export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps) {
+    const { t } = useAdminI18n()
+    const clientsT = t('clients')
+    const common = t('common')
+
+    const STEPS = [
+        { id: 1, title: clientsT.modal.steps.basic },
+        { id: 2, title: clientsT.modal.steps.address },
+        { id: 3, title: clientsT.modal.steps.house },
+        { id: 4, title: clientsT.modal.steps.service },
+        { id: 5, title: clientsT.modal.steps.access },
+    ]
+
+    const TIPOS_RESIDENCIA = [
+        { value: 'house', label: clientsT.modal.fields.residenceTypes.house },
+        { value: 'apartment', label: clientsT.modal.fields.residenceTypes.apartment },
+        { value: 'condo', label: clientsT.modal.fields.residenceTypes.condo },
+        { value: 'townhouse', label: clientsT.modal.fields.residenceTypes.townhouse },
+        { value: 'other', label: clientsT.modal.fields.residenceTypes.other },
+    ]
+
+    const FREQUENCIAS = [
+        { value: 'weekly', label: clientsT.frequency.weekly },
+        { value: 'biweekly', label: clientsT.frequency.biweekly },
+        { value: 'monthly', label: clientsT.frequency.monthly },
+        { value: 'one_time', label: clientsT.frequency.oneTime },
+    ]
+
+    const DIAS_SEMANA = [
+        { value: 'monday', label: common.days.monday },
+        { value: 'tuesday', label: common.days.tuesday },
+        { value: 'wednesday', label: common.days.wednesday },
+        { value: 'thursday', label: common.days.thursday },
+        { value: 'friday', label: common.days.friday },
+        { value: 'saturday', label: common.days.saturday },
+    ]
+
+    const TIPOS_ACESSO = [
+        { value: 'client_home', label: clientsT.modal.fields.accessTypes.clientHome },
+        { value: 'garage_code', label: clientsT.modal.fields.accessTypes.garageCode },
+        { value: 'lockbox', label: clientsT.modal.fields.accessTypes.lockbox },
+        { value: 'key_hidden', label: clientsT.modal.fields.accessTypes.keyHidden },
+        { value: 'doorman', label: clientsT.modal.fields.accessTypes.doorman },
+        { value: 'other', label: clientsT.modal.fields.accessTypes.other },
+    ]
     const supabase = createClient()
     const [step, setStep] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
@@ -137,7 +143,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                 if (addonsRes.data) setAddonsDisponiveis(addonsRes.data)
             } catch (error) {
                 console.error('Error fetching data:', error)
-                toast.error('Erro ao carregar dados iniciais')
+                toast.error(common.error)
             }
         }
 
@@ -181,21 +187,21 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         switch (currentStep) {
             case 1:
                 if (!formData.nome.trim()) {
-                    toast.error('Nome é obrigatório')
+                    toast.error(clientsT.modal.validation.nameRequired)
                     return false
                 }
                 if (!isValidPhoneUS(formData.telefone)) {
-                    toast.error('Telefone inválido')
+                    toast.error(clientsT.modal.validation.phoneInvalid)
                     return false
                 }
                 if (formData.email && !isValidEmail(formData.email)) {
-                    toast.error('Email inválido')
+                    toast.error(clientsT.modal.validation.emailInvalid)
                     return false
                 }
                 return true
             case 2:
                 if (!formData.endereco_completo.trim()) {
-                    toast.error('Endereço é obrigatório')
+                    toast.error(clientsT.modal.validation.addressRequired)
                     return false
                 }
                 return true
@@ -323,13 +329,13 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                 if (recurrenceError) throw recurrenceError
             }
 
-            toast.success('Cliente cadastrado com sucesso!')
+            toast.success(clientsT.modal.success)
             onOpenChange(false)
             onSuccess?.()
             resetForm()
         } catch (error: any) {
             console.error('Error saving client:', error)
-            toast.error('Erro ao salvar cliente')
+            toast.error(clientsT.modal.error)
         } finally {
             setIsLoading(false)
         }
@@ -367,9 +373,9 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Novo Cliente</DialogTitle>
+                    <DialogTitle>{clientsT.modal.newTitle}</DialogTitle>
                     <DialogDescription>
-                        Passo {step} de {STEPS.length}: {STEPS[step - 1].title}
+                        {clientsT.modal.stepOf.replace('{step}', step.toString()).replace('{total}', STEPS.length.toString())}: {STEPS[step - 1].title}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -378,16 +384,16 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                     {step === 1 && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Nome Completo *</Label>
+                                <Label>{clientsT.modal.fields.fullName} *</Label>
                                 <Input
                                     value={formData.nome}
                                     onChange={e => handleChange('nome', e.target.value)}
-                                    placeholder="Ex: John Doe"
+                                    placeholder={clientsT.modal.fields.fullNamePlaceholder}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Telefone *</Label>
+                                    <Label>{clientsT.modal.fields.phone} *</Label>
                                     <Input
                                         value={formData.telefone}
                                         onChange={e => handleChange('telefone', formatPhoneUS(e.target.value))}
@@ -395,7 +401,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Email</Label>
+                                    <Label>{clientsT.modal.fields.email}</Label>
                                     <Input
                                         value={formData.email}
                                         onChange={e => handleChange('email', e.target.value)}
@@ -411,7 +417,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                         <div className="space-y-4">
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-2">
-                                    <Label>ZIP Code</Label>
+                                    <Label>{clientsT.modal.fields.zipCode}</Label>
                                     <Input
                                         value={formData.zip_code}
                                         onChange={e => {
@@ -424,24 +430,24 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                     />
                                 </div>
                                 <div className="col-span-2 space-y-2">
-                                    <Label>Endereço *</Label>
+                                    <Label>{clientsT.modal.fields.address} *</Label>
                                     <Input
                                         value={formData.endereco_completo}
                                         onChange={e => handleChange('endereco_completo', e.target.value)}
-                                        placeholder="123 Main St"
+                                        placeholder={clientsT.modal.fields.addressPlaceholder}
                                     />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Cidade</Label>
+                                    <Label>{clientsT.modal.fields.city}</Label>
                                     <Input
                                         value={formData.cidade}
                                         onChange={e => handleChange('cidade', e.target.value)}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Estado</Label>
+                                    <Label>{clientsT.modal.fields.state}</Label>
                                     <Select
                                         value={formData.estado}
                                         onValueChange={v => handleChange('estado', v)}
@@ -462,7 +468,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                     {step === 3 && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Tipo de Residência</Label>
+                                <Label>{clientsT.modal.fields.residenceType}</Label>
                                 <Select
                                     value={formData.tipo_residencia}
                                     onValueChange={v => handleChange('tipo_residencia', v)}
@@ -477,7 +483,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Quartos</Label>
+                                    <Label>{clientsT.modal.fields.bedrooms}</Label>
                                     <Input
                                         type="number"
                                         value={formData.bedrooms}
@@ -485,7 +491,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Banheiros</Label>
+                                    <Label>{clientsT.modal.fields.bathrooms}</Label>
                                     <Input
                                         type="number"
                                         step="0.5"
@@ -494,7 +500,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Sq. Feet</Label>
+                                    <Label>{clientsT.modal.fields.sqFeet}</Label>
                                     <Input
                                         type="number"
                                         value={formData.square_feet}
@@ -510,7 +516,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                     {step === 4 && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Frequência</Label>
+                                <Label>{clientsT.modal.fields.frequency}</Label>
                                 <Select
                                     value={formData.frequencia}
                                     onValueChange={v => {
@@ -540,17 +546,17 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label>Dias e Serviços</Label>
+                                    <Label>{clientsT.modal.fields.daysAndServices}</Label>
                                     {formData.frequencia === 'weekly' && (
                                         <Button type="button" variant="outline" size="sm" onClick={addDiaServico}>
-                                            <Plus className="w-4 h-4 mr-1" /> Adicionar
+                                            <Plus className="w-4 h-4 mr-1" /> {clientsT.modal.fields.add}
                                         </Button>
                                     )}
                                 </div>
                                 {formData.diasServicos.length === 0 ? (
                                     <div className="border border-dashed p-4 rounded text-center text-sm text-gray-500">
-                                        <p>Nenhum dia configurado.</p>
-                                        <Button type="button" variant="link" onClick={addDiaServico}>Adicionar Dia</Button>
+                                        <p>{clientsT.modal.fields.noDays}</p>
+                                        <Button type="button" variant="link" onClick={addDiaServico}>{clientsT.modal.fields.addDay}</Button>
                                     </div>
                                 ) : (
                                     <div className="space-y-2">
@@ -589,7 +595,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Add-ons</Label>
+                                <Label>{clientsT.modal.fields.addons}</Label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {addonsDisponiveis.map(addon => (
                                         <div
@@ -610,7 +616,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                     {step === 5 && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Tipo de Acesso</Label>
+                                <Label>{clientsT.modal.fields.accessType}</Label>
                                 <Select
                                     value={formData.acesso_tipo}
                                     onValueChange={v => handleChange('acesso_tipo', v)}
@@ -626,7 +632,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                             {formData.acesso_tipo !== 'client_home' && (
                                 <>
                                     <div className="space-y-2">
-                                        <Label>Código</Label>
+                                        <Label>{clientsT.modal.fields.code}</Label>
                                         <Input
                                             value={formData.acesso_codigo}
                                             onChange={e => handleChange('acesso_codigo', e.target.value)}
@@ -634,7 +640,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Instruções</Label>
+                                        <Label>{clientsT.modal.fields.instructions}</Label>
                                         <Textarea
                                             value={formData.acesso_instrucoes}
                                             onChange={e => handleChange('acesso_instrucoes', e.target.value)}
@@ -650,12 +656,12 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                         checked={formData.tem_pets}
                                         onCheckedChange={c => handleChange('tem_pets', !!c)}
                                     />
-                                    <Label htmlFor="tem_pets">Possui Pets?</Label>
+                                    <Label htmlFor="tem_pets">{clientsT.modal.fields.hasPets}</Label>
                                 </div>
                             </div>
                             {formData.tem_pets && (
                                 <div className="space-y-2">
-                                    <Label>Detalhes dos Pets</Label>
+                                    <Label>{clientsT.modal.fields.petsDetails}</Label>
                                     <Textarea
                                         value={formData.pets_detalhes}
                                         onChange={e => handleChange('pets_detalhes', e.target.value)}
@@ -664,7 +670,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                                 </div>
                             )}
                             <div className="space-y-2">
-                                <Label>Notas Internas</Label>
+                                <Label>{clientsT.modal.fields.internalNotes}</Label>
                                 <Textarea
                                     value={formData.notas_internas}
                                     onChange={e => handleChange('notas_internas', e.target.value)}
@@ -679,7 +685,7 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
                         {step > 1 ? (
                             <Button variant="outline" onClick={prevStep}>
                                 <ChevronLeft className="w-4 h-4 mr-2" />
-                                Anterior
+                                {clientsT.modal.buttons.previous}
                             </Button>
                         ) : (
                             <div />
@@ -687,13 +693,13 @@ export function ClientModal({ open, onOpenChange, onSuccess }: ClientModalProps)
 
                         {step < STEPS.length ? (
                             <Button onClick={nextStep} className="bg-[#C48B7F] hover:bg-[#A66D60]">
-                                Próximo
+                                {clientsT.modal.buttons.next}
                                 <ChevronRight className="w-4 h-4 ml-2" />
                             </Button>
                         ) : (
                             <Button onClick={handleSubmit} disabled={isLoading} className="bg-[#C48B7F] hover:bg-[#A66D60]">
                                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                                Finalizar Cadastro
+                                {clientsT.modal.buttons.finish}
                             </Button>
                         )}
                     </div>

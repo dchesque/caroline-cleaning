@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -51,6 +52,10 @@ const STATUS_CONTRACT = {
 }
 
 export default function ContratosPage() {
+    const { t } = useAdminI18n()
+    const contractsT = t('contracts')
+    const common = t('common')
+
     const [contracts, setContracts] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [search, setSearch] = useState('')
@@ -105,15 +110,15 @@ export default function ContratosPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="font-heading text-h2 text-foreground">Contratos</h1>
+                    <h1 className="font-heading text-h2 text-foreground">{contractsT.title}</h1>
                     <p className="text-body text-muted-foreground">
-                        Gerencie os contratos dos seus clientes
+                        {contractsT.subtitle}
                     </p>
                 </div>
                 <Button asChild className="gap-2">
                     <Link href="/admin/contratos/novo">
                         <Plus className="w-4 h-4" />
-                        Novo Contrato
+                        {contractsT.newContract}
                     </Link>
                 </Button>
             </div>
@@ -127,7 +132,7 @@ export default function ContratosPage() {
                                 <FileText className="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                                <p className="text-caption text-muted-foreground">Total</p>
+                                <p className="text-caption text-muted-foreground">{contractsT.stats.total}</p>
                                 <p className="text-h3 font-semibold">{stats.total}</p>
                             </div>
                         </div>
@@ -140,7 +145,7 @@ export default function ContratosPage() {
                                 <CheckCircle className="w-5 h-5 text-success" />
                             </div>
                             <div>
-                                <p className="text-caption text-muted-foreground">Assinados</p>
+                                <p className="text-caption text-muted-foreground">{contractsT.stats.signed}</p>
                                 <p className="text-h3 font-semibold">{stats.assinados}</p>
                             </div>
                         </div>
@@ -153,7 +158,7 @@ export default function ContratosPage() {
                                 <Clock className="w-5 h-5 text-warning" />
                             </div>
                             <div>
-                                <p className="text-caption text-muted-foreground">Pendentes</p>
+                                <p className="text-caption text-muted-foreground">{contractsT.stats.pending}</p>
                                 <p className="text-h3 font-semibold">{stats.pendentes}</p>
                             </div>
                         </div>
@@ -166,7 +171,7 @@ export default function ContratosPage() {
                                 <FileText className="w-5 h-5 text-brandy-rose-600" />
                             </div>
                             <div>
-                                <p className="text-caption text-muted-foreground">Valor Total</p>
+                                <p className="text-caption text-muted-foreground">{contractsT.stats.totalValue}</p>
                                 <p className="text-h3 font-semibold">{formatCurrency(stats.valorTotal)}</p>
                             </div>
                         </div>
@@ -179,7 +184,7 @@ export default function ContratosPage() {
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                        placeholder="Buscar por número ou cliente..."
+                        placeholder={contractsT.filters.search}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="pl-9"
@@ -187,12 +192,14 @@ export default function ContratosPage() {
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Status" />
+                        <SelectValue placeholder={contractsT.filters.statusPlaceholder || "Status"} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="all">{common.all}</SelectItem>
                         {Object.entries(STATUS_CONTRACT).map(([key, value]) => (
-                            <SelectItem key={key} value={key}>{value.label}</SelectItem>
+                            <SelectItem key={key} value={key}>
+                                {contractsT.status[key as keyof typeof contractsT.status] || value.label}
+                            </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -208,17 +215,17 @@ export default function ContratosPage() {
                     ) : contracts.length === 0 ? (
                         <div className="text-center py-12">
                             <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground">Nenhum contrato encontrado</p>
+                            <p className="text-muted-foreground">{common.noResults}</p>
                         </div>
                     ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Contrato</TableHead>
-                                    <TableHead>Cliente</TableHead>
-                                    <TableHead>Valor</TableHead>
-                                    <TableHead>Período</TableHead>
-                                    <TableHead>Status</TableHead>
+                                    <TableHead>{contractsT.table.contract}</TableHead>
+                                    <TableHead>{contractsT.table.client}</TableHead>
+                                    <TableHead>{contractsT.table.value}</TableHead>
+                                    <TableHead>{contractsT.table.period}</TableHead>
+                                    <TableHead>{contractsT.table.status}</TableHead>
                                     <TableHead className="w-[50px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -278,13 +285,13 @@ export default function ContratosPage() {
                                                         <DropdownMenuItem asChild>
                                                             <Link href={`/admin/contratos/${contract.id}`}>
                                                                 <Eye className="w-4 h-4 mr-2" />
-                                                                Visualizar
+                                                                {common.view}
                                                             </Link>
                                                         </DropdownMenuItem>
                                                         {contract.documento_url && (
                                                             <DropdownMenuItem>
                                                                 <Download className="w-4 h-4 mr-2" />
-                                                                Baixar PDF
+                                                                {contractsT.table.downloadPdf || 'Download PDF'}
                                                             </DropdownMenuItem>
                                                         )}
                                                     </DropdownMenuContent>

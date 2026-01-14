@@ -9,6 +9,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { Search } from 'lucide-react'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface ClientsFiltersProps {
     filters: {
@@ -21,12 +22,15 @@ interface ClientsFiltersProps {
 }
 
 export function ClientsFilters({ filters, onChange }: ClientsFiltersProps) {
+    const { t } = useAdminI18n()
+    const clientsT = t('clients')
+
     return (
         <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Buscar clientes por nome ou telefone..."
+                    placeholder={clientsT.filters.search}
                     className="pl-8 bg-white"
                     value={filters.search}
                     onChange={(e) => onChange({ ...filters, search: e.target.value })}
@@ -37,14 +41,14 @@ export function ClientsFilters({ filters, onChange }: ClientsFiltersProps) {
                 onValueChange={(value) => onChange({ ...filters, status: value })}
             >
                 <SelectTrigger className="w-[180px] bg-white">
-                    <SelectValue placeholder="Status" />
+                    <SelectValue placeholder={clientsT.filters.statusPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="all">Todos os Status</SelectItem>
-                    <SelectItem value="lead">Lead</SelectItem>
-                    <SelectItem value="ativo">Ativo</SelectItem>
-                    <SelectItem value="pausado">Pausado</SelectItem>
-                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                    <SelectItem value="all">{clientsT.filters.statusAll}</SelectItem>
+                    <SelectItem value="lead">{clientsT.status.lead}</SelectItem>
+                    <SelectItem value="ativo">{clientsT.status.active}</SelectItem>
+                    <SelectItem value="pausado">{clientsT.status.paused}</SelectItem>
+                    <SelectItem value="cancelado">{clientsT.status.cancelled}</SelectItem>
                 </SelectContent>
             </Select>
             <Select
@@ -55,13 +59,13 @@ export function ClientsFilters({ filters, onChange }: ClientsFiltersProps) {
                 }}
             >
                 <SelectTrigger className="w-[180px] bg-white">
-                    <SelectValue placeholder="Ordenar por" />
+                    <SelectValue placeholder={clientsT.filters.orderBy} />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="created_at-desc">Mais recentes</SelectItem>
-                    <SelectItem value="created_at-asc">Mais antigos</SelectItem>
-                    <SelectItem value="nome-asc">Nome (A-Z)</SelectItem>
-                    <SelectItem value="nome-desc">Nome (Z-A)</SelectItem>
+                    <SelectItem value="created_at-desc">{clientsT.filters.recent}</SelectItem>
+                    <SelectItem value="created_at-asc">{clientsT.filters.oldest}</SelectItem>
+                    <SelectItem value="nome-asc">{clientsT.filters.nameAZ}</SelectItem>
+                    <SelectItem value="nome-desc">{clientsT.filters.nameZA}</SelectItem>
                 </SelectContent>
             </Select>
         </div>

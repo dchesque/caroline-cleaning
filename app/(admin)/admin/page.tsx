@@ -5,14 +5,18 @@ import { AlertsPanel } from '@/components/dashboard/alerts-panel'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RecentLeadsWidget } from '@/components/dashboard/recent-leads-widget'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 export default function DashboardPage() {
+    const { t } = useAdminI18n();
+    const common = t('common');
+
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="font-heading text-3xl text-foreground">Dashboard</h1>
+                <h1 className="font-heading text-3xl text-foreground">{common.dashboard}</h1>
                 <p className="text-sm text-muted-foreground">
-                    Bem-vinda de volta! Aqui está o resumo do seu dia.
+                    {common.welcome}
                 </p>
             </div>
 

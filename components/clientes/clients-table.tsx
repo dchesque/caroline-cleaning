@@ -47,6 +47,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface Client {
     id: string
@@ -65,22 +66,28 @@ interface ClientsTableProps {
     onRefresh?: () => void
 }
 
-const STATUS_CONFIG = {
-    lead: { label: 'Lead', color: 'bg-blue-100 text-blue-700' },
-    ativo: { label: 'Ativo', color: 'bg-green-100 text-green-700' },
-    pausado: { label: 'Pausado', color: 'bg-yellow-100 text-yellow-700' },
-    cancelado: { label: 'Cancelado', color: 'bg-red-100 text-red-700' },
-    inativo: { label: 'Inativo', color: 'bg-gray-100 text-gray-700' },
-}
-
-const FREQUENCIA_LABELS: Record<string, string> = {
-    weekly: 'Semanal',
-    biweekly: 'Quinzenal',
-    monthly: 'Mensal',
-    one_time: 'Avulso',
-}
+// Configurações de status e frequencia movidas para dentro do componente para usar i18n
 
 export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProps) {
+    const { t } = useAdminI18n()
+    const clientsT = t('clients')
+    const common = t('common')
+
+    const statusConfig: any = {
+        lead: { label: clientsT.status.lead, color: 'bg-blue-100 text-blue-700' },
+        ativo: { label: clientsT.status.active, color: 'bg-green-100 text-green-700' },
+        pausado: { label: clientsT.status.paused, color: 'bg-yellow-100 text-yellow-700' },
+        cancelado: { label: clientsT.status.cancelled, color: 'bg-red-100 text-red-700' },
+        inativo: { label: clientsT.status.inactive, color: 'bg-gray-100 text-gray-700' },
+    }
+
+    const frequenciaLabels: Record<string, string> = {
+        weekly: clientsT.frequency.weekly,
+        biweekly: clientsT.frequency.biweekly,
+        monthly: clientsT.frequency.monthly,
+        one_time: clientsT.frequency.oneTime,
+    }
+
     const router = useRouter()
     const supabase = createClient()
     const [deletingClient, setDeletingClient] = useState<Client | null>(null)
@@ -96,11 +103,11 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
 
             if (error) throw error
 
-            toast.success(`Status alterado para ${STATUS_CONFIG[newStatus as keyof typeof STATUS_CONFIG]?.label}`)
+            toast.success(`${clientsT.table.changeStatus}: ${statusConfig[newStatus as keyof typeof statusConfig]?.label}`)
             onRefresh?.()
         } catch (error) {
             console.error('Error updating status:', error)
-            toast.error('Erro ao alterar status')
+            toast.error(common.error)
         }
     }
 
@@ -117,12 +124,12 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
 
             if (error) throw error
 
-            toast.success('Cliente excluído com sucesso')
+            toast.success(clientsT.modal.success)
             setDeletingClient(null)
             onRefresh?.()
         } catch (error) {
             console.error('Error deleting client:', error)
-            toast.error('Erro ao excluir cliente. Verifique se não há agendamentos vinculados.')
+            toast.error(common.error)
         } finally {
             setIsDeleting(false)
         }
@@ -153,7 +160,7 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
     if (clients.length === 0) {
         return (
             <div className="text-center py-12 text-muted-foreground">
-                Nenhum cliente encontrado
+                {clientsT.table.noResults}
             </div>
         )
     }
@@ -165,17 +172,17 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Nome</TableHead>
-                            <TableHead>Telefone</TableHead>
-                            <TableHead>Cidade</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Frequência</TableHead>
+                            <TableHead>{clientsT.table.name}</TableHead>
+                            <TableHead>{clientsT.table.phone}</TableHead>
+                            <TableHead>{clientsT.table.city}</TableHead>
+                            <TableHead>{clientsT.table.status}</TableHead>
+                            <TableHead>{clientsT.table.frequency}</TableHead>
                             <TableHead className="w-[70px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {clients.map((client) => {
-                            const status = STATUS_CONFIG[client.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.lead
+                            const status = statusConfig[client.status as keyof typeof statusConfig] || statusConfig.lead
                             return (
                                 <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50">
                                     <TableCell
@@ -196,7 +203,7 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
                                         </Badge>
                                     </TableCell>
                                     <TableCell onClick={() => router.push(`/admin/clientes/${client.id}`)}>
-                                        {client.frequencia ? FREQUENCIA_LABELS[client.frequencia] || client.frequencia : '-'}
+                                        {client.frequencia ? frequenciaLabels[client.frequencia] || client.frequencia : '-'}
                                     </TableCell>
                                     <TableCell>
                                         <DropdownMenu>
@@ -206,29 +213,27 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end" className="w-48">
-                                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                <DropdownMenuLabel>{clientsT.table.actions}</DropdownMenuLabel>
                                                 <DropdownMenuSeparator />
 
                                                 <DropdownMenuItem onClick={() => router.push(`/admin/clientes/${client.id}`)}>
                                                     <Eye className="mr-2 h-4 w-4" />
-                                                    Ver Detalhes
+                                                    {clientsT.table.viewDetails}
                                                 </DropdownMenuItem>
-
                                                 <DropdownMenuItem onClick={() => router.push(`/admin/clientes/${client.id}?edit=true`)}>
                                                     <Pencil className="mr-2 h-4 w-4" />
-                                                    Editar
+                                                    {clientsT.table.edit}
                                                 </DropdownMenuItem>
 
                                                 <DropdownMenuSeparator />
 
                                                 <DropdownMenuItem onClick={() => handleSMS(client.telefone)}>
                                                     <MessageSquare className="mr-2 h-4 w-4" />
-                                                    Enviar SMS
+                                                    {clientsT.table.sendSms}
                                                 </DropdownMenuItem>
-
                                                 <DropdownMenuItem onClick={() => handleWhatsApp(client.telefone)}>
                                                     <Phone className="mr-2 h-4 w-4" />
-                                                    WhatsApp
+                                                    {clientsT.table.whatsapp}
                                                 </DropdownMenuItem>
 
                                                 <DropdownMenuSeparator />
@@ -237,28 +242,28 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
                                                 <DropdownMenuSub>
                                                     <DropdownMenuSubTrigger>
                                                         <UserCheck className="mr-2 h-4 w-4" />
-                                                        Alterar Status
+                                                        {clientsT.table.changeStatus}
                                                     </DropdownMenuSubTrigger>
                                                     <DropdownMenuSubContent>
                                                         <DropdownMenuItem onClick={() => handleStatusChange(client.id, 'lead')}>
                                                             <Clock className="mr-2 h-4 w-4 text-blue-500" />
-                                                            Lead
+                                                            {clientsT.status.lead}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleStatusChange(client.id, 'ativo')}>
                                                             <UserCheck className="mr-2 h-4 w-4 text-green-500" />
-                                                            Ativo
+                                                            {clientsT.status.active}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleStatusChange(client.id, 'pausado')}>
                                                             <UserMinus className="mr-2 h-4 w-4 text-yellow-500" />
-                                                            Pausado
+                                                            {clientsT.status.paused}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleStatusChange(client.id, 'cancelado')}>
                                                             <UserX className="mr-2 h-4 w-4 text-red-500" />
-                                                            Cancelado
+                                                            {clientsT.status.cancelled}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleStatusChange(client.id, 'inativo')}>
                                                             <UserMinus className="mr-2 h-4 w-4 text-gray-500" />
-                                                            Inativo
+                                                            {clientsT.status.inactive}
                                                         </DropdownMenuItem>
                                                     </DropdownMenuSubContent>
                                                 </DropdownMenuSub>
@@ -270,7 +275,7 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
                                                     className="text-red-600 focus:text-red-600"
                                                 >
                                                     <Trash2 className="mr-2 h-4 w-4" />
-                                                    Excluir
+                                                    {clientsT.table.delete}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -285,7 +290,7 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
                 {clients.map((client) => {
-                    const status = STATUS_CONFIG[client.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.lead
+                    const status = statusConfig[client.status as keyof typeof statusConfig] || statusConfig.lead
                     return (
                         <div
                             key={client.id}
@@ -304,20 +309,20 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem onClick={() => router.push(`/admin/clientes/${client.id}`)}>
-                                            <Eye className="mr-2 h-4 w-4" /> Ver Detalhes
+                                            <Eye className="mr-2 h-4 w-4" /> {clientsT.table.viewDetails}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleSMS(client.telefone)}>
-                                            <MessageSquare className="mr-2 h-4 w-4" /> SMS
+                                            <MessageSquare className="mr-2 h-4 w-4" /> {clientsT.table.sendSms}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleWhatsApp(client.telefone)}>
-                                            <Phone className="mr-2 h-4 w-4" /> WhatsApp
+                                            <Phone className="mr-2 h-4 w-4" /> {clientsT.table.whatsapp}
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
                                             onClick={() => setDeletingClient(client)}
                                             className="text-red-600"
                                         >
-                                            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                                            <Trash2 className="mr-2 h-4 w-4" /> {clientsT.table.delete}
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -328,7 +333,7 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
                                 </Badge>
                                 {client.frequencia && (
                                     <Badge variant="outline">
-                                        {FREQUENCIA_LABELS[client.frequencia] || client.frequencia}
+                                        {frequenciaLabels[client.frequencia] || client.frequencia}
                                     </Badge>
                                 )}
                             </div>
@@ -341,23 +346,23 @@ export function ClientsTable({ clients, isLoading, onRefresh }: ClientsTableProp
             <Dialog open={!!deletingClient} onOpenChange={() => setDeletingClient(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Confirmar Exclusão</DialogTitle>
+                        <DialogTitle>{clientsT.deleteDialog.title}</DialogTitle>
                         <DialogDescription>
-                            Tem certeza que deseja excluir o cliente <strong>{deletingClient?.nome}</strong>?
+                            <span dangerouslySetInnerHTML={{ __html: clientsT.deleteDialog.description.replace('{name}', deletingClient?.nome || '') }} />
                             <br /><br />
-                            Esta ação não pode ser desfeita. Todos os dados do cliente serão removidos permanentemente.
+                            {clientsT.deleteDialog.warning}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setDeletingClient(null)}>
-                            Cancelar
+                            {common.cancel}
                         </Button>
                         <Button
                             variant="destructive"
                             onClick={handleDelete}
                             disabled={isDeleting}
                         >
-                            {isDeleting ? 'Excluindo...' : 'Excluir'}
+                            {isDeleting ? clientsT.deleteDialog.deleting : clientsT.deleteDialog.confirm}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

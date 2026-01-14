@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
+import { TranslationKeys } from '@/lib/admin-i18n/translations'
 import {
     LayoutDashboard,
     Calendar,
@@ -22,18 +24,18 @@ import {
     Sparkles // Ícone para Serviços
 } from 'lucide-react'
 
-const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { name: 'Agenda', href: '/admin/agenda', icon: Calendar },
-    { name: 'Nossos Serviços', href: '/admin/servicos', icon: Sparkles },
-    { name: 'Clientes', href: '/admin/clientes', icon: Users },
-    { name: 'Leads', href: '/admin/leads', icon: UserPlus },
-    { name: 'Contratos', href: '/admin/contratos', icon: FileText },
-    { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign },
-    { name: 'Mensagens', href: '/admin/mensagens', icon: MessageSquare },
-    { name: 'Equipe', href: '/admin/equipe', icon: Users2 },  // NOVO
-    { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-    { name: 'Configurações', href: '/admin/configuracoes', icon: Settings },
+const navigation: { key: keyof TranslationKeys['sidebar'], href: string, icon: any }[] = [
+    { key: 'overview', href: '/admin', icon: LayoutDashboard },
+    { key: 'scheduling', href: '/admin/agenda', icon: Calendar },
+    { key: 'services', href: '/admin/servicos', icon: Sparkles },
+    { key: 'clients', href: '/admin/clientes', icon: Users },
+    { key: 'leads', href: '/admin/leads', icon: UserPlus },
+    { key: 'contracts', href: '/admin/contratos', icon: FileText },
+    { key: 'finance', href: '/admin/financeiro', icon: DollarSign },
+    { key: 'messages', href: '/admin/mensagens', icon: MessageSquare },
+    { key: 'team', href: '/admin/equipe', icon: Users2 },
+    { key: 'analytics', href: '/admin/analytics', icon: BarChart3 },
+    { key: 'settings', href: '/admin/configuracoes', icon: Settings },
 ]
 
 interface SidebarContentProps {
@@ -42,6 +44,9 @@ interface SidebarContentProps {
 }
 
 function SidebarContent({ pathname, onLinkClick }: SidebarContentProps) {
+    const { t } = useAdminI18n();
+    const sidebar = t('sidebar');
+
     return (
         <div className="flex flex-col h-full bg-white">
             <div className="flex items-center h-16 px-6 border-b border-[#EAE0D5]">
@@ -57,7 +62,7 @@ function SidebarContent({ pathname, onLinkClick }: SidebarContentProps) {
                             (item.href !== '/admin' && pathname.startsWith(item.href))
                         return (
                             <Link
-                                key={item.name}
+                                key={item.key}
                                 href={item.href}
                                 onClick={onLinkClick}
                                 className={cn(
@@ -68,7 +73,7 @@ function SidebarContent({ pathname, onLinkClick }: SidebarContentProps) {
                                 )}
                             >
                                 <item.icon className="w-5 h-5" />
-                                {item.name}
+                                {sidebar[item.key]}
                             </Link>
                         )
                     })}
@@ -101,7 +106,9 @@ export function Sidebar() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 w-64">
-                    <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
+                    <SheetTitle className="sr-only">
+                        {useAdminI18n().t('sidebar').menu}
+                    </SheetTitle>
                     <SidebarContent
                         pathname={pathname}
                         onLinkClick={() => setIsMobileOpen(false)}

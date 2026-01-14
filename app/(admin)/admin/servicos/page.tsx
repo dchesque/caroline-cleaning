@@ -56,6 +56,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrencyUSD, formatCurrencyInput, parseCurrency } from '@/lib/formatters'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface ServicoTipo {
     id: string
@@ -84,24 +85,29 @@ interface Addon {
     ordem: number
 }
 
-const CORES_SERVICO = [
-    { value: '#22c55e', label: 'Verde', class: 'bg-green-500' },
-    { value: '#3b82f6', label: 'Azul', class: 'bg-blue-500' },
-    { value: '#f59e0b', label: 'Amarelo', class: 'bg-yellow-500' },
-    { value: '#ef4444', label: 'Vermelho', class: 'bg-red-500' },
-    { value: '#8b5cf6', label: 'Roxo', class: 'bg-purple-500' },
-    { value: '#ec4899', label: 'Rosa', class: 'bg-pink-500' },
-    { value: '#06b6d4', label: 'Ciano', class: 'bg-cyan-500' },
-    { value: '#BE9982', label: 'Brandy Rose', class: 'bg-[#BE9982]' },
-]
-
-const TIPOS_COBRANCA = [
-    { value: 'fixo', label: 'Valor Fixo' },
-    { value: 'por_hora', label: 'Por Hora' },
-    { value: 'por_unidade', label: 'Por Unidade' },
-]
+// Constantes movidas para dentro do componente para usar i18n
 
 export default function ServicosPage() {
+    const { t } = useAdminI18n()
+    const servicesT = t('services')
+    const common = t('common')
+
+    const CORES_SERVICO = [
+        { value: '#22c55e', label: 'Verde', class: 'bg-green-500' },
+        { value: '#3b82f6', label: 'Azul', class: 'bg-blue-500' },
+        { value: '#f59e0b', label: 'Amarelo', class: 'bg-yellow-500' },
+        { value: '#ef4444', label: 'Vermelho', class: 'bg-red-500' },
+        { value: '#8b5cf6', label: 'Roxo', class: 'bg-purple-500' },
+        { value: '#ec4899', label: 'Rosa', class: 'bg-pink-500' },
+        { value: '#06b6d4', label: 'Ciano', class: 'bg-cyan-500' },
+        { value: '#BE9982', label: 'Brandy Rose', class: 'bg-[#BE9982]' },
+    ]
+
+    const TIPOS_COBRANCA = [
+        { value: 'fixo', label: servicesT.modals.billingTypes.fixed },
+        { value: 'por_hora', label: servicesT.modals.billingTypes.hourly },
+        { value: 'por_unidade', label: servicesT.modals.billingTypes.unit },
+    ]
     const [activeTab, setActiveTab] = useState('servicos')
     const [servicos, setServicos] = useState<ServicoTipo[]>([])
     const [addons, setAddons] = useState<Addon[]>([])
@@ -189,12 +195,12 @@ export default function ServicosPage() {
 
     const saveServico = async () => {
         if (!servicoForm.codigo || !servicoForm.nome) {
-            toast.error('Código e Nome são obrigatórios')
+            toast.error(servicesT.modals.validation.required)
             return
         }
 
         if (!/^[a-z_]+$/.test(servicoForm.codigo)) {
-            toast.error('Código deve conter apenas letras minúsculas e underscore')
+            toast.error(servicesT.modals.validation.codeFormat)
             return
         }
 
@@ -217,27 +223,27 @@ export default function ServicosPage() {
                     .update(data)
                     .eq('id', editingServico.id)
                 if (error) throw error
-                toast.success('Serviço atualizado!')
+                toast.success(common.save)
             } else {
                 const { error } = await supabase
                     .from('servicos_tipos')
                     .insert({ ...data, ordem: servicos.length })
                 if (error) throw error
-                toast.success('Serviço criado!')
+                toast.success(common.save)
             }
 
             setShowServicoModal(false)
             fetchData()
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao salvar serviço')
+            toast.error(common.error)
         } finally {
             setIsSaving(false)
         }
     }
 
     const deleteServico = async (id: string) => {
-        if (!confirm('Tem certeza que deseja excluir este serviço?')) return
+        if (!confirm(servicesT.modals.confirmDelete)) return
 
         try {
             const { error } = await supabase
@@ -245,10 +251,10 @@ export default function ServicosPage() {
                 .delete()
                 .eq('id', id)
             if (error) throw error
-            toast.success('Serviço excluído!')
+            toast.success(common.delete)
             fetchData()
         } catch (error) {
-            toast.error('Erro ao excluir serviço')
+            toast.error(common.error)
         }
     }
 
@@ -259,10 +265,10 @@ export default function ServicosPage() {
                 .update({ ativo: !servico.ativo })
                 .eq('id', servico.id)
             if (error) throw error
-            toast.success(`Serviço ${!servico.ativo ? 'ativado' : 'desativado'}!`)
+            toast.success(common.save)
             fetchData()
         } catch (error) {
-            toast.error('Erro ao atualizar status')
+            toast.error(common.error)
         }
     }
 
@@ -298,12 +304,12 @@ export default function ServicosPage() {
 
     const saveAddon = async () => {
         if (!addonForm.codigo || !addonForm.nome || !addonForm.preco) {
-            toast.error('Código, Nome e Preço são obrigatórios')
+            toast.error(servicesT.modals.validation.addonRequired)
             return
         }
 
         if (!/^[a-z_]+$/.test(addonForm.codigo)) {
-            toast.error('Código deve conter apenas letras minúsculas e underscore')
+            toast.error(servicesT.modals.validation.codeFormat)
             return
         }
 
@@ -326,27 +332,27 @@ export default function ServicosPage() {
                     .update(data)
                     .eq('id', editingAddon.id)
                 if (error) throw error
-                toast.success('Addon atualizado!')
+                toast.success(common.save)
             } else {
                 const { error } = await supabase
                     .from('addons')
                     .insert({ ...data, ordem: addons.length })
                 if (error) throw error
-                toast.success('Addon criado!')
+                toast.success(common.save)
             }
 
             setShowAddonModal(false)
             fetchData()
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao salvar addon')
+            toast.error(common.error)
         } finally {
             setIsSaving(false)
         }
     }
 
     const deleteAddon = async (id: string) => {
-        if (!confirm('Tem certeza que deseja excluir este addon?')) return
+        if (!confirm(servicesT.modals.confirmDelete)) return
 
         try {
             const { error } = await supabase
@@ -354,10 +360,10 @@ export default function ServicosPage() {
                 .delete()
                 .eq('id', id)
             if (error) throw error
-            toast.success('Addon excluído!')
+            toast.success(common.delete)
             fetchData()
         } catch (error) {
-            toast.error('Erro ao excluir addon')
+            toast.error(common.error)
         }
     }
 
@@ -368,18 +374,18 @@ export default function ServicosPage() {
                 .update({ ativo: !addon.ativo })
                 .eq('id', addon.id)
             if (error) throw error
-            toast.success(`Addon ${!addon.ativo ? 'ativado' : 'desativado'}!`)
+            toast.success(common.save)
             fetchData()
         } catch (error) {
-            toast.error('Erro ao atualizar status')
+            toast.error(common.error)
         }
     }
 
     const getPrecoLabel = (addon: Addon) => {
         const price = formatCurrencyUSD(addon.preco)
         if (addon.tipo_cobranca === 'fixo') return price
-        if (addon.tipo_cobranca === 'por_hora') return `${price}/hour`
-        if (addon.tipo_cobranca === 'por_unidade') return `${price}/${addon.unidade || 'unit'}`
+        if (addon.tipo_cobranca === 'por_hora') return `${price}/${servicesT.modals.billingTypes.hourLabel}`
+        if (addon.tipo_cobranca === 'por_unidade') return `${price}/${addon.unidade || servicesT.modals.billingTypes.unitLabel}`
         return price
     }
 
@@ -403,10 +409,10 @@ export default function ServicosPage() {
                 <div>
                     <h1 className="font-heading text-2xl font-bold flex items-center gap-2">
                         <Sparkles className="w-6 h-6 text-[#C48B7F]" />
-                        Nossos Serviços
+                        {servicesT.title}
                     </h1>
                     <p className="text-sm text-muted-foreground">
-                        Gerencie os serviços e adicionais oferecidos
+                        {servicesT.subtitle}
                     </p>
                 </div>
             </div>
@@ -417,23 +423,23 @@ export default function ServicosPage() {
                     <TabsList>
                         <TabsTrigger value="servicos" className="gap-2">
                             <Sparkles className="w-4 h-4" />
-                            Serviços ({servicos.length})
+                            {servicesT.tabs.services} ({servicos.length})
                         </TabsTrigger>
                         <TabsTrigger value="addons" className="gap-2">
                             <Package className="w-4 h-4" />
-                            Adicionais ({addons.length})
+                            {servicesT.tabs.addons} ({addons.length})
                         </TabsTrigger>
                     </TabsList>
 
                     {activeTab === 'servicos' ? (
                         <Button onClick={() => openServicoModal()}>
                             <Plus className="w-4 h-4 mr-2" />
-                            Novo Serviço
+                            {servicesT.buttons.newService}
                         </Button>
                     ) : (
                         <Button onClick={() => openAddonModal()}>
                             <Plus className="w-4 h-4 mr-2" />
-                            Novo Adicional
+                            {servicesT.buttons.newAddon}
                         </Button>
                     )}
                 </div>
@@ -454,7 +460,7 @@ export default function ServicosPage() {
                                                 {servico.nome}
                                                 {!servico.ativo && (
                                                     <Badge variant="destructive" className="text-xs">
-                                                        Inativo
+                                                        {servicesT.serviceCard.inactive}
                                                     </Badge>
                                                 )}
                                             </CardTitle>
@@ -471,18 +477,18 @@ export default function ServicosPage() {
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onClick={() => openServicoModal(servico)}>
                                                     <Pencil className="w-4 h-4 mr-2" />
-                                                    Editar
+                                                    {servicesT.serviceCard.edit}
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => toggleServicoAtivo(servico)}>
                                                     {servico.ativo ? (
                                                         <>
                                                             <XCircle className="w-4 h-4 mr-2" />
-                                                            Desativar
+                                                            {servicesT.serviceCard.deactivate}
                                                         </>
                                                     ) : (
                                                         <>
                                                             <CheckCircle className="w-4 h-4 mr-2" />
-                                                            Ativar
+                                                            {servicesT.serviceCard.activate}
                                                         </>
                                                     )}
                                                 </DropdownMenuItem>
@@ -491,7 +497,7 @@ export default function ServicosPage() {
                                                     className="text-red-600"
                                                 >
                                                     <Trash2 className="w-4 h-4 mr-2" />
-                                                    Excluir
+                                                    {servicesT.serviceCard.delete}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -499,16 +505,16 @@ export default function ServicosPage() {
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                                        {servico.descricao || 'Sem descrição'}
+                                        {servico.descricao || servicesT.serviceCard.noDescription}
                                     </p>
                                     <div className="grid grid-cols-2 gap-4 text-sm">
                                         <div className="flex items-center gap-2">
                                             <DollarSign className="w-4 h-4 text-muted-foreground" />
-                                            <span>x{servico.multiplicador_preco} preço</span>
+                                            <span>x{servico.multiplicador_preco} {servicesT.serviceCard.priceMultiplier}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Clock className="w-4 h-4 text-muted-foreground" />
-                                            <span>{servico.duracao_base_minutos}min</span>
+                                            <span>{servico.duracao_base_minutos}{servicesT.serviceCard.min}</span>
                                         </div>
                                     </div>
                                     <div className="mt-3 flex items-center gap-2">
@@ -517,7 +523,7 @@ export default function ServicosPage() {
                                             style={{ backgroundColor: servico.cor || '#BE9982' }}
                                         />
                                         <span className="text-xs text-muted-foreground">
-                                            {servico.disponivel_agendamento_online ? 'Disponível online' : 'Apenas interno'}
+                                            {servico.disponivel_agendamento_online ? servicesT.serviceCard.availableOnline : servicesT.serviceCard.internalOnly}
                                         </span>
                                     </div>
                                 </CardContent>
@@ -528,10 +534,10 @@ export default function ServicosPage() {
                             <Card className="col-span-full">
                                 <CardContent className="py-12 text-center">
                                     <Sparkles className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                                    <p className="text-muted-foreground">Nenhum serviço cadastrado</p>
+                                    <p className="text-muted-foreground">{servicesT.table.noServices}</p>
                                     <Button className="mt-4" onClick={() => openServicoModal()}>
                                         <Plus className="w-4 h-4 mr-2" />
-                                        Criar Primeiro Serviço
+                                        {servicesT.buttons.createFirstService}
                                     </Button>
                                 </CardContent>
                             </Card>
@@ -546,21 +552,21 @@ export default function ServicosPage() {
                             {addons.length === 0 ? (
                                 <div className="py-12 text-center">
                                     <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                                    <p className="text-muted-foreground">Nenhum adicional cadastrado</p>
+                                    <p className="text-muted-foreground">{servicesT.table.noAddons}</p>
                                     <Button className="mt-4" onClick={() => openAddonModal()}>
                                         <Plus className="w-4 h-4 mr-2" />
-                                        Criar Primeiro Adicional
+                                        {servicesT.buttons.createFirstAddon}
                                     </Button>
                                 </div>
                             ) : (
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Nome</TableHead>
-                                            <TableHead>Código</TableHead>
-                                            <TableHead>Preço</TableHead>
-                                            <TableHead>Tempo Adicional</TableHead>
-                                            <TableHead>Status</TableHead>
+                                            <TableHead>{servicesT.table.name}</TableHead>
+                                            <TableHead>{servicesT.table.code}</TableHead>
+                                            <TableHead>{servicesT.table.price}</TableHead>
+                                            <TableHead>{servicesT.table.additionalTime}</TableHead>
+                                            <TableHead>{servicesT.table.status}</TableHead>
                                             <TableHead className="w-[70px]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -590,7 +596,7 @@ export default function ServicosPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant={addon.ativo ? 'default' : 'destructive'}>
-                                                        {addon.ativo ? 'Ativo' : 'Inativo'}
+                                                        {addon.ativo ? servicesT.serviceCard.active : servicesT.serviceCard.inactive}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
@@ -603,18 +609,18 @@ export default function ServicosPage() {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuItem onClick={() => openAddonModal(addon)}>
                                                                 <Pencil className="w-4 h-4 mr-2" />
-                                                                Editar
+                                                                {servicesT.serviceCard.edit}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => toggleAddonAtivo(addon)}>
                                                                 {addon.ativo ? (
                                                                     <>
                                                                         <XCircle className="w-4 h-4 mr-2" />
-                                                                        Desativar
+                                                                        {servicesT.serviceCard.deactivate}
                                                                     </>
                                                                 ) : (
                                                                     <>
                                                                         <CheckCircle className="w-4 h-4 mr-2" />
-                                                                        Ativar
+                                                                        {servicesT.serviceCard.activate}
                                                                     </>
                                                                 )}
                                                             </DropdownMenuItem>
@@ -623,7 +629,7 @@ export default function ServicosPage() {
                                                                 className="text-red-600"
                                                             >
                                                                 <Trash2 className="w-4 h-4 mr-2" />
-                                                                Excluir
+                                                                {servicesT.serviceCard.delete}
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
@@ -643,17 +649,17 @@ export default function ServicosPage() {
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
                         <DialogTitle>
-                            {editingServico ? 'Editar Serviço' : 'Novo Serviço'}
+                            {editingServico ? servicesT.modals.editService : servicesT.modals.newService}
                         </DialogTitle>
                         <DialogDescription>
-                            Configure os detalhes do tipo de serviço
+                            {servicesT.modals.serviceDescription}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Código *</Label>
+                                <Label>{servicesT.modals.fields.code} *</Label>
                                 <Input
                                     value={servicoForm.codigo}
                                     onChange={(e) => setServicoForm({
@@ -664,11 +670,11 @@ export default function ServicosPage() {
                                     disabled={!!editingServico}
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    Apenas letras minúsculas e underscore
+                                    {servicesT.modals.fields.codeHelp}
                                 </p>
                             </div>
                             <div className="space-y-2">
-                                <Label>Nome *</Label>
+                                <Label>{servicesT.modals.fields.name} *</Label>
                                 <Input
                                     value={servicoForm.nome}
                                     onChange={(e) => setServicoForm({ ...servicoForm, nome: e.target.value })}
@@ -678,18 +684,18 @@ export default function ServicosPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Descrição</Label>
+                            <Label>{servicesT.modals.fields.description}</Label>
                             <Textarea
                                 value={servicoForm.descricao}
                                 onChange={(e) => setServicoForm({ ...servicoForm, descricao: e.target.value })}
-                                placeholder="Descrição do serviço..."
+                                placeholder={servicesT.modals.fields.descriptionPlaceholder}
                                 rows={2}
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Multiplicador de Preço</Label>
+                                <Label>{servicesT.modals.fields.multiplier}</Label>
                                 <Input
                                     type="number"
                                     step="0.1"
@@ -698,11 +704,11 @@ export default function ServicosPage() {
                                     onChange={(e) => setServicoForm({ ...servicoForm, multiplicador_preco: e.target.value })}
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    1.0 = preço base, 1.5 = +50%
+                                    {servicesT.modals.fields.multiplierHelp}
                                 </p>
                             </div>
                             <div className="space-y-2">
-                                <Label>Duração Base (min)</Label>
+                                <Label>{servicesT.modals.fields.duration}</Label>
                                 <Input
                                     type="number"
                                     min="30"
@@ -714,7 +720,7 @@ export default function ServicosPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Cor do Calendário</Label>
+                            <Label>{servicesT.modals.fields.calendarColor}</Label>
                             <div className="flex gap-2">
                                 {CORES_SERVICO.map((cor) => (
                                     <button
@@ -722,8 +728,8 @@ export default function ServicosPage() {
                                         type="button"
                                         onClick={() => setServicoForm({ ...servicoForm, cor: cor.value })}
                                         className={`w-8 h-8 rounded-full border-2 transition-all ${servicoForm.cor === cor.value
-                                                ? 'border-gray-900 scale-110'
-                                                : 'border-transparent'
+                                            ? 'border-gray-900 scale-110'
+                                            : 'border-transparent'
                                             }`}
                                         style={{ backgroundColor: cor.value }}
                                         title={cor.label}
@@ -738,7 +744,7 @@ export default function ServicosPage() {
                                     checked={servicoForm.ativo}
                                     onCheckedChange={(checked) => setServicoForm({ ...servicoForm, ativo: checked })}
                                 />
-                                <Label>Serviço Ativo</Label>
+                                <Label>{servicesT.modals.fields.active}</Label>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Switch
@@ -748,18 +754,18 @@ export default function ServicosPage() {
                                         disponivel_agendamento_online: checked
                                     })}
                                 />
-                                <Label>Disponível Online</Label>
+                                <Label>{servicesT.modals.fields.availableOnline}</Label>
                             </div>
                         </div>
                     </div>
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowServicoModal(false)}>
-                            Cancelar
+                            {common.cancel}
                         </Button>
                         <Button onClick={saveServico} disabled={isSaving}>
                             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            {editingServico ? 'Salvar' : 'Criar'}
+                            {editingServico ? common.save : common.save}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -770,17 +776,17 @@ export default function ServicosPage() {
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
                         <DialogTitle>
-                            {editingAddon ? 'Editar Adicional' : 'Novo Adicional'}
+                            {editingAddon ? servicesT.modals.editAddon : servicesT.modals.newAddon}
                         </DialogTitle>
                         <DialogDescription>
-                            Configure os detalhes do serviço adicional
+                            {servicesT.modals.addonDescription}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Código *</Label>
+                                <Label>{servicesT.modals.fields.code} *</Label>
                                 <Input
                                     value={addonForm.codigo}
                                     onChange={(e) => setAddonForm({
@@ -792,7 +798,7 @@ export default function ServicosPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Nome *</Label>
+                                <Label>{servicesT.modals.fields.name} *</Label>
                                 <Input
                                     value={addonForm.nome}
                                     onChange={(e) => setAddonForm({ ...addonForm, nome: e.target.value })}
@@ -802,18 +808,18 @@ export default function ServicosPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Descrição</Label>
+                            <Label>{servicesT.modals.fields.description}</Label>
                             <Textarea
                                 value={addonForm.descricao}
                                 onChange={(e) => setAddonForm({ ...addonForm, descricao: e.target.value })}
-                                placeholder="Descrição do adicional..."
+                                placeholder={servicesT.modals.fields.descriptionPlaceholder}
                                 rows={2}
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Preço *</Label>
+                                <Label>{servicesT.modals.fields.price} *</Label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                     <Input
@@ -828,7 +834,7 @@ export default function ServicosPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Tipo de Cobrança</Label>
+                                <Label>{servicesT.modals.fields.billingType}</Label>
                                 <Select
                                     value={addonForm.tipo_cobranca}
                                     onValueChange={(v) => setAddonForm({ ...addonForm, tipo_cobranca: v })}
@@ -849,7 +855,7 @@ export default function ServicosPage() {
 
                         {addonForm.tipo_cobranca === 'por_unidade' && (
                             <div className="space-y-2">
-                                <Label>Unidade</Label>
+                                <Label>{servicesT.modals.fields.unit}</Label>
                                 <Input
                                     value={addonForm.unidade}
                                     onChange={(e) => setAddonForm({ ...addonForm, unidade: e.target.value })}
@@ -860,7 +866,7 @@ export default function ServicosPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Tempo Adicional (min)</Label>
+                                <Label>{servicesT.modals.fields.additionalMinutes}</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -874,18 +880,18 @@ export default function ServicosPage() {
                                     checked={addonForm.ativo}
                                     onCheckedChange={(checked) => setAddonForm({ ...addonForm, ativo: checked })}
                                 />
-                                <Label>Ativo</Label>
+                                <Label>{servicesT.modals.fields.addonActive}</Label>
                             </div>
                         </div>
                     </div>
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setShowAddonModal(false)}>
-                            Cancelar
+                            {common.cancel}
                         </Button>
                         <Button onClick={saveAddon} disabled={isSaving}>
                             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            {editingAddon ? 'Salvar' : 'Criar'}
+                            {editingAddon ? common.save : common.save}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

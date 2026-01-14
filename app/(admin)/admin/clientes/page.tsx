@@ -7,8 +7,12 @@ import { ClientModal } from '@/components/clientes/client-modal'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 export default function ClientesPage() {
+    const { t } = useAdminI18n()
+    const clientsT = t('clients')
+
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [clients, setClients] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -45,12 +49,12 @@ export default function ClientesPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="font-heading text-3xl text-foreground">Clientes</h1>
-                    <p className="text-sm text-muted-foreground">Gerencie seus clientes e leads</p>
+                    <h1 className="font-heading text-3xl text-foreground">{clientsT.title}</h1>
+                    <p className="text-sm text-muted-foreground">{clientsT.subtitle}</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)} className="gap-2 bg-[#C48B7F] hover:bg-[#A66D60]">
                     <Plus className="w-4 h-4" />
-                    Novo Cliente
+                    {clientsT.newClient}
                 </Button>
             </div>
 

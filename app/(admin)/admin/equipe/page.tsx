@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -109,6 +110,10 @@ export default function EquipePage() {
     const [isToggleStatusDialogOpen, setIsToggleStatusDialogOpen] = useState(false)
     const [memberToDelete, setMemberToDelete] = useState<string | null>(null)
     const [memberToToggle, setMemberToToggle] = useState<Membro | null>(null)
+
+    const { t } = useAdminI18n()
+    const teamT = t('team')
+    const common = t('common')
 
     const supabase = createClient()
 
@@ -256,9 +261,9 @@ export default function EquipePage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="font-heading text-2xl font-bold text-foreground">Equipe</h1>
+                    <h1 className="font-heading text-2xl font-bold text-foreground">{teamT.title}</h1>
                     <p className="text-sm text-muted-foreground">
-                        Gerencie os membros da sua equipe de limpeza
+                        {teamT.subtitle}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -268,13 +273,13 @@ export default function EquipePage() {
                         className="w-[200px]"
                     >
                         <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="ativos">Ativos</TabsTrigger>
-                            <TabsTrigger value="inativos">Inativos</TabsTrigger>
+                            <TabsTrigger value="ativos">{teamT.tabs.active}</TabsTrigger>
+                            <TabsTrigger value="inativos">{teamT.tabs.inactive}</TabsTrigger>
                         </TabsList>
                     </Tabs>
                     <Button onClick={handleCreate} className="bg-[#C48B7F] hover:bg-[#A66D60]">
                         <Plus className="w-4 h-4 mr-2" />
-                        Novo Membro
+                        {teamT.newMember}
                     </Button>
                 </div>
             </div>
@@ -289,11 +294,11 @@ export default function EquipePage() {
                     <CardContent className="py-12 text-center">
                         <Users2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 mb-4">
-                            {filterStatus === 'ativos' ? 'Nenhum membro ativo cadastrado' : 'Nenhum membro inativo'}
+                            {filterStatus === 'ativos' ? teamT.emptyActive : teamT.emptyInactive}
                         </p>
                         {filterStatus === 'ativos' && (
                             <Button onClick={handleCreate} className="bg-[#C48B7F] hover:bg-[#A66D60]">
-                                Adicionar Primeiro Membro
+                                {teamT.addFirst}
                             </Button>
                         )}
                     </CardContent>
@@ -325,7 +330,7 @@ export default function EquipePage() {
                                         <div>
                                             <p className="font-semibold">{membro.nome}</p>
                                             <Badge variant="secondary" className="text-xs">
-                                                {CARGOS.find(c => c.value === membro.cargo)?.label}
+                                                {teamT.roles[membro.cargo]}
                                             </Badge>
                                         </div>
                                     </div>
@@ -338,7 +343,7 @@ export default function EquipePage() {
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem onClick={() => handleEdit(membro)}>
                                                 <Pencil className="w-4 h-4 mr-2" />
-                                                Editar
+                                                {common.edit}
                                             </DropdownMenuItem>
                                             {membro.ativo ? (
                                                 <DropdownMenuItem
@@ -349,7 +354,7 @@ export default function EquipePage() {
                                                     className="text-amber-600 focus:text-amber-600 focus:bg-amber-50"
                                                 >
                                                     <UserX className="w-4 h-4 mr-2" />
-                                                    Desativar
+                                                    {common.inactive}
                                                 </DropdownMenuItem>
                                             ) : (
                                                 <DropdownMenuItem
@@ -360,7 +365,7 @@ export default function EquipePage() {
                                                     className="text-emerald-600 focus:text-emerald-600 focus:bg-emerald-50"
                                                 >
                                                     <UserCheck className="w-4 h-4 mr-2" />
-                                                    Reativar
+                                                    {common.active}
                                                 </DropdownMenuItem>
                                             )}
                                             <DropdownMenuItem
@@ -371,7 +376,7 @@ export default function EquipePage() {
                                                 className="text-red-600 focus:text-red-600 focus:bg-red-50"
                                             >
                                                 <Trash2 className="w-4 h-4 mr-2" />
-                                                Excluir Permanentemente
+                                                {teamT.deleteDialog.confirm}
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -379,7 +384,7 @@ export default function EquipePage() {
 
                                 {!membro.ativo && (
                                     <div className="mt-2 text-[10px] uppercase tracking-wider font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full inline-block">
-                                        Membro Inativo
+                                        {teamT.card.inactiveBadge}
                                     </div>
                                 )}
 
@@ -398,7 +403,7 @@ export default function EquipePage() {
                                     )}
                                     <div className="flex items-center gap-2">
                                         <Calendar className="w-4 h-4" />
-                                        Desde {format(new Date(membro.data_admissao), 'MMM yyyy')}
+                                        {teamT.card.since} {format(new Date(membro.data_admissao), 'MMM yyyy')}
                                     </div>
                                 </div>
                             </CardContent>
@@ -412,24 +417,24 @@ export default function EquipePage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            {editingMembro?.id ? 'Editar Membro' : 'Novo Membro'}
+                            {editingMembro?.id ? teamT.modal.editTitle : teamT.modal.newTitle}
                         </DialogTitle>
                         <DialogDescription>
-                            Preencha os dados do membro da equipe
+                            {teamT.modal.description}
                         </DialogDescription>
                     </DialogHeader>
 
                     {editingMembro && (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Nome *</Label>
+                                <Label>{teamT.modal.fullName} *</Label>
                                 <Input
                                     value={editingMembro.nome}
                                     onChange={(e) => setEditingMembro({
                                         ...editingMembro,
                                         nome: e.target.value
                                     })}
-                                    placeholder="Nome completo"
+                                    placeholder={teamT.modal.fullName}
                                 />
                             </div>
 
@@ -461,7 +466,7 @@ export default function EquipePage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Cargo</Label>
+                                    <Label>{teamT.modal.role}</Label>
                                     <Select
                                         value={editingMembro.cargo}
                                         onValueChange={(v: any) => setEditingMembro({
@@ -473,16 +478,14 @@ export default function EquipePage() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {CARGOS.map((c) => (
-                                                <SelectItem key={c.value} value={c.value}>
-                                                    {c.label}
-                                                </SelectItem>
-                                            ))}
+                                            <SelectItem value="cleaner">{teamT.roles.cleaner}</SelectItem>
+                                            <SelectItem value="supervisor">{teamT.roles.supervisor}</SelectItem>
+                                            <SelectItem value="admin">{teamT.roles.admin}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Cor de Identificação</Label>
+                                    <Label>{teamT.modal.idColor}</Label>
                                     <Select
                                         value={editingMembro.cor}
                                         onValueChange={(v) => setEditingMembro({
@@ -517,7 +520,7 @@ export default function EquipePage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Data de Admissão</Label>
+                                <Label>{teamT.modal.admissionDate}</Label>
                                 <Input
                                     type="date"
                                     value={editingMembro.data_admissao}
@@ -532,7 +535,7 @@ export default function EquipePage() {
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                            Cancelar
+                            {common.cancel}
                         </Button>
                         <Button
                             onClick={handleSave}
@@ -542,10 +545,10 @@ export default function EquipePage() {
                             {isSaving ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Salvando...
+                                    {teamT.modal.saving}
                                 </>
                             ) : (
-                                'Salvar'
+                                common.save
                             )}
                         </Button>
                     </DialogFooter>
@@ -558,22 +561,21 @@ export default function EquipePage() {
                     <AlertDialogHeader>
                         <div className="flex items-center gap-2 text-red-600 mb-2">
                             <AlertTriangle className="w-5 h-5" />
-                            <AlertDialogTitle>Excluir Permanentemente?</AlertDialogTitle>
+                            <AlertDialogTitle>{teamT.deleteDialog.title}</AlertDialogTitle>
                         </div>
                         <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Isso excluirá permanentemente o membro
-                            da equipe e todos os dados associados do nosso banco de dados.
+                            {teamT.deleteDialog.description}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setMemberToDelete(null)}>
-                            Cancelar
+                            {common.cancel}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeletePermanent}
                             className="bg-red-600 hover:bg-red-700 text-white"
                         >
-                            Confirmar Exclusão
+                            {teamT.deleteDialog.confirm}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -586,18 +588,18 @@ export default function EquipePage() {
                         <div className={`flex items-center gap-2 mb-2 ${memberToToggle?.ativo ? 'text-amber-600' : 'text-emerald-600'}`}>
                             {memberToToggle?.ativo ? <UserX className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
                             <AlertDialogTitle>
-                                {memberToToggle?.ativo ? 'Desativar Membro?' : 'Reativar Membro?'}
+                                {memberToToggle?.ativo ? teamT.toggleDialog.deactivateTitle : teamT.toggleDialog.activateTitle}
                             </AlertDialogTitle>
                         </div>
                         <AlertDialogDescription>
                             {memberToToggle?.ativo
-                                ? 'Isso ocultará o membro da lista de ativos, mas seus dados serão preservados.'
-                                : 'Isso tornará o membro visível e ativo na equipe novamente.'}
+                                ? teamT.toggleDialog.deactivateDesc
+                                : teamT.toggleDialog.activateDesc}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setMemberToToggle(null)}>
-                            Cancelar
+                            {common.cancel}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleToggleAtivo}
@@ -605,7 +607,7 @@ export default function EquipePage() {
                                 ? "bg-amber-600 hover:bg-amber-700 text-white border-none"
                                 : "bg-emerald-600 hover:bg-emerald-700 text-white border-none"}
                         >
-                            {memberToToggle?.ativo ? 'Confirmar Desativação' : 'Confirmar Reativação'}
+                            {memberToToggle?.ativo ? teamT.toggleDialog.confirmDeactivate : teamT.toggleDialog.confirmActivate}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -20,6 +21,10 @@ import { RevenueChart } from '@/components/financeiro/revenue-chart'
 import { RecentTransactions } from '@/components/financeiro/recent-transactions'
 
 export default async function FinanceiroPage() {
+    const { t } = useAdminI18n()
+    const financeT = t('finance')
+    const common = t('common')
+
     const supabase = await createClient()
 
     // Get financial summary
@@ -75,28 +80,28 @@ export default async function FinanceiroPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="font-heading text-h2 text-foreground">Financeiro</h1>
+                    <h1 className="font-heading text-h2 text-foreground">{financeT.title}</h1>
                     <p className="text-body text-muted-foreground">
-                        Visão geral das finanças do seu negócio
+                        {financeT.subtitle}
                     </p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" asChild>
                         <Link href="/admin/financeiro/categorias">
                             <Tags className="w-4 h-4 mr-2" />
-                            Categorias
+                            {financeT.categories}
                         </Link>
                     </Button>
                     <Button variant="outline" asChild>
                         <Link href="/admin/financeiro/despesas">
                             <TrendingDown className="w-4 h-4 mr-2" />
-                            Nova Despesa
+                            {financeT.newExpense}
                         </Link>
                     </Button>
                     <Button asChild>
                         <Link href="/admin/financeiro/receitas">
                             <Plus className="w-4 h-4 mr-2" />
-                            Nova Receita
+                            {financeT.newRevenue}
                         </Link>
                     </Button>
                 </div>
@@ -108,7 +113,7 @@ export default async function FinanceiroPage() {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-caption text-muted-foreground">Receita do Mês</p>
+                                <p className="text-caption text-muted-foreground">{financeT.stats.revenue}</p>
                                 <p className="text-h3 font-semibold">{formatCurrency(totalCurrentRevenue)}</p>
                                 <div className="flex items-center gap-1 mt-1">
                                     {Number(revenueChange) >= 0 ? (
@@ -117,7 +122,7 @@ export default async function FinanceiroPage() {
                                         <ArrowDownRight className="w-4 h-4 text-destructive" />
                                     )}
                                     <span className={`text-caption ${Number(revenueChange) >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                        {revenueChange}% vs mês anterior
+                                        {revenueChange}% {financeT.stats.vsLastMonth}
                                     </span>
                                 </div>
                             </div>
@@ -132,10 +137,10 @@ export default async function FinanceiroPage() {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-caption text-muted-foreground">Despesas do Mês</p>
+                                <p className="text-caption text-muted-foreground">{financeT.stats.expenses}</p>
                                 <p className="text-h3 font-semibold">{formatCurrency(totalExpenses)}</p>
                                 <p className="text-caption text-muted-foreground mt-1">
-                                    Custos operacionais
+                                    {financeT.stats.operationalCosts}
                                 </p>
                             </div>
                             <div className="p-3 bg-destructive/10 rounded-lg">
@@ -149,12 +154,12 @@ export default async function FinanceiroPage() {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-caption text-muted-foreground">Lucro Líquido</p>
+                                <p className="text-caption text-muted-foreground">{financeT.stats.profit}</p>
                                 <p className={`text-h3 font-semibold ${profit >= 0 ? 'text-success' : 'text-destructive'}`}>
                                     {formatCurrency(profit)}
                                 </p>
                                 <p className="text-caption text-muted-foreground mt-1">
-                                    Este mês
+                                    {financeT.stats.thisMonth}
                                 </p>
                             </div>
                             <div className="p-3 bg-primary/10 rounded-lg">
@@ -168,10 +173,10 @@ export default async function FinanceiroPage() {
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-caption text-muted-foreground">A Receber</p>
+                                <p className="text-caption text-muted-foreground">{financeT.stats.pending}</p>
                                 <p className="text-h3 font-semibold text-warning">{formatCurrency(totalPending)}</p>
                                 <p className="text-caption text-muted-foreground mt-1">
-                                    Pagamentos pendentes
+                                    {financeT.stats.pendingPayments}
                                 </p>
                             </div>
                             <div className="p-3 bg-warning/10 rounded-lg">
@@ -187,7 +192,7 @@ export default async function FinanceiroPage() {
                 <div className="lg:col-span-2">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-h4">Receita Mensal</CardTitle>
+                            <CardTitle className="text-h4">{financeT.charts.monthlyRevenue}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <Suspense fallback={<Skeleton className="h-[300px]" />}>
@@ -200,9 +205,9 @@ export default async function FinanceiroPage() {
                 <div>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="text-h4">Transações Recentes</CardTitle>
+                            <CardTitle className="text-h4">{financeT.charts.recentTransactions}</CardTitle>
                             <Button variant="ghost" size="sm" asChild>
-                                <Link href="/admin/financeiro/receitas">Ver todas</Link>
+                                <Link href="/admin/financeiro/receitas">{financeT.charts.viewAll}</Link>
                             </Button>
                         </CardHeader>
                         <CardContent>
@@ -224,8 +229,8 @@ export default async function FinanceiroPage() {
                                     <TrendingUp className="w-5 h-5 text-success" />
                                 </div>
                                 <div>
-                                    <p className="font-semibold">Receitas</p>
-                                    <p className="text-caption text-muted-foreground">Gerenciar entradas</p>
+                                    <p className="font-semibold">{financeT.quickLinks.revenues}</p>
+                                    <p className="text-caption text-muted-foreground">{financeT.quickLinks.revenuesDesc}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -240,8 +245,8 @@ export default async function FinanceiroPage() {
                                     <TrendingDown className="w-5 h-5 text-destructive" />
                                 </div>
                                 <div>
-                                    <p className="font-semibold">Despesas</p>
-                                    <p className="text-caption text-muted-foreground">Gerenciar saídas</p>
+                                    <p className="font-semibold">{financeT.quickLinks.expenses}</p>
+                                    <p className="text-caption text-muted-foreground">{financeT.quickLinks.expensesDesc}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -256,8 +261,8 @@ export default async function FinanceiroPage() {
                                     <Calendar className="w-5 h-5 text-info" />
                                 </div>
                                 <div>
-                                    <p className="font-semibold">Relatórios</p>
-                                    <p className="text-caption text-muted-foreground">Análises detalhadas</p>
+                                    <p className="font-semibold">{financeT.quickLinks.reports}</p>
+                                    <p className="text-caption text-muted-foreground">{financeT.quickLinks.reportsDesc}</p>
                                 </div>
                             </div>
                         </CardContent>

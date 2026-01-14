@@ -24,8 +24,12 @@ import {
     Package
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 export default function ConfiguracoesPage() {
+    const { t } = useAdminI18n()
+    const settingsT = t('settings')
+    const common = t('common')
     const [isLoading, setIsLoading] = useState(false)
     const [config, setConfig] = useState({
         // Business Info
@@ -81,10 +85,10 @@ export default function ConfiguracoesPage() {
                 })
 
             if (error) throw error
-            toast.success('Configurações salvas!')
+            toast.success(common.save)
         } catch (error) {
             console.error('Error saving config:', error)
-            toast.error('Erro ao salvar configurações')
+            toast.error(common.error)
         } finally {
             setIsLoading(false)
         }
@@ -95,9 +99,9 @@ export default function ConfiguracoesPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="font-heading text-h2 text-foreground">Configurações</h1>
+                    <h1 className="font-heading text-h2 text-foreground">{settingsT.title}</h1>
                     <p className="text-body text-muted-foreground">
-                        Gerencie as configurações do sistema
+                        {settingsT.subtitle}
                     </p>
                 </div>
                 <Button onClick={handleSave} disabled={isLoading} className="gap-2">
@@ -106,16 +110,16 @@ export default function ConfiguracoesPage() {
                     ) : (
                         <Save className="w-4 h-4" />
                     )}
-                    Salvar Alterações
+                    {settingsT.saveChanges}
                 </Button>
             </div>
 
             <Tabs defaultValue="empresa" className="space-y-6">
                 <TabsList className="w-full justify-start overflow-x-auto">
-                    <TabsTrigger value="empresa">Empresa</TabsTrigger>
-                    <TabsTrigger value="horarios">Horários</TabsTrigger>
-                    <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
-                    <TabsTrigger value="agendamento">Agendamento</TabsTrigger>
+                    <TabsTrigger value="empresa">{settingsT.tabs.company}</TabsTrigger>
+                    <TabsTrigger value="horarios">{settingsT.tabs.hours}</TabsTrigger>
+                    <TabsTrigger value="notificacoes">{settingsT.tabs.notifications}</TabsTrigger>
+                    <TabsTrigger value="agendamento">{settingsT.tabs.booking}</TabsTrigger>
                 </TabsList>
 
                 {/* Company Info */}
@@ -124,23 +128,23 @@ export default function ConfiguracoesPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Building2 className="w-5 h-5" />
-                                Informações da Empresa
+                                {settingsT.company.title}
                             </CardTitle>
                             <CardDescription>
-                                Dados básicos que aparecem em contratos e comunicações
+                                {settingsT.company.description}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Nome da Empresa</Label>
+                                    <Label>{settingsT.company.name}</Label>
                                     <Input
                                         value={config.business_name}
                                         onChange={(e) => setConfig({ ...config, business_name: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Telefone</Label>
+                                    <Label>{settingsT.company.phone}</Label>
                                     <Input
                                         value={config.business_phone}
                                         onChange={(e) => setConfig({ ...config, business_phone: e.target.value })}
@@ -149,7 +153,7 @@ export default function ConfiguracoesPage() {
                             </div>
                             <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Email</Label>
+                                    <Label>{settingsT.company.email}</Label>
                                     <Input
                                         type="email"
                                         value={config.business_email}
@@ -157,7 +161,7 @@ export default function ConfiguracoesPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Website</Label>
+                                    <Label>{settingsT.company.website}</Label>
                                     <Input
                                         value={config.business_website}
                                         onChange={(e) => setConfig({ ...config, business_website: e.target.value })}
@@ -165,7 +169,7 @@ export default function ConfiguracoesPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Endereço</Label>
+                                <Label>{settingsT.company.address}</Label>
                                 <Input
                                     value={config.business_address}
                                     onChange={(e) => setConfig({ ...config, business_address: e.target.value })}
@@ -186,8 +190,8 @@ export default function ConfiguracoesPage() {
                                             <Package className="w-5 h-5 text-brandy-rose-600" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold">Add-ons</p>
-                                            <p className="text-caption text-muted-foreground">Serviços adicionais</p>
+                                            <p className="font-semibold">{settingsT.company.addons}</p>
+                                            <p className="text-caption text-muted-foreground">{settingsT.company.addonsDesc}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -202,8 +206,8 @@ export default function ConfiguracoesPage() {
                                             <MapPin className="w-5 h-5 text-success" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold">Áreas</p>
-                                            <p className="text-caption text-muted-foreground">Regiões atendidas</p>
+                                            <p className="font-semibold">{settingsT.company.areas}</p>
+                                            <p className="text-caption text-muted-foreground">{settingsT.company.areasDesc}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -218,8 +222,8 @@ export default function ConfiguracoesPage() {
                                             <Users className="w-5 h-5 text-warning" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold">Equipe</p>
-                                            <p className="text-caption text-muted-foreground">Gerenciar membros</p>
+                                            <p className="font-semibold">{settingsT.company.team}</p>
+                                            <p className="text-caption text-muted-foreground">{settingsT.company.teamDesc}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -234,8 +238,8 @@ export default function ConfiguracoesPage() {
                                             <DollarSign className="w-5 h-5 text-brandy-rose-500" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold">Preços</p>
-                                            <p className="text-caption text-muted-foreground">Ranges de preço</p>
+                                            <p className="font-semibold">{settingsT.company.pricing}</p>
+                                            <p className="text-caption text-muted-foreground">{settingsT.company.pricingDesc}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -248,15 +252,15 @@ export default function ConfiguracoesPage() {
                 <TabsContent value="horarios">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Horário de Funcionamento</CardTitle>
+                            <CardTitle>{settingsT.hours.title}</CardTitle>
                             <CardDescription>
-                                Defina os horários em que você aceita agendamentos
+                                {settingsT.hours.description}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Início do Expediente</Label>
+                                    <Label>{settingsT.hours.start}</Label>
                                     <Input
                                         type="time"
                                         value={config.operating_start}
@@ -264,7 +268,7 @@ export default function ConfiguracoesPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Fim do Expediente</Label>
+                                    <Label>{settingsT.hours.end}</Label>
                                     <Input
                                         type="time"
                                         value={config.operating_end}
@@ -274,16 +278,16 @@ export default function ConfiguracoesPage() {
                             </div>
 
                             <div className="space-y-3">
-                                <Label>Dias de Atendimento</Label>
+                                <Label>{settingsT.hours.days}</Label>
                                 <div className="flex flex-wrap gap-2">
                                     {[
-                                        { value: 'monday', label: 'Seg' },
-                                        { value: 'tuesday', label: 'Ter' },
-                                        { value: 'wednesday', label: 'Qua' },
-                                        { value: 'thursday', label: 'Qui' },
-                                        { value: 'friday', label: 'Sex' },
-                                        { value: 'saturday', label: 'Sáb' },
-                                        { value: 'sunday', label: 'Dom' },
+                                        { value: 'monday', label: settingsT.hours.mon },
+                                        { value: 'tuesday', label: settingsT.hours.tue },
+                                        { value: 'wednesday', label: settingsT.hours.wed },
+                                        { value: 'thursday', label: settingsT.hours.thu },
+                                        { value: 'friday', label: settingsT.hours.fri },
+                                        { value: 'saturday', label: settingsT.hours.sat },
+                                        { value: 'sunday', label: settingsT.hours.sun },
                                     ].map((day) => (
                                         <Button
                                             key={day.value}
@@ -309,17 +313,17 @@ export default function ConfiguracoesPage() {
                 <TabsContent value="notificacoes">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Notificações</CardTitle>
+                            <CardTitle>{settingsT.notifications.title}</CardTitle>
                             <CardDescription>
-                                Configure quando você quer ser notificada
+                                {settingsT.notifications.description}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-medium">Novos Agendamentos</p>
+                                    <p className="font-medium">{settingsT.notifications.newBooking}</p>
                                     <p className="text-caption text-muted-foreground">
-                                        Receber notificação quando um novo agendamento for criado
+                                        {settingsT.notifications.newBookingDesc}
                                     </p>
                                 </div>
                                 <Switch
@@ -332,9 +336,9 @@ export default function ConfiguracoesPage() {
 
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-medium">Cancelamentos</p>
+                                    <p className="font-medium">{settingsT.notifications.cancellations}</p>
                                     <p className="text-caption text-muted-foreground">
-                                        Receber notificação quando um agendamento for cancelado
+                                        {settingsT.notifications.cancellationsDesc}
                                     </p>
                                 </div>
                                 <Switch
@@ -347,9 +351,9 @@ export default function ConfiguracoesPage() {
 
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-medium">Lembretes</p>
+                                    <p className="font-medium">{settingsT.notifications.reminders}</p>
                                     <p className="text-caption text-muted-foreground">
-                                        Receber lembrete antes dos agendamentos
+                                        {settingsT.notifications.remindersDesc}
                                     </p>
                                 </div>
                                 <Switch
@@ -362,7 +366,7 @@ export default function ConfiguracoesPage() {
 
                             {config.notify_reminder && (
                                 <div className="space-y-2 pl-4 border-l-2 border-pampas">
-                                    <Label>Horas de antecedência</Label>
+                                    <Label>{settingsT.notifications.hoursNotice}</Label>
                                     <Input
                                         type="number"
                                         min="1"
@@ -381,15 +385,15 @@ export default function ConfiguracoesPage() {
                 <TabsContent value="agendamento">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Configurações de Agendamento</CardTitle>
+                            <CardTitle>{settingsT.booking.title}</CardTitle>
                             <CardDescription>
-                                Regras para criação de novos agendamentos
+                                {settingsT.booking.description}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Antecedência Mínima (horas)</Label>
+                                    <Label>{settingsT.booking.minNotice}</Label>
                                     <Input
                                         type="number"
                                         min="1"
@@ -397,11 +401,11 @@ export default function ConfiguracoesPage() {
                                         onChange={(e) => setConfig({ ...config, min_booking_notice: parseInt(e.target.value) })}
                                     />
                                     <p className="text-caption text-muted-foreground">
-                                        Tempo mínimo antes do serviço para aceitar agendamento
+                                        {settingsT.booking.minNoticeDesc}
                                     </p>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Agendamento Antecipado (dias)</Label>
+                                    <Label>{settingsT.booking.maxAdvance}</Label>
                                     <Input
                                         type="number"
                                         min="1"
@@ -409,12 +413,12 @@ export default function ConfiguracoesPage() {
                                         onChange={(e) => setConfig({ ...config, max_booking_advance: parseInt(e.target.value) })}
                                     />
                                     <p className="text-caption text-muted-foreground">
-                                        Máximo de dias no futuro para agendamento
+                                        {settingsT.booking.maxAdvanceDesc}
                                     </p>
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Duração Padrão (minutos)</Label>
+                                <Label>{settingsT.booking.defaultDuration}</Label>
                                 <Input
                                     type="number"
                                     min="60"
@@ -424,7 +428,7 @@ export default function ConfiguracoesPage() {
                                     className="w-32"
                                 />
                                 <p className="text-caption text-muted-foreground">
-                                    Duração padrão para novos serviços
+                                    {settingsT.booking.defaultDurationDesc}
                                 </p>
                             </div>
                         </CardContent>

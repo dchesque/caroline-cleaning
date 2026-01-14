@@ -9,13 +9,18 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { MessageSquare, Search, Clock, User } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { ptBR, enUS } from 'date-fns/locale'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 export default function MensagensPage() {
     const [sessions, setSessions] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [search, setSearch] = useState('')
+    const { t, locale } = useAdminI18n()
+    const messagesT = t('messages')
     const supabase = createClient()
+
+    const dateLocale = locale === 'pt-BR' ? ptBR : enUS
 
     useEffect(() => {
         const fetchSessions = async () => {
@@ -66,9 +71,9 @@ export default function MensagensPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="font-heading text-h2 text-foreground">Mensagens</h1>
+                <h1 className="font-heading text-h2 text-foreground">{messagesT.title}</h1>
                 <p className="text-body text-muted-foreground">
-                    Histórico de conversas com a Carol (IA)
+                    {messagesT.subtitle}
                 </p>
             </div>
 
@@ -76,7 +81,7 @@ export default function MensagensPage() {
             <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                    placeholder="Buscar por nome ou telefone..."
+                    placeholder={messagesT.searchPlaceholder}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-9"
@@ -92,7 +97,7 @@ export default function MensagensPage() {
                 <Card>
                     <CardContent className="py-12 text-center">
                         <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">Nenhuma conversa encontrada</p>
+                        <p className="text-muted-foreground">{messagesT.noConversations}</p>
                     </CardContent>
                 </Card>
             ) : (
@@ -115,7 +120,7 @@ export default function MensagensPage() {
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <p className="font-semibold">
-                                                        {session.lead_info?.nome || 'Visitante'}
+                                                        {session.lead_info?.nome || messagesT.visitor}
                                                     </p>
                                                     {session.lead_info?.telefone && (
                                                         <Badge variant="secondary" className="text-[10px]">
@@ -134,11 +139,11 @@ export default function MensagensPage() {
                                             <p className="text-caption text-muted-foreground">
                                                 {formatDistanceToNow(new Date(session.last_activity), {
                                                     addSuffix: true,
-                                                    locale: ptBR
+                                                    locale: dateLocale
                                                 })}
                                             </p>
                                             <Badge variant="outline" className="text-[10px] mt-1">
-                                                {session.messages_count} msgs
+                                                {session.messages_count} {messagesT.msgs}
                                             </Badge>
                                         </div>
                                     </div>
