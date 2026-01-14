@@ -2,6 +2,7 @@ import { startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, addDays }
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { AppointmentCard } from './appointment-card'
+import { useEffect, useState } from 'react'
 
 interface WeekViewProps {
     currentDate: Date
@@ -10,12 +11,46 @@ interface WeekViewProps {
     onAppointmentClick: (appointment: any) => void
 }
 
+interface PositionedAppointment {
+    appointment: any
+    top: number
+    height: number
+    column: number
+    totalColumns: number
+}
+
 export function WeekView({ currentDate, appointments, onSlotClick, onAppointmentClick }: WeekViewProps) {
     const start = startOfWeek(currentDate)
     const end = endOfWeek(currentDate)
     const days = eachDayOfInterval({ start, end })
     const hours = Array.from({ length: 14 }, (_, i) => i + 7) // 7 AM to 8 PM
     const HOUR_HEIGHT = 80
+    const [currentTime, setCurrentTime] = useState(new Date())
+
+    // Atualiza a hora atual a cada minuto
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTime(new Date())
+        }, 60000)
+
+        return () => clearInterval(interval)
+    }, [])
+
+    // Calcula a posição da linha de "agora"
+    const getCurrentTimePosition = () => {
+        const now = new Date()
+        const hours = now.getHours()
+        const minutes = now.getMinutes()
+
+        if (hours < 7 || hours >= 21) return null
+
+        const totalMinutesFromStart = (hours - 7) * 60 + minutes
+        const top = (totalMinutesFromStart / 60) * HOUR_HEIGHT
+
+        return top
+    }
+
+    const currentTimeTop = getCurrentTimePosition()
 
     const calculatePosition = (horario: string, duracaoMinutos: number) => {
         const [hoursStr, minutesStr] = horario.split(':')
@@ -27,6 +62,50 @@ export function WeekView({ currentDate, appointments, onSlotClick, onAppointment
         const height = (duracaoMinutos / 60) * HOUR_HEIGHT
 
         return { top, height }
+    }
+
+    // Detecta sobreposição de horários e calcula colunas para um dia específico
+    const getPositionedAppointments = (dayAppointments: any[]): PositionedAppointment[] => {
+        const positioned: PositionedAppointment[] = []
+
+        dayAppointments.forEach(app => {
+            const { top, height } = calculatePosition(app.horario_inicio, app.duracao_minutos)
+            const appEnd = top + height
+
+            // Encontra agendamentos que se sobrepõem
+            const overlapping = positioned.filter(p => {
+                const pEnd = p.top + p.height
+                return !(appEnd <= p.top || top >= pEnd)
+            })
+
+            // Determina a coluna disponível
+            let column = 0
+            const usedColumns = overlapping.map(p => p.column)
+            while (usedColumns.includes(column)) {
+                column++
+            }
+
+            // Calcula o total de colunas necessárias para este grupo
+            const maxColumn = Math.max(column, ...overlapping.map(p => p.column))
+            const totalColumns = maxColumn + 1
+
+            // Atualiza o totalColumns de todos os agendamentos sobrepostos
+            overlapping.forEach(p => {
+                if (p.totalColumns < totalColumns) {
+                    p.totalColumns = totalColumns
+                }
+            })
+
+            positioned.push({
+                appointment: app,
+                top,
+                height,
+                column,
+                totalColumns
+            })
+        })
+
+        return positioned
     }
 
     return (
@@ -67,6 +146,7 @@ export function WeekView({ currentDate, appointments, onSlotClick, onAppointment
                             {days.map(day => {
                                 const dayStr = format(day, 'yyyy-MM-dd')
                                 const dayAppointments = appointments.filter(a => a.data === dayStr)
+                                const positionedAppointments = getPositionedAppointments(dayAppointments)
 
                                 return (
                                     <div key={day.toISOString()} className="relative border-r border-[#EAE0D5] last:border-r-0 group">
@@ -94,16 +174,20 @@ export function WeekView({ currentDate, appointments, onSlotClick, onAppointment
 
                                         {/* Appointments Layer */}
                                         <div className="absolute inset-0 pointer-events-none">
-                                            {dayAppointments.map(app => {
-                                                const { top, height } = calculatePosition(app.horario_inicio, app.duracao_minutos)
+                                            {positionedAppointments.map(({ appointment: app, top, height, column, totalColumns }) => {
+                                                const widthPercent = 100 / totalColumns
+                                                const leftPercent = column * widthPercent
+
                                                 return (
                                                     <div
                                                         key={app.id}
-                                                        className="absolute left-1 right-2 pointer-events-auto transition-all hover:z-20"
+                                                        className="absolute pointer-events-auto transition-all hover:z-20"
                                                         style={{
                                                             top: `${top + 4}px`,
                                                             height: `${height - 8}px`,
-                                                            minHeight: '35px'
+                                                            minHeight: '35px',
+                                                            left: `calc(${leftPercent}% + 4px)`,
+                                                            width: `calc(${widthPercent}% - ${column === totalColumns - 1 ? 8 : 6}px)`
                                                         }}
                                                         onClick={(e) => { e.stopPropagation(); onAppointmentClick(app) }}
                                                     >
@@ -112,6 +196,19 @@ export function WeekView({ currentDate, appointments, onSlotClick, onAppointment
                                                 )
                                             })}
                                         </div>
+
+                                        {/* Current Time Indicator (only for today) */}
+                                        {isSameDay(day, new Date()) && currentTimeTop !== null && (
+                                            <div
+                                                className="absolute left-0 right-0 pointer-events-none z-30"
+                                                style={{ top: `${currentTimeTop}px` }}
+                                            >
+                                                <div className="flex items-center">
+                                                    <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 shadow-sm" />
+                                                    <div className="flex-1 h-0.5 bg-red-500 shadow-sm" />
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )
                             })}

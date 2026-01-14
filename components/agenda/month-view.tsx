@@ -20,7 +20,7 @@ export function MonthView({ currentDate, appointments, onDayClick, onAppointment
     const blanks = Array(startPad).fill(null)
 
     return (
-        <div className="grid grid-cols-7 gap-px bg-[#EAE0D5] border border-[#EAE0D5] rounded-lg overflow-hidden">
+        <div className="grid grid-cols-7 gap-px bg-[#EAE0D5] border border-[#EAE0D5] rounded-lg">
             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
                 <div key={day} className="bg-[#FDF8F6] p-2 text-center text-sm font-semibold text-[#5D5D5D]">
                     {day}
@@ -38,7 +38,7 @@ export function MonthView({ currentDate, appointments, onDayClick, onAppointment
                 return (
                     <div
                         key={day.toISOString()}
-                        className={`bg-white h-32 md:h-40 p-1 flex flex-col hover:bg-gray-50 transition-colors cursor-pointer ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}`}
+                        className={`relative bg-white h-32 md:h-40 p-1 flex flex-col hover:bg-gray-50 transition-colors cursor-pointer overflow-visible ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}`}
                         onClick={() => onDayClick(day)}
                     >
                         <div className={`text-right p-1 text-sm ${isToday ? 'bg-[#C48B7F] text-white rounded-full w-6 h-6 flex items-center justify-center ml-auto' : 'text-[#5D5D5D]'}`}>
@@ -48,10 +48,10 @@ export function MonthView({ currentDate, appointments, onDayClick, onAppointment
                             {daysAppointments.map(app => (
                                 <div
                                     key={app.id}
-                                    className="h-16 shrink-0"
+                                    className="h-16 shrink-0 relative z-10"
                                     onClick={(e) => { e.stopPropagation(); onAppointmentClick(app) }}
                                 >
-                                    <AppointmentCard appointment={app} />
+                                    <AppointmentCard appointment={app} showTooltip={false} variant="compact" />
                                 </div>
                             ))}
                         </div>

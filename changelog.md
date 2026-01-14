@@ -12,6 +12,27 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+## [1.5.0] - 2026-01-14
+### Adicionado
+- **Admin (Agenda)**:
+  - **Indicador de Hora Atual (Current Time Line)**: Linha vermelha horizontal mostrando a hora atual em tempo real nas visualizações Diária e Semanal, com atualização automática a cada minuto.
+  - **Detecção de Conflitos de Horário**: Agendamentos simultâneos agora são posicionados lado a lado (estilo Google Calendar), com cálculo automático de largura baseado no número de sobreposições.
+  - **Tooltips Ricos ao Hover**: Preview detalhado ao passar o mouse sobre agendamentos (nas visualizações Diária e Semanal), exibindo cliente, telefone, endereço, valor, serviços e observações.
+  - **Layout Compacto para Visualização Mensal**: Cards otimizados mostrando intervalo de horário completo (10:00-12:00) e nome do cliente em formato horizontal.
+
+### Melhorado
+- **Admin (Agenda)**:
+  - Sistema de posicionamento inteligente de tooltips (aparecem abaixo do card, centralizados, com seta decorativa).
+  - Cards responsivos com ocultação automática de elementos secundários em espaços estreitos.
+  - Variantes de layout (normal/compact) para otimização de espaço em diferentes visualizações.
+  - Borda lateral colorida nos cards compactos indicando status do agendamento.
+
+### Corrigido
+- **Admin (Agenda)**:
+  - Correção de overflow na visualização mensal para permitir exibição completa de tooltips.
+  - Ajuste de z-index para garantir que tooltips apareçam acima de todos os elementos do calendário.
+  - Resolução de problemas de badge sendo cortado na visualização semanal.
+
 ## [1.4.0] - 2026-01-14
 ### Adicionado
 - **Admin (Agenda)**:
