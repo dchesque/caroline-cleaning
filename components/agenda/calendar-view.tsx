@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -9,6 +9,9 @@ import { MonthView } from './month-view'
 import { WeekView } from './week-view'
 import { DayView } from './day-view'
 import { AppointmentModal } from './appointment-modal'
+import { AppointmentDetailModal } from './appointment-detail-modal'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 
 type ViewType = 'month' | 'week' | 'day'
 
@@ -21,7 +24,12 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
     const [currentDate, setCurrentDate] = useState(new Date())
     const [view, setView] = useState<ViewType>('month')
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+    const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null)
+    const [appointmentIdToEdit, setAppointmentIdToEdit] = useState<string | undefined>()
+
+    const supabase = useMemo(() => createClient(), [])
 
     const navigate = (direction: 'prev' | 'next') => {
         if (view === 'month') {
@@ -44,8 +52,33 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
     }
 
     const handleAppointmentClick = (appointment: any) => {
-        // For now just log, eventually open edit modal or client details
-        console.log('Clicked appointment:', appointment)
+        setSelectedAppointment(appointment)
+        setIsDetailModalOpen(true)
+    }
+
+    const handleEditAppointment = (appointment: any) => {
+        setAppointmentIdToEdit(appointment.id)
+        setIsDetailModalOpen(false)
+        setIsModalOpen(true)
+    }
+
+    const handleDeleteAppointment = async (appointment: any) => {
+        if (!confirm('Tem certeza que deseja excluir este agendamento?')) return
+
+        try {
+            const { error } = await supabase
+                .from('agendamentos')
+                .delete()
+                .eq('id', appointment.id)
+
+            if (error) throw error
+            toast.success('Agendamento excluído com sucesso!')
+            setIsDetailModalOpen(false)
+            onRefresh()
+        } catch (error) {
+            console.error('Error deleting appointment:', error)
+            toast.error('Erro ao excluir agendamento')
+        }
     }
 
     return (
@@ -113,9 +146,21 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
 
             <AppointmentModal
                 open={isModalOpen}
-                onOpenChange={setIsModalOpen}
+                onOpenChange={(open) => {
+                    setIsModalOpen(open)
+                    if (!open) setAppointmentIdToEdit(undefined)
+                }}
                 selectedDate={selectedDate}
+                appointmentId={appointmentIdToEdit}
                 onSuccess={onRefresh}
+            />
+
+            <AppointmentDetailModal
+                appointment={selectedAppointment}
+                open={isDetailModalOpen}
+                onOpenChange={setIsDetailModalOpen}
+                onEdit={handleEditAppointment}
+                onDelete={handleDeleteAppointment}
             />
         </div>
     )

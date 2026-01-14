@@ -1,4 +1,5 @@
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isSameDay } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { AppointmentCard } from './appointment-card'
 
 interface MonthViewProps {
@@ -20,7 +21,7 @@ export function MonthView({ currentDate, appointments, onDayClick, onAppointment
 
     return (
         <div className="grid grid-cols-7 gap-px bg-[#EAE0D5] border border-[#EAE0D5] rounded-lg overflow-hidden">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
                 <div key={day} className="bg-[#FDF8F6] p-2 text-center text-sm font-semibold text-[#5D5D5D]">
                     {day}
                 </div>
@@ -31,7 +32,7 @@ export function MonthView({ currentDate, appointments, onDayClick, onAppointment
             ))}
 
             {days.map(day => {
-                const daysAppointments = appointments.filter(a => isSameDay(new Date(a.data), day))
+                const daysAppointments = appointments.filter(a => a.data === format(day, 'yyyy-MM-dd'))
                 const isToday = isSameDay(day, new Date())
 
                 return (
@@ -43,13 +44,14 @@ export function MonthView({ currentDate, appointments, onDayClick, onAppointment
                         <div className={`text-right p-1 text-sm ${isToday ? 'bg-[#C48B7F] text-white rounded-full w-6 h-6 flex items-center justify-center ml-auto' : 'text-[#5D5D5D]'}`}>
                             {format(day, 'd')}
                         </div>
-                        <div className="flex-1 overflow-y-auto space-y-1 mt-1 scrollbar-hide">
+                        <div className="flex-1 overflow-y-auto space-y-1.5 mt-1 scrollbar-hide">
                             {daysAppointments.map(app => (
-                                <div key={app.id} onClick={(e) => { e.stopPropagation(); onAppointmentClick(app) }}>
-                                    {/* Mini card for month view */}
-                                    <div className="bg-[#FDF8F6] border border-[#EAE0D5] rounded p-1 text-xs truncate">
-                                        {format(new Date(app.data), 'HH:mm')} - {app.cliente?.nome}
-                                    </div>
+                                <div
+                                    key={app.id}
+                                    className="h-16 shrink-0"
+                                    onClick={(e) => { e.stopPropagation(); onAppointmentClick(app) }}
+                                >
+                                    <AppointmentCard appointment={app} />
                                 </div>
                             ))}
                         </div>

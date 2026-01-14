@@ -12,6 +12,50 @@ Este arquivo registra todas as alterações notáveis feitas no projeto Carolina
 
 
 
+## [1.4.0] - 2026-01-14
+### Adicionado
+- **Admin (Agenda)**:
+  - Novo modal de detalhes de agendamento (`AppointmentDetailModal`) com visualização completa de dados, cliente, serviços e addons.
+  - Funcionalidade de exclusão de agendamentos com diálogo de confirmação.
+  - Suporte total à edição de agendamentos existentes, reaproveitando o formulário de criação com carregamento dinâmico de dados.
+
+### Melhorado
+- **Admin (Agenda)**:
+  - Refatoração visual do `AppointmentCard` para um design premium (fundo claro, tipografia Sans-Serif moderna e layout estruturado conforme solicitado).
+  - Sincronização automática entre as visualizações de Mês, Semana e Dia.
+  - Melhoria na legibilidade com fontes aumentadas e uso das cores institucionais (#C48B7F).
+  - Formatação de horários nos cards e modais para remover segundos e melhorar a clareza visual.
+
+### Corrigido
+- **Admin (Agenda)**:
+  - Correção crítica do bug de "deslocamento de data" causado por fuso horário: a agenda agora utiliza comparação direta de strings de data (`YYYY-MM-DD`).
+  - Ajuste no posicionamento e dimensionamento dos cards nas visualizações de Dia e Semana para refletir com precisão o horário de início e duração.
+  - Resolução de erro de importação ausente (`cn`) no componente de detalhes.
+
+## [1.3.20] - 2026-01-14
+### Corrigido
+- **Admin (Agenda)**:
+  - Resolução do erro "Maximum update depth exceeded" ao selecionar serviços adicionais no modal de agendamento.
+  - Estabilização do cliente Supabase no hook `useAppointmentForm` utilizando `useMemo`.
+  - Refatoração do componente `AddonSection` para evitar disparos duplicados de eventos de clique e atualização de estado.
+  - Melhoria na robustez da lógica de toggle de addons para prevenir duplicidade de itens no estado.
+  - Correção de erro na criação de agendamento: removido o envio manual do campo `valor_final` (coluna gerada automaticamente pelo banco).
+
+## [1.3.19] - 2026-01-12
+### Melhorado
+- **Admin (Agenda)**:
+  - Refatoração completa do Modal de Novo Agendamento para maior modularidade e manutenibilidade.
+  - Componentização das seções (Cliente, Serviço, Addons, Valores, Resumo).
+  - Isolamento da lógica de negócios em hook customizado `useAppointmentForm`.
+
+## [1.3.18] - 2026-01-12
+### Corrigido
+- **Interface (UI)**:
+  - Resolução definitiva de erros de "Maximum update depth exceeded" e incompatibilidade com React 19:
+    - Retorno às versões mais recentes do Radix UI (compatíveis com React 19).
+    - Refatoração de `Dialog`, `Select`, `Checkbox`, `Label` para usar `forwardRef`.
+    - Desabilitação do `reactStrictMode` temporariamente para evitar double-invocation loops conhecidos em bibliotecas de terceiros no Next.js 15.
+
 ## [1.3.17] - 2026-01-12
 ### Corrigido
 - **Financeiro**:
