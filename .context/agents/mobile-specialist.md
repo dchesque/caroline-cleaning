@@ -1,166 +1,172 @@
 # Mobile Specialist Agent Playbook
 
 ## Mission
-Specialize in elevating the Carolinas Premium Next.js 15+ app (TypeScript, Tailwind CSS, shadcn/ui, Supabase) to world-class mobile experiences. Focus on responsive design (mobile-first), touch-optimized interactions, performance (Lighthouse mobile >95), PWA features (installable, offline-first), accessibility (WCAG 2.2 AA), and hybrid app readiness (Capacitor). Prioritize high-traffic mobile paths: public landing/chat (`app/(public)`), admin dashboards (clientes, cliente-ficha, analytics, agenda, financeiro). Use tools like Chrome DevTools (device emulation, throttled 3G/4G), Lighthouse CI, WebPageTest, and real devices (iPhone Safari, Android Chrome/Samsung Internet). Track Web Vitals: LCP <2s, FID <100ms, CLS <0.1 on mobile.
+Elevate the Caroline Cleaning Next.js 15+ app (TypeScript, Tailwind CSS, shadcn/ui, Supabase) to production-grade mobile excellence. Target mobile-first responsive design, touch-optimized UX, 95+ Lighthouse mobile scores (Performance, Accessibility, Best Practices), PWA capabilities (installable, offline sync), WCAG 2.2 AA compliance, and Capacitor hybrid readiness. Prioritize high-engagement mobile flows: public landing/chat (`app/(public)`), admin dashboards (`app/(admin)/admin/*`: clientes, cliente-ficha, chat, analytics, agenda, financeiro). Use Chrome DevTools (device emulation, 3G/4G throttling), Lighthouse CI, real devices (iOS Safari, Android Chrome), and BrowserStack for validation. Optimize Core Web Vitals: LCP <2s, INP <200ms, CLS <0.1 on mobile.
 
 ## Responsibilities
-- **Responsive Design**: Mobile-first Tailwind breakpoints (`sm:`, `md:`, `lg:`), vertical stacking, viewport-safe units (`h-screen`, `min-h-dvh`), bottom navigation/sheets.
-- **Touch & Gestures**: 48dp+ tap targets, swipe actions (delete/archive), drag-to-reorder (agenda/services), haptics (`navigator.vibrate`), keyboard avoidance.
-- **Performance**: Lazy-load heavy components (`next/dynamic`), virtual scrolling (chats/tables), image optimization (`next/image` with `sizes`), Suspense/Streaming.
-- **PWA/Offline**: Manifest, service worker (caching Supabase, IndexedDB sync), background sync for chat/mutations.
-- **Forms & Inputs**: Masks/formatters (`lib/formatters.ts`), `inputmode="tel|numeric"`, no-zoom (`font-size: 16px` min), validation feedback.
-- **Accessibility**: Semantic elements, ARIA roles, screen reader testing (VoiceOver/TalkBack), `prefers-reduced-motion`, focus traps in modals.
-- **Realtime Mobile**: Supabase subscriptions with mobile throttling, offline queuing via `idb`, push notifications via `WebhookService`.
-- **Testing/Auditing**: Emulated devices, real-device farms (BrowserStack), Lighthouse audits pre/post, Core Web Vitals integration.
+- **Responsive Layouts**: Mobile-first Tailwind (`sm:`, `md:` breakpoints), fluid grids (`grid-cols-1 sm:grid-cols-2`), `h-dvh`/`min-h-screen`, bottom sheets/nav.
+- **Touch Interactions**: 44px+ tap targets, swipe-to-act (delete/archive in lists/chat), drag-reorder (agenda services), haptics (`navigator.vibrate()`), virtual keyboards avoidance.
+- **Performance**: Code-splitting (`next/dynamic`), virtualization (chats/tables), optimized images (`next/image` with `sizes="(max-width: 640px) 100vw"`), Suspense boundaries.
+- **PWA/Offline**: `public/manifest.json`, service worker for Supabase caching/IndexedDB queuing, background sync (`sync` event).
+- **Forms/Inputs**: `lib/formatters.ts` integration (e.g., `formatPhoneUS`, `formatCurrencyInput`), `inputmode`, `font-size: 16px` (no zoom), real-time validation.
+- **Accessibility**: ARIA labels/roles, `prefers-reduced-motion`, focus management (modals/sheets), screen reader tests (VoiceOver/TalkBack).
+- **Realtime Mobile**: Throttled Supabase subs (`lib/supabase/`), offline mutation queues via IndexedDB, `WebhookService` for pushes.
+- **Auditing**: Pre/post Lighthouse audits, Web Vitals tracking (`web-vitals` lib), gesture conflict resolution.
 
 ## Best Practices (Codebase-Derived)
-- **Styling Conventions**: `cn()` utility (`lib/utils.ts`) for responsive classes: `cn("flex flex-col lg:flex-row gap-2 sm:gap-4")`. shadcn/ui primitives (`components/ui/button.tsx`, `sheet.tsx`, `dialog.tsx`, `tabs.tsx`) are baseline responsive; extend with `sticky top-0 z-50 backdrop-blur-sm`.
-- **Component Patterns**: Typed props/interfaces (e.g., `ChatWindowProps`, `TabAgendamentosProps`). `'use client'` only for interactivity; prefer Server Components. Memoize renders: `React.memo` for `MessageBubble`, `useMemo` for lists/filters.
-- **Forms & Validation**: Leverage `lib/formatters.ts` (`formatPhoneUS`, `formatCurrencyInput`, `isValidPhoneUS`, `isValidEmail`, `parseCurrency`). On-blur formatting, server actions (`lib/actions/`), Zod schemas in hooks like `useAppointmentForm`.
-- **Lists & Tables**: Virtualize (`react-virtuoso` or `react-window`) for `clients-table.tsx`, `chat-messages.tsx`. Swipe rows for actions (e.g., archive client/appointment).
-- **Realtime/Offline**: Supabase in `lib/supabase/`; queue in IndexedDB, sync via `WebhookService` (`lib/services/webhookService.ts`). Offline badges/skeletons.
-- **i18n & Context**: `lib/admin-i18n/context.tsx` (`AdminI18nContextType`) for admin mobile labels.
-- **Animations/Gestures**: Framer Motion (`@framer-motion`) with reduced mobile duration (0.2s), swipe via `react-use-gesture`. Haptics on confirmations.
-- **PWA Setup**: `public/manifest.json` (theme_color from brand, 192x192+ icons, `display: standalone`). Service worker caches static/API.
-- **Performance Patterns**: Dynamic imports for charts (`components/analytics/trends-chart.tsx`), `loading.tsx` skeletons, `IntersectionObserver` for lazy lists.
+- **Styling**: `cn()` from `lib/utils.ts` for conditional classes: `cn("flex flex-col md:flex-row gap-4 p-6 sm:p-8")`. shadcn/ui (`components/ui/button.tsx`, `sheet.tsx`, `dialog.tsx`, `tabs.tsx`) as base; add mobile: `w-full sm:w-auto`, `h-12 min-h-[44px]`.
+- **Component Structure**: `'use client'` for hooks/interactivity (e.g., `useAppointmentForm`); Server Components default. Typed props (e.g., `ChatWindowProps`, `ClientsTableProps`). Memoization: `React.memo(MessageBubble)`, `useMemo` for filtered lists.
+- **Forms/Validation**: `lib/formatters.ts` hooks: onChange `formatCurrencyInput(value)`, onBlur `parseCurrency(value)`. Zod + server actions (`lib/actions/`). Mobile steppers for `AppointmentFormData`.
+- **Lists/Tables**: Virtual scrolling for `clients-table.tsx`, `chat-messages.tsx` (add `react-virtuoso`). Swipe actions on rows/cards.
+- **Realtime/Offline**: `WebhookService` (`lib/services/webhookService.ts`) for events; IndexedDB for chat/clients queue + sync. Offline indicators (skeletons/badges).
+- **i18n/Context**: `AdminI18nContextType` (`lib/admin-i18n/context.tsx`) for localized mobile strings.
+- **Gestures/Animations**: Framer Motion with `drag="x"` for swipes, reduced duration (150-250ms mobile). `touch-action: manipulation` CSS.
+- **PWA**: Enhance `public/manifest.json` (icons 192x192+, `display: standalone`). SW caches Supabase responses, static assets.
+- **Performance**: Dynamic imports for heavy UI (`components/analytics/trends-chart.tsx`), `loading.tsx` skeletons, IntersectionObserver for lazy-loading.
+- **Conventions**: Export types first (`components/agenda/types.ts`: `ServicoTipo`, `Addon`, `AddonSelecionado`). Props interfaces end with `Props` (e.g., `TabAgendamentosProps`).
 
 ## Key Areas and Files
-Focus on mobile hotspots: chat (scrolling/input), cliente-ficha (tabs/headers), analytics (charts), agenda (forms/calendar), financeiro/clientes (lists/forms). Use `getFileStructure(app/(admin))` and `searchCode(/mobile|sm:|sheet|swipe/)` for audits.
+Focus on mobile-critical paths: chat (realtime scrolling), cliente-ficha (tabbed views), analytics (charts), agenda/financeiro/clientes (forms/lists). High-traffic: `app/(public)/chat`, `app/(admin)/admin/clientes/[id]`, `app/(admin)/admin/analytics/*`.
 
 ### Core Directories
-| Directory/Path | Mobile Focus | Priority Tasks |
-|----------------|--------------|---------------|
-| `app/(public)/chat` & `components/chat/` | Infinite scroll, bottom input, offline | Virtualize messages, swipe-delete, voice/emoji. |
-| `app/(admin)/admin/clientes/[id]` & `components/cliente-ficha/` | Tabbed profile, sticky elements | Swipe tabs, compact `client-header.tsx`, touch-edit fields. |
-| `app/(admin)/admin/analytics/` & `components/analytics/` | Responsive charts/metrics | Touch pan/zoom (`TrendData`), lazy-load. |
-| `app/(admin)/admin/agenda/` & `components/agenda/` | Calendar/forms | Drag events, `useAppointmentForm` stepper, `ServicoTipo` selectors. |
-| `app/(admin)/admin/financeiro/` & `components/financeiro/` | Forms/lists | Pull-to-refresh, currency masks, quick-add. |
-| `app/(admin)/admin/clientes/` & `components/clientes/` | Tables/filters/modals | Searchable/virtual table, fullscreen edit modal. |
-| `app/(public)` & `components/landing/` | Hero/FAQ/pricing | Swipe carousels, accordions, sticky CTAs. |
-| `components/ui/` | Primitives | Large buttons, mobile sheets/drawers. |
-| `lib/utils.ts`, `lib/formatters.ts` | Shared helpers | Responsive utils, input masks. |
-| `lib/services/` | Orchestration | Webhook push/offline sync. |
+| Directory/Path | Mobile Focus | Priority |
+|----------------|--------------|----------|
+| `app/(public)/chat/*` & `components/chat/*` | Bottom-fixed input, infinite scroll, offline chat | High: Swipe-delete, voice input |
+| `app/(admin)/admin/clientes/[id]` & `components/cliente-ficha/*` | Sticky tabs/header, touch-edits | High: Compact cards, swipe-complete |
+| `app/(admin)/admin/analytics/*` & `components/analytics/*` | Touch-friendly charts | Medium: Pinch-zoom, lazy-load |
+| `app/(admin)/admin/agenda/*` & `components/agenda/*` | Drag-drop calendar, service pickers | High: Stepper forms, `ServicoTipo` |
+| `app/(admin)/admin/financeiro/*` & `components/financeiro/*` | Quick-add forms, pull-refresh lists | High: Currency masks, numeric pads |
+| `app/(admin)/admin/clientes/*` & `components/clientes/*` | Virtual tables, filter drawers | High: Swipe-archive, search debounce |
+| `app/(public)/*` & `components/landing/*` | Swipe carousels, sticky CTAs | Medium: Accordions, hero parallax |
+| `components/ui/*` | Button/sheet/dialog primitives | Low: Size/touch overrides |
+| `lib/utils.ts`, `lib/formatters.ts` | Responsive utils, masks | High: Everywhere |
+| `lib/services/webhookService.ts` | Push/offline orchestration | Medium: Mobile sync |
 
 ### Key Files and Purposes
-| File | Purpose | Key Symbols/Props | Mobile Optimizations Needed |
-|------|---------|-------------------|-----------------------------|
-| `components/chat/chat-window.tsx` | Full chat UI container | `ChatWindowProps` | Keyboard-avoid view (`react-remove-scroll`), virtual height. |
-| `components/chat/chat-messages.tsx` | Scrollable messages | `ChatMessagesProps` | Infinite scroll up, swipe left/right actions. |
-| `components/chat/chat-input.tsx` | Composer/input | `ChatInputProps` | Fixed bottom, auto-focus, emoji/attach swipe. |
-| `components/chat/message-bubble.tsx` | Individual message | `MessageBubbleProps` | Long-press context menu, read receipts. |
-| `components/chat/chat-header.tsx` | Chat top bar | `ChatHeaderProps` | Back button haptic, avatar tap. |
-| `components/cliente-ficha/client-header.tsx` | Client profile summary | `ClientHeaderProps` | Sticky scroll, edit chevron touch. |
-| `components/cliente-ficha/tab-agendamentos.tsx` | Appointments list | `TabAgendamentosProps` | Compact cards, swipe-complete. |
-| `components/cliente-ficha/tab-financeiro.tsx` | Transaction history | `TabFinanceiroProps` | Recent summaries, filter dropdowns. |
-| `components/cliente-ficha/tab-info.tsx` | Client details | `TabInfoProps` | Inline edits, phone/email formatters. |
-| `components/cliente-ficha/tab-notas.tsx` | Notes tab | `TabNotasProps` | Rich text mobile, timestamp format. |
-| `components/cliente-ficha/tab-contrato.tsx` | Contract view | `TabContratoProps` | PDF embed zoom, sign touch. |
-| `components/analytics/trends-chart.tsx` | Trend visualizations | `TrendData` | Recharts responsive, pinch-zoom. |
-| `components/agenda/appointment-form/use-appointment-form.ts` | Form logic | `useAppointmentForm`, `AppointmentFormData` | Multi-step mobile, `ServicoTipo/Addon` pickers. |
-| `components/agenda/types.ts` | Shared types | `ServicoTipo`, `Addon`, `AddonSelecionado` | Dropdowns with search. |
-| `components/financeiro/transaction-form.tsx` | Add/edit transaction | `TransactionFormProps` | Numeric input, date wheel picker. |
-| `components/financeiro/expense-categories.tsx` | Category list | `ExpenseCategoryProps` | Drag-reorder, quick form. |
-| `components/financeiro/category-quick-form.tsx` | Fast category add | `CategoryQuickFormProps` | Bottom sheet trigger. |
-| `components/clientes/clients-table.tsx` | Client listing | `ClientsTableProps`, `Client` | Virtual rows, swipe-actions, sticky filters. |
-| `components/clientes/clients-filters.tsx` | Search/filters | `ClientsFiltersProps` | Collapsible mobile, debounce search. |
-| `components/clientes/edit-client-modal.tsx` | Client editor | `EditClientModalProps`, `ServicoTipo`, `Addon`, `DiaServico` | Fullscreen sheet, validation. |
-| `lib/utils.ts` | Class merging, formatters | `cn`, `formatCurrency`, `formatDate` | Responsive flex/grid helpers. |
-| `lib/formatters.ts` | Input sanitizers | `formatPhoneUS`, `formatCurrencyInput`, `isValidPhoneUS`, `isValidEmail` | On-blur hooks. |
-| `lib/services/webhookService.ts` | Event handling | `WebhookService` | Mobile push parsing, offline queue. |
-| `lib/admin-i18n/context.tsx` | Admin translations | `AdminI18nContextType` | Compact labels. |
+| File | Purpose | Key Symbols/Props | Mobile Optimizations |
+|------|---------|-------------------|----------------------|
+| `components/chat/chat-window.tsx` | Chat container | `ChatWindowProps` | Keyboard-avoid (`react-remove-scroll-bar`), virtual viewport |
+| `components/chat/chat-messages.tsx` | Message list | `ChatMessagesProps` | Virtuoso infinite scroll, swipe gestures |
+| `components/chat/chat-input.tsx` | Input composer | `ChatInputProps` | Fixed bottom, emoji picker sheet |
+| `components/chat/message-bubble.tsx` | Single message | `MessageBubbleProps` | Long-press menu, haptic tap |
+| `components/chat/chat-header.tsx` | Top bar | `ChatHeaderProps` | Haptic back, avatar zoom |
+| `components/chat/chat-bubble-notification.tsx` | Unread badge | `ChatBubbleNotificationProps` | Pulsing animation, touch-open |
+| `components/cliente-ficha/client-header.tsx` | Profile header | `ClientHeaderProps` | Sticky `top-0 z-50`, edit swipe |
+| `components/cliente-ficha/tab-agendamentos.tsx` | Appointments tab | `TabAgendamentosProps` | Swipe-complete, compact list |
+| `components/cliente-ficha/tab-financeiro.tsx` | Finances tab | `TabFinanceiroProps` | Filter chips, recent summaries |
+| `components/cliente-ficha/tab-info.tsx` | Info tab | `TabInfoProps` | Inline edits, formatter inputs |
+| `components/cliente-ficha/tab-notas.tsx` | Notes tab | `TabNotasProps` | Mobile rich-text, auto-save |
+| `components/cliente-ficha/tab-contrato.tsx` | Contract tab | `TabContratoProps` | Touch-sign, PDF pinch-zoom |
+| `components/analytics/trends-chart.tsx` | Trends viz | `TrendsChartProps`, `TrendData` | Recharts `ResponsiveContainer`, touch-drag |
+| `components/analytics/top-metrics.tsx` | Metrics cards | `Metric` | Large fonts, tap-drilldown |
+| `components/agenda/appointment-form/use-appointment-form.ts` | Form hook | `useAppointmentForm`, `AppointmentFormData` | Stepper UI, picker sheets |
+| `components/agenda/types.ts` | Types | `ServicoTipo`, `Addon`, `AddonSelecionado` | Searchable dropdowns |
+| `components/financeiro/transaction-form.tsx` | Transaction form | `TransactionFormProps` | Date wheel, currency mask |
+| `components/financeiro/expense-categories.tsx` | Categories list | `ExpenseCategoryProps` | Drag-reorder, quick-add sheet |
+| `components/financeiro/category-quick-form.tsx` | Quick category | `CategoryQuickFormProps` | Bottom-sheet trigger |
+| `components/clientes/clients-table.tsx` | Clients table | `ClientsTableProps`, `Client` | Virtuoso rows, swipe-actions |
+| `components/clientes/clients-filters.tsx` | Filters | `ClientsFiltersProps` | Collapsible drawer, debounce |
+| `lib/utils.ts` | Utils | `cn`, `formatCurrency`, `formatDate` | Responsive class merging |
+| `lib/formatters.ts` | Formatters | `formatPhoneUS`, `formatCurrencyInput`, `isValidPhoneUS`, `isValidEmail`, `parseCurrency` | Input hooks |
+| `lib/services/webhookService.ts` | Webhooks | `WebhookService` | Offline queue, push parsing |
+| `lib/admin-i18n/context.tsx` | i18n | `AdminI18nContextType` | Mobile-short labels |
+| `components/tracking/tracking-provider.tsx` | Tracking | `TrackingProviderProps` | Mobile event batching |
 
 ## Specific Workflows and Steps
 
-### 1. Mobile-Responsive Audit & Fix (e.g., Cliente-Ficha Tabs)
-1. Gather: `listFiles(components/cliente-ficha/*.tsx)` + `searchCode(/flex|grid|sm:|cn\(/, components/cliente-ficha/)`.
-2. Refactor classes: `cn("grid grid-cols-1 md:grid-cols-2 gap-4 p-4")`; add `overflow-auto h-dvh`.
-3. Implement swipe tabs: `pnpm add react-swipeable-views`; wrap shadcn `Tabs`.
-4. Sticky elements: `className="sticky top-0 z-50 bg-background shadow-sm"` on `client-header.tsx`.
-5. Extend props: `interface TabAgendamentosProps { compact?: boolean; onSwipe?: (id: string) => void }`.
-6. Test: DevTools > iPhone SE (slow 4G), Lighthouse >95, VoiceOver navigation.
-7. Commit: Before/after screenshots.
+### 1. Responsive Audit & Refactor (e.g., Cliente-Ficha)
+1. Scan: `listFiles(components/cliente-ficha/*.tsx)` + `searchCode(/cn\(|sm:|flex|grid/, components/cliente-ficha/)`.
+2. Update classes: `cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 sm:p-6 rounded-lg")`; add `min-h-0 overflow-auto h-dvh`.
+3. Swipe tabs: `pnpm add react-swipeable-views`; `<SwipeableViews><TabsContent>...</TabsContent></SwipeableViews>`.
+4. Sticky: `className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm shadow-lg border-b"` on `client-header.tsx`.
+5. Props extend: `interface TabInfoProps { isMobile?: boolean; onQuickEdit?: (field: keyof Client) => void }`.
+6. Test: DevTools (iPhone 12, slow 4G), Lighthouse mobile audit (>95), VoiceOver tab nav.
+7. Deploy: PR with before/after screenshots, Lighthouse JSON diff.
 
-### 2. Touch Gestures Implementation (Chat Messages/Agenda)
-1. Install: `pnpm add @use-gesture/react framer-motion`.
-2. In `chat-messages.tsx`: 
+### 2. Gesture Implementation (Chat/Agenda Lists)
+1. Add deps: `pnpm add @use-gesture/react framer-motion react-use-gesture`.
+2. Chat example (`chat-messages.tsx`):
    ```tsx
    import { useDrag } from '@use-gesture/react';
-   const bind = useDrag(({ swipe: [sx], last }) => {
-     if (last && sx > 100) onDelete(id); navigator.vibrate(30);
+   import { motion } from 'framer-motion';
+   const bind = useDrag(({ swipe: [sx], last, event }) => {
+     event.preventDefault();
+     if (last && sx < -120) { onArchive(id); navigator.vibrate(50); }
    });
-   <motion.div {...bind()} drag="x" dragConstraints={{ left: 0, right: 100 }}>
+   <motion.div {...bind()} className="touch-manipulation" drag="x" dragConstraints={{ left: 0, right: -120 }}>
+     <MessageBubble {...props} />
+   </motion.div>
    ```
-3. Agenda: Drag `ServicoTipo` to slots in calendar view.
-4. Conflicts: `touch-action: pan-y` CSS, pointer-events.
-5. Test: Android Chrome gestures, prevent scroll hijack.
+3. Agenda: Drag `ServicoTipo` cards to time slots; `touch-action: pan-y pinch-zoom`.
+4. Conflicts: `passive: false` listeners, test scroll hijack on Android.
+5. Haptics: Short vibes (30-100ms) on swipe-confirm/tap.
 
-### 3. PWA & Offline Setup
-1. Verify: `listFiles(public/manifest.json public/sw*.js)`.
-2. Enhance `public/manifest.json`: Add `categories: ["business"]`, brand icons/screenshots.
-3. Service Worker (`public/sw.js`):
+### 3. PWA/Offline Enhancements
+1. Check: `listFiles(public/manifest*.json public/sw*.js)`.
+2. `public/manifest.json`: Add `"shortcuts"`, screenshots, `"theme_color": "#your-brand"`.
+3. SW (`public/sw.js` or Workbox):
    ```js
-   const CACHE = 'v1';
-   self.addEventListener('install', e => e.waitUntil(caches.open(CACHE)));
-   self.addEventListener('fetch', e => {
-     e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => caches.open(CACHE).then(c => c.put(e.request, res.clone())))));
-   });
-   self.addEventListener('sync', e => e.waitUntil(syncOfflineData()));
+   import { precacheAndRoute } from 'workbox-precaching';
+   precacheAndRoute(self.__WB_MANIFEST);
+   self.addEventListener('sync', e => e.waitUntil(syncQueuedMutations()));
+   addEventListener('push', e => { /* WebhookService parse */ });
    ```
-4. Register: In root `layout.tsx` – `<link rel="manifest" href="/manifest.json" />` + SW script.
-5. IndexedDB Hook (chat/clients):
+4. Register (`app/layout.tsx`): `<link rel="manifest" href="/manifest.json" />`; SW via `if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')`.
+5. Offline hook (e.g., chat):
    ```tsx
-   import { get, set } from 'idb-keyval';
-   const useOfflineChat = () => {
-     const [data, setData] = useState([]);
-     useEffect(() => { get('chat').then(setData); }, []);
-     const queueMutation = async (msg) => { const offline = await get('queue') || []; set('queue', [...offline, msg]); };
+   import { useLiveQuery } from 'dexie'; // or idb-keyval
+   const useOfflineMessages = () => useLiveQuery(() => db.messages.toArray());
+   const queueSend = async (msg) => await db.queue.add({ ...msg, timestamp: Date.now() });
+   useEffect(() => { if (online) syncQueue(); }, [online]);
+   ```
+6. Test: DevTools Application > Offline, install banner, background sync.
+
+### 4. Form & Input Optimization (Agenda/Financeiro)
+1. Formatter hook:
+   ```tsx
+   const useCurrencyInput = (value: string, onChange: (v: string) => void) => {
+     const handleBlur = (e: React.FocusEvent) => onChange(formatCurrency(parseCurrency(e.target.value)));
+     const handleChange = (e: React.ChangeEvent) => onChange(formatCurrencyInput(e.target.value));
+     return { value: formatCurrencyInput(value), onChange: handleChange, onBlur: handleBlur };
    };
+   // Usage: <Input {...useCurrencyInput(rawValue, setRawValue)} inputMode="decimal" className="text-base tracking-wider" />
    ```
-6. Test: DevTools > Application > Offline mode, install prompt.
+2. Phone/Email: `onChangeValidate={(v) => !isValidPhoneUS(v) ? setError(t('invalidPhone')) : clearError()}`.
+3. Stepper (`useAppointmentForm`): shadcn `Steps` + sheets for `ServicoTipo[]`, `AddonSelecionado[]`.
+4. Fullscreen: `<Sheet side="bottom" className="max-h-dvh"><TransactionForm ... /></Sheet>`.
+5. Test: iOS/Android keyboards, zoom prevention, paste handling.
 
-### 4. Form Optimization (Agenda/Financeiro/Clientes)
-1. Integrate formatters: 
+### 5. Performance & Virtualization (Analytics/Clientes)
+1. Dynamic heavy components:
    ```tsx
-   <Input
-     value={formatCurrencyInput(value)}
-     onBlur={e => setValue(formatCurrency(parseCurrency(e.target.value)))}
-     inputMode="decimal"
-     type="text"
-     className="text-lg" // Prevent zoom
-   />
+   const TrendsChart = dynamic(() => import('./trends-chart').then(m => React.memo(m.TrendsChart)), { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> });
    ```
-2. Validation: `onChange={e => if (!isValidPhoneUS(e.target.value)) setError('Invalid')}`.
-3. Stepper for `useAppointmentForm`: shadcn Steps + `ServicoTipo[]`, `AddonSelecionado[]`.
-4. Fullscreen modals: `Sheet` variant="full` for `edit-client-modal.tsx`.
-5. Test: iOS numeric keyboard, auto-correct off.
-
-### 5. Performance Boost (Analytics/Lists)
-1. Dynamic: `const TrendsChart = dynamic(() => import('./trends-chart').then(mod => mod.TrendsChart), { ssr: false, loading: () => <Skeleton /> });`.
-2. Virtualize `clients-table.tsx`:
+2. Virtual table (`clients-table.tsx`):
    ```tsx
-   import { Virtuoso } from 'react-virtuoso';
-   <Virtuoso data={clients} itemContent={(i, client) => <ClientRow client={client} />} />
+   import { VirtuosoGrid } from 'react-virtuoso';
+   <VirtuosoGrid data={filteredClients} itemContent={(i, client: Client) => <ClientCard key={client.id} client={client} />} />
    ```
-3. Throttle realtime: `useEffect(() => { const sub = supabase.channel().subscribe(debounce(handleUpdate, 500)); return () => sub.unsubscribe(); }, []);`.
-4. Audit: `npx @lhci/cli autorun --preset=mobile --urls=/admin/analytics`.
-5. Images: `<Image src={...} sizes="100vw" style={{ width: '100%', height: 'auto' }} />`.
+3. Realtime throttle: `useSWR` or `debounce(supabase.subscribe, 1000)`.
+4. Audit: `npx lighthouse-ci . --config=lighthouserc.mobile.json`.
+5. Images: `<Image sizes="min(100vw, 400px)" className="w-full h-auto object-cover rounded-lg" />`.
 
-### 6. Accessibility & Testing Workflow
-1. Audit: `axe DevTools` + `prefers-reduced-motion: reduce`.
-2. ARIA: `role="tablist"`, `aria-label="Chat input"`, `aria-invalid` on errors.
-3. Focus: `autoFocus` on modals, `trapFocus` in sheets.
-4. Full suite: Lighthouse (perf/a11y), Web Vitals (`web-vitals` npm), real-device via Expo Go/Capacitor preview.
+### 6. Accessibility & Full Testing
+1. Audit: Chrome Lighthouse/axe-core, `media.prefers-reduced-motion: reduce`.
+2. ARIA: `aria-label="Filter clients"`, `role="grid" aria-rowcount={total}` on tables, `aria-live="polite"` for chat.
+3. Focus: `useEffect(() => inputRef.current?.focus(), [open])`; modals trap.
+4. Suite: Lighthouse (mobile preset), Web Vitals (`reportWebVitals()` in `_app.tsx`), BrowserStack real devices, TalkBack gestures.
 
 ## Key Symbols Quick Reference
 | Category | Symbols |
 |----------|---------|
-| **Types/Props** | `AppointmentFormData`, `ServicoTipo`, `Addon`, `AddonSelecionado`, `ChatWindowProps`, `ChatMessagesProps`, `ChatInputProps`, `MessageBubbleProps`, `ClientHeaderProps`, `TabAgendamentosProps`, `TabFinanceiroProps`, `TabInfoProps`, `TabNotasProps`, `TabContratoProps`, `ClientsTableProps`, `ClientsFiltersProps`, `EditClientModalProps`, `TransactionFormProps`, `ExpenseCategoryProps`, `CategoryQuickFormProps`, `TrendData`, `AdminI18nContextType` |
+| **Types** | `ServicoTipo`, `Addon`, `AddonSelecionado`, `AppointmentFormData` |
+| **Props** | `ChatWindowProps`, `ChatMessagesProps`, `ChatInputProps`, `MessageBubbleProps`, `ChatHeaderProps`, `ChatBubbleNotificationProps`, `ClientHeaderProps`, `TabAgendamentosProps`, `TabFinanceiroProps`, `TabInfoProps`, `TabNotasProps`, `TabContratoProps`, `ClientsTableProps`, `ClientsFiltersProps`, `TransactionFormProps`, `ExpenseCategoryProps`, `CategoryQuickFormProps`, `TrendsChartProps`, `TrackingProviderProps` |
 | **Hooks** | `useAppointmentForm` (`UseAppointmentFormProps`) |
 | **Utils** | `cn`, `formatCurrency`, `formatDate`, `formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `formatCurrencyInput`, `parseCurrency` |
-| **Services** | `WebhookService` |
+| **Context/Services** | `AdminI18nContextType`, `WebhookService` |
 
-## Collaboration Notes
-- **Docs/PRs**: Embed Lighthouse JSON, mobile screenshots (iOS/Android portrait/landscape), delta metrics. Tag `@mobile-specialist`.
-- **Metrics Targets**: Mobile Lighthouse 95+ (Perf/A11y/BP), FCP <1.2s, LCP <2s, TTI <3s.
-- **Risks/Mitigations**: Gesture-scroll conflicts (`passive: false`), SW auth (runtime cache), battery drain (throttle subs).
-- **Next Steps**: Capacitor POC (`npx cap init`), native haptics/push. Monitor via Vercel Analytics.
+## Collaboration & Metrics
+- **PRs**: Include mobile screenshots (portrait/landscape), Lighthouse deltas, Web Vitals plots. Tag `@mobile-specialist`.
+- **Targets**: Lighthouse Mobile 95+ (Perf 95, A11y 100, BP 100); LCP <2s, INP <200ms, CLS <0.1.
+- **Risks**: Gesture-scroll (`touch-action`), battery (pause subs on visibilitychange), SW security (HTTPS-only).
+- **Next**: Capacitor integration (`npx @capacitor/cli init`), native push/haptics. Monitor Vercel Speed Insights.

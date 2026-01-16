@@ -3,204 +3,203 @@
 ---
 status: complete
 generated: 2024-10-04
-repository: C:\Workspace\carolinas-premium
+repository: C:\Workspace\caroline-cleaning
 testingFramework: Vitest + React Testing Library + MSW + vi.mock + @testing-library/user-event
 coverageTarget: 100% utils/formatters, 95% services, 90% API routes, 80% components
-priorityAreas: lib/utils.ts, lib/formatters.ts, lib/services/webhookService.ts, app/api/**/route.ts (20+ routes), lib/supabase/*.ts
-toolUsage: readFile for source analysis, listFiles 'app/api/**', analyzeSymbols for symbols, searchCode for patterns/mocks, getFileStructure for changes
+priorityAreas: lib/utils.ts, lib/formatters.ts, lib/services/webhookService.ts, app/api/slots/route.ts, app/api/ready/route.ts, app/api/profile/route.ts, app/api/pricing/route.ts, app/api/health/route.ts, app/api/contact/route.ts, app/api/chat/route.ts, app/api/webhook/n8n/route.ts, app/api/tracking/event/route.ts, app/api/notifications/send/route.ts, app/api/financeiro/categorias/route.ts
+toolUsage: readFile for source analysis (e.g., route.ts handlers), listFiles 'app/api/**/route.ts', analyzeSymbols for utils/services symbols, searchCode '// TODO|uncovered|mock' patterns, getFileStructure for lib/ and app/api/ changes
 ---
 
 ## Mission
-Author, expand, and maintain tests for this Next.js 15/TypeScript app (183 files, 284 symbols: 44 .ts utils/services, 137 .tsx components, 44 API handlers). Ensure reliability for US-focused features: phone/currency/email formatting, Supabase integrations, chat/webhooks/notifications, AI "Carol" queries, financial categories. Trigger on:
-- New code/refactors: TDD (tests → impl → refactor).
-- Bugs: Repro + regression tests.
-- Coverage < targets: Auto-remediate gaps in lib/ (utils/services), app/api/.
-- Risks: Webhook/n8n flows, POST payloads (contact/chat/notifications), formatters (edge cases).
+Author, expand, and maintain tests for this Next.js 15/TypeScript app focusing on US-centric cleaning service features: utils (currency/phone/email formatting), services (webhook orchestration), API controllers (slots/profile/pricing/health/contact/chat/notifications/tracking/financeiro). codebase emphasizes lib/ utils (10+ formatters), lib/services (WebhookService), app/api/ routes (20+ handlers: GET slots/profile/pricing, POST contact/chat/webhook/n8n/tracking). Trigger on:
+- New/refactored code: TDD cycle (tests first → impl → coverage verify).
+- Bugs: Repro tests + fixes.
+- Coverage gaps: Prioritize utils (100%), services (95%), APIs (90%).
+- High-risk: Webhook secrets/n8n, POST payloads (chat/contact/notifications), formatters (invalid US inputs).
 
 ## Responsibilities
-- **Unit**: Pure utils/formatters (exhaustive table-driven tests).
-- **Integration**: Services (WebhookService orchestration, mock Supabase/fetch).
-- **API**: Route handlers (NextRequest/Response assertions, MSW for sub-calls).
-- **Component**: RTL for .tsx (forms, agendas, landing; user flows, a11y, states).
-- **Mocks**: vi.mock (Supabase/utils), MSW (REST APIs), fixtures (JSON payloads).
-- **Coverage/Analysis**: `vitest --coverage`; target gaps via tools (e.g., `searchCode 'uncovered branch'`).
-- **Docs**: Update `docs/testing.md` with patterns; handoff summaries.
+- **Unit Tests**: Utils/formatters (table-driven, exhaustive edges: invalid phones/emails/currencies).
+- **Integration Tests**: Services (WebhookService; mock Supabase/config/fetch).
+- **API Tests**: Route handlers (NextRequest/NextResponse; assert status/JSON, sub-calls).
+- **Component Tests**: RTL for forms/agendas (phone inputs, submissions; a11y/states).
+- **Mocks**: vi.mock (lib/supabase, lib/config), MSW (/api/* endpoints), fixtures (payloads/cases).
+- **Coverage**: `vitest --coverage`; remediate via tools (e.g., `searchCode 'if\s*\(condition\)'` for branches).
+- **Docs**: Append to `docs/testing.md`; PR handoff summaries.
 
 ## Testing Stack & Setup
-- **Vitest**: Fast ESM/TSX; `npm test [glob] --watch --coverage`.
-- **RTL + Jest-DOM**: `render`, `screen`, `userEvent`; queries by role/label.
-- **MSW**: `__mocks__/handlers.ts` for `/api/*`; auto-start in `vitest.config.ts`.
-- **vi.mock**: Dynamic/hoisted for Supabase (`lib/supabase/*`), fetch, config.
-- **Timers**: `vi.useFakeTimers()` for dates/notifications.
-- **Fixtures**: `__tests__/fixtures/` (e.g., `phone-cases.json`, `webhook-payloads.json`).
-- **Helpers**: `__tests__/helpers.tsx` (`renderWithProviders`, `nextRequest` factory).
+- **Vitest**: ESM/TSX; `npm test [glob] --watch --coverage --ui`.
+- **RTL + Jest-DOM**: `render/screen/userEvent`; role/label queries.
+- **MSW**: `__mocks__/handlers.ts` (REST for /api/contact, /api/chat); setup in `vitest.config.ts`.
+- **vi.mock**: Hoisted for `lib/utils`, `lib/supabase/*`, `fetch`.
+- **Timers/Async**: `vi.useFakeTimers()` (dates/notifs); `waitFor`.
+- **Fixtures**: `__tests__/fixtures/` (formatters-cases.json, webhook-payloads.json, api-bodies.json).
+- **Helpers**: `__tests__/helpers.ts` (`renderWithProviders`, `createNextRequest`).
 - **Run Commands**:
   ```
-  npm test lib/ --watch              # Utils/services TDD
-  npm test app/api/ --coverage       # API routes
-  vitest lib/formatters.test.ts      # Isolated
-  npm run coverage:ui                # LCOV report (if configured)
+  npm test lib/utils*.test.ts --watch          # Formatters TDD
+  npm test lib/services/ --coverage            # WebhookService
+  npm test app/api/ --coverage                 # All routes
+  vitest app/api/chat/route.test.ts            # Isolated
+  npm run coverage:report                      # LCOV/UI
   ```
 
 ## File Structure & Naming Conventions
-**Colocation Priority** (codebase pattern: 80% colocated tests):
+**Colocation (90% pattern: tests beside sources)**:
 | Layer | Source Dirs | Test Pattern | Examples |
 |-------|-------------|--------------|----------|
-| Utils | `lib/utils.ts`, `lib/formatters.ts` | `{file}.test.ts` (same dir) | `lib/utils.test.ts`, `lib/formatters.test.ts` |
-| Services | `lib/services/` | `{file}.test.ts` | `lib/services/webhookService.test.ts` |
-| Supabase | `lib/supabase/server.ts`, `client.ts` | `{file}.test.ts` | `lib/supabase/server.test.ts` |
-| API Controllers | `app/api/**/route.ts` (slots, chat, webhook/n8n, etc.) | `route.test.ts` (same dir) | `app/api/chat/route.test.ts` |
-| Components | `components/landing/`, `agenda/appointment-form/*.tsx` | `{file}.test.tsx` | `components/landing/Form.test.tsx` |
+| Utils | `lib/utils.ts`, `lib/formatters.ts` | `{file}.test.ts` colocated | `lib/utils.test.ts`, `lib/formatters.test.ts` |
+| Services | `lib/services/` (tracking/supabase/config/actions/context) | `{file}.test.ts` | `lib/services/webhookService.test.ts` |
+| API Controllers | `app/api/slots/`, `profile/`, `chat/`, `webhook/n8n/`, etc. | `route.test.ts` colocated | `app/api/contact/route.test.ts` |
+| Components | `components/landing/`, `agenda/appointment-form/` | `{file}.test.tsx` | `components/agenda/appointment-form/Form.test.tsx` |
 
-**Shared Tests**:
+**Shared**:
 ```
 __tests__/
 ├── fixtures/
-│   ├── formatters.json     # Phone/currency/email cases
-│   ├── api-payloads.json   # Chat/contact/notifications
-│   └── supabase-mocks.json # Row data, errors
+│   ├── utils-cases.json      # Currency/phone/email tables
+│   ├── webhook-n8n.json      # Payloads/secrets
+│   └── api-responses.json    # Slots/profile data
 ├── mocks/
-│   ├── handlers.ts         # MSW: rest.post('/api/webhook/n8n', ...)
-│   ├── supabase.server.ts  # vi.fn().mockResolvedValue(client)
-│   └── fetch.ts            # Global fetch mock
-└── helpers.tsx             # RTL providers (QueryClient, i18n), NextRequest util
+│   ├── handlers.ts           # MSW: rest.get('/api/slots'), rest.post('/api/chat')
+│   └── supabase.ts           # vi.fn() for clients/queries
+└── helpers.ts                # Providers (i18n/theme), NextRequest factory
 ```
 
-## Key Files & Purposes (From 284 Symbols, Tool Analysis)
-**1. Utils (43 symbols; pure, no deps; 100% coverage goal)**  
-Pure helpers; focus edge cases (null/empty/invalid US formats).  
+## Key Files & Purposes (From Tool Analysis: 55 utils symbols, WebhookService, 50+ API symbols)
+**1. Utils (Pure; 100% coverage; 10+ formatters; no deps)**  
+Edge-focused: US phones (E.164), currency ($1,234.56), emails, dates.  
 | File | Key Symbols | Purpose | Test Priorities |
 |------|-------------|---------|-----------------|
-| `lib/utils.ts` | `cn`, `formatCurrency`, `formatDate` | Tailwind merge, US currency/date | Null/NaN/locales ('en-US'), output snapshots |
-| `lib/formatters.ts` | `formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `formatCurrencyInput`, `parseCurrency` | Phone (US E.164), email regex, currency ($1,234.56) | Invalid (letters/negatives), roundtrip (format/parse), 20+ cases/file |
-| `lib/supabase/server.ts`, `client.ts` | `createServerClient`, `createClient` | Auth/DB clients | Mock returns; no real Supabase calls; auth contexts |
+| `lib/utils.ts` | `cn`, `formatCurrency`, `formatDate` | Tailwind cn(), US $ dates | Null/empty/NaN, locales ('en-US'), snapshots |
+| `lib/formatters.ts` | `formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `formatCurrencyInput`, `parseCurrency` | Phone validation/formatting, email regex, currency parse/format | 25+ cases (invalid: letters/+1-abc, negatives), roundtrip (format/parse/unformat), overflow/precision |
+| `lib/tracking/`, `supabase/`, `config/` | (Impl details via `analyzeSymbols`) | Helpers (events, DB clients, env) | Mocked in services/API; no direct tests unless exported |
 
-**2. Services (WebhookService; orchestration)**  
+**2. Services (Business logic; 95% coverage)**  
 | File | Key Class | Purpose | Test Priorities |
 |------|-----------|---------|-----------------|
-| `lib/services/webhookService.ts` | `WebhookService` | n8n webhooks, payload processing, Supabase writes | Secret validation, HTTP mocks, success/401 paths, DB inserts |
+| `lib/services/webhookService.ts` | `WebhookService` | n8n webhook handling, secret validation, Supabase/tracking orchestration | Valid/invalid secrets (401), payload processing, DB writes (mock), error paths |
 
-**3. Controllers (44 symbols; 20+ routes)**  
-HTTP handlers; test req/res, status/JSON, sub-service calls.  
+**3. Controllers (50+ symbols; HTTP handlers; 90% coverage)**  
+Test req.method/body/headers → res.status/headers/json(); MSW sub-APIs.  
 | Dir/Route | Symbols/Methods | Purpose | Test Priorities |
 |-----------|-----------------|---------|-----------------|
-| `app/api/slots/` | `GET` | Availability slots | Query params (?date=), empty array |
-| `app/api/ready/`, `pricing/`, `health/` | `GET` | Health/pricing | Static JSON, 200/500 |
-| `app/api/contact/`, `notifications/send/` | `POST` | Forms/notifs | Body validation, MSW deps, emails queued |
-| `app/api/webhook/n8n/` | `POST` | n8n integration | Headers['x-secret'], WebhookService mock |
-| `app/api/financeiro/categorias/` & `[id]/` | `GET`/`POST` | CRUD categories | Auth (Supabase), list/create/update |
-| `app/api/config/public/` | `GET` | Public config | No auth, env vars |
-| `app/api/chat/`, `chat/status/` | `POST`/`GET` | Chat sessions | Payload {message}, streaming? |
-| `app/api/carol/query/`, `actions/` | `POST` | AI queries/actions | Complex payloads, responses |
+| `app/api/slots/` | `GET` | Time slots availability | Query (?date=), empty/full, 200/400 |
+| `app/api/ready/`, `pricing/`, `health/` | `GET` | Status/pricing/health checks | Static responses, env vars, 200/500 errors |
+| `app/api/profile/` | `GET`, `PUT` | User profile fetch/update | Auth (Supabase), partial updates, validation |
+| `app/api/contact/` | `POST` | Contact form submission | Body (name/email/phone), validation, queued response |
+| `app/api/chat/`, `chat/status/` | `POST`, `GET` | Chat messages/status | Payload {message}, sessions, streaming? |
+| `app/api/webhook/n8n/` | `POST` | n8n webhook | Headers['x-secret'], WebhookService call, 200/401 |
+| `app/api/tracking/event/` | `POST` | Event tracking | Payload validation, utils/formatters usage |
+| `app/api/notifications/send/` | `POST` | Send notifications | Body recipients/message, mock queue/DB |
+| `app/api/financeiro/categorias/`, `[id]/` | `GET`, `POST` | Financial categories CRUD | Auth, list/create/update/delete, Supabase mocks |
+| `app/api/config/public/` | `GET` | Public config | No auth, sanitized env |
 
-**4. Components (137 .tsx; UI)**  
-Dirs: `components/landing/`, `agenda/appointment-form/`, `chat/`.  
-Purpose: Forms (phone/currency), booking, chat UI. Tests: Interactions, MSW APIs, loading/errors/success.
+**4. Components (UI; forms/agendas; 80% coverage)**  
+`components/landing/`, `agenda/appointment-form/` : RTL user flows (phone/currency inputs → API POST).
 
-## Best Practices (Derived from Codebase Patterns)
-- **AAA Structure**: Arrange (mocks/fixtures), Act (invoke), Assert (toBe/toEqual/toThrow).
-- **Naming**: `test('should [verb] [subject] when [scenario]', async () => { ... })`.
-- **Table-Driven**: Arrays `as const` for utils/formatters (e.g., 15+ phone cases).
+## Best Practices (Codebase-Derived)
+- **AAA**: Arrange (setup mocks/fixtures), Act (call/export), Assert (expect chains).
+- **Test Names**: `test('should [action] [entity] when [condition]', async () => {})`.
+- **Table-Driven Utils**:
+  ```ts
+  const cases = [ { input: '(555) 123-4567', expected: '+15551234567', valid: true }, ... ] as const;
+  cases.forEach(({ input, expected, valid }) => test(`phoneUS: ${input}`, () => {
+    expect(formatPhoneUS(input)).toBe(expected);
+    expect(isValidPhoneUS(input)).toBe(valid);
+  }));
+  ```
 - **Asserts**:
   ```ts
-  expect(fn(input)).toBe(expected);  // Utils
-  expect(res.status).toBe(200);      // API
-  expect(await res.json()).toEqual({ success: true });
-  await waitFor(() => expect(screen.getByText('success')).toBeVisible());  // RTL
+  expect(formatCurrency(1234.56)).toBe('$1,234.56');  // Utils
+  expect(res.status).toBe(200); expect(await res.json()).toEqual(expectedBody);  // API
+  await waitFor(() => expect(screen.getByRole('alert')).toBeVisible());  // RTL
   ```
-- **Mocks** (minimal, hoisted):
+- **Mocks**:
   ```ts
-  vi.hoisted(() => ({ createServerClient: vi.fn(() => ({ from: vi.fn() })) }));
-  vi.mock('../supabase/server.ts', () => factory);
-  // MSW in beforeAll
-  server.use(rest.post('/api/notifications/send', handler));
+  vi.hoisted(() => ({ cn: vi.fn((...args) => args.filter(Boolean).join(' ')) })); vi.mock('./utils');
+  // MSW
+  server.use(rest.post('/api/contact', async (req, res, ctx) => res(ctx.json({ success: true }))));
   ```
-- **Async/Errors**: `await expect(fn()).resolves.toHaveProperty('ok', true)` or `.rejects.toMatchObject({ status: 400 })`.
-- **RTL**: Prefer `getByRole('button', { name: /submit/i })`; `userEvent.type`; no implementation details.
-- **Cleanup**: `afterEach(vi.clearAllMocks, cleanup); afterAll(server.close)`.
-- **No Snapshots**: Use explicit `toEqual({ ... })`; US locales only.
-- **Coverage**: Branches > statements; ignore configs.
+- **API Helpers**:
+  ```ts
+  const createRequest = (method: string, body?: any, headers = {}) => new NextRequest('http://localhost', {
+    method, headers: { 'Content-Type': 'application/json', ...headers }, body: body ? JSON.stringify(body) : undefined
+  });
+  ```
+- **Async/Errors**: `await expect(POST(req)).rejects.toThrow('Invalid secret');`.
+- **RTL**: `getByRole('textbox', { name: /phone/i })`; `userEvent.type`; avoid CSS/classes.
+- **Cleanup**: `afterEach(() => { vi.clearAllMocks(); cleanup(); }); afterAll(server.close);`.
+- **Coverage**: Prioritize branches (if/try); no snapshots; US locales.
 
 ## Workflows & Steps
 
-### 1. Utils/Formatters (High-Priority Unit Tests)
-1. `analyzeSymbols lib/formatters.ts` → List exports (e.g., 7 formatters).
-2. `readFile lib/formatters.ts` → Infer deps/edges.
-3. Create/update `lib/formatters.test.ts`:
-   ```ts
-   import { isValidPhoneUS /* etc */ } from './formatters';
-   const cases = [ /* from fixtures/formatters.json */ ] as const;
-   cases.forEach(({ input, valid, formatted }) => {
-     test(`formats/validates "${input}" → ${valid}/${formatted}`, () => {
-       expect(isValidPhoneUS(input)).toBe(valid);
-       // Roundtrip
-     });
-   });
-   ```
-4. `vitest lib/formatters.test.ts --coverage` → 100%; add negatives/overflow.
+### 1. Utils/Formatters (Priority Unit)
+1. `analyzeSymbols lib/utils.ts` + `lib/formatters.ts` → Exports list.
+2. `readFile lib/formatters.ts` → Edge cases (searchCode '\.test\.?|edge').
+3. Generate `lib/formatters.test.ts` w/ fixtures/table-driven (25+ cases/phone-email-currency).
+4. Run `vitest lib/formatters.test.ts --coverage` → Verify 100%; add roundtrips/throws.
 
-### 2. Services (e.g., WebhookService Integration)
-1. `readFile lib/services/webhookService.ts` → Methods/secrets.
-2. Create `webhookService.test.ts`:
+### 2. Services (WebhookService)
+1. `readFile lib/services/webhookService.ts` → Methods/params (secret, payload).
+2. `lib/services/webhookService.test.ts`:
    ```ts
-   vi.mock('../supabase/server');
-   vi.mock('node-fetch');  // If used
-   const { WebhookService } = await import('./webhookService');
-   test('handles valid n8n payload', async () => {
+   vi.mock('../../supabase/server.ts');
+   vi.mock('../../config');
+   test('validates secret and processes n8n webhook', async () => {
      const service = new WebhookService();
-     const result = await service.handleWebhook(validPayload, 'correct-secret');
-     expect(createServerClient).toHaveBeenCalled();
-     expect(result).toEqual({ processed: true });
+     const result = await service.handle(validPayload, 'valid-secret');
+     expect(createServerClient).toHaveBeenCalledWith(expect.anything(), { ... });
+     expect(result).toEqual({ status: 'processed' });
+   });
+   test('rejects invalid secret', async () => {
+     await expect(service.handle(payload, 'wrong')).rejects.toThrow('Unauthorized');
    });
    ```
-3. Mock config/Supabase; error paths (invalid secret → throw).
+3. Mock deps; paths: success/DB error/network.
 
-### 3. API Routes
-1. `listFiles 'app/api/webhook/n8n/route.ts'` → Confirm `POST`.
-2. `route.test.ts`:
+### 3. API Routes (e.g., /contact, /webhook/n8n)
+1. `listFiles 'app/api/contact/route.ts'` → Confirm POST.
+2. `app/api/contact/route.test.ts`:
    ```ts
-   import { POST } from './route';  // Dynamic import if needed
-   const mkReq = (body: any, headers = {}) => new NextRequest('...', {
-     method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body)
-   });
-   test('POST /api/webhook/n8n with secret', async () => {
-     const req = mkReq(payload, { 'x-n8n-secret': 'valid' });
+   import { POST } from './route';
+   test('POST /contact with valid body', async () => {
+     const req = createRequest('POST', { name: 'Test', phone: '(555)123-4567' });
      const res = await POST(req as any);
      expect(res.status).toBe(200);
+     expect(await res.json()).toEqual({ message: 'Sent' });
    });
    ```
-3. MSW for internal calls; auth/400s.
+3. MSW internals; 400 invalid body; headers (secrets for n8n).
 
-### 4. Components
-1. `listFiles 'components/landing/*.tsx'` → Target forms.
-2. `.test.tsx` w/ `renderWithProviders` (Theme/Query/i18n):
+### 4. Components (Forms)
+1. `listFiles 'components/agenda/appointment-form/*.tsx'`.
+2. `.test.tsx`:
    ```tsx
-   test('submits appointment form', async () => {
+   test('submits valid form', async () => {
      renderWithProviders(<AppointmentForm />);
-     await userEvent.type(screen.getByLabelText(/phone/i), validPhone);
-     userEvent.click(screen.getByRole('button', { name: /schedule/i }));
-     await waitFor(() => expect(screen.getByText(/booked/i)).toBeVisible());
-     expect(mswPost).toHaveBeenCalledWith('/api/contact', expect.objectContaining({ phone: formatted }));
+     await userEvent.type(screen.getByLabelText(/phone/i), '(555) 123-4567');
+     userEvent.click(screen.getByRole('button', { name: /book/i }));
+     await waitFor(() => expect(screen.getByText(/success/i)).toBeInTheDocument());
+     expect(postSpy).toHaveBeenCalledWith('/api/contact', expect.objectContaining({ phone: '+15551234567' }));
    });
    ```
 
-### 5. Coverage Gap Remediation
-1. `vitest --coverage` → Scan `coverage/lcov-report/index.html`.
-2. `searchCode 'if\s*\([^)]*uncovered'` or `analyzeSymbols --untested`.
-3. Prioritize: Utils (43 sym) > API (44) > Services.
-4. Add tests; re-run until targets.
+### 5. Coverage Remediation
+1. `vitest --coverage` → Identify gaps (utils branches, API conditions).
+2. `searchCode 'app/api/.*if\s*\('` → Untested branches.
+3. Add tests; iterate to targets.
 
-### 6. Maintenance/Full Scan
-1. `getFileStructure` + git diff → Changed files.
-2. Update colocated tests; `searchCode 'import.*changed-module'`.
-3. E2E gaps: Chat flows (future Cypress?).
+### 6. Full Maintenance
+1. `getFileStructure app/api/` + git changes.
+2. Update colocated; cross-search imports.
+3. Handoff: Tests added, coverage Δ, gaps, commands.
 
 ## Handoff Template
 ```
-Tests Added: lib/formatters.test.ts (28 cases, 100% cov), webhookService.test.ts (12 tests).
-Coverage Δ: +18% (utils now 100%, API 92%).
-Gaps Remaining: carol/actions route, agenda components.
-Commands: npm test app/api/carol/ --watch
-PR Ready: Yes
+Tests: lib/formatters.test.ts (35 cases, 100%), webhookService.test.ts (15 tests, 96%), app/api/contact/route.test.ts (8 tests).
+Coverage: Utils 100% (+25%), APIs 88% (+12%).
+Gaps: app/api/carol/*, components/landing/.
+Run: npm test app/api/ --coverage
+PR: Ready
 ```
-Sync `docs/testing.md`.
+Update `docs/testing.md`.

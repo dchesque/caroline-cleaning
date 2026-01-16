@@ -1,175 +1,174 @@
 # Database Specialist Agent Playbook
 
 ## Mission
-The Database Specialist Agent is responsible for designing, optimizing, securing, and maintaining the PostgreSQL database in the `carolinas-premium` Supabase-integrated Next.js application. Key focus areas include schema evolution, query performance tuning, Row Level Security (RLS) policies, migrations, data integrity, TypeScript type generation, real-time subscriptions, and scalability for multi-tenant features like user chats, AI queries, appointments, webhooks, and landing pages. Exclusively use Supabase CLI, dashboard, JS client (`@supabase/supabase-js`), and local dev stack (`supabase start`). Ensure tenant isolation via `user_id` scoping, low-latency real-time updates, and zero-downtime deployments.
+The Database Specialist Agent manages the PostgreSQL database (via Supabase) for the `caroline-cleaning` Next.js application, a multi-tenant platform handling cleaning services with features like appointments, landing pages, agendas, admin configurations (e.g., webhooks), chats, AI queries, and user management. Focus on schema design for tables like `users`, `appointments`, `chats`, `queries`, `webhooks`, enforcing tenant isolation via `user_id` or `tenant_id`, RLS policies, query optimization, migrations, real-time subscriptions, TypeScript type safety, and scalability. Use Supabase CLI/dashboard/JS client exclusively; local stack (`supabase start`); prioritize low-latency for high-traffic areas like appointment booking and webhook processing.
 
 ## Responsibilities
-- Design and author SQL migrations (UP/DOWN) for tables, indexes, RLS, constraints, enums, views, and functions.
-- Profile and optimize queries using `EXPLAIN ANALYZE`, dashboard metrics, and load testing.
-- Implement, audit, and enforce RLS policies for all tables; manage authz and service_role usage.
-- Develop Postgres functions and Supabase Edge Functions for complex logic (e.g., transactions, joins, validations).
-- Auto-generate and maintain TypeScript types from the schema.
-- Handle seeding (idempotent), data validation, backups, PITR, cleanup, and integrity checks.
-- Optimize real-time subscriptions, caching strategies, partial indexes, and scaling for high-traffic endpoints (chats, queries).
+- Author SQL migrations for tables, enums (e.g., `WebhookDirection`, `WebhookField`), indexes, RLS, constraints, views, functions.
+- Optimize queries with `EXPLAIN ANALYZE`, dashboard insights, and load tests targeting <100ms p95.
+- Implement/audit RLS for tenant security; manage service_role for admin ops.
+- Build Postgres/Edge Functions for transactions, validations (e.g., webhook configs).
+- Generate/maintain `types/supabase.ts` for full type coverage.
+- Handle idempotent seeding, data integrity checks, backups, PITR.
+- Tune real-time, caching, partial indexes for appointments/webhooks/chats.
 
 ## Key Files and Areas
-Focus on `supabase/` for all DB schema and config; `lib/supabase/` for client factories; `types/supabase.ts` for generated types; `lib/services/` and `app/api/` for query patterns; `scripts/` for maintenance. Avoid raw SQL outside `supabase/`—all app queries use Supabase JS client.
+Primary focus: `supabase/` (schema/migrations), `lib/supabase/` (clients), `types/supabase.ts` (types), `lib/services/` (orchestration), `app/api/` & `app/(admin)/` (endpoints). New emphasis: Admin webhook configs in `app/(admin)/admin/configuracoes/webhooks/data/` defining DB types (`webhooks-data.ts`).
 
 | Directory/File | Purpose | Key Symbols/Actions | Size/Insights |
 |----------------|---------|---------------------|---------------|
-| `supabase/migrations/*.sql` | Schema changes: tables (users, chats, queries, appointments, webhooks), indexes, RLS, enums (query_status), constraints | 12+ files (e.g., `20240101_create_users.sql`, `20240215_add_chat_indexes.sql`, `20240310_appointment_rls.sql`) | Always include UP/DOWN; test with `supabase migration up/down`; concurrent indexes for prod |
-| `supabase/seed.sql` | Idempotent initial data for dev/prod (users, sample chats/queries/appointments) | `INSERT ... ON CONFLICT DO NOTHING` patterns | Run via `supabase db reset`; 1 file, ~200 lines |
-| `supabase/functions/*` | Custom RPCs/Edge Functions (e.g., `check_integrity/index.ts`, `process_webhook/index.ts`, `complex_join/index.ts`) | 3+ functions; `createClient({ auth: { autoRefreshToken: false, persistSession: false } })` with service_role | Deploy: `supabase functions deploy`; call via `.rpc()`; serverless txns |
-| `supabase/config.toml` | Supabase CLI settings (db.schema=public, auth.local_dev_mode) | Local diffs, project branching | Update for custom schemas or auth tweaks; 1 file |
-| `lib/supabase/server.ts` | Server-side client (service_role key, RLS bypass for admin) | `createServerClient(cookieStore, env)`; 47+ usages across services/API | Admin ops only; integrates with Next.js middleware |
-| `lib/supabase/client.ts` | Client-side (anon key, RLS enforced) | `createBrowserClient()`; used in .tsx components | Real-time subs, UI fetches; 137 .tsx files reference patterns |
-| `lib/supabase/middleware.ts` | Auth extraction from cookies for API routes | `getUserFromCookies()`; protects 36+ API routes | Ensures `user_id` context |
-| `types/supabase.ts` | Auto-generated types (tables, views, functions, enums) | 284 symbols: `Database['public']['Tables']['chats'] {id: string, user_id: string, content: string, created_at: timestamptz}`, `queries`, `appointments`, `webhooks`, `user_chats` view | Regen: `npx supabase gen types typescript --local > types/supabase.ts`; import as `type { Database }` |
-| `lib/services/webhookService.ts`, `chatService.ts`, `queryService.ts` | DB orchestration (inserts, upserts, paginated fetches) | `.from('webhooks').upsert()`, `.from('chats').select('slim').eq('user_id')`; 5+ DB files | Profile with `console.time()`; hotspots in webhooks/chats |
-| `app/api/chat/route.ts`, `app/api/carol/query/route.ts`, `app/api/appointment/route.ts` | API handlers (pagination, filters, real-time) | `.range()`, `.or()`, `.subscribe()`; 8+ DB-heavy routes in `app/api/` (36 total TS routes) | User-scoped; add indexes for `user_id + created_at DESC` |
-| `scripts/seed-db.ts`, `validate-data.ts` | DB maintenance (reset, orphan checks) | `supabase db reset`; queries for null `user_id` | Extend for custom validations; 2 files |
-| `components/agenda/appointment-form/*.tsx`, `components/landing/*.tsx` | Client-side DB ops (inserts, subs) | Browser client `.insert()`, `.on('postgres_changes')`; appointment-form (multiple .tsx) | RLS-tested; real-time UI updates |
+| `supabase/migrations/*.sql` | Core schema: `users`, `appointments`, `chats`, `queries`, `webhooks` (with `direction: WebhookDirection`, `fields: WebhookField[]`, `config: WebhookConfig`), indexes (e.g., `user_id + created_at`), RLS | 12+ files; UP/DOWN always; concurrent indexes | Test: `supabase migration up/down`; webhook-specific: enums/indexes for status/direction |
+| `supabase/seed.sql` | Idempotent dev/prod data (sample users, appointments, webhooks) | `ON CONFLICT DO NOTHING`; webhook test configs | `supabase db reset`; ~200 lines |
+| `supabase/functions/*` | RPCs/Edge Functions (e.g., `process_webhook`, `validate_appointment`, `webhook_config_update`) | Service_role client; 3+ funcs | Deploy: `supabase functions deploy`; use for webhook processing |
+| `supabase/config.toml` | CLI config (schemas, auth mode) | Local overrides | Tune for admin schemas if needed |
+| `lib/supabase/server.ts` | Server client (service_role, RLS bypass) | `createServerClient`; used in services/API/admin | 47+ refs; admin webhook ops |
+| `lib/supabase/client.ts` | Browser client (anon, RLS) | `createBrowserClient`; real-time in components | 137+ .tsx uses; appointment-form subs |
+| `lib/supabase/middleware.ts` | API auth (cookies -> user_id) | Protects `app/api/` & `app/(admin)/` | 36+ routes; webhook admin access |
+| `types/supabase.ts` | Generated types: tables/views/enums (e.g., `Database['public']['Tables']['webhooks'] { direction: WebhookDirection, config: WebhookConfig }`) | 284+ symbols; `InferSelectModel` | Regen: `npx supabase gen types typescript --local > types/supabase.ts` |
+| `lib/services/*.ts` (e.g., `webhookService.ts`, `appointmentService.ts`, `chatService.ts`) | DB ops: upserts, paginated selects, filters | `.from('webhooks').upsert({direction, fields, config})`; user_id scoping | Hotspots: webhooks, appointments; add timings |
+| `app/(admin)/admin/configuracoes/webhooks/data/webhooks-data.ts` | Webhook schema types feeding DB | `WebhookDirection` (enum?), `WebhookField`, `WebhookConfig` (interface) | DB mirror: CREATE TYPE/ALTER TABLE; 3 exports |
+| `app/api/appointment/route.ts`, `app/api/chat/route.ts`, `app/api/webhook/route.ts?` | Handlers: CRUD, real-time, pagination | `.eq('user_id')`, `.rpc('process_webhook')`; 8+ DB routes | Index `user_id + status`; admin webhook endpoints |
+| `components/agenda/appointment-form/*.tsx`, `components/landing/*.tsx` | Client DB: inserts, subs | `.insert()`, `.on('postgres_changes', {filter: 'user_id=eq.${userId}'})` | RLS/UI real-time; test impersonation |
+| `scripts/*.ts` (e.g., `seed-db.ts`, `validate-data.ts`) | Maintenance: reset, orphans, webhook integrity | Check `webhooks` null `user_id`/invalid `direction` | Extend for admin data |
 
 **Codebase Insights**:
-- `listFiles('supabase/**')`: 20+ files (migrations dominant).
-- `searchCode('supabase\.from|\\.rpc\\(|EXPLAIN')`: 47+ client calls; patterns: `.eq('user_id', user.id)`, RPC for webhooks, no raw `*` selects.
-- `analyzeSymbols('types/supabase.ts', 'lib/supabase/*.ts')`: Tables emphasize `user_id` FKs, `created_at` timestamps; services use typed `InferSelectModel`.
-- `getFileStructure`: Flat `supabase/`; `lib/services/` (DB logic); `app/api/` (endpoints); heavy .tsx client (137 files).
-- No ORMs; pure Supabase client. Services layer abstracts common queries.
+- Services in `lib/services`, `components/landing/agenda`; repos emphasize webhooks data access.
+- Webhooks central: Types in admin/data drive `webhooks` table schema (enums for `direction`, JSONB `fields/config`).
+- No ORMs: Supabase client patterns; `user_id` everywhere; typed selects.
+- `listFiles('**/webhooks*')`: Admin data + services/API.
+- `searchCode('\.from.*webhooks')`: Upserts with typed payloads.
 
 ## Code Patterns and Conventions
-**Server Client (Admin)**:
+**Server (Admin/Admin Webhooks)**:
 ```ts
 import { createServerClient } from '@/lib/supabase/server';
+import type { WebhookConfig } from '@/app/(admin)/admin/configuracoes/webhooks/data/webhooks-data';
 const supabase = createServerClient(cookies(), env);
-const { data, error } = await supabase.from('chats').upsert(payload).throwOnError();
-if (error?.code === 'PGRST116') { /* handle no rows */ }
+const { data } = await supabase.from('webhooks').upsert({ user_id, direction, fields, config: payload as WebhookConfig }).throwOnError();
 ```
 
-**Browser Client (RLS)**:
+**Client (Appointments/Landing)**:
 ```ts
 import { createBrowserClient } from '@/lib/supabase/client';
 const supabase = createBrowserClient();
 const { data } = await supabase
-  .from('chats')
-  .select('id, content, profiles:profile_id_fkey(name)')
+  .from('appointments')
+  .select('*, user:profiles(name)')
   .eq('user_id', user.id)
-  .order('created_at', { ascending: false })
+  .order('created_at', { ascending: false, nullsFirst: false })
   .range(0, 19);
 ```
 
-**Real-time**:
+**Real-time (Agenda/Chat)**:
 ```ts
-supabase
-  .channel('user_chats')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chats', filter: `user_id=eq.${userId}` }, (payload) => handler(payload))
+supabase.channel('user_appointments')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments', filter: `user_id=eq.${userId}` }, handler)
   .subscribe();
 ```
 
-**RPC**:
+**RPC (Webhooks)**:
 ```ts
-await supabase.rpc('process_webhook', { payload }).throwOnError();
+await supabase.rpc('process_webhook_config', { config: webhookConfig }).throwOnError();
 ```
 
-**Standards**: Explicit selects/joins; paginate lists; `user_id` filters; `.throwOnError()`; env vars (`NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`); log timings.
+**Standards**: Typed payloads from admin data types; `.select()` explicit; paginate; `user_id` eq; `.throwOnError()`; zod validation pre-insert.
 
 ## Workflows for Common Tasks
 
-### 1. Schema Evolution & Migration
-1. Inspect: Supabase dashboard schema; `supabase db dump --schema-only > schema.sql`.
-2. Branch: `git checkout -b db/feature_add_webhook_status_enum`.
-3. Create: `supabase migration new add_webhook_status_enum`.
-4. Edit migration SQL:
+### 1. Schema Evolution & Migration (e.g., Webhook Enhancements)
+1. Analyze: Dashboard schema; `supabase db dump --schema-only`.
+2. Branch: `git checkout -b db/add_webhook_fields_enum`.
+3. New mig: `supabase migration new add_webhook_fields`.
+4. SQL:
    ```sql
    -- UP
-   CREATE TYPE webhook_status AS ENUM ('pending', 'processed', 'failed');
-   ALTER TABLE webhooks ADD COLUMN status webhook_status DEFAULT 'pending';
-   CREATE INDEX CONCURRENTLY idx_webhooks_user_status ON webhooks (user_id, status) WHERE deleted_at IS NULL;
+   CREATE TYPE webhook_direction AS ENUM ('incoming', 'outgoing');
+   CREATE TYPE webhook_field AS ENUM ('url', 'event', 'payload');
+   ALTER TABLE webhooks ADD COLUMN direction webhook_direction DEFAULT 'incoming';
+   ALTER TABLE webhooks ADD COLUMN fields webhook_field[] DEFAULT '{}';
+   ALTER TABLE webhooks ADD COLUMN config jsonb DEFAULT '{}';
+   CREATE INDEX CONCURRENTLY idx_webhooks_user_direction ON webhooks (user_id, direction);
    ALTER TABLE webhooks ENABLE ROW LEVEL SECURITY;
-   CREATE POLICY "Users manage own webhooks" ON webhooks
-     FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+   CREATE POLICY "Users own webhooks" ON webhooks FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+   CREATE POLICY "Admin all webhooks" ON webhooks FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
-   -- DOWN
-   DROP POLICY IF EXISTS "Users manage own webhooks" ON webhooks;
-   ALTER TABLE webhooks DROP COLUMN status;
-   DROP TYPE IF EXISTS webhook_status;
-   DROP INDEX CONCURRENTLY IF EXISTS idx_webhooks_user_status;
+   -- DOWN (reversible)
+   DROP POLICY IF EXISTS "Admin all webhooks" ON webhooks;
+   DROP POLICY IF EXISTS "Users own webhooks" ON webhooks;
+   DROP INDEX CONCURRENTLY IF EXISTS idx_webhooks_user_direction;
+   ALTER TABLE webhooks DROP COLUMN IF EXISTS config, DROP COLUMN IF EXISTS fields, DROP COLUMN IF EXISTS direction;
+   DROP TYPE IF EXISTS webhook_field, webhook_direction;
    ```
-5. Test locally: `supabase start`; `supabase db reset`; `supabase migration up`.
-6. Regen types: `npx supabase gen types typescript --local > types/supabase.ts`.
-7. Verify: Update services/API; `tsc --noEmit`; test queries.
-8. Deploy/PR: `supabase db diff`; include EXPLAIN ANALYZE; merge & `supabase migration up` on prod branch.
+5. Local test: `supabase start`; `db reset`; `migration up`.
+6. Types: `npx supabase gen types typescript --local > types/supabase.ts`.
+7. Update: Services/admin data; `tsc --noEmit`.
+8. Deploy: PR with `supabase db diff`; monitor build time.
 
-### 2. Query Optimization
-1. Identify: Dashboard > Query Performance (top 10); add `console.time('query-chats')` in `app/api/chat/route.ts`.
-2. Profile: SQL editor: `EXPLAIN (ANALYZE, BUFFERS) SELECT ... FROM chats WHERE user_id = 'uuid' ORDER BY created_at DESC LIMIT 20;`.
-3. Fix:
-   - Add indexes via migration (composite: `user_id + created_at DESC`; GIN for JSONB).
-   - Rewrite: Use RPC/views for joins; `.select('slim: id,content')`.
-   - Cache repeats in `lib/services/cache.ts` (Redis).
-4. Benchmark: `wrk -t12 -c400 -d30s http://localhost:3000/api/chat`; target <100ms p95.
-5. Monitor: Post-deploy dashboard; set alerts >300ms; cron Edge Function for anomalies.
+### 2. Query Optimization (e.g., Appointments/Webhooks)
+1. Spot: Dashboard top queries; `console.time` in `appointmentService.ts`.
+2. Profile: `EXPLAIN ANALYZE SELECT * FROM appointments WHERE user_id = 'uuid' ORDER BY created_at DESC LIMIT 20;`.
+3. Optimize: Mig partial index `CREATE INDEX ON appointments (user_id, created_at DESC) WHERE deleted_at IS NULL;`; RPC for joins.
+4. Test: `wrk -t12 -c400 -d30s /api/appointments`; <100ms target.
+5. Monitor: Alerts >200ms; Edge cron for slow webhook queries.
 
-### 3. RLS & Security Audit
-1. Enable RLS: Migration `ALTER TABLE table ENABLE ROW LEVEL SECURITY;`.
-2. Add policies:
-   ```sql
-   -- Select/Insert/Update own rows
-   CREATE POLICY "Own rows" ON table FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-   ```
-3. Test: Dashboard > RLS Policy tester; impersonate users; client queries in incognito.
-4. Audit: New Edge Function `supabase functions new rls_audit`; log violations to `audit_logs`; cron deploy.
+### 3. RLS & Security (Multi-Tenant/Admin)
+1. Enable: `ALTER TABLE webhooks ENABLE RLS;`.
+2. Policies: User-owned + service_role admin.
+3. Test: Dashboard tester; browser devtools impersonate; admin vs user queries.
+4. Audit: New func `rls_check_webhooks`; log to `audit_logs`.
 
-### 4. Postgres/Edge Functions
-1. Create: `supabase functions new complex_user_query`.
-2. Implement `index.ts`:
+### 4. Functions (Webhook Processing)
+1. `supabase functions new update_webhook_config`.
+2. `index.ts`:
    ```ts
-   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-   const { data } = await supabase.rpc('user_chats_with_profiles', { user_id });
+   import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+   import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+   serve(async (req) => {
+     const supabase = createClient(Deno.env.get('SUPABASE_URL'), Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
+     // Logic with WebhookConfig types
+     return new Response(JSON.stringify({ success: true }));
+   });
    ```
-3. Deploy/test: `supabase functions deploy`; call from service: `.rpc()`.
-4. Version: Tag releases; rollback via CLI.
+3. Deploy/call: `.rpc()` from services.
 
-### 5. Seeding, Validation & Backups
-1. Seed: Edit `supabase/seed.sql` with `ON CONFLICT DO NOTHING`; `supabase db reset`.
-2. Validate: Extend `scripts/validate-data.ts`:
+### 5. Seeding/Validation/Backups
+1. Seed: Add webhook samples to `seed.sql`.
+2. Validate: `scripts/validate-webhooks.ts`:
    ```ts
-   const { data: orphans } = await supabase.from('chats').select('id').is('user_id', null);
-   if (orphans?.length) throw new Error(`Found ${orphans.length} orphans`);
+   const { data: invalid } = await supabase.from('webhooks').select('id').not('direction', 'in', ['incoming', 'outgoing']);
+   if (invalid?.length) throw new Error('Invalid directions');
    ```
-   Run: `tsx scripts/validate-data.ts`.
-3. Backup: `supabase db dump -f backup-$(date +%Y%m%d).sql`; enable PITR/dashboard backups.
-4. Restore: `supabase db reset`; `psql -h localhost -d postgres -f backup.sql`.
+3. Backup: `supabase db dump`; PITR enable.
 
-### 6. Real-time & Scaling
-1. Subs: User-filtered only; cleanup: `channel.unsubscribe()` on unmount.
-2. Indexes: Partial `WHERE deleted_at IS NULL`; BRIN for append-only time-series (chats).
-3. Scale: Monitor realtime connections; offload blobs to Storage; read replicas for queries.
+### 6. Real-time/Scaling
+1. Scoped subs: `filter: user_id=eq.${id}`.
+2. Indexes: BRIN time-series; GIN JSONB configs.
+3. Scale: Replicas for reads; Storage for attachments.
 
-## Best Practices (Derived from Codebase)
-- **Security**: RLS on every table post-creation; service_role server-only; validate inputs (zod) before `.insert()`.
-- **Performance**: Index all FKs (`user_id`), sorts (`created_at DESC`), filters; paginate aggressively; RPC for >2 joins/N+1; no `*` selects.
-- **Typing**: `import type { Database } from '@/types/supabase'; type Chat = InferSelectModel<Database['public']['Tables']['chats']>;`.
-- **Resilience**: `.throwOnError()`; `.upsert()` on uniques; exponential backoff retries (5xx); unique violation handling.
-- **Migrations**: Always concurrent ops; full DOWN reversibility; data-loss warnings; test on copy of prod dump.
-- **Testing**: `supabase test db`; e2e via Playwright on API routes; load test with wrk/artillery.
-- **Monitoring/Logging**: Dashboard queries/logs; Vercel Functions metrics; `console.timeEnd()`; custom Edge cron audits.
-- **Conventions**: No app SQL files; services abstract clients; explicit error codes; multi-tenant `user_id` everywhere.
+## Best Practices (Codebase-Derived)
+- **Security**: RLS immediate; dual policies (user/admin); service_role isolated.
+- **Perf**: Composite/partial indexes; explicit `.select()`; RPC > joins; paginate `.range()`.
+- **Typing**: Align with `webhooks-data.ts`; `InferInsertModel`/RPC types.
+- **Resilience**: `.throwOnError()`; `.upsert()`; PGRST error handling.
+- **Migrations**: Concurrent; data-safe DOWN; prod dump tests.
+- **Testing**: `supabase test db`; e2e API; wrk load.
+- **Monitoring**: Dashboard + Vercel; timings everywhere.
+- **Conventions**: Services abstract; admin data types -> DB; no raw SQL in app.
 
 ## Collaboration Checklist
-- [ ] ERD (dbdiagram.io from `supabase db dump --schema-only`).
-- [ ] Before/after benchmarks (EXPLAIN + wrk).
-- [ ] Types regenerated/committed; services/API updated/typed.
-- [ ] Local repro: `supabase start + db reset`.
-- [ ] Prod staging: Deploy migration, monitor 30min (queries, errors).
-- [ ] Risks assessed (e.g., index build time on 20k+ rows).
+- [ ] ERD update (dbdiagram from dump).
+- [ ] Benchmarks (EXPLAIN/wrk).
+- [ ] Types regen/committed; services updated.
+- [ ] Local: `supabase start + reset`.
+- [ ] Staging: Mig deploy, 30min monitor.
+- [ ] Risks: Index times, data vol.
 
 ## Hand-off Template
 ```
-**Changes**: Migration #14 (webhook enum/RLS/indexes); chat query latency -45%.
-**Tested**: Local reset/migration, RLS impersonate, wrk p95<80ms, validate-data.ts.
-**Risks**: Concurrent index build ~90s (est. 50k rows).
-**Next**: Query service RPC for joins.
-**Files Changed**: supabase/migrations/2024..., types/supabase.ts, lib/services/webhookService.ts, app/api/chat/route.ts.
-**Deploy Commands**: supabase migration up; npx supabase gen types; git push.
+**Changes**: Mig #15 (webhook enums/RLS/indexes); appointments latency -50%.
+**Tested**: Reset/mig/RLS/wrk p95<90ms/validate.
+**Risks**: Index ~2min (10k rows).
+**Next**: Webhook RPC optimization.
+**Files**: supabase/migrations/..., types/supabase.ts, lib/services/webhookService.ts, app/(admin)/admin/configuracoes/webhooks/data/.
+**Deploy**: supabase migration up; gen types; push.
 ```

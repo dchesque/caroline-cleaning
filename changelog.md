@@ -2,6 +2,13 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.1.5] - 2026-01-16
+### Changed
+- Atualização abrangente da documentação técnica no diretório `.context/`.
+- Refinamento das diretrizes e especialidades dos agentes AI.
+- Sincronização do Project Overview com as últimas funcionalidades (Tracking v2, Webhooks).
+
+
 ## [2.1.4] - 2026-01-16
 ### Fixed
 - Correção de erro de build devido a chave de tradução ausente (`deactivateError`) no pacote `en-US`.

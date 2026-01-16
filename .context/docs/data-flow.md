@@ -1,8 +1,9 @@
 # Data Flow & Integrations
 
-This document outlines the core data flows in **Carolinas Premium**, a Next.js 14 App Router application using Supabase for persistence, n8n for workflow automation, Carol AI for conversational chat, and an admin dashboard for CRM, scheduling, and finance management. Data enters primarily via chat widgets, admin forms, external webhooks, and API integrations, flows through typed hooks, services, and API routes, persists in Supabase (with realtime subscriptions), and outputs via UI components, exports (Excel/PDF), and notifications.
+This document outlines the core data flows in **Carolinas Premium**, a Next.js 14 App Router application using Supabase for persistence, n8n for workflow automation, Carol AI for conversational chat, and an admin dashboard for CRM, scheduling, and finance management. Data enters primarily via chat widgets, admin forms, external webhooks, and API integrations; flows through typed hooks, services, and API routes; persists in Supabase (with realtime subscriptions); and outputs via UI components, exports (Excel/PDF), and notifications.
 
 ## Key Principles
+
 - **Server-Side Data Fetching**: Use `createClient` from [`lib/supabase/server.ts`](../lib/supabase/server.ts) in Server Components for secure, efficient queries.
 - **Client-Side Interactivity**: Custom hooks (e.g., [`hooks/use-chat.ts`](../hooks/use-chat.ts), [`hooks/use-webhook.ts`](../hooks/use-webhook.ts)) manage state and mutations.
 - **Event-Driven Architecture**: n8n triggers webhooks with typed payloads from [`types/webhook.ts`](../types/webhook.ts).
@@ -48,9 +49,9 @@ graph TD
     AdminLayout["app/(admin)/layout.tsx<br/>AdminLayout"] --> AdminI18n["lib/admin-i18n/context.tsx<br/>AdminI18nProvider"]
 ```
 
-- **Types Hub** ([`types/index.ts`](../types/index.ts)): Central export for 20+ models; used in 30+ files for forms/queries (e.g., `ClienteInsert` in `components/clientes/edit-client-modal.tsx`).
+- **Types Hub** ([`types/index.ts`](../types/index.ts)): Central export for 20+ models; imported in 30+ files for forms/queries (e.g., `ClienteInsert` in `components/clientes/edit-client-modal.tsx`).
 - **Chat Stack**: `useChat` → `Message[]` (`ChatMessage` type); sessions via `lib/chat-session.ts` (`generateSessionId`).
-- **Agenda Stack**: `ViewType` enum in [`components/agenda/calendar-view.tsx`](../components/agenda/calendar-view.tsx) routes to Day/Week/Month views.
+- **Agenda Stack**: `ViewType` enum in [`components/agenda/calendar-view.tsx`](../components/agenda/calendar-view.tsx) routes to Day/Week/Month views; depends on `components/agenda/appointment-modal.tsx` (imported by 8 files).
 - **Shared Utils**: `cn` (classNames), `formatCurrency`/`formatDate` ([`lib/utils.ts`](../lib/utils.ts)); phone/zip formatters ([`lib/formatters.ts`](../lib/formatters.ts)).
 
 ## Service Layer
@@ -59,7 +60,7 @@ graph TD
 |---------------|----------|---------|--------------------------|
 | `WebhookService` | [`lib/services/webhookService.ts`](../lib/services/webhookService.ts) | Validates HMAC (`getWebhookSecret` from [`lib/config/webhooks.ts`](../lib/config/webhooks.ts)), processes `WebhookPayload` variants, inserts/updates Supabase, triggers notifications via `useNotify*` hooks. | Supabase (`createClient`), `Logger`, `getWebhookTimeout`. |
 | `Logger` | [`lib/logger.ts`](../lib/logger.ts) | Structured logs (`LogEntry`, `LogLevel`: info/warn/error). Usage: `const logger = new Logger(); logger.info('Event', { payload });`. | None (singleton). |
-| `BusinessSettings` | [`lib/business-config.ts`](../lib/business-config.ts) | Loads/saves business config (`mapDbToSettings`, `getBusinessSettingsServer`/`getBusinessSettingsClient`, `saveBusinessSettings`). Wrapped in `BusinessSettingsProvider`. | Supabase; used in admin config pages (e.g., `EquipeConfigPage`). |
+| `BusinessSettings` | [`lib/business-config.ts`](../lib/business-config.ts) | Loads/saves business config (`mapDbToSettings`, `getBusinessSettingsServer`/`getBusinessSettingsClient`, `saveBusinessSettings`). Wrapped in `BusinessSettingsProvider`. | Supabase; used in admin config pages (e.g., `ConfiguracoesPage`). |
 
 Services are thin; heavy lifting in API routes, hooks, and Server Components.
 
@@ -122,7 +123,7 @@ sequenceDiagram
     Hooks->>+SB: Log/notify (e.g., NotificationPayload)
 ```
 
-**Supported Events** (`WebhookEventType`):
+**Supported Events** (`WebhookEventType` from [`types/webhook.ts`](../types/webhook.ts)):
 - `chat_message` (`ChatMessagePayload`)
 - Lead: `lead_created`/`updated`/`converted` (`Lead*Payload`)
 - Appointments: `created`/`confirmed`/`completed`/`cancelled`/`rescheduled` (`Appointment*Payload`)
@@ -155,14 +156,16 @@ const { data: clientes } = await supabase
   .returns<Cliente[]>();
 
 // Client Components
-<ClientsFilters onFilter={setFilters} />  // ClientsFiltersProps
-<ClientsTable data={clientes} />         // ClientsTableProps, EditClientModal
+<ClientsFilters onFilter={setFilters} />
+<ClientsTable data={clientes} />
 ```
 
-- **Agenda**: `AgendaPage` → `CalendarView` (fetches `Agendamento[]`).
-- **Financeiro**: `transaction-form.tsx` (TransactionFormProps) → `Financeiro` inserts; `expense-categories.tsx`.
+- **Agenda**: `AgendaPage` → `CalendarView` (fetches `Agendamento[]` via `AgendaHoje`).
+- **Financeiro**: `transaction-form.tsx` (`TransactionFormProps`) → `Financeiro` inserts; `category-quick-form.tsx`, `expense-categories.tsx`.
 - **Analytics**: `ClientesAnalyticsPage`, `ConversionFunnel` → `DashboardStats`.
-- **Exports**: `exportToExcel(clientes)` or `exportToPDF()` from tables.
+- **Exports**: `exportToExcel(clientes)` or `exportToPDF()` from tables ([`lib/export-utils.ts`](../lib/export-utils.ts)).
+
+**Config Pages**: `ConfiguracoesPage` → Webhooks tabs (`webhooks-tabs.tsx` imported by 6 files), using `WebhookConfig`/`WebhookField`.
 
 ### 4. Authentication & Sessions
 Middleware + actions secure routes.
@@ -184,38 +187,39 @@ sequenceDiagram
     end
 ```
 
-- Utils: `getUser`, `signOut` ([`lib/actions/auth.ts`](../lib/actions/auth.ts)).
+- Utils: `getUser`, `signOut` ([`lib/actions/auth.ts`](../lib/actions/auth.ts)); `AdminLayout`, `AuthLayout`.
 
 ## External Integrations
 
 | Integration | Direction | Auth/Config | Payloads | Error Handling |
 |-------------|-----------|-------------|----------|----------------|
-| **Supabase** | Bi-directional | Service Role (server.ts), Anon (client.ts) | `ClienteInsert`, `AgendamentoUpdate`, realtime `MensagemChat` | Typed `returns<T[]>`, `Logger.error`, toasts. |
-| **n8n** | Inbound webhooks | HMAC (`getWebhookSecret`), timeout (`getWebhookTimeout`) | `IncomingWebhookPayload` → `WebhookPayload` | 401 Unauthorized, 408 Timeout + log. |
-| **Carol AI** | Outbound (chat/actions) | `/api/carol/query` (QueryPayload), `/api/carol/actions` (ActionPayload) | Streaming responses | Client retry (`reload` in `useChat`). |
+| **Supabase** | Bi-directional | Service Role (`server.ts`), Anon (`client.ts`) | `ClienteInsert`, `AgendamentoUpdate`, realtime `MensagemChat` | Typed `returns<T[]>`, `Logger.error`, toasts. |
+| **n8n** | Inbound webhooks | HMAC (`getWebhookSecret`), timeout (`getWebhookTimeout`) from [`lib/config/webhooks.ts`](../lib/config/webhooks.ts) | `IncomingWebhookPayload` → `WebhookPayload` | 401 Unauthorized, 408 Timeout + log. |
+| **Carol AI** | Outbound (chat/actions) | `/api/carol/query` (`QueryPayload`), `/api/carol/actions` (`ActionPayload`) | Streaming responses | Client retry (`reload` in `useChat`). |
 | **Stripe/Calendly** | Inbound via n8n | n8n workflows | Event payloads → `PaymentReceivedPayload`, `Appointment*Payload` | n8n retries. |
 | **Exports** | Client-side | jsPDF (`exportToPDF`), SheetJS (`exportToExcel`) | Table data (`DashboardStats`, `Cliente[]`) | Browser-only; fallback CSV. |
 
-**Outbound Webhooks**: `sendWebhookAction` ([`lib/actions/webhook.ts`](../lib/actions/webhook.ts)) for custom events.
+**Outbound Webhooks**: `sendWebhookAction` ([`lib/actions/webhook.ts`](../lib/actions/webhook.ts)) for custom events; config in `app/(admin)/admin/configuracoes/webhooks/*`.
 
 ## Observability & Reliability
 
 - **Logging**: Ubiquitous `Logger` (e.g., API routes: `logger.error(err, { userId, payload })`).
 - **Health Checks**: `GET /api/health`, `/api/ready`, `/api/slots`.
 - **Common Errors**:
-  | Scenario | Response | Mitigation |
-  |----------|----------|------------|
-  | Webhook auth fail | 401 + log | Verify `getWebhookSecret`. |
-  | DB constraint violation | 500 + toast | Validate forms client-side. |
-  | Rate limit | 429 | Exponential backoff. |
-  | Chat stream timeout | Fallback message | `useChat` reload(). |
 
-**Monitoring**: Supabase Logs, console tail, integrate Sentry. Paginate queries (`limit: 50, offset`).
+| Scenario | Response | Mitigation |
+|----------|----------|------------|
+| Webhook auth fail | 401 + log | Verify `getWebhookSecret`. |
+| DB constraint violation | 500 + toast | Validate forms client-side (`isValidPhoneUS`, `isValidEmail`). |
+| Rate limit | 429 | Exponential backoff (`rateLimit`). |
+| Chat stream timeout | Fallback message | `useChat` `reload()`. |
+
+**Monitoring**: Supabase Logs, console tail, integrate Sentry. Paginate queries (`limit: 50, offset`); indexes on `created_at`, `cliente_id`.
 
 ## Developer Best Practices
 
-1. **Extend Events**: Add to `WebhookEventType`/`types/webhook.ts` → handler in `WebhookService` → `useNotifyNewEvent` hook.
-2. **New Mutations**: POST to `/api/notifications/send` (NotificationPayload) or direct Supabase in actions.
+1. **Extend Events**: Add to `WebhookEventType` → handler in `WebhookService` → `useNotifyNewEvent` hook.
+2. **New Mutations**: POST to `/api/notifications/send` (`NotificationPayload`) or direct Supabase in actions.
 3. **Queries**: Always `.returns<Cliente[]>()`; use `eq`, `ilike` filters.
 4. **Testing**:
    ```bash
@@ -224,7 +228,7 @@ sequenceDiagram
      -H "Authorization: sha256=$(echo -n '{"type":"chat_message"}' | openssl dgst -sha256 -hmac $WEBHOOK_SECRET | cut -d' ' -f2)" \
      -H "Content-Type: application/json" -d '{"type":"chat_message", "payload":{...}}'
    ```
-5. **Performance**: RSC `cache: 'force-cache'`, Supabase indexes on `created_at`, `cliente_id`; paginate tables.
-6. **New Components**: Follow patterns (props interfaces, `cn` for styling); analyze with repo tools.
+5. **Performance**: RSC `cache: 'force-cache'`, Supabase indexes; paginate tables.
+6. **New Components**: Follow patterns (props interfaces, `cn` for styling); e.g., `CategoryQuickFormProps`.
 
-See [Public API](../) for all 284+ exports/symbols. Update this doc via PRs.
+See [Public API](../) for all 284+ exports/symbols (e.g., `useNotifyAppointmentCreated`, `ClientsFilters`). Update this doc via PRs.

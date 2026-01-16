@@ -1,156 +1,158 @@
 # Bug Fixer Agent Playbook
 
 ## Mission
-Diagnose, reproduce, and resolve bugs in this Next.js 14+ TypeScript app (183 files, 284 symbols: 137 `.tsx` UI components, 44 `.ts` logic/API routes, 2 `.mjs`). Prioritize high-impact issues: UI hydration mismatches, API 500s/400s (validation/DB failures), webhook payload errors (N8N), formatting crashes (currency/phone/email), and Supabase auth/timeouts. Deliver precise, minimal fixes (1-5 lines where possible) using codebase conventions: `cn()` for Tailwind, `formatCurrencyUSD()`/`isValidPhoneUS()` for inputs, `createClient(cookies())` for Supabase, `WebhookService` for integrations. Always verify with tests, linting, and repro; ensure zero regressions.
+Diagnose, reproduce, and fix bugs in this Next.js 14+ TypeScript app (183 files, ~300 symbols across layers). Focus on high-risk areas: Utils (formatting/validation crashes), Controllers (API 500s/400s from missing validation/try-catch), Services (webhook orchestration), UI hydration/re-renders, and Supabase/DB issues. Apply minimal, convention-matching fixes: reuse `cn()` for styles, `isValid*()` guards for inputs, structured logging, `try/catch` in handlers. Always repro locally (`npm run dev`), verify with tests/lint (`npm test && npm run lint -- --fix`), and ship with repro steps + conventional commits (`fix(api/slots): guard invalid dates`).
 
 ## Responsibilities
-- **Triage Bugs**: Categorize by layer (Utils/UI/API/Services/DB) from logs/stack traces/user reports.
-- **Reproduce Locally**: `npm run dev`; browser console, Network tab, Supabase dashboard, Vercel logs.
-- **Root Cause**: Trace call stacks: UI hooks → API handlers → services/utils → Supabase.
-- **Fix Safely**: Add validation, try/catch, logging; reuse exports; no breaking changes.
-- **Verify Thoroughly**: Unit/integration tests, manual edges (null/empty/invalid), `npm run lint -- --fix`, `npm test`.
-- **Document & Ship**: Inline comments, conventional commit (`fix(api/contact): add phone validation`), PR with repro steps/tests.
+- **Triage**: Classify by layer (Utils/Services/Controllers/UI/DB) using logs, stack traces, or user reports.
+- **Reproduce**: Local dev server, browser devtools (Console/Network), Supabase dashboard, Vercel logs, curl/Postman for APIs.
+- **Root Cause Analysis**: Trace stacks: UI → API routes → services/utils → Supabase/DB.
+- **Fix**: 1-3 line patches where possible; add guards/logging; no new deps or refactors.
+- **Verify**: Unit tests (mock utils/Supabase), edge cases (null/empty/invalid), full CI (`npm test -- --coverage`).
+- **Document/Ship**: Inline `// FIX: [desc] (repro: [steps])`; PR with diff/tests/logs.
 
 ## Core Focus Areas
-Target layers by bug frequency/risk (derived from 284 symbols: 43 Utils, 44 Controllers, 2 Services, 137 UI):
+Prioritize by layer, bug frequency, and symbol density (284 total symbols: 55 Utils, 50+ Controllers, 2 Services).
 
-| Layer | Key Directories/Files | Symbols/Handlers (Count) | Common Bug Types | Risk Level |
-|-------|-----------------------|---------------------------|------------------|------------|
-| **Utils** | `lib/utils.ts`, `lib/formatters.ts`, `lib/supabase/*`, `lib/config/*`, `lib/actions/*`, `lib/context/*`, `lib/admin-i18n/*` | `cn`, `formatCurrency`, `formatDate`, `formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `formatCurrencyInput`, `parseCurrency` (43 total) | Input crashes (NaN/undefined), display mismatches | **High** |
-| **Controllers (API)** | `app/api/slots/route.ts`, `app/api/ready/route.ts`, `app/api/pricing/route.ts`, `app/api/health/route.ts`, `app/api/contact/route.ts`, `app/api/chat/route.ts`, `app/api/financeiro/categorias/route.ts`, `app/api/webhook/n8n/route.ts`, `app/api/notifications/send/route.ts`, `app/api/config/public/route.ts`, `app/api/chat/status/route.ts`, `app/api/carol/query/route.ts`, `app/api/carol/actions/route.ts`, `app/api/financeiro/categorias/[id]/route.ts` | `GET`/`POST` handlers (44 total) | 500s (no try/catch), payload parse fails, validation gaps | **High** |
-| **Services** | `lib/services/webhookService.ts`, `components/landing/*`, `components/agenda/appointment-form/*` | `WebhookService` (2 total, 85% service pattern confidence) | Payload mismatches, orchestration errors | **Medium** |
-| **UI** | `components/*`, `app/(admin)/*`, `app/(public)/*` (.tsx: 137 files) | React hooks, forms, shadcn/ui | Hydration warnings, re-render loops, form state | **High** |
-| **Config/DB** | `lib/env.ts`, `lib/supabase/server.ts`/`client.ts`, `supabase/migrations/*` | Env vars, RLS policies | Auth 403s, timeouts, schema constraints | **Medium** |
+| Layer | Directories/Files | Key Symbols/Handlers (Count) | Common Bugs | Risk |
+|-------|-------------------|------------------------------|-------------|------|
+| **Utils** | `lib/utils.ts`, `lib/formatters.ts`, `lib/tracking/*`, `lib/supabase/*`, `lib/config/*`, `lib/admin-i18n/*`, `lib/actions/*`, `lib/context/*` | `cn`, `formatCurrency`, `formatDate`, `formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `formatCurrencyInput`, `parseCurrency` (55 total) | NaN/undefined in formatting, invalid input crashes, Tailwind class loss | **High** |
+| **Controllers (API)** | `app/api/slots/route.ts`, `app/api/ready/route.ts`, `app/api/profile/route.ts`, `app/api/pricing/route.ts`, `app/api/health/route.ts`, `app/api/contact/route.ts`, `app/api/chat/route.ts`, `app/api/webhook/n8n/route.ts`, `app/api/tracking/event/route.ts`, `app/api/tracking/config/route.ts`, `app/api/profile/password/route.ts`, `app/api/notifications/send/route.ts`, `app/api/financeiro/categorias/route.ts`, `app/api/config/public/route.ts`, `app/api/carol/query/route.ts`, `app/api/carol/actions/route.ts`, `app/api/chat/status/route.ts`, `app/api/financeiro/categorias/[id]/route.ts` | `GET`/`POST`/`PUT` handlers (50 total) | Payload parse fails, no validation (400s), unhandled exceptions (500s), missing `req.json()` | **High** |
+| **Services** | `lib/services/webhookService.ts`, `components/landing/*`, `components/agenda/appointment-form/*` | `WebhookService` (2 total, 85% service pattern match) | Payload mismatches, unvalidated orchestration, integration timeouts | **Medium** |
+| **UI/DB/Config** | `components/*` (.tsx), `lib/supabase/*`, `lib/env.ts`, `supabase/migrations/*` | Hooks/forms, `createClient(cookies())` | Hydration mismatches, auth 403s, env/schema constraints | **Medium** |
 
-**Hotspots**:
-- API routes: Missing `await req.json()` or validation → 500s.
-- Formatters: Raw inputs to `formatCurrencyUSD(parseCurrency(raw))` without `isValid*`.
-- Webhooks: `app/api/webhook/n8n/route.ts` + `WebhookService` payload types.
+**Hotspots** (search-derived):
+- API routes: 50+ handlers lack consistent `try/catch` or `isValid*()`.
+- Utils: Formatting chains crash on raw/unguarded inputs.
+- Webhooks: `app/api/webhook/n8n/route.ts` → `WebhookService` payload handling.
 
-## Best Practices (Codebase-Derived)
-- **Error Handling Pattern** (in all API routes/services):
-  ```ts
-  try {
-    const payload = await req.json();
-    // Validate: if (!isValidEmail(payload.email)) → NextResponse.json({ error: 'Invalid email', code: 400 }, { status: 400 })
-    // Business logic
-    return NextResponse.json({ success: true, data });
-  } catch (error) {
-    console.error({ endpoint: __filename, payload: req.body?.toString(), error: error.message });
-    return NextResponse.json({ error: 'Internal server error', code: 500 }, { status: 500 });
-  }
-  ```
-- **Validation/Formatting** (reuse utils, no custom regex):
-  | Use Case | Utils Chain | Example |
-  |----------|-------------|---------|
-  | Phone | `isValidPhoneUS(raw) ? formatPhoneUS(raw) : ''` | Forms/UI display |
-  | Email | `isValidEmail(email)` | API POST guards |
-  | Currency | `formatCurrencyUSD(parseCurrency(raw))` | Pricing/contact |
-  | Tailwind | `cn('btn', isError && 'border-red-500')` | Conditional styles |
-- **Supabase**: Server-side: `createClient(cookies())` from `lib/supabase/server.ts`; always auth-aware.
-- **API Route Skeleton** (match existing 44 handlers):
+## Best Practices (Codebase Conventions)
+- **API Handler Skeleton** (match 50 controllers):
   ```ts
   import { NextRequest, NextResponse } from 'next/server';
-  import { isValidPhoneUS, isValidEmail } from '@/lib/formatters';
-  // service imports...
+  import { cn } from '@/lib/utils'; // If UI-related
+  import { isValidEmail, isValidPhoneUS } from '@/lib/formatters';
+  import { WebhookService } from '@/lib/services/webhookService'; // As needed
 
-  export async function POST(req: NextRequest) { /* pattern above */ }
-  ```
-- **UI Fixes**: Use `useEffect` for client-only; `'use client';` directive; `React.useMemo` for heavy computes.
-- **Logging**: Structured `console.error({ endpoint, payload, error })`; no `console.log` in prod paths.
-- **TS Strict**: No `any`; extend `types/index.ts` for payloads.
-- **Testing**: Jest patterns (if present); mock Supabase/utils; `expect(fn(invalid)).toThrow()`.
-
-## Key Files and Purposes
-### Utils Layer (Core Helpers, 43 symbols)
-| File | Purpose | Bug Fixes |
-|------|---------|-----------|
-| `lib/utils.ts` | Tailwind merge (`cn`), date/currency basics | Add `cn` to conditional classes; prevent style loss |
-| `lib/formatters.ts` | Phone/email/currency parsing/display/validation | Guard calls: `if (!isValidPhoneUS(phone)) return early` |
-| `lib/supabase/server.ts` / `client.ts` | Auth clients (`createClient(cookies())` / public) | Fix 403s: Ensure cookies in server calls |
-| `lib/config/*` | Env/config loaders | Add `zod` validation for missing vars |
-| `lib/services/webhookService.ts` | `WebhookService` class (payload handling) | Type payloads; add `process()` validation |
-
-### Controllers (API Routes, 44 handlers)
-| Endpoint | File | Purpose | Fixes |
-|----------|------|---------|-------|
-| Slots | `app/api/slots/route.ts` (GET) | Availability slots | Pagination, timeout handling |
-| Ready/Health | `app/api/ready/route.ts` (GET), `app/api/health/route.ts` (GET) | Checks | Supabase ping + env |
-| Pricing | `app/api/pricing/route.ts` (GET) | Prices | `formatCurrencyUSD` everywhere |
-| Contact | `app/api/contact/route.ts` (POST) | Submissions | `isValidEmail/phone` + spam check |
-| Chat | `app/api/chat/route.ts` (POST), `app/api/chat/status/route.ts` (GET) | Messaging | Session validation |
-| Financeiro | `app/api/financeiro/categorias/route.ts` (GET/POST), `[id]/route.ts` | CRUD | DB upserts + constraints |
-| Webhook | `app/api/webhook/n8n/route.ts` (POST) | N8N payloads | `new WebhookService().handle(req)` + try/catch |
-| Notifications | `app/api/notifications/send/route.ts` (POST) | Sends | Rate limit, queue |
-| Carol | `app/api/carol/query/route.ts` (GET), `actions/route.ts` (POST) | AI ops | Prompt sanitization |
-| Config | `app/api/config/public/route.ts` (GET) | Public data | Safe exposure (no secrets) |
-
-### Other Essentials
-- `types/index.ts`: Payload interfaces (extend for fixes).
-- `lib/env.ts`: Var validation (add schemas).
-- Test files: `*.test.ts` (add units for utils/formatters).
-
-## Bug Fixing Workflow
-### 1. Triage & Repro (5 min)
-1. Parse report/logs: UI? (`hydration mismatch`); API? (`500 at /api/chat`); Utils? (`NaN in formatCurrency`).
-2. Tools: `listFiles('app/api/**/route.ts')`; `searchCode('formatPhoneUS')`; `readFile('lib/formatters.ts')`; `analyzeSymbols('app/api/webhook/n8n/route.ts')`.
-3. Repro: `npm run dev`; curl/Postman for APIs; inspect console/Network.
-
-### 2. Analyze Root Cause (10 min)
-| Bug Type | Trace Path | Check |
-|----------|------------|-------|
-| Hydration/UI | `.tsx` → hooks | `useEffect` deps; `'use client'` |
-| API 500/400 | `route.ts` → services/utils | Missing `try/await req.json()`; no validation |
-| Formatting Crash | Utils calls | Raw input sans `isValid*` |
-| DB/Auth | Supabase calls | `cookies()` missing; RLS |
-| Webhook Fail | `/n8n` → `WebhookService` | Payload shape mismatch |
-
-### 3. Fix (10 min)
-- **API Validation** (e.g., contact):
-  ```ts
-  // In app/api/contact/route.ts POST
-  const { email, phone } = await req.json();
-  if (!isValidEmail(email) || !isValidPhoneUS(phone)) {
-    return NextResponse.json({ error: 'Invalid email or phone' }, { status: 400 });
+  export async function POST(req: NextRequest) {
+    try {
+      const payload = await req.json();
+      // Validate
+      if (!isValidEmail(payload.email)) return NextResponse.json({ error: 'Invalid email' }, { status: 400 });
+      // Logic (e.g., new WebhookService().process(payload))
+      return NextResponse.json({ success: true, data: formatCurrencyUSD(payload.amount) });
+    } catch (error) {
+      console.error({ endpoint: __filename, payload: await req.text(), error: error.message });
+      return NextResponse.json({ error: 'Server error', code: 500 }, { status: 500 });
+    }
   }
   ```
-- **UI Formatter** (e.g., form):
-  ```tsx
-  const formattedPhone = isValidPhoneUS(phone) ? formatPhoneUS(phone) : '';
-  <Input className={cn('w-full', !isValidPhoneUS(phone) && 'border-destructive')} value={formattedPhone} />
-  ```
-- **Service/Webhook**:
+- **Utils Usage** (guard chains):
+  | Input | Guard + Format | Fallback |
+  |-------|----------------|----------|
+  | Phone | `isValidPhoneUS(raw) ? formatPhoneUS(raw) : ''` | `''` |
+  | Email | `isValidEmail(email)` | Early 400 return |
+  | Currency | `formatCurrencyUSD(parseCurrency(rawInput))` | `'$0.00'` on NaN |
+  | Styles | `cn('base-class', condition && 'variant-red')` | Always wrap conditionals |
+- **Supabase**: `import { createClient } from '@/lib/supabase/server'; createClient(cookies())` (server); public client for UI.
+- **Services**: Instantiate `new WebhookService()`; add `validatePayload(payload)` if missing.
+- **Error Logging**: `{ endpoint: __filename, payload: await req.text(), error }` (structured, no prod logs).
+- **UI**: `'use client';`, `useEffect` for client-side, `React.useMemo` for computes.
+- **TS**: No `any`; infer from utils; extend `types/index.ts` for payloads.
+- **Lint/Test**: ESLint/Prettier auto-fix; Jest mocks for Supabase/utils.
+
+## Key Files and Purposes
+### Utils (55 symbols, shared helpers)
+| File | Purpose | Common Fixes |
+|------|---------|--------------|
+| `lib/utils.ts` | `cn()` Tailwind merge, base formatters | Wrap conditional classes: `cn('btn', error && 'border-red-500')` |
+| `lib/formatters.ts` | Phone/email/currency validation + display | Add guards: `if (!isValidPhoneUS(phone)) return NextResponse.json({ error }, { status: 400 });` |
+| `lib/supabase/server.ts` / `client.ts` | Auth-aware clients | Ensure `cookies()` in server calls; fix 403s |
+| `lib/services/webhookService.ts` | `WebhookService` for N8N payloads | `service.process(await req.json())` in try/catch; add type checks |
+| `lib/config/*`, `lib/tracking/*` | Env loaders, event tracking | Zod guards for missing vars; payload logging |
+
+### Controllers (50+ handlers)
+| Endpoint | File | Purpose | Fixes |
+|----------|------|---------|-------|
+| Slots | `app/api/slots/route.ts` (GET) | Availability | Date validation + `formatDate` |
+| Profile | `app/api/profile/route.ts` (GET/PUT), `app/api/profile/password/route.ts` (?) | User data | Auth + `isValidEmail/phone` |
+| Pricing | `app/api/pricing/route.ts` (GET) | Prices | `formatCurrencyUSD` guards |
+| Health/Ready | `app/api/health/route.ts` (GET), `app/api/ready/route.ts` (GET) | Status checks | Supabase ping + env checks |
+| Contact/Chat | `app/api/contact/route.ts` (POST), `app/api/chat/route.ts` (POST), `app/api/chat/status/route.ts` (GET) | Forms/messaging | Input validation + sessions |
+| Webhook N8N | `app/api/webhook/n8n/route.ts` (POST) | Integrations | `WebhookService` + payload parse |
+| Tracking | `app/api/tracking/event/route.ts` (POST), `app/api/tracking/config/route.ts` (?) | Events | Structured logging |
+| Financeiro | `app/api/financeiro/categorias/route.ts`, `[id]/route.ts` | Categories CRUD | DB constraints + upserts |
+| Notifications | `app/api/notifications/send/route.ts` (POST) | Sends | Rate limits |
+| Carol | `app/api/carol/query/route.ts` (GET), `actions/route.ts` (POST) | AI queries/actions | Prompt/email validation |
+| Config | `app/api/config/public/route.ts` (GET) | Public config | No secrets exposure |
+
+### Other
+- `types/index.ts`: Extend for API payloads (e.g., `interface ContactPayload { email: string; phone: string; }`).
+- `lib/env.ts`: Zod schemas for env vars.
+- Tests: `*.test.ts` (add for utils: `expect(isValidPhoneUS('invalid')).toBe(false)`).
+
+## Bug Fixing Workflow
+### 1. Triage & Repro (5-10 min)
+1. Categorize: Utils (format crash)? Controllers (500 log)? Services (webhook fail)?
+2. Tools: `listFiles('app/api/**/route.ts')`; `searchCode('formatPhoneUS|isValid')`; `readFile('app/api/contact/route.ts')`; `analyzeSymbols('lib/formatters.ts')`.
+3. Repro: `npm run dev`; `curl -X POST http://localhost:3000/api/contact -d '{"email":"bad"}'`; check console/Network/Supabase.
+
+### 2. Root Cause (10 min)
+| Symptom | Likely Layer/Path | Diagnostic |
+|---------|-------------------|------------|
+| `SyntaxError` / 500 | Controllers | Missing `await req.json()` / try-catch |
+| `NaN` / Crash | Utils | Unguarded `parseCurrency(formatCurrency(raw))` |
+| Hydration | UI → Utils | Client/server format mismatch; fix with `useEffect` |
+| 403/Auth | Supabase via Controllers | No `cookies()` |
+| Payload Mismatch | Services/Webhook | `WebhookService` expects wrong shape |
+
+### 3. Implement Fix (5-15 min)
+- **Validation Example** (Controllers/Utils):
   ```ts
-  // In webhookService.ts or route
+  // app/api/contact/route.ts
+  const { phone } = await req.json();
+  if (!isValidPhoneUS(phone)) {
+    return NextResponse.json({ error: 'Invalid phone' }, { status: 400 });
+  }
+  ```
+- **Formatting/UI**:
+  ```tsx
+  // components/form.tsx
+  const displayPhone = React.useMemo(() => isValidPhoneUS(phone) ? formatPhoneUS(phone) : '', [phone]);
+  <Input className={cn("w-full", !isValidPhoneUS(phone) && "border-red-500")} value={displayPhone} />
+  ```
+- **Service**:
+  ```ts
+  // app/api/webhook/n8n/route.ts
   const service = new WebhookService();
-  service.validatePayload(payload); // Add if missing
+  await service.process(await req.json()); // Wrap in try/catch if missing
   ```
 
 ### 4. Verify (10 min)
-1. Add test: `__tests__/formatters.test.ts` → `test('invalid phone', () => expect(() => formatPhoneUS('invalid')).not.toThrow());`.
-2. `npm test`; `npm run lint -- --fix`; `npm run format`.
-3. Manual: Valid/invalid/edge (null, '', max length); browser + curl.
-4. Coverage: `npm test -- --coverage`.
+1. Write test: `test/formatters.test.ts` → `test('guards invalid phone', () => { expect(isValidPhoneUS('abc')).toBe(false); });`.
+2. Run: `npm test`, `npm run lint -- --fix`, manual edges (null, '', '9999999999').
+3. Coverage: Ensure >80% on fixed paths; browser + API curl.
 
 ### 5. Ship (5 min)
-- Comment: `// FIX: Guard formatPhoneUS with isValidPhoneUS (fixes #123, repro: invalid input crash)`.
-- Commit: `fix(api/contact): add input validation + tests`.
-- PR: Repro GIF/logs, before/after, tests passed.
+- Inline: `// FIX: Add isValidPhoneUS guard (fixes input crash, repro: curl bad phone)`.
+- Commit: `fix(api/contact): validate phone + add test`.
+- PR: Repro steps/logs, test results, "zero regressions".
 
-## Common Bugs & Templates
-| Bug | Symptom | Fix Template |
-|-----|---------|--------------|
-| Payload Parse | `SyntaxError: Unexpected token` | `try { const p = await req.json(); } catch { return 400; }` |
-| Invalid Format | `NaN` display | `isValid*` guard + fallback `''` |
-| No Styles | Missing classes | `cn(baseClasses, variant ? 'mod' : '')` |
-| Supabase 403 | Auth fail | `createServerClient(cookies())` |
-| Webhook 400 | N8N fail | `WebhookService.process(await req.json())` in try/catch |
+## Common Bugs & Quick Templates
+| Bug | Symptom | Template |
+|-----|---------|----------|
+| Parse Fail | `Unexpected token` | `try { await req.json() } catch { return NextResponse.json({}, {status:400}) }` |
+| Format Crash | `NaN` / undefined | `isValid*() ? format*() : fallback` |
+| Missing Styles | No Tailwind | `cn('base', cond && 'mod')` |
+| Webhook 500 | N8N error | `new WebhookService().process(payload)` + logging |
+| Auth Fail | 403 | `createClient(cookies())` |
 
-## Tool Usage
-- **Discovery**: `getFileStructure()`; `listFiles('lib/**.ts')`.
-- **Deep Dive**: `readFile('app/api/chat/route.ts')`; `analyzeSymbols('lib/utils.ts')`.
-- **Patterns**: `searchCode('cn\\(')` for Tailwind usage.
+## Tool Usage Guidelines
+- **Overview**: `getFileStructure()`; `listFiles('app/api/**/*.ts')`.
+- **Symbols**: `analyzeSymbols('lib/utils.ts')` for utils calls.
+- **Patterns**: `searchCode('req\\.json\\(\\)')` (missing awaits); `searchCode('cn\\(')` (styles).
+- **Deep**: `readFile('app/api/webhook/n8n/route.ts')`.
 
 ## Escalation
-- Cross-layer (e.g., schema): Ping team; add `TODO: [issue]`.
-- Post-PR: Monitor Vercel logs 30min; update `CHANGELOG.md`.
+- DB schema/RLS: Document `TODO: Update migration`; notify team.
+- Regressions post-ship: Monitor Vercel logs; hotfix PR.

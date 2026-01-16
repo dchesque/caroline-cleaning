@@ -1,170 +1,186 @@
 # Code Reviewer Agent Playbook
 
 ## Mission
-Ensure elite code quality across the Carolinas Premium repository—a Next.js 14 App Router TypeScript application (183 files: 44 `.ts`, 137 `.tsx`, 2 `.mjs`; 284 symbols) managing salon operations. Core features include AI chat (Carol via `app/api/carol/*`), admin dashboards (clients, agenda, financeiro), Supabase backend, N8n webhooks (`lib/services/webhookService.ts`), notifications, and shadcn/ui landing pages. Review PRs, commits to `main`/`develop`/feature branches, and hotfixes. Enforce layered architecture (Utils → Services → Controllers → Components), strict TypeScript, security (RLS, webhook secrets/validation), performance (memoization, query optimization), and UX (mobile-first responsive design, formatters). High-priority: webhook payloads (15+ types in `types/webhook.ts`), Supabase queries (`types/supabase.ts`), API routes (44 exported handlers), utils (43 symbols like `cn`, formatters).
+Maintain elite code quality in the Caroline Cleaning repository—a Next.js 14 App Router TypeScript app with Supabase integration, N8n webhooks, AI chat (Carol), admin dashboards (agenda, financeiro, clients), tracking, notifications, and shadcn/ui components. Review PRs, commits to `main`/`develop`/feature branches, and hotfixes. Enforce layered architecture (**Utils** → **Services** → **Controllers** → **Components**), strict TypeScript (no `any`), security (webhook validation/RLS/secrets), performance (memoization/server components), and UX (responsive formatters/mobile-first). Prioritize: webhook ecosystem (`types/webhook.ts` 15+ payloads, `WebhookService`), API routes (50+ handlers like `GET`/`POST`), utils (55 symbols: `cn`, formatters), Supabase types, tracking (`lib/tracking/`).
 
 ## Responsibilities
-- **Type Safety/Syntax**: No `any`/`unknown` abuse; exhaustive TS; ESLint/Prettier; `analyzeSymbols` for new exports.
-- **Conventions**: Mandatory `cn` for Tailwind; formatters (`formatCurrencyUSD`, `formatPhoneUS`, `isValidEmail`); `Logger` with context in all services/controllers.
-- **Security**: Validate all payloads (e.g., `IncomingWebhookPayload`, Zod preferred); Supabase RLS; webhook secrets (`x-n8n-secret`); no secrets in code/logs.
-- **Architecture**: Utils pure/no side-effects; Services orchestrate (class-based, 85% pattern: `WebhookService`); Controllers thin (export `GET`/`POST`, delegate); Components reactive.
-- **Performance**: `useMemo`/`useCallback` for lists/forms; `useTransition`; Server Components; avoid re-renders (`searchCode('useEffect.*\[\]')`).
-- **UX/Accessibility**: Mobile-first `cn('text-sm md:text-base')`; ARIA labels; formatters in inputs/displays; shadcn/ui consistency.
-- **Testing/Docs**: No tests detected—mandate Vitest for utils/services; JSDoc; update `types/`; repro steps for bugs.
-- **Feedback Format**: Severity-prefixed, line-specific, diff-based fixes:
+- **Type Safety**: Exhaustive unions/discriminated payloads; `analyzeSymbols` for new exports; no `any`/`unknown`.
+- **Conventions**: `cn` for Tailwind; formatters everywhere (`formatPhoneUS`, `isValidEmail`, `formatCurrencyUSD`); `Logger` with structured `LogEntry` in services/controllers.
+- **Security**: Zod/runtime validation for payloads (e.g., `WebhookOptions`); `x-n8n-secret` checks; RLS on Supabase (`Database`); no secrets/logs exposure.
+- **Architecture**: Utils pure (no side-effects); Services class-based orchestration (`WebhookService.process()`); Controllers thin/delegate; Components reactive/shadcn.
+- **Performance**: `useMemo`/`useCallback`/`useTransition`; Server Components; optimize Supabase queries; scan re-renders via `searchCode('useEffect.*\[\]')`.
+- **UX/Accessibility**: Mobile-first `cn('text-sm md:text-base')`; ARIA; formatters in forms/displays (e.g., `formatCurrencyInput`).
+- **Testing/Docs**: Mandate Vitest (utils/services); JSDoc; extend `types/`; repro steps.
+- **Feedback Format**: Severity + file:line + diff:
   ```
   🚫 Blocker: lib/services/webhookService.ts#L35
-  Unhandled payload variant.
+  Missing exhaustive switch for AppointmentCancelledPayload.
   ```ts
-  + import { AppointmentCreatedPayload } from '@/types/webhook';
-  + if (payload.type === 'appointment_created') { ... }
+  + case 'appointment_cancelled':
+  +   return this.handleAppointmentCancelled(payload as AppointmentCancelledPayload);
   ```
 
 ## Activation Triggers
-- Changes in: `app/api/` (44 symbols), `lib/services/`, `lib/utils.ts`/`formatters.ts`, `types/webhook.ts`, `hooks/`, `components/` (137 `.tsx`).
-- Tools workflow: `getFileStructure` → `listFiles('**/*.{ts,tsx,mjs}')` → `readFile(changedFiles)` → `analyzeSymbols(file)` → `searchCode('any|console\.log|supabase\.select\*\(|WebhookService')`.
-- Post-merge: Regression scan via `searchCode` on high-risk patterns.
+- Changes in: `app/api/` (controllers: slots/ready/profile/pricing/health/contact/chat/webhook/n8n/...), `lib/` (utils/services/tracking/supabase/config), `types/` (webhook/supabase), `hooks/` (use-webhook/use-chat), `components/` (agenda/appointment-form, tracking).
+- Tools: `getFileStructure` → `listFiles('**/*.{ts,tsx}')` → `readFile(changed)` → `analyzeSymbols(file)` → `searchCode('WebhookService|supabase|any|Logger|cn|format')`.
+- Post-merge: Scan regressions (`searchCode('payload\.type|process\.env')`).
 
 ## Key Areas of Focus
 
 | Area | Directories/Files | Focus Checklist |
 |------|-------------------|-----------------|
-| **Utils** (43 symbols) | `lib/utils.ts` (`cn`, `formatCurrency`, `formatDate`), `lib/formatters.ts` (`formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`/`isValidEmail`, `formatCurrencyUSD`/`formatCurrencyInput`/`parseCurrency`), `lib/logger.ts` (`Logger`), `lib/supabase/`, `lib/config/`, `lib/admin-i18n/`, `lib/actions/`, `lib/context/`, `lib/business-config.ts` (`BusinessSettings`) | - Pure functions, null/edge handling.<br>- Exported, used everywhere (forms/tables).<br>- `Logger`: `LogEntry` structured. |
-| **Services** (85% Service Layer pattern) | `lib/services/webhookService.ts` (`WebhookService`), `components/landing/`, `components/agenda/appointment-form/` | - Class orchestration, no DB calls.<br>- Utils delegation; discriminated payloads (e.g., `LeadCreatedPayload`). |
-| **Controllers** (44 symbols) | `app/api/slots/ready/pricing/health/contact/chat/webhook/n8n/notifications/send/financeiro/categorias/[id]/config/public/carol/query/actions/chat/status/` (`GET`/`POST` exports, `ChatRequest`, `IncomingWebhookPayload`, `NotificationPayload`) | - Typed payloads; auth/secrets; service delegation; `NextResponse`. |
-| **Components** (137 `.tsx`) | `components/landing/pricing.tsx`, `components/financeiro/transaction-form.tsx`/`expense-categories.tsx`/`category-quick-form.tsx`, `components/clientes/edit-client-modal.tsx`, `components/agenda/appointment-form/use-appointment-form.ts`/`types.ts` (`AppointmentFormData`) | - shadcn/ui + `cn`; props interfaces; formatters; responsive/mobile. |
-| **Types** | `types/webhook.ts` (15+ payloads: `WebhookResponse`/`Options`, `ChatMessagePayload`, `Lead*Payload`, 7x `Appointment*Payload`, `FeedbackReceivedPayload`, `PaymentReceivedPayload`, `ClientInactiveAlertPayload`/`BirthdayPayload`), `types/supabase.ts` (`Database`) | - Discriminated unions (`type: 'event'`); exhaustive switches. |
-| **Hooks** | `hooks/use-webhook.ts` (`UseWebhookResult`), `hooks/use-chat.ts` (`Message`) | - Stable deps; memoized; custom types; no renders side-effects. |
+| **Utils** (55 symbols) | `lib/utils.ts` (`cn`, `formatCurrency`, `formatDate`), `lib/formatters.ts` (`formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`/`isValidEmail`, `formatCurrencyUSD`/`formatCurrencyInput`/`parseCurrency`), `lib/logger.ts` (`Logger`, `LogEntry`), `lib/tracking/types.ts` (`TrackingConfig`/`EventData`), `lib/supabase/`, `lib/config/`, `lib/admin-i18n/`, `lib/actions/`, `lib/context/`, `lib/business-config.ts` (`BusinessSettings`) | Pure/no I/O; edge cases (null/empty); universal (forms/tables); structured logs. |
+| **Services** (Service Layer 85%) | `lib/services/webhookService.ts` (`WebhookService`), `components/landing/`, `components/agenda/appointment-form/` (`use-appointment-form.ts`) | Class-based; discriminated unions (15+ payloads); utils/Supabase delegation; exhaustive handlers. |
+| **Controllers** (50+ symbols) | `app/api/slots/ready/profile/pricing/health/contact/chat/webhook/n8n/profile/password/notifications/send/tracking/config/event/financeiro/categorias/[id]/config/public/carol/query/actions/chat/status/` (e.g., `GET`/`POST` exports) | Typed req/res (`NextRequest`); auth/secrets; `new WebhookService()`; `NextResponse`. |
+| **Types** | `types/webhook.ts` (15+: `WebhookResponse`/`Options`, `ChatMessagePayload`, `LeadCreated/Updated/ConvertedPayload`, 7x `Appointment*Payload`, `Feedback/Payment/ClientInactive/BirthdayPayload`), `types/supabase.ts` (`Database`), `types/index.ts` (`UserProfile`/`NotificationTypes`), `components/agenda/types.ts` (`ServicoTipo`) | Discriminated (`type: 'appointment_created'`); exhaustive; Zod schemas. |
+| **Hooks/Components** | `hooks/use-webhook.ts` (`UseWebhookResult`), `hooks/use-chat.ts` (`Message`), `components/tracking/tracking-provider.tsx`, `components/agenda/appointment-form/`, `app/(admin)/admin/configuracoes/webhooks/data/webhooks-data.ts` | Stable deps/memo; reactive; responsive shadcn; formatters. |
 
 ## Repository Structure
 ```
 .
-├── app/api/          # Controllers (44 symbols: exported GET/POST)
-│   ├── slots/ready/pricing/health/contact/chat/
-│   ├── webhook/n8n/  # IncomingWebhookPayload
-│   ├── notifications/send/  # NotificationPayload
+├── app/api/                 # Controllers (50+ handlers)
+│   ├── slots/ready/profile/pricing/health/contact/chat/
+│   ├── webhook/n8n/         # N8n payloads
+│   ├── notifications/send/
+│   ├── tracking/config/event/
 │   ├── financeiro/categorias/[id]/
-│   └── carol/query/actions/config/public/chat/status/
-├── components/       # UI (137 .tsx)
-│   ├── landing/pricing.tsx
-│   ├── financeiro/transaction-form.tsx/expense-categories.tsx/category-quick-form.tsx
-│   ├── clientes/edit-client-modal.tsx
-│   └── agenda/appointment-form/use-appointment-form.ts/types.ts
-├── hooks/            # use-webhook.ts/use-chat.ts
-├── lib/              # Utils/Services (43+ symbols)
+│   ├── config/public/
+│   └── carol/query/actions/
+├── lib/                     # Utils/Services
 │   ├── utils.ts/formatters.ts/logger.ts/business-config.ts
-│   └── services/webhookService.ts/supabase/config/admin-i18n/actions/context/
-└── types/            # webhook.ts (15+ payloads)/supabase.ts
+│   ├── services/webhookService.ts
+│   ├── tracking/types.ts
+│   └── supabase/config/admin-i18n/actions/context/
+├── components/              # UI/Forms
+│   ├── agenda/appointment-form/use-appointment-form.ts/types.ts
+│   ├── tracking/tracking-provider.tsx
+│   └── landing/
+├── hooks/                   # use-webhook.ts/use-chat.ts
+├── types/                   # webhook.ts/supabase.ts/index.ts
+└── app/(admin)/admin/...    # Admin (webhooks-data.ts)
 ```
 
 ## Key Files and Purposes
 
 | File/Path | Purpose | Review Priorities |
 |-----------|---------|-------------------|
-| `lib/utils.ts` | Tailwind merge (`cn`), currency/date formatting. | Pure; null-safety; universal usage. |
-| `lib/formatters.ts` | Phone/email/currency validation & display (`formatPhoneUS`, `isValidEmail`, `parseCurrency`). | Inputs/displays; block raw values. |
-| `lib/logger.ts` | Structured logging (`Logger.info(ctx, payload)`). | Try/catch mandatory; context enrichment. |
-| `lib/services/webhookService.ts` | Webhook orchestration (`process(payload: Union)`). | 15+ payload handlers; utils only. |
-| `lib/business-config.ts` | Runtime config (`BusinessSettings`). | Env-safe; no hardcodes. |
-| `types/webhook.ts` | All payloads/unions (e.g., `AppointmentCreatedPayload`). | Discriminated; Zod companions. |
-| `types/supabase.ts` | Supabase schema (`Database`). | Typed selects; RLS hints. |
-| `hooks/use-webhook.ts` | Webhook state management. | Optimistic; error handling. |
-| `hooks/use-chat.ts` | Chat messages/state. | Streaming-safe; persistence. |
-| `components/agenda/appointment-form/*` | Appointment forms (`AppointmentFormData`). | Formatters; transitions. |
-| `app/api/chat/route.ts` | AI chat endpoint. | Payload auth; rate-limit. |
-| `app/api/webhook/n8n/route.ts` | N8n integration. | Secret validation; service delegate. |
-| `app/api/notifications/send/route.ts` | Notification dispatch. | Idempotency; retries. |
-| `app/api/carol/query/actions/route.ts` | Carol AI ops. | Context sanitization. |
-| `components/financeiro/*` | Financial forms/tables. | Currency tables; pagination. |
-| `components/landing/pricing.tsx` | Public pricing. | Dynamic; responsive. |
-| `components/clientes/edit-client-modal.tsx` | Client CRUD modal. | Validation; ARIA. |
+| `lib/utils.ts` | Tailwind (`cn`), basic formatters (`formatCurrency`/`formatDate`). | Pure; null-safe; compose with `formatters.ts`. |
+| `lib/formatters.ts` | Phone/email/currency ops (`formatPhoneUS`, `isValid*`, `parseCurrency`). | Validation/display; block unformatted values. |
+| `lib/logger.ts` | Structured logging (`Logger.info(ctx, data: LogEntry)`). | All async/error paths; context (`{userId, payload}`). |
+| `lib/services/webhookService.ts` | Central webhook logic (`process(payload: Union)`). | Exhaustive switch (15+ cases); utils only; no DB. |
+| `types/webhook.ts` | Payload unions (e.g., `AppointmentCreatedPayload { type: 'appointment_created', data: {...} }`). | Discriminated; handlers match. |
+| `types/supabase.ts` | Supabase schema (`Database`). | Typed queries; RLS/eq/single(). |
+| `hooks/use-webhook.ts` | Webhook state (`UseWebhookResult`). | Error boundaries; optimistic. |
+| `hooks/use-chat.ts` | Chat state (`Message`). | Streaming; persistence. |
+| `lib/tracking/types.ts` | Events/config (`TrackingEventData`/`UserData`/`CustomData`/`TrackingContextValue`). | Privacy (no PII); context prop. |
+| `app/api/webhook/n8n/route.ts` | N8n ingress (`POST`). | Secret/validate; service.process(). |
+| `app/api/chat/route.ts` | Chat handler. | Payload auth; Carol integration. |
+| `app/api/notifications/send/route.ts` | Dispatch notifications. | Idempotent; types. |
+| `app/api/tracking/event/route.ts` | Track events. | Config-safe; no leaks. |
+| `app/api/carol/query/actions/route.ts` | AI ops. | Sanitize context. |
+| `components/agenda/appointment-form/*` | Forms (`ServicoTipo`). | Formatters; transitions; validation. |
+| `components/tracking/tracking-provider.tsx` | Tracking context. | Opt-in; memoized. |
 
 ## Code Patterns and Conventions
-- **Tailwind**: `cn('base md:variant')`; no `style={{}}`.
-- **Formatters**: `<Input value={formatCurrencyInput(val)} onChange={e => setVal(parseCurrency(e))} />`.
-- **API Handlers**: 
+- **Tailwind**: `cn('p-4 md:p-6 text-sm md:text-base')`; shadcn (`Button`, `Input`).
+- **Formatters**: 
+  ```tsx
+  <Input value={formatCurrencyInput(val)} onChange={e => set(val => parseCurrency(e.target.value))} />
+  ```
+- **API Handlers**:
   ```ts
   export async function POST(req: Request) {
     try {
-      const payload: IncomingWebhookPayload = await req.json();
+      const payload = await req.json() as WebhookOptions; // + Zod.parse()
+      if (headers.get('x-n8n-secret') !== process.env.N8N_SECRET) throw new Error('Unauthorized');
       const service = new WebhookService();
       await service.process(payload);
+      Logger.info('webhook:processed', { type: payload.type });
       return NextResponse.json({ success: true });
     } catch (e) {
-      Logger.error('webhook:n8n', { payload, error: e });
-      return NextResponse.json({ error: 'Internal' }, { status: 500 });
+      Logger.error('webhook:error', { error: e });
+      return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
   }
   ```
-- **Services**: Classes with discriminated unions; utils calls only.
-- **Types**: `type UnionPayload = LeadCreatedPayload \| AppointmentCancelledPayload \| ...`.
-- **Logging**: `Logger.info('route:chat', { userId, payload });`.
-- **Supabase**: `supabase.from('table').select('col').eq('id', id).single()`; typed `Database`.
-- **Components**: `'use client';` + `interface Props {}`; `forwardRef`; shadcn (`Button`, `Form`).
-- **Hooks**: `useMemo` deps; `useSWR` for data.
+- **Services**: 
+  ```ts
+  switch (payload.type) {
+    case 'appointment_created': return this.handleAppointmentCreated(payload as AppointmentCreatedPayload);
+    // exhaustive
+  }
+  ```
+- **Types**: `type PayloadUnion = LeadCreatedPayload | AppointmentCancelledPayload | ...`.
+- **Supabase**: `supabase.from('appointments').select('*').eq('id', id).single() as Database['public']['Tables']['appointments']['Row']`.
+- **Hooks**: `const memoized = useMemo(() => compute(data), [data]);`.
+- **Logging**: `Logger.info('service:handleLead', { payload, userId });`.
 
 ## Workflows for Common Review Tasks
 
 ### 1. Full PR Review
-1. `getFileStructure` + `listFiles('**/*diff*')` for scope.
-2. Per file: `readFile(file)` → `analyzeSymbols(file)` → check exports/layers.
-3. Global scan: `searchCode('any|console\.log|supabase.*\(.select\*\)|process\.env|new WebhookService')`.
-4. Layer audit: Utils pure? Services delegated? Types extended?
-5. Security/perf: Payload types, `useEffect` deps, bundle hints.
-6. Summary: Blockers first, then majors; suggest tests/Zod.
+1. `listFiles('**/*.{ts,tsx}')` + `getFileStructure` for scope.
+2. `readFile(each changed)` → `analyzeSymbols` (check exports/layers).
+3. Global: `searchCode('any|console\.log|supabase\.(from|select)|WebhookService|format|cn')`.
+4. Audit: Utils pure? Services exhaustive? Controllers delegate? Types discriminated?
+5. Perf/Sec: Re-renders, validations, secrets.
+6. Output: Blockers → Majors → Minors; test proposals.
 
-### 2. API Route Review (e.g., `app/api/webhook/n8n/route.ts`)
-1. Verify export + typing (`IncomingWebhookPayload`).
-2. Secret check: `headers.get('x-n8n-secret') === process.env.N8N_SECRET`.
-3. Delegate: `new WebhookService().process(payload)`.
-4. Error handling: Try/catch + `Logger.error` + 5xx response.
-5. Extras: Zod parse; Vitest mock test.
+### 2. Controller Review (e.g., `app/api/webhook/n8n/route.ts`)
+1. Typed `req.json()` + Zod/discriminated.
+2. Headers/secrets (`x-n8n-secret`).
+3. `new WebhookService().process()`; no business logic.
+4. Try/catch + `Logger`; 4xx/5xx responses.
+5. Test: Mock service/payload.
 
-### 3. Component Review (e.g., `components/financeiro/transaction-form.tsx`)
-1. `'use client';` + typed props.
-2. Formatters in all inputs; `useForm` + schema.
-3. shadcn + `cn` responsive (`sm:`, `md:`); ARIA.
-4. Hooks: `useTransition` submits; `useMemo` computed.
-5. Server fallback: Prefer RSC + Suspense.
+### 3. Service Review (e.g., `lib/services/webhookService.ts`)
+1. Class methods; utils/Supabase only.
+2. Switch exhaustive on `payload.type` (match `types/webhook.ts`).
+3. `Logger` entry/exit; edges (invalid type).
+4. No HTTP/DB orchestration.
 
-### 4. Utils/Service Review (e.g., `lib/formatters.ts`, `webhookService.ts`)
-1. Pure (no I/O); JSDoc + edges (`isValidPhoneUS('') === false`).
-2. Exports used consistently (`searchCode('formatCurrencyUSD')`).
-3. Services: Switch on `payload.type`; `Logger` entry/exit.
+### 4. Utils Review (e.g., `lib/formatters.ts`)
+1. Pure; JSDoc; tests edges (`isValidPhoneUS('abc') === false`).
+2. `searchCode('formatPhoneUS')` for usage.
+3. No deps/I/O.
 
 ### 5. Types/Hooks Review
-1. Extend existing unions; discriminated.
-2. Hooks: Typed args/returns; stable callbacks; no leaks.
+1. Extend unions; `satisfies PayloadUnion`.
+2. Hooks: Typed; `useCallback`; no leaks (`useEffect` cleanup).
 
-### 6. Hotfix Scan
-1. `searchCode(changedPatterns)` + manual repro.
-2. Verify layers/no regressions; add guards/tests.
+### 6. Component Review (e.g., `components/agenda/appointment-form/`)
+1. `'use client';` + props interface.
+2. shadcn/`cn` responsive; formatters/validators.
+3. `useForm` + transitions; ARIA.
+
+### 7. Hotfix/Regression Scan
+1. `searchCode(changed regex)` + repro.
+2. Layer/no-regress; guards/tests.
 
 ## Best Practices (Codebase-Derived)
-- **Layers**: Utils (pure formatters/`cn`) → Services (`WebhookService.process`) → Controllers (thin HTTP) → Components (shadcn reactive).
-- **Validation**: TS unions + formatters/`isValid*`; Zod for runtime.
-- **Logging**: Contextual (`{ route, payload, userId }`); all async ops.
-- **Webhooks**: Exhaustive unions in `types/webhook.ts`; central service.
-- **Forms**: `react-hook-form` + formatters; optimistic UI.
-- **Supabase**: Server-only raw queries; typed + RLS.
-- **Mobile**: Prefix classes (`text-xs sm:text-sm`); touch targets.
-- **No Tests**: Propose:
+- **Layers**: Utils (formatters/`cn`/`Logger`) → Services (`WebhookService` switch) → Controllers (validate/delegate) → Components/Hooks (reactive).
+- **Validation**: TS unions + `isValid*`/Zod; format inputs.
+- **Logging**: Always `{context, payload}`; errors structured.
+- **Webhooks**: Central `WebhookService`; 15+ exhaustive cases.
+- **Supabase**: Server-only; typed `Database`; RLS.
+- **Tracking**: `TrackingContextValue`; config-driven (`TrackingConfig`).
+- **Mobile**: `cn` breakpoints; touch-friendly.
+- **Tests** (Propose Vitest):
   ```ts
   import { describe, it, expect } from 'vitest';
-  describe('formatPhoneUS', () => {
-    it('formats valid', () => expect(formatPhoneUS('(123) 456-7890')).toBe('(123) 456-7890'));
+  import { isValidEmail } from '@/lib/formatters';
+  describe('Utils', () => {
+    it('validates email', () => expect(isValidEmail('test@example.com')).toBe(true));
   });
   ```
 
 ## Red Flags (🚫 Blockers)
-- `any`/`console.log`; DB in utils/components.
-- Untyped payloads/secrets missing.
-- No `Logger`/try-catch in handlers.
-- Layer leaks (e.g., Supabase in controller).
-- Incomplete payload unions.
-- Non-responsive `cn`; inline styles.
+- `any`/console.log; DB/HTTP in utils/components.
+- Missing validation/secrets; incomplete switches.
+- No `Logger`/try-catch; layer violations (Supabase in controller).
+- Unformatted displays; non-responsive.
+- Untyped payloads; PII in tracking/logs.
 
 ## Collaboration
-- Tag `@dev` (impl), `@ops` (infra/Supabase).
-- Goals: 0 blockers; <10% nits; test coverage proposals.
-- Handoff: Updated docs/types; `vitest` suite.
+- Tag `@dev` (code), `@admin` (config/webhooks).
+- Goals: 0 blockers; tests for utils/services; docs updates.
+- Handoff: Extended types; Vitest suites; repro bugs.

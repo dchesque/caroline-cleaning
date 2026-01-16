@@ -1,167 +1,178 @@
 # Feature Developer Playbook
 
-This playbook equips the **Feature Developer Agent** to implement new features in the Carolinas Premium repository—a Next.js 14+ App Router app with TypeScript (.ts/.tsx), React, Tailwind CSS, shadcn/ui, Prisma/DB, TanStack Query, react-hook-form + Zod, Recharts, and integrations (N8N via `WebhookService`, Carol AI APIs `/api/carol/{query,actions}`, notifications). 183 files: 137 .tsx (UI/components), 44 .ts (API/services), 2 .mjs. Focus: Admin dashboard (`app/(admin)/admin/*`), client management, finance, agenda, analytics, chat; public landing (`app/(public)/`), auth.
+This playbook guides the **Feature Developer Agent** in implementing new features for the Caroline Cleaning app—a Next.js 14+ App Router application using TypeScript (.ts/.tsx), React, Tailwind CSS, shadcn/ui components, Prisma database, TanStack Query, react-hook-form with Zod validation, Recharts for charts, and integrations like N8N webhooks (`WebhookService`), Carol AI APIs (`/api/carol/{query,actions}`), and notifications. The codebase spans ~183 files: primarily UI components (137 .tsx in `components/` domains), API routes (44 .ts in `app/api/`), services (`lib/services/`), and nested pages (`app/(admin)/admin/*`, `app/(public)/`, `app/(auth)/`). 
 
-**Primary Focus Areas**:
-- **Components** (139 symbols): Domain-grouped in `components/{agenda,financeiro,clientes,cliente-ficha,chat,analytics,landing,ui}`; reusable, typed, <300 LOC.
-- **API Routes** (44 symbols): `app/api/{slots,pricing,chat,webhook/n8n,financeiro/categorias,notifications/send,carol/{query,actions},...}`; Zod-validated handlers.
-- **Services**: `lib/services/` (e.g., `WebhookService` class for orchestration).
-- **Pages**: Nested dynamic routes (`[id]`, subdirs like `financeiro/{relatorios,receitas,despesas,categorias}`), `loading.tsx`/`error.tsx`, Server Components.
-- **Types**: `components/agenda/types.ts` (`ServicoTipo`, `Addon`, `AddonSelecionado`, `AppointmentFormData`); reuse across domains.
+**Core Focus Areas**:
+- **Admin Dashboard** (`app/(admin)/admin/*`): Clients (`clientes/[id]` with tabs), finance (`financeiro/{relatorios,receitas,categorias,despesas}`), agenda, analytics (`analytics/{tendencias,satisfacao,receita,conversao,clientes,carol}`), chat (`mensagens/[sessionId]`), configs (`configuracoes/{servicos,equipe,pricing,areas,addons,empresa}`), contracts (`contratos/{[id],novo}`).
+- **Public Landing** (`app/(public)/{landing,chat,terms,privacy}`): Marketing, pricing, contact forms.
+- **Components** (152 symbols): Domain-specific (`components/{agenda,financeiro,clientes,cliente-ficha,chat,analytics,tracking,landing,ui,admin}`); reusable, typed props, <300 LOC/file.
+- **API Routes/Controllers** (50+ symbols): `app/api/{slots,profile,pricing,chat,webhook/n8n,tracking/{event,config},financeiro/categorias/[id],carol/{query,actions},notifications/send,...}`; Zod schemas, Prisma queries.
+- **Services** (business logic): `lib/services/webhookService.ts` (`WebhookService` class for orchestration, N8N processing).
+- **Types & Hooks**: `components/agenda/types.ts` (`ServicoTipo`, `Addon`, `AddonSelecionado`, `AppointmentFormData`); hooks like `useAppointmentForm`.
 
-Features must be type-safe, responsive (`sm:md:lg:`), dark-mode (`dark:`), accessible (ARIA/keyboard), optimistic (TanStack Query), and integrate services/webhooks.
+New features must be **type-safe**, **responsive** (Tailwind `sm: md: lg:` breakpoints), **dark-mode ready** (`dark:` classes), **accessible** (ARIA labels, keyboard nav), **optimistic** (TanStack Query mutations), integrate **webhooks/notifications**, and follow Server Components patterns with `Suspense`/`loading.tsx`/`error.tsx`.
 
 ## Key Files and Purposes
 
-### Components (UI: Forms, Tables, Tabs, Charts, Chat)
-Reusable primitives composing pages; shadcn/ui base (`components/ui/{Button,Input,Dialog,Table,Tabs,Form,Skeleton,etc}`).
+### Components (UI Primitives, Forms, Tables, Tabs, Charts, Chat)
+Domain-grouped, composable with shadcn/ui (`components/ui/{Button,Input,Table,Tabs,Form,Skeleton,Dialog,...}`). Use `cn()` from `lib/utils.ts` for Tailwind merging.
 
-| Domain/Path | Purpose | Key Files/Symbols | Integration Notes |
-|-------------|---------|-------------------|-------------------|
-| `components/agenda/` | Scheduling/forms | `types.ts` (`ServicoTipo`, `Addon`, `AddonSelecionado`, `AppointmentFormData`); `appointment-form/use-appointment-form.ts` (`useAppointmentForm`) | Forms w/ services/addons; use in admin/agenda, client tabs (`tab-agendamentos.tsx`) |
-| `components/landing/` | Marketing/public | `pricing.tsx` (`PricingItem`); `whats-included.tsx` (`WhatsIncluded`); `meet-carol.tsx` (`MeetCarol`); `how-it-works.tsx` (`HowItWorks`); `faq.tsx` (`FAQ`); `announcement-bar.tsx` (`AnnouncementBar`) | Hero/pricing in `app/(public)/`; dynamic data fetch |
-| `components/financeiro/` | Expenses/transactions/categories | `transaction-form.tsx` (`TransactionFormProps`); `expense-categories.tsx` (`ExpenseCategoryProps`); `category-quick-form.tsx` (`CategoryQuickFormProps`) | Modals/tables; `app/(admin)/admin/financeiro/{relatorios,receitas,despesas,categorias}` + `[id]` |
-| `components/clientes/` | Client CRUD/listing | `edit-client-modal.tsx` (`EditClientModalProps`; uses `ServicoTipo`/`Addon`/`DiaServico`); `clients-table.tsx` (`Client`, `ClientsTableProps`); `clients-filters.tsx` (`ClientsFiltersProps`) | Tables/filters/modals; `app/(admin)/admin/clientes/[id]` |
-| `components/cliente-ficha/` | Client profile (tabbed) | `tab-notas.tsx` (`TabNotasProps`); `tab-info.tsx` (`TabInfoProps`); `tab-financeiro.tsx` (`TabFinanceiroProps`); `tab-contrato.tsx` (`TabContratoProps`); `tab-agendamentos.tsx` (`TabAgendamentosProps`); `client-header.tsx` (`ClientHeaderProps`) | Tabs for `[id]` pages; parallel data fetches |
-| `components/chat/` | Messaging UI | `message-bubble.tsx` (`MessageBubbleProps`); `chat-window.tsx` (`ChatWindowProps`); `chat-messages.tsx` (`ChatMessagesProps`); `chat-input.tsx` (`ChatInputProps`); `chat-header.tsx` (`ChatHeaderProps`); `chat-bubble-notification.tsx` (`ChatBubbleNotificationProps`) | `/api/chat/` + status; `app/(public)/chat`, `app/(admin)/admin/mensagens/[sessionId]` |
-| `components/analytics/` | Dashboards/charts | `trends-chart.tsx` (`TrendData`); satisfaction, funnel, etc. | Recharts; `app/(admin)/admin/analytics/{tendencias,satisfacao,receita,conversao,clientes,carol}` |
-| `components/ui/` | Primitives | `cn()` utility from `lib/utils.ts` | Tailwind merge; all components |
+| Domain/Path | Purpose | Key Files/Symbols | Usage/Integrations |
+|-------------|---------|-------------------|--------------------|
+| `components/agenda/` | Appointment scheduling/forms | `types.ts` (`ServicoTipo`, `Addon`, `AddonSelecionado`, `AppointmentFormData`); `appointment-form/use-appointment-form.ts` (`useAppointmentForm`) | Forms in admin/agenda, `cliente-ficha/tab-agendamentos.tsx`; react-hook-form + Zod |
+| `components/landing/` | Public marketing | `pricing.tsx` (`PricingItem`); `whats-included.tsx` (`WhatsIncluded`); `trust-badges.tsx` (`TrustBadges`); `meet-carol.tsx` (`MeetCarol`); `how-it-works.tsx` (`HowItWorks`); `faq.tsx` (`FAQ`) | `app/(public)/` pages; dynamic pricing data |
+| `components/financeiro/` | Transactions/expenses/categories | `transaction-form.tsx` (`TransactionFormProps`); `expense-categories.tsx` (`ExpenseCategoryProps`); `category-quick-form.tsx` (`CategoryQuickFormProps`) | Modals/tables in `app/(admin)/admin/financeiro/*`; CRUD APIs |
+| `components/clientes/` | Client lists/filters | `clients-table.tsx` (`Client`, `ClientsTableProps`); `clients-filters.tsx` (`ClientsFiltersProps`) | `app/(admin)/admin/clientes`; TanStack Table, filters |
+| `components/cliente-ficha/` | Client profile tabs | `tab-notas.tsx` (`TabNotasProps`); `tab-info.tsx` (`TabInfoProps`); `tab-financeiro.tsx` (`TabFinanceiroProps`); `tab-contrato.tsx` (`TabContratoProps`); `tab-agendamentos.tsx` (`TabAgendamentosProps`); `client-header.tsx` (`ClientHeaderProps`) | `app/(admin)/admin/clientes/[id]/page.tsx`; parallel queries |
+| `components/chat/` | Real-time messaging | `message-bubble.tsx` (`MessageBubbleProps`); `chat-window.tsx` (`ChatWindowProps`); `chat-messages.tsx` (`ChatMessagesProps`); `chat-input.tsx` (`ChatInputProps`); `chat-header.tsx` (`ChatHeaderProps`); `chat-bubble-notification.tsx` (`ChatBubbleNotificationProps`) | `app/(public)/chat`, `app/(admin)/admin/mensagens/[sessionId]`; `/api/chat/` optimistic updates |
+| `components/analytics/` | Metrics/charts | `trends-chart.tsx` (`TrendData`, `TrendsChartProps`); `top-metrics.tsx` (`Metric`) | Recharts in `app/(admin)/admin/analytics/*`; date-range filters |
+| `components/tracking/` | Event tracking | `tracking-provider.tsx` (`TrackingProviderProps`, `Window` extension) | Wrap app; `/api/tracking/{event,config}` |
+| `components/ui/` | shadcn primitives | Button, Input, etc. | All components; responsive/dark variants |
 
-### API Routes (`app/api/`: 44 handlers)
-Zod schemas, Prisma/services, `NextRequest/Response`.
+### API Routes (Controllers: `app/api/`)
+Zod-parsed `NextRequest`, Prisma/services, error Responses (400/404).
 
-| Path | Method/Symbols | Purpose | Notes |
-|------|----------------|---------|-------|
-| `slots/` | `GET` | Availability | Agenda slots |
-| `pricing/` | `GET` | Public pricing | Landing integration |
-| `chat/` & `chat/status/` | `POST`/`GET` | Messages/status | Real-time; optimistic |
-| `webhook/n8n/` | `POST` | N8N workflows | `WebhookService.process()` |
-| `financeiro/categorias/` & `[id]` | `GET`/`POST` | Categories CRUD | Expenses |
-| `notifications/send/` | `POST` | Alerts | Post-CRUD triggers |
-| `carol/{query,actions}/` | `GET`/`POST` | AI queries/actions | Chat/agenda |
-| `{ready,health,contact,config/public}/` | `GET`/`POST` | Meta/public | Health checks, forms |
+| Path | Methods/Key Symbols | Purpose | Integrations |
+|------|---------------------|---------|--------------|
+| `slots/` | `GET` | Availability slots | Agenda services |
+| `profile/` | `GET`, `PUT` | User profile/password | Auth + updates |
+| `pricing/` | `GET` | Public pricing tiers | Landing pages |
+| `chat/` & `chat/status/` | `POST`, `GET` | Send/status messages | Optimistic UI |
+| `webhook/n8n/` | `POST` | N8N workflow triggers | `WebhookService.process()` |
+| `tracking/{event,config}/` | `POST`, `GET` | Analytics events/config | `TrackingProvider` |
+| `financeiro/categorias/[id]/` | `GET`, `POST`, etc. | CRUD categories/expenses | Finance tables/forms |
+| `carol/{query,actions}/` | `GET`, `POST` | AI queries/actions | Chat/agenda smarts |
+| `notifications/send/` | `POST` | Push alerts | Post-CRUD hooks |
 
-### Services (Business Logic: lib/services/)
+### Services (lib/services/)
+Encapsulates orchestration (85% pattern match).
+
 | File | Purpose | Key Symbols |
 |------|---------|-------------|
-| `lib/services/webhookService.ts` | N8N/webhook orchestration (85% service pattern) | `WebhookService` (class @ line 35: `process()`, notify) |
+| `lib/services/webhookService.ts` | Webhook/N8N processing, notifications | `WebhookService` class (line 35: `process()`, notify on events) |
 
 ### Pages/Layouts (`app/`)
-- **Admin**: `app/(admin)/admin/{configuracoes/{servicos,equipe,pricing,areas,addons},agenda,analytics/{...},clientes/[id],contratos/{[id],novo},equipe,financeiro/{...},leads,mensagens/[sessionId],servicos}`.
-- **Public**: `app/(public)/{chat,terms,privacy}`.
-- **Auth**: `app/(auth)/login`.
-- Patterns: RSC, `Suspense`/`loading.tsx`/`error.tsx`, dynamic `[id]`.
+Nested routes with RSC, dynamic `[id]`, `Suspense` boundaries.
+
+- **Admin**: Deeply nested (`admin/financeiro/relatorios`, `configuracoes/webhooks`, `analytics/tendencias`).
+- **Public/Auth**: Simpler (`(public)/chat`, `(auth)/login`).
+- Patterns: `loading.tsx`, `error.tsx`, Server fetches.
 
 ## Code Patterns & Conventions
-- **Components/Hooks**:
+- **Components**:
   ```tsx
+  'use client';
   import { cn } from '@/lib/utils';
   import { Button } from '@/components/ui/button';
-  interface Props { data: AppointmentFormData; onSubmit: (data: AppointmentFormData) => void; }
-  export function MyForm({ data, onSubmit }: Props) {
+  import { AppointmentFormData } from '@/components/agenda/types';
+
+  interface Props { data?: AppointmentFormData; onSubmit: (data: AppointmentFormData) => Promise<void>; loading?: boolean; }
+  export function AppointmentForm({ data, onSubmit, loading }: Props) {
     return (
-      <div className={cn('p-4 space-y-4 md:p-6 dark:bg-slate-900')}>
-        <Button className="w-full sm:w-auto">Submit</Button>
-      </div>
+      <form onSubmit={handleSubmit(onSubmit)} className={cn('space-y-4 p-6 dark:bg-slate-900')}>
+        <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+          {loading ? <Skeleton /> : 'Agendar'}
+        </Button>
+      </form>
     );
   }
-  // Hook: export const useMyHook = (props: UseProps) => { const queryClient = useQueryClient(); ... }
   ```
+- **Hooks**: `useQuery(['client', id], () => fetch('/api/clients/' + id).then(r => r.json()))`; `useMutation({ mutationFn: postData, onSuccess: () => queryClient.invalidateQueries({ queryKey: ['client', id] }) })`.
 - **API Routes**:
   ```ts
   import { NextRequest } from 'next/server';
   import { z } from 'zod';
   import { WebhookService } from '@/lib/services/webhookService';
-  const schema = z.object({ clientId: z.string() });
+  import { prisma } from '@/lib/prisma';
+
+  const schema = z.object({ id: z.string().uuid() });
   export async function POST(req: NextRequest) {
     try {
-      const data = schema.parse(await req.json());
-      await new WebhookService().process(data.clientId);
+      const { id } = schema.parse(await req.json());
+      const client = await prisma.client.findUnique({ where: { id } });
+      if (!client) return Response.json({ error: 'Client not found' }, { status: 404 });
+      await new WebhookService().process(id);
       return Response.json({ success: true });
-    } catch (e) {
-      return Response.json({ error: 'Invalid' }, { status: 400 });
+    } catch (error) {
+      return Response.json({ error: (error as Error).message }, { status: 400 });
     }
   }
   ```
-- **Forms**: `useForm({ resolver: zodResolver(schema) })` + shadcn `FormField`.
-- **Queries/Mutations**: `useQuery(['key'], fn)`, `useMutation({ onSuccess: () => queryClient.invalidateQueries() })`, optimistic.
-- **Charts**: `<LineChart data={TrendData[] as { date: string; value: number }[]}>`.
-- **Types**: Export interfaces/enums; Zod.infer.
-- **Utils**: `lib/utils.ts` (`cn`, toasts via Sonner).
-- **No Tests**: Vitest optional.
+- **Forms**: `const form = useForm<AppointmentFormData>({ resolver: zodResolver(AppointmentSchema) });`.
+- **Types**: Exported interfaces/enums; `type SafeData = z.infer<typeof schema>;`.
+- **Utils**: `lib/utils.ts` (cn, toasts via Sonner); no tests detected (add Vitest if needed).
 
 ## Workflows for Common Tasks
 
-### 1. New Reusable Component (e.g., `AddonSelector`)
-1. Place: `components/agenda/addon-selector.tsx`.
-2. Props: `interface AddonSelectorProps { addons: Addon[]; selected: AddonSelecionado[]; onChange: (a: AddonSelecionado[]) => void; }`.
-3. shadcn: `<Table>`, `<Select>`, `<Skeleton />` for loading.
-4. Responsive: `grid-cols-1 lg:grid-cols-2 dark:border-slate-700`.
-5. Hook integration: `const { form } = useAppointmentForm(props);`.
-6. Barrel export: `components/agenda/index.ts`.
-7. Test: Use in `edit-client-modal.tsx` or `appointment-form/`.
+### 1. New Reusable Component (e.g., `components/financeiro/addon-tracker.tsx`)
+1. Create file in domain: `components/financeiro/addon-tracker.tsx`.
+2. Define props: `interface AddonTrackerProps { clientId: string; addons: Addon[]; }`.
+3. Build UI: Use shadcn `<Table>`, `<Card>`, Recharts if trends; responsive grid (`grid-cols-1 md:grid-cols-2`).
+4. Add states/loading: `<Skeleton className="h-32 w-full" />`; `useTransition` for submits.
+5. Hook integration: `const { data } = useQuery(['addons', clientId], () => fetch(`/api/clients/${clientId}/addons`));`.
+6. Export in barrel: Add to `components/financeiro/index.ts`.
+7. Integrate: Use in `cliente-ficha/tab-financeiro.tsx` or admin pages.
 
-### 2. New API Endpoint (e.g., `/api/clients/[id]/addons`)
-1. `app/api/clients/[id]/addons/route.ts`.
-2. Dynamic: `const { id } = z.object({ id: z.string() }).parse(params);`.
-3. Logic: Prisma `prisma.client.findUnique({ where: { id }, include: { addons: true } })` or `WebhookService`.
-4. Error: `if (!client) return Response.json({ error: 'Not found' }, { status: 404 });`.
-5. CORS/headers if public.
+### 2. New API Endpoint (e.g., `/api/financeiro/addons/[clientId]`)
+1. Create `app/api/financeiro/addons/[clientId]/route.ts`.
+2. Parse params/body: `const { clientId } = z.object({ clientId: z.string().uuid() }).parse(params);`.
+3. Business logic: Prisma query + `new WebhookService().process(clientId);`.
+4. Handle errors: 404 if not found, Zod validation, JSON responses.
+5. Test via curl/Postman: Integrate with TanStack Query in components.
 
-### 3. Client Tab Extension (e.g., `tab-addons.tsx`)
-1. Copy `tab-agendamentos.tsx` → `components/cliente-ficha/tab-addons.tsx` (`TabAddonsProps { clientId: string; }`).
-2. Fetch: `useQuery({ queryKey: ['client', clientId, 'addons'], queryFn: () => fetch(`/api/clients/${clientId}/addons`).then(r => r.json()) })`.
-3. UI: `<AddonSelector addons={data?.addons || []} />` + mutations.
-4. Page update: `app/(admin)/admin/clientes/[id]/page.tsx` → Add `<TabsContent value="addons"> <TabAddons clientId={params.id} /> </TabsContent>` + tab trigger.
-5. Invalidate: `onSuccess: () => queryClient.invalidateQueries({ queryKey: ['client', clientId] })`.
+### 3. Extend Client Ficha Tab (e.g., New `tab-trackings.tsx`)
+1. Copy pattern: `components/cliente-ficha/tab-trackings.tsx` (`interface TabTrackingsProps { clientId: string; }`).
+2. Fetch data: `useQuery(['tracking', clientId], () => get(`/api/tracking/config?clientId=${clientId}`));`.
+3. UI: `<ClientsTable data={data?.events || []} />` + charts.
+4. Update page: `app/(admin)/admin/clientes/[id]/page.tsx` → Add `<TabsContent value="trackings"><TabTrackings clientId={id} /></TabsContent>` and tab nav.
+5. Optimistic + invalidate: Mutations refetch tabs/parent queries; toast success.
 
-### 4. Full Domain Feature (e.g., Finance Addon Tracking)
-1. **Components**: `components/financeiro/addon-expenses-table.tsx` (reuse `ClientsTableProps`, `expense-categories.tsx`).
-2. **Filters**: Extend `clients-filters.tsx` pattern.
-3. **API**: `app/api/financeiro/addons/route.ts` + `[id]`; Zod + Prisma link (`transaction.addonId`).
-4. **Page**: `app/(admin)/admin/financeiro/addons/page.tsx` (Server: `const data = await prisma...`; `<Suspense fallback={<Skeleton />}>`).
-5. **Service**: `WebhookService.notifyFinanceUpdate(addonId)`.
-6. **Polish**: Empty state (`No addons`), mobile (`overflow-x-auto`), toast feedback, charts (`TrendData` for expenses).
+### 4. Full Feature: Finance Addon Analytics (e.g., Track Expenses by Addon)
+1. **Components**: `components/financeiro/addon-expenses.tsx` (table + `TrendsChartProps`).
+2. **API**: `app/api/financeiro/addons/route.ts` (GET list, POST create; Zod + Prisma `transaction.create({ data: { addonId, clientId } })`).
+3. **Service**: Extend `WebhookService` or call `process('finance-addon-update', { addonId })`.
+4. **Page**: `app/(admin)/admin/financeiro/addons/page.tsx` (Server: `const addons = await prisma...`; `<Suspense><AddonExpenses /></Suspense>`).
+5. **Analytics Integration**: Add widget to `app/(admin)/admin/analytics/receita/page.tsx`.
+6. **Polish**: Filters (`clients-filters.tsx` pattern), empty state, mobile scroll (`overflow-x-auto`), notifications on create.
 
-### 5. Chat/Agenda Hybrid (e.g., Inline Scheduling)
-1. Extend `chat-input.tsx`: Add `AppointmentFormData` form via `useAppointmentForm`.
-2. Mutation: `useMutation({ mutationFn: (data) => post('/api/chat/schedule', { sessionId, data }) })`.
-3. Optimistic: `onMutate: prepend simulated message`.
-4. Post-success: `/api/notifications/send` + `WebhookService.confirmSchedule(clientId)`.
-5. UI: Collapsible form in `chat-window.tsx`.
+### 5. Chat Enhancement (e.g., Schedule Button in Chat Input)
+1. Extend `chat-input.tsx`: Add `<Button onClick={() => setShowForm(true)}>Agendar</Button>`.
+2. Form: `<AppointmentForm onSubmit={async (data) => { await mutation.mutateAsync({ sessionId, data }); }} />`.
+3. Mutation: `useMutation({ mutationFn: (payload) => post('/api/chat/schedule', payload), onSuccess: queryClient.invalidateQueries(['chat', sessionId]) })`.
+4. Webhook: Trigger `WebhookService.process('schedule-via-chat', data.clientId)`.
+5. UI: Optimistic message prepend; ARIA for form.
 
-### 6. Public Landing Feature (e.g., Interactive Pricing Calculator)
-1. Component: `components/landing/pricing-calculator.tsx` (extends `PricingItem`; `useState` for addons).
-2. Server data: Page `app/(public)/pricing/page.tsx` → `const pricing = await db.pricing.findMany();`.
-3. API: `/api/pricing/calculate` (Zod input → compute total w/ `Addon` prices).
-4. CTA: Form → `/api/contact` or chat init.
+### 6. Public Feature (e.g., Tracking Opt-In on Landing)
+1. Component: `components/landing/tracking-optin.tsx` (`TrustBadges` style).
+2. Page update: `app/(public)/page.tsx` → Insert `<TrackingOptIn onToggle={toggleTracking} />`.
+3. API: POST `/api/tracking/config` (update user prefs).
+4. Provider: Ensure `TrackingProvider` wraps layout.
 
-### 7. Analytics Dashboard Widget (e.g., Addon Revenue Trends)
-1. `components/analytics/addon-revenue-chart.tsx` (`TrendData[]`).
-2. Query: `useQuery(['analytics', 'addons', 'revenue'], () => get('/api/analytics/addons?period=monthly'))`.
-3. Integrate: `app/(admin)/admin/analytics/receita/page.tsx` → Grid layout w/ `<AddonRevenueChart />`.
-4. Filters: Date range via `react-hook-form`.
+### 7. Analytics Widget (e.g., Client Satisfaction Trends)
+1. `components/analytics/satisfaction-trends.tsx` (`TrendData[]`).
+2. Query: `useQuery(['analytics', 'satisfacao', { period: '30d' }], () => get('/api/analytics/satisfacao'));`.
+3. Integrate: `app/(admin)/admin/analytics/satisfacao/page.tsx` → Grid + filters.
+4. Export data: Button → CSV via `json2csv`.
 
 ## Best Practices from Codebase
-- **Modularity**: Compose (e.g., `category-quick-form` in tables/modals); barrel indexes.
-- **Performance**: RSC for pages, `Suspense` + streaming, TanStack Table virtualized lists, `useTransition` for UI.
-- **UX**: Loading (`Skeleton`), error (`toast.error(e.message)`), empty states, optimistic mutations, infinite scroll for chat/clients.
-- **Accessibility**: `aria-label="Add expense"`, `role="tab"`, `onKeyDown` for Enter/Space, focus management in modals.
-- **Security/Styling**: Server auth (NextAuth/middleware), Zod sanitization, `dark:` + `data-[state=open]:bg-slate-100`.
-- **Types/Validation**: `z.infer<typeof schema>`, export props/types.
-- **Integrations**: Always consider `WebhookService` for N8N (e.g., client changes → workflows), Carol AI for smart features.
-- **Commits**: `feat(financeiro): add addon expenses tracking + API + webhook`.
-- **Dev**: `npm run dev`, ESLint/Prettier auto-fix, Tailwind JIT.
+- **Modularity**: Small files, barrel exports (`index.ts`), compose (e.g., `category-quick-form` in tables).
+- **Performance**: Server Components/pages, `Suspense` + skeletons, TanStack virtualized tables, `useTransition` for forms.
+- **UX**: Optimistic updates, infinite scroll (chat/clients), toasts (`toast.success('Salvo!')`), empty states ("Nenhum cliente"), error boundaries.
+- **Accessibility**: `aria-label`, `role="tablist"`, `onKeyDown={(e) => e.key === 'Enter' && submit()}`, focus traps in modals.
+- **Security**: Zod everywhere, server auth (middleware), no client Prisma.
+- **Styling**: `cn('base dark:dark-variant hover:bg-slate-100 data-[state=open]:animate-in')`; mobile-first.
+- **Integrations**: Trigger `WebhookService` on CRUD (clients/finance/agenda); `/api/notifications/send` for alerts; Carol AI for dynamic content.
+- **Commits/PRs**: `feat(clientes): add tracking tab + API + webhook integration`.
+- **Dev Tools**: `npm run dev`; ESLint/Prettier; use `readFile('components/agenda/types.ts')` for types.
 
 ## Quick Reference Checklist
-- [ ] Domain-aligned files (`components/financeiro/`, `app/api/financeiro/`)?
-- [ ] Typed/reusable (props extend shared `ServicoTipo`/`Addon`)?
-- [ ] shadcn/Tailwind/Recharts/TanStack patterns?
-- [ ] Query/mutation + invalidate/optimistic/error handling?
-- [ ] Zod forms/API + service calls?
-- [ ] Responsive/dark/accessible + loading/empty/error states?
-- [ ] Webhook/notifications for business events?
-- [ ] Page integration (tabs, Suspense, dynamic routes)?
-- [ ] Toasts + mobile-first?
-
-Use tools (`listFiles('components/**.tsx')`, `analyzeSymbols()`) for codebase updates. Scale features modularly.
+- [ ] Files in domain (`components/financeiro/`, `app/api/financeiro/`, `app/(admin)/admin/financeiro/addons`)?
+- [ ] Typed props/hooks (extend `Addon`, `AppointmentFormData`; Zod schemas)?
+- [ ] shadcn/Tailwind/Recharts/TanStack Query patterns matched?
+- [ ] Mutations optimistic + invalidate parent queries + error toasts?
+- [ ] Responsive/dark/accessible (breakpoints, ARIA, keyboard)?
+- [ ] Loading/skeletons/empty/error states?
+- [ ] WebhookService + notifications for events?
+- [ ] Page integration (dynamic routes, tabs, Suspense)?
+- [ ] Mobile-optimized (overflow, grid-cols)?
+- [ ] Tested in context (e.g., client tab)?

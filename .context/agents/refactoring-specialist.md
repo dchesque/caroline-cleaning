@@ -1,186 +1,174 @@
 # Refactoring Specialist Agent Playbook
 
 ## Mission
-Refactor the Carolinas Premium codebase—a Next.js 13+ application with TypeScript (.ts: 44 files, .tsx: 137 files, .mjs: 2 files), Tailwind CSS via shadcn/ui, Supabase integration, and features like admin dashboards, client/appointment management, services configuration, Carol AI queries, webhooks (n8n), data exports, and public pages. Target technical debt to improve maintainability, performance, and consistency:
+Refactor the Caroline Cleaning codebase—a Next.js 13+ app with TypeScript (high .tsx density: UI-heavy components), Tailwind CSS (shadcn/ui), Supabase backend, admin dashboards for services/config, appointment/agenda management, webhook services (n8n), tracking utils, API routes (Carol queries), and public pages. Prioritize technical debt in utils/services layers to boost maintainability, performance, and consistency:
 
-- **Code Smells**: Duplicated inline formatting/validation in TSX files, oversized components/methods (>50-100 LOC), tight coupling (e.g., direct Supabase calls in UI/API routes).
-- **Performance**: Unbatched Supabase queries (e.g., in `app/api/carol/query/route.ts`), potential re-render issues in 137 TSX components, large bundle sizes.
-- **Consistency**: Mandate utils like `cn` and formatters; enforce typed interfaces, shadcn patterns, and service classes.
-- **Technical Debt Hotspots**: Utils/services (43 symbols), admin services pages, API routes, agenda components.
+- **Code Smells**: Inline formatting/validation duplication across TSX, oversized components (e.g., service sections), direct Supabase calls in UI/API, unbatched queries.
+- **Performance**: Multiple DB calls (e.g., `app/api/carol/query/route.ts`), re-renders in agenda/admin components, export bottlenecks.
+- **Consistency**: Centralize utils (`cn`, formatters), enforce typed props/interfaces (`ServiceSectionProps`, `ServiceType`), service classes (`WebhookService` pattern).
+- **Hotspots**: Utils (55 symbols: lib/utils.ts, formatters.ts), services (lib/services/webhookService.ts), agenda components, admin services pages, API routes.
 
-**Codebase Stats**: 183 files, 284 symbols. Prioritize .tsx (UI-heavy) for decomposition, .ts (utils/services/API) for extraction/optimization.
+**Stats from Analysis**: Focus utils/services (57 symbols), key files (8+), directories: lib/* (high priority), components/agenda, app/(admin), app/api.
 
 ## Responsibilities
-- **Issue Detection**: Use tools (`searchCode`, `analyzeSymbols`, `listFiles("**/*.tsx")`) to identify duplication, god components, unoptimized queries.
-- **Atomic Refactors**: Extract utils/hooks/services, split components, batch DB calls; aim for <150 LOC per PR.
-- **Convention Enforcement**: `cn` for all classes, centralized formatters, `React.FC<Props>` with interfaces, pure exports.
-- **Validation**: `npm run lint:fix`, add/update tests (`*.test.tsx`), perf checks (`npm run build`, Lighthouse >90), LOC/bundle reduction.
-- **Documentation**: PRs with `refactor(area): desc`, metrics tables; update `docs/architecture.md`, `glossary.md`.
+- **Detection**: `searchCode` for duplication (e.g., `className\\s*\\?`), `analyzeSymbols` on TSX/TS, `listFiles("**/*.tsx")`, `getFileStructure` for hotspots.
+- **Refactors**: Extract to utils/services, decompose TSX (<80 LOC/file), batch queries, type everything.
+- **Enforcement**: `cn` everywhere, formatters for data, `React.FC<Props>`, pure service classes.
+- **Validation**: `npm run lint:fix build`, tests (`*.test.tsx`), perf (Lighthouse >90, bundle <prev).
+- **Docs/PRs**: `refactor(area): desc` with metrics tables; update `README.md` or `docs/refactor-log.md`.
 
 ## Best Practices Derived from Codebase
-Analyzed via symbols (284 total), utils (43), services (2+). Enforce these patterns:
+From 57 analyzed symbols (utils:55, services:2). Enforce patterns:
 
-### ClassNames & Styling (All 137 TSX)
-- Use `cn("base", condition && "modifier")` from `lib/utils.ts`. Replace `className={condition ? "a b" : "c d"}` or raw Tailwind strings.
+### ClassNames & Styling (All TSX Files)
+- `import { cn } from '@/lib/utils'; cn("base", condition && "modifier")`. Replace ternaries/strings.
 
-### Formatting & Validation (Centralize Duplication)
-| Function | File | Purpose | Replace Inline Examples |
-|----------|------|---------|-------------------------|
-| `cn` | `lib/utils.ts` | Tailwind merging | `clsx(...)` or conditionals |
-| `formatCurrency` | `lib/utils.ts` | General currency | `number.toLocaleString()` |
-| `formatDate` | `lib/utils.ts` | Date display | `new Date().toLocaleDateString()` |
-| `formatPhoneUS` | `lib/formatters.ts` | US phone formatting | Manual string ops/regex |
-| `unformatPhone` | `lib/formatters.ts` | Phone parsing | Slicing/digits extraction |
-| `isValidPhoneUS` | `lib/formatters.ts` | Phone validation | Custom regex |
-| `isValidEmail` | `lib/formatters.ts` | Email check | `email.includes('@')` |
-| `formatCurrencyUSD` | `lib/formatters.ts` | USD display | `$` + `toLocaleString()` |
-| `formatCurrencyInput` | `lib/formatters.ts` | Input masking | Manual key handlers |
-| `parseCurrency` | `lib/formatters.ts` | Currency parsing | `parseFloat(str.replace('$', ''))` |
+### Formatting & Validation (Centralize 10+ Utils)
+| Function | File | Purpose | Inline Replacements |
+|----------|------|---------|---------------------|
+| `cn` | `lib/utils.ts` | Tailwind merge | `clsx`, ternaries |
+| `formatCurrency` | `lib/utils.ts` | Currency display | `toLocaleString()` |
+| `formatDate` | `lib/utils.ts` | Date formatting | `toLocaleDateString()` |
+| `formatPhoneUS` | `lib/formatters.ts` | US phone format | Regex/string ops |
+| `unformatPhone` | `lib/formatters.ts` | Phone parse | Digit extraction |
+| `isValidPhoneUS` | `lib/formatters.ts` | Phone validation | Custom checks |
+| `isValidEmail` | `lib/formatters.ts` | Email validation | Basic `@` checks |
+| `formatCurrencyUSD` | `lib/formatters.ts` | USD currency | `$` + locale |
+| `formatCurrencyInput` | `lib/formatters.ts` | Input masking | Key handlers |
+| `parseCurrency` | `lib/formatters.ts` | Currency parse | `parseFloat(replace)` |
 
-### Exports & Utils
-- Pure named exports (e.g., `exportToExcel`/`exportToPDF` in `lib/export-utils.ts`); stream large data.
+### Exports & Tracking Utils
+- Named exports: `exportToExcel`/`exportToPDF` (`lib/export-utils.ts`), `generateEventId`/`hashData`/`normalizePhone`/`getFacebookCookies`/`getUtmParams`/`mapSupabaseConfigToTracking` (`lib/tracking/utils.ts`).
+- Stream exports; hash/track sensitively.
 
-### Supabase & DB
-- Server/client wrappers (`lib/supabase/server.ts`, `client.ts`).
-- Batch: `supabase.from('table').select('col1, col2, related(*)')` instead of multiple calls.
-
-### Components (137 TSX)
-- `interface Props { ... }`; `const Comp: React.FC<Props> = ({}) => {...}`.
-- Optimize: `React.memo`, `useCallback`/`useMemo`, `forwardRef` for inputs.
-
-### Services (Class-Based, e.g., `WebhookService`)
+### Services (Class Pattern)
 ```ts
+// From lib/services/webhookService.ts
 export class WebhookService {
-  async process(payload: Payload) { /* logic */ }
+  async process(payload: any) { /* Supabase + logic */ }
 }
 ```
-- Dependency injection; async methods; extend for new logic (e.g., `ServiceConfigService`).
+- Constructor init Supabase; async methods; DI for testing.
 
-### API Routes
-- Zod validation; `NextResponse.json(data as T, { status })`; `revalidateTag`/`revalidatePath`; <500ms.
+### Components & Props
+- `interface ServiceSectionProps { services?: ServiceType[]; }`
+- `const Comp: React.FC<ServiceSectionProps> = ({ services }) => { useMemo(formatters) }`
+- Memoize lists, `forwardRef` inputs.
+
+### Supabase & API
+- Batch: `.select('*, related(*)')`.
+- Zod + `NextResponse.json(data as T)`.
+- Cache: `revalidateTag`.
 
 ### Types
-- `interface ServiceType { id: string; name: string; price: number; }`.
-- Centralize reusable (`types/index.ts`); inline for local.
-
-### Perf & Builds
-- Data fetching: SWR/React Query.
-- Lists: Virtualize if >50 items.
-- Dynamic imports for heavy components.
+- `interface ServiceType { id: string; name: string; price: number; }` from admin pages.
+- Central `types/services.ts`.
 
 ## Key Files and Purposes
-Focus by priority (symbol density, duplication):
+Prioritized by symbols/duplication (use `readFile` for details):
 
-### Utils & Helpers (43 Symbols; High Duplication)
-| File | Purpose | Key Symbols | Refactor Opportunities |
-|------|---------|-------------|------------------------|
-| `lib/utils.ts` | Core Tailwind/formatting utils | `cn`, `formatCurrency`, `formatDate` | Extract all inline class/date logic from TSX |
-| `lib/formatters.ts` | Phone/email/currency handlers | `formatPhoneUS`, `unformatPhone`, `isValidPhoneUS`, `isValidEmail`, `formatCurrencyUSD`, `formatCurrencyInput`, `parseCurrency` | Forms/tables in admin/agenda |
-| `lib/export-utils.ts` | Excel/PDF generation | `exportToExcel`, `exportToPDF` | Chunking for large exports; client-side opts |
-| `lib/services/webhookService.ts` | n8n webhook processing | `WebhookService` | Template for other services; extract page logic |
+| File | Directory/Layer | Purpose | Key Symbols | Refactor Targets |
+|------|-----------------|---------|-------------|------------------|
+| `lib/utils.ts` | Utils | Core Tailwind/date/currency | `cn`, `formatCurrency`, `formatDate` | Extract from all TSX |
+| `lib/services/webhookService.ts` | Services | Webhook processing (n8n/Supabase) | `WebhookService` | Template services; batch DB |
+| `components/agenda/appointment-form/service-section.tsx` | Components | Service picker in forms | `ServiceSectionProps` | Hooks/utils; decompose |
+| `app/(admin)/admin/configuracoes/servicos/page.tsx` | Admin | Services CRUD/config | `ServiceType` | To `ServiceConfigService`; table split |
+| `lib/export-utils.ts` | Utils | Excel/PDF exports | `exportToExcel`, `exportToPDF` | Chunking/streaming |
+| `lib/tracking/utils.ts` | Utils | Tracking/UTM/phone | `generateEventId`, `hashData`, `normalizePhone`, `getFacebookCookies`, `getUtmParams`, `mapSupabaseConfigToTracking` | Centralize tracking calls |
+| `app/api/carol/query/route.ts` | API | Carol AI service queries | `queryServicePricing`, `queryServiceAreas` | Batch + Zod |
+| `app/(public)/terms/page.tsx` | Public | Terms page | `TermsOfServicePage` | Shared layout/utils |
 
-### Services & Components
-| File | Purpose | Key Symbols | Refactor Opportunities |
-|------|---------|-------------|------------------------|
-| `components/agenda/appointment-form/service-section.tsx` | Service selection in appointment form | `ServiceSectionProps` | Extract hooks (`useServices`), formatters; decompose |
-| `app/(admin)/admin/configuracoes/servicos/page.tsx` | Admin services CRUD/config | `ServiceType` | Move logic to `ServiceConfigService`; split table/form |
-
-### API & Pages (Perf Hotspots)
-| File | Purpose | Key Symbols | Refactor Opportunities |
-|------|---------|-------------|------------------------|
-| `app/api/carol/query/route.ts` | Carol AI queries (pricing/areas) | `queryServicePricing`, `queryServiceAreas` | Batch Supabase; caching; Zod |
-| `app/(public)/terms/page.tsx` | Public terms page | `TermsOfServicePage` | Extract shared layout; utils for content |
-
-**Directory Priorities** (183 Files):
-| Directory | Files | Priority | Why |
-|-----------|-------|----------|-----|
-| `lib/` (utils, supabase, services, config, actions, context, admin-i18n) | High (.ts) | 1 | 43 symbols; extract targets |
-| `components/` (agenda, landing) | 137 TSX | 2 | Decomposition/prop drilling |
-| `app/(admin)/` | Many pages | 3 | Services/config CRUD |
-| `app/api/` | Routes | 4 | Query optimization |
-| `app/(public)/` | Pages | 5 | Consistency/reuse |
+**Directory Focus**:
+| Directory | Files/Key Areas | Priority | Rationale |
+|-----------|-----------------|----------|-----------|
+| `lib/` (utils.ts, formatters.ts, services/webhookService.ts, export-utils.ts, tracking/utils.ts) | Utils/Services | 1 | 55+ symbols; duplication source |
+| `components/agenda/appointment-form/` | UI Components | 2 | Props-heavy; formatting smells |
+| `app/(admin)/admin/configuracoes/servicos/` | Admin Pages | 3 | CRUD → services |
+| `app/api/carol/query/` | API Routes | 4 | Query perf |
+| `app/(public)/` | Public Pages | 5 | Consistency |
 
 ## Specific Workflows
-Leverage tools: `getFileStructure()`, `listFiles("lib/**/*.ts")`, `searchCode("className\\s*=", "**/*.tsx")`, `analyzeSymbols("app/api/**/*.ts")`, `readFile(file)`.
+Use tools proactively: `listFiles("lib/**/*.ts")`, `searchCode("className\\s*=", "**/*.tsx")`, `analyzeSymbols("components/**/*.tsx")`.
 
-### Workflow 1: Extract Inline Formatting (High Impact, 137 TSX)
-1. Scan: `searchCode("(toLocaleString|format\\(|\\$|regex).*?(className|value)", "**/*.tsx")`.
-2. Target file: `readFile("components/agenda/appointment-form/service-section.tsx")`.
-3. Add util: In `lib/formatters.ts` → `export const formatServicePrice = (price: number) => formatCurrencyUSD(price);`.
-4. Replace: Import + use; lint fix.
-5. Validate: Tests (`npm test`), UI check.
-6. Commit/PR: `refactor(agenda): extract service price formatter` + before/after LOC.
+### Workflow 1: Centralize Formatting (Utils Extraction)
+1. Scan: `searchCode("(toLocale|formatCurrency|\\$|phone).*?(className|value)", "**/*.tsx")`.
+2. Target: `readFile("components/agenda/appointment-form/service-section.tsx")`.
+3. Extend `lib/formatters.ts`: `export const formatServiceDisplay = (service: ServiceType) => ({ name: service.name, price: formatCurrencyUSD(service.price) });`.
+4. Replace: Import/use in TSX; `services.map(formatServiceDisplay)`.
+5. Validate: `npm test`, UI snapshot.
+6. PR: `refactor(agenda): centralize service formatters` + LOC table.
 
-### Workflow 2: Decompose Oversized Components (>50 LOC)
-1. List: `listFiles("components/**/*.tsx")`; `analyzeSymbols(target.tsx)` for large FCs.
-2. Split: Extract sub-comp (e.g., `ServiceList.tsx`), hook (`useFormattedServices.ts`).
-3. Optimize: `const services = useMemo(() => data.map(formatServicePrice), [data]);`.
-4. Types: `interface ServiceSectionProps { services: ServiceType[] }`.
-5. Verify: Profiler (<3 re-renders), `npm run build`.
+### Workflow 2: Decompose Components (TSX Split)
+1. List: `listFiles("components/agenda/**/*.tsx")`; pick >50 LOC via `readFile`.
+2. Analyze: `analyzeSymbols("components/agenda/appointment-form/service-section.tsx")`.
+3. Extract: `ServiceList.tsx` (sub-comp), `useServices` hook (`useMemo` + formatters).
+4. Props: Refine `ServiceSectionProps`.
+5. Optimize: `React.memo(ServiceList)`.
 6. PR Metrics:
-   | Metric | Before | After |
-   |--------|--------|-------|
-   | LOC | 120 | 80 |
-   | Sub-comps | 0 | 3 |
+   | Metric | Before | After | Δ |
+   |--------|--------|-------|---|
+   | LOC    | 100    | 60    | -40% |
+   | Hooks  | 0      | 2     | + |
 
-### Workflow 3: Optimize API Queries (e.g., Multiple Supabase Calls)
-1. Read: `readFile("app/api/carol/query/route.ts")`.
-2. Refactor:
-   ```ts
-   const { data } = await supabase
-     .from('services')
-     .select('*, pricing(*), areas(*)');
-   return NextResponse.json(data as Awaited<ReturnType<typeof queryServicePricing>>);
-   ```
-3. Add: Zod schema, `revalidateTag('carol-query')`.
-4. Test: `curl`, time <200ms; integration test.
-5. PR: Query count reduction table.
-
-### Workflow 4: Extract to Services (Pages → Classes)
+### Workflow 3: Service Class Extraction (Pages → Services)
 1. Target: `readFile("app/(admin)/admin/configuracoes/servicos/page.tsx")`.
-2. Create `lib/services/ServiceConfigService.ts`:
+2. Create `lib/services/ServiceConfigService.ts` (pattern from `WebhookService`):
    ```ts
    import { createServerClient } from '@/lib/supabase/server';
    export class ServiceConfigService {
-     private supabase;
-     constructor() { this.supabase = createServerClient(); }
+     private supabase = createServerClient();
      async getServices(): Promise<ServiceType[]> {
        const { data } = await this.supabase.from('services').select('*');
        return data ?? [];
      }
+     async updateService(id: string, updates: Partial<ServiceType>) { /* ... */ }
    }
    ```
-3. Page: `const serviceSvc = new ServiceConfigService(); const services = await serviceSvc.getServices();`.
-4. Types: Export `ServiceType`.
-5. Validate: Tests, perf.
+3. Page: `const svc = new ServiceConfigService(); const services = await svc.getServices();`.
+4. Export `ServiceType` to `types/services.ts`.
+5. Test: Unit for service methods.
+6. PR: `refactor(admin): extract ServiceConfigService`.
+
+### Workflow 4: API Query Optimization
+1. Read: `readFile("app/api/carol/query/route.ts")`.
+2. Batch:
+   ```ts
+   const { data: services } = await supabase.from('services').select('*, pricing(*), areas(*)');
+   return NextResponse.json(services as Awaited<ReturnType<typeof queryServicePricing>>());
+   ```
+3. Add Zod schema, cache tags.
+4. Benchmark: Time queries pre/post.
+5. PR Table:
+   | Query | Before (ms) | After (ms) | Calls |
+   |-------|-------------|------------|-------|
+   | Pricing | 300 | 120 | 3→1 |
 
 ### Workflow 5: Full PR Cycle
-1. **Plan**: Tool scan → "5 inline formatters in agenda; LOC -20%; perf +15%".
-2. Branch: `refactor/<area>-<issue>`.
-3. Changes: 1-3 files.
-4. Validate: `npm run lint test build`; Lighthouse; bundle analyzer.
+1. **Scan/Plan**: Tools → "Dupe formatters in 5 TSX; extract to utils".
+2. Branch: `refactor/utils-formatters`.
+3. Changes: 2-4 files max.
+4. Validate: Lint/build/test; Lighthouse.
 5. PR Template:
    ```
-   ## Refactor Summary
-   - Files: [list]
+   ## Summary
+   Files: lib/formatters.ts, service-section.tsx
    
    ## Metrics
-   | Area | Before | After | Delta |
-   |------|--------|-------|-------|
-   | LOC  | 250    | 200   | -20%  |
-   | Queries | 4   | 1     | -75%  |
+   | Area | Before | After | Δ |
+   |------|--------|-------|---|
+   | LOC  | 150    | 110   | -27% |
+   | Dupe utils | 5 | 0 | -100% |
    
-   ## Validation
-   - [x] Tests pass
-   - [x] No regressions (screenshots)
-   - [x] Perf improved
+   ## Checks
+   - [x] Tests/Lint/Build
+   - [x] No UI perf regression
    ```
 
 ## Key Symbols to Leverage/Extend
-- **Utils (43)**: `cn`, formatters (10+) → All UI/data.
-- **Services**: `WebhookService` (class pattern); extract `ServiceConfigService`.
-- **UI/API**: `ServiceSectionProps`, `ServiceType`, `queryServicePricing`/`queryServiceAreas` → Batch/typing.
+- **Utils (55)**: `cn`/`format*` → UI data; tracking utils → all events.
+- **Services (2+)**: `WebhookService` → `ServiceConfigService`.
+- **UI/API**: `ServiceSectionProps`/`ServiceType` → typed everywhere; `queryServicePricing` → batched.
 
 ## Collaboration & Handoff
-- **Status**: "Refactored [files]; Metrics: LOC -15%, queries batched. PR #[num]. Next: [priority area]."
-- **Docs**: New utils to `glossary.md`; patterns to `architecture.md`; link playbook in `AGENTS.md`.
+- **Updates**: "Refactored service-section.tsx; +formatServiceDisplay util. PR #42. Metrics: LOC -25%. Next: admin servicos page."
+- **Docs**: Log refactors in `docs/refactors.md`; link utils in `glossary.md`.
