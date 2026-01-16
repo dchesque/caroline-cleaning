@@ -2,6 +2,24 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [1.9.5] - 2026-01-15
+
+### Adicionado
+- **Admin (Conta)**:
+  - Nova página "Minha Conta" (`/admin/conta`) acessível pelo menu do usuário no header.
+  - Tab Perfil: edição de nome e telefone, visualização de email e função.
+  - Tab Segurança: formulário de alteração de senha com validação de senha atual e requisitos mínimos.
+  - Tab Preferências: configuração de notificações (email, push, SMS) e tipos de alerta específicos.
+  - Zona de Perigo: opção para desativar conta com confirmação por digitação de segurança.
+  - Sistema completo de i18n para toda a página suportando PT-BR e EN-US.
+
+### Técnico
+- Nova tabela `user_profiles` no Supabase com Row Level Security (RLS).
+- API Routes dedicada: `GET/PUT /api/profile` para gestão de dados do usuário.
+- API Route dedicada: `PUT /api/profile/password` para troca segura de senha.
+- Trigger de banco de dados para criação automática de perfil ao registrar novos usuários via Supabase Auth.
+- Expansão do dicionário de traduções com 100+ novas chaves.
+
 ## [1.9.4] - 2026-01-16
 ### Adicionado
 - **Admin (Internacionalização)**:

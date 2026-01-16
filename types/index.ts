@@ -24,3 +24,30 @@ export type PrecoBase = Database['public']['Tables']['precos_base']['Row']
 // Views
 export type AgendaHoje = Database['public']['Views']['v_agenda_hoje']['Row']
 export type DashboardStats = Database['public']['Views']['v_dashboard_stats']['Row']
+
+// User Profile
+export interface UserProfile {
+    id: string
+    full_name: string | null
+    phone: string | null
+    role: 'admin' | 'manager' | 'staff'
+    avatar_url: string | null
+    language: string
+    theme: 'light' | 'dark' | 'system'
+    email_notifications: boolean
+    push_notifications: boolean
+    sms_notifications: boolean
+    notification_types: NotificationTypes
+    last_login_at: string | null
+    created_at: string
+    updated_at: string
+    email?: string // Campo virtual vindo do auth.users
+}
+
+export interface NotificationTypes {
+    newLead: boolean
+    newAppointment: boolean
+    appointmentReminder: boolean
+    paymentReceived: boolean
+    lowRating: boolean
+}

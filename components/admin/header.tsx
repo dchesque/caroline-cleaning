@@ -2,9 +2,10 @@
 
 import { signOut } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
-import { LogOut, User } from 'lucide-react'
+import { LogOut, User, Settings } from 'lucide-react'
 import { LanguageSelector } from './language-selector'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
+import Link from 'next/link'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -38,6 +39,13 @@ export function AdminHeader({ user }: { user: any }) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>{common.myAccount}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                                <Link href="/admin/conta" className="cursor-pointer">
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    {common.settings}
+                                </Link>
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => signOut()} className="text-destructive cursor-pointer">
                                 <LogOut className="mr-2 h-4 w-4" />
