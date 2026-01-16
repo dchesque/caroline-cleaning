@@ -47,6 +47,32 @@ export async function POST(request: NextRequest) {
 
         if (error) throw error
 
+        // Disparar evento server-side
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/tracking/event`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_name: 'Lead',
+                    event_id: `lead_form_${data.id}`,
+                    event_source_url: request.headers.get('referer') || '/',
+                    user_data: {
+                        email: null,
+                        phone: telefone,
+                        first_name: nome.split(' ')[0],
+                        city: cidade,
+                    },
+                    custom_data: {
+                        content_name: 'Contact Form',
+                        content_category: 'Lead',
+                    },
+                }),
+            });
+        } catch (trackingError) {
+            console.error('Tracking error:', trackingError);
+            // Não falhar a request principal por erro de tracking
+        }
+
         return NextResponse.json({
             success: true,
             message: 'Contato recebido! Entraremos em contato em breve.',

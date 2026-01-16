@@ -2,6 +2,42 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.0.0] - 2026-01-16
+
+### Adicionado
+- **Sistema de Tracking v2.0**:
+  - `TrackingProvider`: Context provider que carrega configurações do Supabase e injeta scripts dinamicamente.
+  - Suporte completo a: Meta Pixel, Google Ads, GA4, GTM, TikTok Pixel, UTMify.
+  - Meta Conversions API (CAPI) para tracking server-side com maior precisão após iOS 14+.
+  - Nova tabela `tracking_events` para logging de todos os eventos.
+  - API `/api/tracking/config` para carregar configurações públicas.
+  - API `/api/tracking/event` para eventos server-side com deduplicação.
+  - Hook `useTracking()` para disparar eventos facilmente em qualquer componente.
+  - Deduplicação automática entre eventos client-side e server-side via `event_id`.
+
+### Melhorado
+- **Tracking**:
+  - Configurações do admin agora são aplicadas automaticamente no site público.
+  - PageView disparado automaticamente em cada mudança de rota.
+  - Eventos de conversão (Lead, Schedule) disparados nos pontos corretos do funil.
+  - Suporte a scripts customizados no head e body.
+
+### Técnico
+- Nova estrutura `lib/tracking/` com tipos, utils e configurações.
+- Migration `07_tracking_events.sql` para tabela de log de eventos.
+- Integração com `/api/contact` e `/api/carol/actions` para eventos server-side.
+- Remoção do componente `GoogleAnalytics` antigo (env-based) em favor do novo sistema dinâmico.
+
+### Eventos Mapeados
+| Evento | Trigger | Plataformas |
+|--------|---------|-------------|
+| PageView | Automático em cada página | Meta, GA4, TikTok, GTM |
+| InitiateChat | Usuário abre o chat | Meta, GA4, TikTok, GTM |
+| Lead | Formulário de contato ou chat | Meta (+ CAPI), GA4, Google Ads, TikTok |
+| Schedule | Agendamento criado | Meta (+ CAPI), GA4, Google Ads, TikTok |
+| ClickToCall | Clique no telefone | Meta, GA4, GTM |
+
+
 ## [1.9.6] - 2026-01-16
 
 ### Corrigido

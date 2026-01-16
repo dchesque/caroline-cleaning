@@ -1,15 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { MessageCircle } from 'lucide-react'
 import { ChatWindow } from './chat-window'
 import { ChatBubbleNotification } from './chat-bubble-notification'
 import { useChat } from '@/hooks/use-chat'
 import { cn } from '@/lib/utils'
+import { useTracking } from '@/components/tracking/tracking-provider'
 
 export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false)
+    const { trackEvent } = useTracking()
+
     const [showBubble, setShowBubble] = useState(false)
     const [bubbleContent, setBubbleContent] = useState({
         title: "Hi! I'm Carol.",
@@ -77,27 +80,40 @@ export function ChatWidget() {
         sessionStorage.setItem(BUBBLE_DISMISSED_KEY, 'true')
     }
 
+    const handleToggleChat = useCallback((newState?: boolean) => {
+        const nextState = newState !== undefined ? newState : !isOpen
+
+        if (nextState && !isOpen) {
+            trackEvent('InitiateChat', {
+                content_name: 'Chat Widget',
+            })
+        }
+
+        setIsOpen(nextState)
+        if (nextState) {
+            setShowBubble(false)
+        }
+    }, [isOpen, trackEvent])
+
     // Handler to click bubble (opens chat)
     const handleBubbleClick = () => {
-        setShowBubble(false)
-        setIsOpen(true)
+        handleToggleChat(true)
     }
 
     useEffect(() => {
-        const handleOpenChat = () => {
-            setShowBubble(false)
-            setIsOpen(true)
+        const onOpenChat = () => {
+            handleToggleChat(true)
         }
-        window.addEventListener('open-chat', handleOpenChat)
-        return () => window.removeEventListener('open-chat', handleOpenChat)
-    }, [])
+        window.addEventListener('open-chat', onOpenChat)
+        return () => window.removeEventListener('open-chat', onOpenChat)
+    }, [handleToggleChat])
 
     return (
         <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
             {/* Chat Window */}
             <ChatWindow
                 isOpen={isOpen}
-                onClose={() => setIsOpen(false)}
+                onClose={() => handleToggleChat(false)}
                 chat={chat}
                 className="w-[90vw] h-[80vh] md:w-[400px] md:h-[600px] mb-4 rounded-xl shadow-2xl"
             />
@@ -116,7 +132,7 @@ export function ChatWidget() {
                 {/* Toggle Button */}
                 <Button
                     size="icon"
-                    onClick={() => setIsOpen(prev => !prev)}
+                    onClick={() => handleToggleChat()}
                     className={cn(
                         "h-14 w-14 rounded-full shadow-lg bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white transition-transform duration-300",
                         isOpen ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"

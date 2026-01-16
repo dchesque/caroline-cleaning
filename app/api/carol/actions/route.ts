@@ -123,6 +123,30 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
         return { status: 'error', message: error.message }
     }
 
+    // ADICIONAR: Disparar evento de Lead
+    try {
+        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/tracking/event`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                event_name: 'Lead',
+                event_id: `lead_chat_${data.id}`,
+                user_data: {
+                    phone: phone,
+                    email: email,
+                    first_name: name?.split(' ')[0],
+                    zip_code: zip_code,
+                },
+                custom_data: {
+                    content_name: 'Chat Carol',
+                    content_category: 'Lead',
+                },
+            }),
+        });
+    } catch (e) {
+        console.error('Tracking error:', e);
+    }
+
     return {
         status: 'created',
         client_id: data.id,
@@ -258,6 +282,29 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
 
     if (error) {
         return { status: 'error', message: error.message }
+    }
+
+    // ADICIONAR: Disparar evento de Schedule
+    try {
+        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/tracking/event`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                event_name: 'Schedule',
+                event_id: `schedule_${appointment.id}`,
+                user_data: {
+                    external_id: clientId,
+                },
+                custom_data: {
+                    content_name: service_type || 'Cleaning Service',
+                    content_category: 'Appointment',
+                    value: appointment.valor || 0,
+                    currency: 'USD',
+                },
+            }),
+        });
+    } catch (e) {
+        console.error('Tracking error:', e);
     }
 
     // Buscar dados do cliente para confirmação

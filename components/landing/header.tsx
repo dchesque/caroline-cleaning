@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button'
 import { MessageSquare, MessageCircle, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useBusinessSettings } from '@/lib/context/business-settings-context'
+import { useTracking } from '@/components/tracking/tracking-provider'
 
 export function Header() {
     const settings = useBusinessSettings()
+    const { trackEvent } = useTracking()
     const [isScrolled, setIsScrolled] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -111,6 +113,7 @@ export function Header() {
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                             <a
                                 href={`sms:${settings.business_phone}`}
+                                onClick={() => trackEvent('ClickToCall', { content_name: 'Header SMS' })}
                                 className="flex items-center gap-2 hover:text-brandy-rose-600 transition-colors"
                             >
                                 <MessageSquare className="w-4 h-4 text-brandy-rose-500" />

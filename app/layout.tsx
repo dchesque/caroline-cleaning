@@ -19,8 +19,6 @@ export const metadata: Metadata = {
   description: "Professional cleaning, instantly scheduled.",
 };
 
-import { GoogleAnalytics } from '@/components/analytics/google-analytics';
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,7 +31,6 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {children}
-        <GoogleAnalytics />
       </body>
     </html>
   );
