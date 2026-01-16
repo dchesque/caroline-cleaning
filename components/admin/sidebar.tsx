@@ -59,6 +59,7 @@ const navigation: NavigationItem[] = [
             { key: 'settingsLanding', href: '/admin/configuracoes/pagina-inicial', icon: Layout },
             { key: 'settingsSystem', href: '/admin/configuracoes/sistema', icon: Cog },
             { key: 'settingsTracking', href: '/admin/configuracoes/trackeamento', icon: BarChart3 },
+            { key: 'settingsWebhooks', href: '/admin/configuracoes/webhooks', icon: FileText },
         ]
     },
 ]

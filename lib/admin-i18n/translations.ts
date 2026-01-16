@@ -83,6 +83,7 @@ export const translations = {
             settingsLanding: 'Página Inicial',
             settingsSystem: 'Sistema',
             settingsTracking: 'Trackeamento',
+            settingsWebhooks: 'Webhooks',
             menu: 'Menu de Navegação',
         },
         dashboard: {
@@ -601,6 +602,10 @@ export const translations = {
                     title: 'Trackeamento',
                     description: 'Pixels, tags e scripts de rastreamento',
                 },
+                webhooksCard: {
+                    title: 'Webhooks',
+                    description: 'Documentação técnica e integração com n8n',
+                },
             },
 
             // Empresa
@@ -1012,6 +1017,7 @@ export const translations = {
             settingsLanding: 'Landing Page',
             settingsSystem: 'System',
             settingsTracking: 'Tracking',
+            settingsWebhooks: 'Webhooks',
             menu: 'Navigation Menu',
         },
         dashboard: {
@@ -1529,6 +1535,10 @@ export const translations = {
                 trackingCard: {
                     title: 'Tracking',
                     description: 'Pixels, tags and tracking scripts',
+                },
+                webhooksCard: {
+                    title: 'Webhooks',
+                    description: 'Technical documentation and n8n integration',
                 },
             },
 

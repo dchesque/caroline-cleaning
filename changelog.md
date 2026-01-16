@@ -2,6 +2,17 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.1.0] - 2026-01-16
+
+### Adicionado
+- **Documentação de Webhooks**:
+  - Nova página técnica em `/admin/configuracoes/webhooks` para desenvolvedores.
+  - Detalhamento de 15 webhooks Outbound (App → n8n) e 4 webhooks Inbound (n8n → App).
+  - Painel interativo com: payloads TypeScript, exemplos JSON, comandos cURL de teste e tabelas de parâmetros.
+  - Banner de status de configuração em tempo real.
+  - Componente `CopyCodeBlock` para facilitar a cópia de snippets técnicos.
+  - Visão geral da arquitetura de integração com n8n.
+
 ## [2.0.0] - 2026-01-16
 
 ### Adicionado
