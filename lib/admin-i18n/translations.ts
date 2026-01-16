@@ -2133,6 +2133,7 @@ export const translations = {
                 typeToConfirm: 'Type "{word}" to confirm',
                 confirmWord: 'DEACTIVATE',
                 deactivateSuccess: 'Account deactivated successfully.',
+                deactivateError: 'Error deactivating account.',
             },
         },
     },

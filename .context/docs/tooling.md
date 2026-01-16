@@ -1,62 +1,59 @@
 # Tooling & Productivity Guide
 
-This guide documents essential tools, scripts, configurations, workflows, and best practices for developing **Carolinas Premium**—a Next.js 14+ application with TypeScript, Tailwind CSS, Supabase (client/server), N8N webhooks, AI-powered chat (Carol), admin dashboards, analytics, and financial tracking. Tooling ensures code quality, rapid iteration, local production parity, and webhook reliability.
+This guide covers essential tools, scripts, configurations, workflows, and best practices for developing **Caroline Cleaning**—a Next.js 14+ app with TypeScript, Tailwind CSS, Supabase (client/server), N8N webhooks, AI-powered chat (Carol), admin dashboards (`app/(admin)/layout.tsx:AdminLayout`), analytics (`components/analytics/conversion-funnel.tsx:ConversionFunnel`), and financial tracking (`components/financeiro/transaction-form.tsx:TransactionFormProps`). Tooling enforces code quality, local/prod parity, and webhook reliability across 183+ files and 284+ symbols (e.g., 152 Components, 50 Controllers).
 
 ## Prerequisites
 
-Install these tools before development:
+Install before starting:
 
-| Tool | Minimum Version | Install Command | Purpose |
-|------|-----------------|-----------------|---------|
-| **Node.js** | 18.17.0+ (LTS) | [nodejs.org](https://nodejs.org) | Runtime for Next.js, TypeScript, bundlers |
-| **pnpm** | 8.0.0+ | `npm i -g pnpm` | Package manager (uses `pnpm-lock.yaml` for monorepo efficiency) |
-| **Supabase CLI** | 1.125.0+ | `npm i -g supabase` | Local Supabase stack, schema migrations, type generation (`types/supabase.ts`) |
-| **ngrok** | Latest | [ngrok.com](https://ngrok.com) | Secure tunneling for webhook testing (`/api/webhook/n8n`) |
-| **Git** | 2.30.0+ | System package manager | VCS with Husky pre-commit hooks |
+| Tool | Min Version | Install | Purpose |
+|------|-------------|---------|---------|
+| **Node.js** | 18.17.0+ LTS | [nodejs.org](https://nodejs.org) | Next.js runtime, bundling |
+| **pnpm** | 8.0.0+ | `npm i -g pnpm` | Fast package manager (`pnpm-lock.yaml`) |
+| **Supabase CLI** | 1.125.0+ | `npm i -g supabase` | Local DB/Auth, migrations, types (`types/supabase.ts:Database`) |
+| **ngrok** | Latest | [ngrok.com](https://ngrok.com) | Webhook tunneling (`app/api/webhook/n8n/route.ts`) |
+| **Git** | 2.30.0+ | System pkg | VCS + Husky hooks |
 
 ### Post-Clone Setup
 ```bash
 pnpm install
-cp .env.example .env.local  # Edit keys: SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, WEBHOOK_SECRET
-pnpm validate-env           # Validates via `lib/env.ts:validateEnv()`
-supabase gen types typescript --local > types/supabase.ts  # Generates `Database`, `Json` types
-supabase start              # Starts local Supabase (DB + Auth, matches prod schema)
-pnpm db:generate            # Regenerates types + validates
+cp .env.example .env.local  # Set SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, WEBHOOK_SECRET
+pnpm validate-env           # Runs `lib/env.ts:validateEnv()`
+supabase gen types typescript --local > types/supabase.ts
+supabase start              # Local Supabase (matches prod schema)
+pnpm db:generate            # Types + validation (`types/index.ts:Cliente`, `Agendamento`)
 ```
 
-**Pro Tip**: After schema changes: `supabase db pull && pnpm db:generate && pnpm type-check`. Cross-reference `types/index.ts` for app types like `Cliente`, `Agendamento`.
+**After DB changes**: `supabase db pull && pnpm db:generate && pnpm type-check`.
 
 ## Core Scripts (`package.json`)
 
-Scripts chain ESLint, Prettier, TypeScript checks, and Supabase sync. Prefix with `pnpm`.
+| Script | Command | Description | Key Outputs/Integrations |
+|--------|---------|-------------|--------------------------|
+| `dev` | `pnpm dev` | Dev server (HMR, Tailwind JIT) | `localhost:3000` (`components/landing/announcement-bar.tsx:AnnouncementBar`) |
+| `build` | `pnpm build` | Prod build + tsc strict | `.next/` |
+| `start` | `pnpm start` | Prod server | Built app |
+| `lint` | `pnpm lint` | ESLint + Prettier (`--fix`) | `lib/utils.ts:cn()`, `lib/formatters.ts:formatCurrency` |
+| `format` | `pnpm format` | Prettier all | Consistency across `*.{ts,tsx}` |
+| `type-check` | `pnpm type-check` | `tsc --noEmit` strict | `types/index.ts:DashboardStats`, `hooks/use-chat.ts:ChatMessage` |
+| `db:generate` | `pnpm db:generate` | Supabase types | `types/supabase.ts:Json` |
+| `export:types` | `pnpm export:types` | Types + env/utils | `lib/export-utils.ts:exportToExcel` |
+| `validate-env` | `pnpm validate-env` | Env checks | `lib/config/webhooks.ts:getWebhookSecret()` |
 
-| Script | Command | Description | Integrations & Outputs |
-|--------|---------|-------------|-------------------------|
-| `dev` | `pnpm dev` | Development server (HMR, Tailwind JIT, Supabase client) | `localhost:3000` (landing: `AboutUs`, `AnnouncementBar`) |
-| `build` | `pnpm build` | Production build + strict type-check | `.next/` directory |
-| `start` | `pnpm start` | Production server (post-build) | Serves built app |
-| `lint` | `pnpm lint` | ESLint + Prettier (`--fix` to auto-correct) | `*.{ts,tsx}` (e.g., `lib/utils.ts:cn()`) |
-| `format` | `pnpm format` | Prettier format all sources | Enforces consistency (e.g., `lib/formatters.ts:formatCurrency`) |
-| `type-check` | `pnpm type-check` | `tsc --noEmit` (strict mode) | Validates `types/supabase.ts:Database`, `types/index.ts:DashboardStats` |
-| `db:generate` | `pnpm db:generate` | Regenerate Supabase types | Updates `types/supabase.ts` |
-| `export:types` | `pnpm export:types` | Export types + env/utils validation | Uses `lib/export-utils.ts:exportToExcel` |
-| `validate-env` | `pnpm validate-env` | Runtime env checks | Calls `lib/config/webhooks.ts:getWebhookSecret()` |
-
-**Example Usage**:
+**Usage**:
 ```bash
-pnpm lint --fix  # Fixes issues in `components/admin/header.tsx:AdminHeader`
-pnpm type-check  # Ensures `hooks/use-chat.ts:ChatMessage` compatibility
+pnpm lint --fix && pnpm type-check  # Fix `components/admin/header.tsx:AdminHeader`
 ```
 
 ## Git Hooks (Husky + lint-staged)
 
-Auto-enforced quality gates on commit. Installed via `postinstall`.
+Auto-quality on commit:
 
 - **Pre-commit** (`.husky/pre-commit`):
-  1. ESLint `--fix` + Prettier on staged `*.{ts,tsx}`.
-  2. Incremental type-check.
-  3. Auto-regenerate `types/supabase.ts`.
-  4. Env validation (`pnpm validate-env`).
+  1. Lint/fix staged files.
+  2. Incremental tsc.
+  3. Regen `types/supabase.ts`.
+  4. `pnpm validate-env`.
 
 - **lint-staged.config.js**:
   ```js
@@ -66,86 +63,90 @@ Auto-enforced quality gates on commit. Installed via `postinstall`.
   }
   ```
 
-Reinstall hooks: `pnpm husky:install`.
+Reinstall: `pnpm husky:install`.
 
 ## Development Workflows
 
-### 1. Local Production Parity
+### 1. Local Prod Parity
 ```bash
-# Env setup
-echo "NEXT_PUBLIC_WEBHOOK_URL=https://your-ngrok-url.ngrok.io" >> .env.local
+echo "NEXT_PUBLIC_WEBHOOK_URL=https://abc123.ngrok.io" >> .env.local
 pnpm validate-env
-
-# Supabase
 supabase start
-
-# Next.js
 pnpm dev
 ```
-- **Landing**: `localhost:3000` (`components/landing/about-us.tsx:AboutUs`).
-- **Admin**: `/admin` (`app/(admin)/layout.tsx:AdminLayout`, `lib/admin-i18n/context.tsx:AdminI18nProvider`).
+- Landing: `/` (`components/landing/about-us.tsx:AboutUs`).
+- Admin: `/admin` (`lib/admin-i18n/context.tsx:AdminI18nProvider`).
 
-### 2. Webhook Development & Testing (N8N Integration)
-- **Tunnel**: `ngrok http 3000`
-- **Config Utils**: `lib/config/webhooks.ts` (`getWebhookUrl()`, `isWebhookConfigured()`, `getWebhookTimeout()`).
-- **Payload Types** (`types/webhook.ts`):
+### 2. Webhooks (N8N + Carol Integration)
+- **Tunnel**: `ngrok http 3000`.
+- **Utils**: `lib/config/webhooks.ts:getWebhookUrl()`, `isWebhookConfigured()`.
+- **Types** (`types/webhook.ts`):
   ```ts
   import type { AppointmentCreatedPayload, WebhookPayload } from '@/types/webhook';
   const payload: AppointmentCreatedPayload = {
-    event: 'appointment.created',
-    data: { id: 1, client_id: 'uuid', starts_at: new Date().toISOString() }
+    event: 'appointment.created' as const,
+    data: { id: 1, client_id: 'uuid-123' }
   };
-  // Test via fetch or Thunder Client
-  fetch(`${getWebhookUrl()}/n8n`, {
-    method: 'POST',
-    headers: { 'Webhook-Secret': getWebhookSecret() },
-    body: JSON.stringify(payload)
-  });
   ```
-- **React Hooks** (`hooks/use-webhook.ts`):
+- **Test**:
+  ```bash
+  curl -X POST "$NGROK_URL/api/webhook/n8n" \
+    -H "Content-Type: application/json" \
+    -H "Webhook-Secret: $(pnpm validate-env && echo $WEBHOOK_SECRET)" \
+    -d @payload.json
+  ```
+- **Hooks** (`hooks/use-webhook.ts`):
   ```tsx
+  import { useNotifyAppointmentCreated } from '@/hooks/use-webhook';
   const { mutate } = useNotifyAppointmentCreated();
-  mutate(payload);  // Triggers `lib/services/webhookService.ts:WebhookService`
+  mutate(payload);  // Calls `lib/services/webhookService.ts:WebhookService`
   ```
-- **Middleware Protection**: `middleware.ts` (`rateLimit`, auth checks).
+- **Services**: `lib/services/webhookService.ts:WebhookService` (handles `WebhookResponse`).
+- **Protection**: `middleware.ts:rateLimit`, `lib/actions/webhook.ts:sendWebhookAction()`.
 
-### 3. AI Chat (Carol) Development
-- **Components**: `components/chat/chat-widget.tsx:ChatWidget` → `ChatWindow` + `ChatInput`.
-- **Hooks**: `hooks/use-chat.ts:useChat()` returns `ChatMessage[]`.
-- **Sessions**: `lib/chat-session.ts:generateSessionId()`, `getSessionId()`.
-- **API**: `POST /api/chat` (`app/api/chat/route.ts:ChatRequest`).
-- **Debug**:
-  ```ts
+### 3. AI Chat (Carol)
+- **Components**: `components/chat/chat-widget.tsx:ChatWidget` → `chat-window.tsx:ChatWindow` + `chat-input.tsx:ChatInput`.
+- **Hooks**: `hooks/use-chat.ts:useChat()` → `Message[]` / `ChatMessage`.
+- **Sessions**: `lib/chat-session.ts:generateSessionId()`, `hooks/use-chat-session.ts:useChatSession()`.
+- **API**: `app/api/chat/route.ts:ChatRequest`.
+- **Logging**:
+  ```tsx
   import Logger from '@/lib/logger';
-  const logger = new Logger();
-  logger.info('ChatSession', { sessionId: getSessionId(), payload });
+  new Logger().info('Chat', { sessionId: getSessionId(), messages: payload });
   ```
 
-### 4. Data Management & Exports
-- **CRUD Pages**: `app/(admin)/admin/clientes/page.tsx:ClientesPage`, `components/clientes/clients-table.tsx:ClientsTableProps`.
-- **Exports** (`lib/export-utils.ts`):
-  ```ts
+### 4. Data/Exports/Analytics
+- **Tables**: `components/clientes/clients-table.tsx:ClientsTableProps` (`types/index.ts:Cliente`).
+- **Exports**:
+  ```tsx
   import { exportToExcel, exportToPDF } from '@/lib/export-utils';
-  exportToExcel(clients as Cliente[], 'clients.xlsx');  // `types/index.ts:Cliente`
+  exportToExcel(clients, 'clients.xlsx');
   ```
-- **Analytics**: `components/analytics/conversion-funnel.tsx:ConversionFunnel`, `types/index.ts:DashboardStats`.
+- **Filters**: `components/clientes/clients-filters.tsx:ClientsFilters`.
+- **Stats**: `types/index.ts:DashboardStats`.
 
-### 5. Admin Features
-- **Agenda**: `app/(admin)/admin/agenda/page.tsx:AgendaPage`, `components/agenda/appointment-form/use-appointment-form.ts:useAppointmentForm`.
-- **Financeiro**: `components/financeiro/transaction-form.tsx:TransactionFormProps`, `components/financeiro/category-quick-form.tsx:CategoryQuickForm`.
-- **Business Config**: `lib/business-config.ts:BusinessSettings`, `lib/context/business-settings-context.tsx:BusinessSettingsProvider`.
+### 5. Admin/Agenda/Financeiro
+- **Agenda**: `app/(admin)/admin/agenda/page.tsx:AgendaPage`, `components/agenda/calendar-view.tsx:CalendarView`.
+- **Forms**: `components/agenda/appointment-form/*` (`AppointmentFormData`), `components/financeiro/category-quick-form.tsx:CategoryQuickForm`.
+- **Config**: `lib/business-config.ts:BusinessSettings` + `lib/context/business-settings-context.tsx:BusinessSettingsProvider`.
+- **Clientes**: `app/(admin)/admin/clientes/page.tsx:ClientesPage`.
 
-## IDE Configuration (VS Code Recommended)
+### 6. Tracking
+- **Provider**: `components/tracking/tracking-provider.tsx`.
+- **Utils**: `lib/tracking/utils.ts:getUtmParams()`, `generateEventId()`.
+- **Types**: `lib/tracking/types.ts:TrackingEventName`, `CustomData`.
 
-### Essential Extensions
+## IDE Setup (VS Code)
+
+### Extensions
 | Extension | ID | Purpose |
 |-----------|----|---------|
-| Tailwind CSS IntelliSense | `bradlc.vscode-tailwindcss` | Autocomplete for `lib/utils.ts:cn()` classes |
-| ESLint | `dbaeumer.vscode-eslint` | Real-time linting/fixing |
-| Prettier | `esbenp.prettier-vscode` | Formatting on save (`lib/formatters.ts:formatPhoneUS`) |
-| GitLens | `eamodio.gitlens` | Dependency tracing (e.g., `components/agenda/appointment-modal.tsx` used by 8 files) |
-| Supabase | `supabase.supabase-vscode` | Schema explorer, `lib/supabase/client.ts:createClient` |
-| Thunder Client | `rangav.vscode-thunder-client` | API testing (`/api/webhook/n8n`, `/api/carol/query`) |
+| Tailwind CSS IntelliSense | `bradlc.vscode-tailwindcss` | `cn()` autocomplete |
+| ESLint | `dbaeumer.vscode-eslint` | Linting |
+| Prettier | `esbenp.prettier-vscode` | Format on save |
+| GitLens | `eamodio.gitlens` | Trace deps (e.g., `components/agenda/appointment-modal.tsx` → 8 importers) |
+| Supabase | `supabase.supabase-vscode` | Schema + `lib/supabase/server.ts:createClient()` |
+| Thunder Client | `rangav.vscode-thunder-client` | Test `/api/webhook/n8n`, `/api/carol/query` |
 
 ### `.vscode/settings.json`
 ```json
@@ -155,56 +156,55 @@ pnpm dev
   "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
   "typescript.preferences.importModuleSpecifier": "shortest",
   "tailwindCSS.experimental.classRegex": ["cn\\(([^)]*)\\)"],
-  "emmet.includeLanguages": { "typescriptreact": "html" },
-  "supabase.projectRef": "${env:SUPABASE_PROJECT_REF}"
+  "emmet.includeLanguages": { "typescriptreact": "html" }
 }
 ```
 
-### Custom Snippets (`.vscode/carolinas.code-snippets`)
+### Snippets (`.vscode/caroline-cleaning.code-snippets`)
 ```json
 {
-  "Supabase Server Client": {
-    "prefix": "supabase-server",
-    "body": ["import { createClient } from '@/lib/supabase/server';", "const supabase = createClient();"]
+  "Supabase Client": {
+    "prefix": "supabase-client",
+    "body": ["import { createClient } from '@/lib/supabase/client';", "const supabase = createClient();"]
   },
-  "Webhook Payload": {
-    "prefix": "webhook-payload",
-    "body": ["import type { AppointmentCreatedPayload } from '@/types/webhook';", "const payload: AppointmentCreatedPayload = { event: 'appointment.created', data: {} };"]
+  "Webhook Hook": {
+    "prefix": "webhook-notify",
+    "body": ["import { useNotifyAppointmentCreated } from '@/hooks/use-webhook';", "const { mutate } = useNotifyAppointmentCreated();"]
   },
   "Clients Table": {
     "prefix": "clients-table",
-    "body": ["import { ClientsTableProps } from '@/components/clientes/clients-table';", "<ClientsTable clients={data} filters={filters} />"]
+    "body": ["import ClientsTable from '@/components/clientes/clients-table';", "<ClientsTable clients={clients} />"]
   }
 }
 ```
 
-## Shell Aliases
-Add to `~/.zshrc` / `~/.bashrc`:
+## Shell Aliases (`~/.zshrc` / `~/.bashrc`)
 ```bash
-alias carol-dev='cd ~/Workspace/carolinas-premium && pnpm dev'
-alias carol-lint='pnpm lint --fix && pnpm format && pnpm type-check'
-alias carol-db='supabase start & sleep 5 && pnpm db:generate'
-alias carol-tunnel='ngrok http 3000'
-alias carol-env='pnpm validate-env'
-alias carol-test-webhook='curl -X POST http://localhost:3000/api/webhook/n8n -H "Content-Type: application/json" -d @payload.json'
+alias caroline-dev='cd ~/Workspace/caroline-cleaning && pnpm dev'
+alias caroline-lint='pnpm lint --fix && pnpm format && pnpm type-check'
+alias caroline-db='supabase start & sleep 5 && pnpm db:generate'
+alias caroline-tunnel='ngrok http 3000'
+alias caroline-env='pnpm validate-env'
+alias caroline-webhook='curl -X POST http://localhost:3000/api/webhook/n8n -H "Content-Type: application/json" -d @payload.json'
 ```
 
 ## Debugging & Monitoring
 
-| Area | Tools/Commands | Key References |
-|------|----------------|---------------|
-| **Logging** | `new Logger().debug('Component', data)` | `lib/logger.ts:Logger`, `LogEntry` |
-| **Supabase** | Supabase Dashboard, Network tab | `lib/supabase/server.ts:createClient`, `types/supabase.ts:Database` |
-| **Webhooks** | ngrok inspect, Thunder Client | `types/webhook.ts:WebhookPayload`, `hooks/use-webhook.ts` |
-| **Performance** | `pnpm build`, Lighthouse CI | `middleware.ts:rateLimit` |
-| **API Routes** | `/api/ready`, `/api/pricing` | `app/api/ready/route.ts:GET` |
+| Area | Tools | References |
+|------|--------|------------|
+| **Logging** | `new Logger('Module').debug(data)` | `lib/logger.ts:Logger`, `LogEntry` / `LogLevel` |
+| **Supabase** | Dashboard, Network | `lib/supabase/client.ts:createClient()`, `types/supabase.ts:Database` |
+| **Webhooks** | ngrok inspect, Thunder Client | `types/webhook.ts:WebhookEventType`, `hooks/use-webhook.ts:useSendChatMessage()` |
+| **Chat** | Console + Logger | `hooks/use-chat.ts:useChat()`, `types/index.ts:MensagemChat` |
+| **Performance** | `pnpm build`, Lighthouse | `middleware.ts:middleware()` |
+| **API Health** | `/api/ready` | Route handlers (`app/api/tracking/event/route.ts:EventPayload`) |
 
-## Common Issues & Best Practices
-- **Type Errors**: Regen types post-DB changes (`pnpm db:generate`).
-- **Formatting**: Always use `lib/formatters.ts` utils (`formatCurrencyUSD`, `parseCurrency`, `isValidPhoneUS`).
-- **Imports**: Prefer barrels (`types/index.ts:AgendamentoInsert`, `types/index.ts:ClienteUpdate`).
-- **Dependencies**: High-impact files like `components/agenda/appointment-modal.tsx` (8 importers).
-- **Security**: Webhook secrets via `getWebhookSecret()`; rate-limiting in `middleware.ts`.
-- **Team Sync**: Share VS Code settings; validate env on PRs.
+## Common Issues & Fixes
+- **Type Mismatches**: `pnpm db:generate` after schema diffs.
+- **Formatting**: Use `lib/formatters.ts` (`formatPhoneUS()`, `isValidEmail()`, `formatCurrencyUSD()`).
+- **Imports**: Barrels (`types/index.ts:AgendamentoUpdate`, `ClienteInsert`).
+- **High-Impact Files**: `components/agenda/appointment-modal.tsx` (8 deps), `app/(admin)/admin/configuracoes/webhooks/components/webhooks-tabs.tsx` (6 deps).
+- **Security**: Secrets via `lib/config/webhooks.ts:getWebhookSecret()`; `middleware.ts:rateLimit`.
+- **Team**: Share settings; PR env checks.
 
-**Stats**: 183 files, 284 symbols (e.g., 139 Components, 44 Controllers). **Updated**: October 2024.
+**Architecture**: Utils (55 symbols), Services (2, e.g., `WebhookService`), Components (152), Controllers (50), Repos (3). **Updated**: October 2024.

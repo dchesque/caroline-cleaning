@@ -2,6 +2,11 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.1.4] - 2026-01-16
+### Fixed
+- Correção de erro de build devido a chave de tradução ausente (`deactivateError`) no pacote `en-US`.
+- Correção crítica impedindo o deploy com Docker.
+
 ## [2.1.3] - 2026-01-16
 ### Fixed
 - Correção de strings hardcoded em português na página de Webhooks.
