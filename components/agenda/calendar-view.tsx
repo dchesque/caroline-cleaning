@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { addMonths, subMonths, addWeeks, subWeeks, addDays, subDays, format } from 'date-fns'
+import { ptBR, enUS } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
@@ -12,6 +13,7 @@ import { AppointmentModal } from './appointment-modal'
 import { AppointmentDetailModal } from './appointment-detail-modal'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 type ViewType = 'month' | 'week' | 'day'
 
@@ -21,6 +23,10 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
+    const { t, locale } = useAdminI18n()
+    const agendaT = t('agenda')
+    const dateLocale = locale === 'pt-BR' ? ptBR : enUS
+
     const [currentDate, setCurrentDate] = useState(new Date())
     const [view, setView] = useState<ViewType>('month')
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -63,7 +69,7 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
     }
 
     const handleDeleteAppointment = async (appointment: any) => {
-        if (!confirm('Tem certeza que deseja excluir este agendamento?')) return
+        if (!confirm(agendaT.detail?.confirmDelete)) return
 
         try {
             const { error } = await supabase
@@ -72,12 +78,12 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
                 .eq('id', appointment.id)
 
             if (error) throw error
-            toast.success('Agendamento excluído com sucesso!')
+            toast.success(agendaT.detail?.deleteSuccess)
             setIsDetailModalOpen(false)
             onRefresh()
         } catch (error) {
             console.error('Error deleting appointment:', error)
-            toast.error('Erro ao excluir agendamento')
+            toast.error(agendaT.detail?.deleteError)
         }
     }
 
@@ -88,14 +94,14 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
                     <Button variant="outline" size="icon" onClick={() => navigate('prev')}>
                         <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <div className="flex-1 sm:flex-none sm:w-40 text-center font-medium">
-                        {format(currentDate, view === 'day' ? 'MMM d, yyyy' : 'MMMM yyyy')}
+                    <div className="flex-1 sm:flex-none sm:w-48 text-center font-medium capitalize">
+                        {format(currentDate, view === 'day' ? 'MMM d, yyyy' : 'MMMM yyyy', { locale: dateLocale })}
                     </div>
                     <Button variant="outline" size="icon" onClick={() => navigate('next')}>
                         <ChevronRight className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" onClick={() => setCurrentDate(new Date())} className="hidden sm:inline-flex">
-                        Hoje
+                        {agendaT.actions?.today}
                     </Button>
                 </div>
 
@@ -105,14 +111,14 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="month">Mês</SelectItem>
-                            <SelectItem value="week">Semana</SelectItem>
-                            <SelectItem value="day">Dia</SelectItem>
+                            <SelectItem value="month">{agendaT.views?.month}</SelectItem>
+                            <SelectItem value="week">{agendaT.views?.week}</SelectItem>
+                            <SelectItem value="day">{agendaT.views?.day}</SelectItem>
                         </SelectContent>
                     </Select>
                     <Button onClick={() => setIsModalOpen(true)} className="bg-[#C48B7F] hover:bg-[#A66D60] flex-1 sm:flex-none">
                         <Plus className="w-4 h-4 mr-2" />
-                        Novo
+                        {agendaT.actions?.newAppointment}
                     </Button>
                 </div>
             </div>

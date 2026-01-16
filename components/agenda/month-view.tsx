@@ -1,6 +1,7 @@
-import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isSameDay } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { startOfMonth, endOfMonth, eachDayOfInterval, format, isSameMonth, isSameDay, startOfWeek, addDays } from 'date-fns'
+import { ptBR, enUS } from 'date-fns/locale'
 import { AppointmentCard } from './appointment-card'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface MonthViewProps {
     currentDate: Date
@@ -10,6 +11,9 @@ interface MonthViewProps {
 }
 
 export function MonthView({ currentDate, appointments, onDayClick, onAppointmentClick }: MonthViewProps) {
+    const { locale } = useAdminI18n()
+    const dateLocale = locale === 'pt-BR' ? ptBR : enUS
+
     const start = startOfMonth(currentDate)
     const end = endOfMonth(currentDate)
 
@@ -19,10 +23,16 @@ export function MonthView({ currentDate, appointments, onDayClick, onAppointment
 
     const blanks = Array(startPad).fill(null)
 
+    // Dias da semana traduzidos
+    const weekDays = Array.from({ length: 7 }).map((_, i) => {
+        const day = addDays(startOfWeek(new Date(), { weekStartsOn: 0 }), i)
+        return format(day, 'eee', { locale: dateLocale })
+    })
+
     return (
         <div className="grid grid-cols-7 gap-px bg-[#EAE0D5] border border-[#EAE0D5] rounded-lg">
-            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-                <div key={day} className="bg-[#FDF8F6] p-2 text-center text-sm font-semibold text-[#5D5D5D]">
+            {weekDays.map(day => (
+                <div key={day} className="bg-[#FDF8F6] p-2 text-center text-sm font-semibold text-[#5D5D5D] capitalize">
                     {day}
                 </div>
             ))}

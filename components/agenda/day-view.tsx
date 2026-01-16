@@ -1,7 +1,8 @@
 import { format, isSameDay, parse } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { ptBR, enUS } from 'date-fns/locale'
 import { AppointmentCard } from './appointment-card'
 import { useEffect, useState } from 'react'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface DayViewProps {
     currentDate: Date
@@ -19,6 +20,9 @@ interface PositionedAppointment {
 }
 
 export function DayView({ currentDate, appointments, onSlotClick, onAppointmentClick }: DayViewProps) {
+    const { locale } = useAdminI18n()
+    const dateLocale = locale === 'pt-BR' ? ptBR : enUS
+
     const hours = Array.from({ length: 14 }, (_, i) => i + 7) // 7 AM to 8 PM
     const HOUR_HEIGHT = 80 // pixels por hora (h-20)
     const [currentTime, setCurrentTime] = useState(new Date())
@@ -113,7 +117,7 @@ export function DayView({ currentDate, appointments, onSlotClick, onAppointmentC
     return (
         <div className="flex flex-col h-[calc(100vh-200px)] overflow-hidden bg-white border border-[#EAE0D5] rounded-lg">
             <div className="border-b border-[#EAE0D5] p-3 text-center font-semibold text-[#5D5D5D] capitalize">
-                {format(currentDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                {format(currentDate, "EEEE, d MMMM", { locale: dateLocale })}
             </div>
             <div className="flex-1 overflow-y-auto relative">
                 {/* Grid Lines */}

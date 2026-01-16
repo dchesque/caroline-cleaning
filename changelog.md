@@ -2,14 +2,25 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
-## [1.9.3] - 2026-01-15
+## [1.9.4] - 2026-01-16
+### Adicionado
+- **Admin (Internacionalização)**:
+  - Internacionalização completa do módulo de Agenda (Calendário, Modais de Criação/Edição e Detalhes).
+  - Suporte a traduções dinâmicas em Português (PT-BR) e Inglês (EN-US) para todos os status, tipos de visualização e rótulos de formulário.
+  - Adição de chaves de validação, mensagens de sucesso e erro traduzidas no contexto da agenda.
+
 ### Melhorado
-- **Admin (UI)**:
-  - Padronização visual completa de todos os inputs, textareas e selects em todas as páginas do módulo admin.
-  - Aplicação de estilo consistente com fundo branco (`bg-white`), bordas suaves (`border-gray-200`), sombra sutil (`shadow-sm`) e focus state com cor da marca (`brandy-rose-400`).
-  - Páginas atualizadas: Serviços, Leads, Contratos, Financeiro (Receitas/Despesas), Equipe, Mensagens e Agenda.
-  - Componentes atualizados: modais de cliente, filtros, formulários de transação, formulários de agendamento.
-  - Criação de constantes de estilo reutilizáveis em `lib/admin-styles.ts`.
+- **Admin (Agenda)**:
+  - Suporte total à edição de agendamentos existentes com carregamento automático de dados e serviços adicionais (Addons).
+  - Sincronização de localidade (Locale) do `date-fns` com o idioma selecionado no painel administrativo para formatação de datas.
+  - Uso de mensagens de feedback (Toasts) traduzidas para todas as operações de CRUD da agenda.
+  - Implementação de tratamento de erros ao carregar agendamentos individuais para edição.
+
+### Corrigido
+- **Admin (UI)**: Remoção de textos fixos em português que restavam no módulo de agendamento.
+- **Admin (Fluxo)**: Correção na lógica de carregamento de equipe e serviços padrão ao abrir modais em modo de edição.
+
+## [1.9.3] - 2026-01-15
 
 
 

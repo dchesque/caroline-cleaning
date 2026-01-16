@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { parseCurrency } from '@/lib/formatters'
 import { ServicoTipo, Addon, AddonSelecionado, AppointmentFormData } from '../types'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface UseAppointmentFormProps {
     open: boolean
@@ -22,6 +23,9 @@ export function useAppointmentForm({
     preSelectedClientId,
     onSuccess
 }: UseAppointmentFormProps) {
+    const { t } = useAdminI18n()
+    const agendaT = t('agenda')
+
     const [isLoading, setIsLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [clients, setClients] = useState<any[]>([])
@@ -71,27 +75,44 @@ export function useAppointmentForm({
         const init = async () => {
             if (appointmentId) {
                 setIsLoading(true)
-                const { data: app, error } = await supabase
-                    .from('agendamentos')
-                    .select('*, cliente:clientes(*)')
-                    .eq('id', appointmentId)
-                    .single()
+                try {
+                    const { data: app, error } = await supabase
+                        .from('agendamentos')
+                        .select('*, cliente:clientes(*)')
+                        .eq('id', appointmentId)
+                        .single()
 
-                if (app && !error) {
-                    setFormData({
-                        data: app.data,
-                        horario_inicio: app.horario_inicio.substring(0, 5),
-                        duracao_minutos: app.duracao_minutos.toString(),
-                        tipo: app.tipo,
-                        status: app.status,
-                        valor: app.valor?.toString() || '',
-                        desconto_percentual: app.desconto_percentual?.toString() || '0',
-                        notas: app.notas || ''
-                    })
-                    setSelectedClient(app.cliente)
-                    setAddonsSelecionados(app.addons || [])
+                    if (app && !error) {
+                        setFormData({
+                            data: app.data,
+                            horario_inicio: app.horario_inicio.substring(0, 5),
+                            duracao_minutos: app.duracao_minutos.toString(),
+                            tipo: app.tipo,
+                            status: app.status,
+                            valor: app.valor?.toString() || '',
+                            desconto_percentual: app.desconto_percentual?.toString() || '0',
+                            notas: app.notas || ''
+                        })
+                        setSelectedClient(app.cliente)
+
+                        // Garantir que os addons carregados correspondam ao tipo AddonSelecionado
+                        if (app.addons && Array.isArray(app.addons)) {
+                            setAddonsSelecionados(app.addons.map((a: any) => ({
+                                codigo: a.codigo || a.id,
+                                nome: a.nome,
+                                preco: a.preco || a.preco_unitario || 0,
+                                quantidade: a.quantidade || 1
+                            })))
+                        } else {
+                            setAddonsSelecionados([])
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading appointment:', error)
+                    toast.error(agendaT.error?.load)
+                } finally {
+                    setIsLoading(false)
                 }
-                setIsLoading(false)
             } else {
                 setFormData({
                     data: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
@@ -124,19 +145,19 @@ export function useAppointmentForm({
 
         init()
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, selectedDate, preSelectedClientId, appointmentId])
+    }, [open, selectedDate, preSelectedClientId, appointmentId, supabase])
 
     // Efeito colateral seguro para preencher tipo default quando serviços carregarem
     useEffect(() => {
         if (open && dataLoaded && serviceTypes.length > 0) {
             setFormData(prev => {
-                if (!prev.tipo) {
+                if (!prev.tipo && !appointmentId) {
                     return { ...prev, tipo: serviceTypes[0].codigo }
                 }
                 return prev
             })
         }
-    }, [dataLoaded, open, serviceTypes])
+    }, [dataLoaded, open, serviceTypes, appointmentId])
 
     // Buscar clientes com debounce
     useEffect(() => {
@@ -232,17 +253,17 @@ export function useAppointmentForm({
         e.preventDefault()
 
         if (!selectedClient) {
-            toast.error('Selecione um cliente')
+            toast.error(agendaT.validation?.clientRequired)
             return
         }
 
         if (!formData.data) {
-            toast.error('Selecione uma data')
+            toast.error(agendaT.validation?.dateRequired)
             return
         }
 
         if (!formData.tipo) {
-            toast.error('Selecione um tipo de serviço')
+            toast.error(agendaT.validation?.serviceRequired)
             return
         }
 
@@ -273,14 +294,14 @@ export function useAppointmentForm({
                     .eq('id', appointmentId)
 
                 if (error) throw error
-                toast.success('Agendamento atualizado com sucesso!')
+                toast.success(agendaT.success?.updated)
             } else {
                 const { error } = await supabase
                     .from('agendamentos')
                     .insert([payload])
 
                 if (error) throw error
-                toast.success('Agendamento criado com sucesso!')
+                toast.success(agendaT.success?.created)
             }
 
             onOpenChange(false)
@@ -288,7 +309,7 @@ export function useAppointmentForm({
 
         } catch (error) {
             console.error('Error saving appointment:', error)
-            toast.error(appointmentId ? 'Erro ao atualizar agendamento' : 'Erro ao criar agendamento')
+            toast.error(appointmentId ? agendaT.error?.update : agendaT.error?.create)
         } finally {
             setIsSaving(false)
         }

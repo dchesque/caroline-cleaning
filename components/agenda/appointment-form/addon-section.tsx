@@ -4,6 +4,7 @@ import { Package, Check } from 'lucide-react'
 import { formatCurrencyUSD } from '@/lib/formatters'
 import { Addon, AddonSelecionado } from '../types'
 import { cn } from '@/lib/utils'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface AddonSectionProps {
     addonsDisponiveis: Addon[]
@@ -18,13 +19,16 @@ export function AddonSection({
     toggleAddon,
     updateAddonQuantidade
 }: AddonSectionProps) {
+    const { t } = useAdminI18n()
+    const agendaT = t('agenda')
+
     if (addonsDisponiveis.length === 0) return null
 
     return (
         <div className="space-y-3">
             <Label className="flex items-center gap-2">
                 <Package className="w-4 h-4" />
-                Serviços Adicionais
+                {agendaT.form?.addons}
             </Label>
             <div className="grid grid-cols-2 gap-2">
                 {addonsDisponiveis.map(addon => {
@@ -73,7 +77,9 @@ export function AddonSection({
                                     className="mt-3 flex items-center justify-between border-t border-[#C48B7F]/20 pt-2"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <span className="text-[10px] font-semibold text-[#8B5A4E] uppercase tracking-wider">Quantidade</span>
+                                    <span className="text-[10px] font-semibold text-[#8B5A4E] uppercase tracking-wider">
+                                        {t('common').quantity}
+                                    </span>
                                     <div className="flex items-center gap-2 bg-white rounded-md border border-[#C48B7F]/30 p-0.5">
                                         <Button
                                             type="button"

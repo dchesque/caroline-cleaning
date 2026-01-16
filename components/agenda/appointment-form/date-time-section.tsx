@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { HORARIOS } from './constants'
 import { AppointmentFormData } from '../types'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface DateTimeSectionProps {
     formData: AppointmentFormData
@@ -10,10 +11,13 @@ interface DateTimeSectionProps {
 }
 
 export function DateTimeSection({ formData, onChange }: DateTimeSectionProps) {
+    const { t } = useAdminI18n()
+    const agendaT = t('agenda')
+
     return (
         <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-                <Label>Data *</Label>
+                <Label>{agendaT.form?.date} *</Label>
                 <Input
                     type="date"
                     value={formData.data}
@@ -23,7 +27,7 @@ export function DateTimeSection({ formData, onChange }: DateTimeSectionProps) {
                 />
             </div>
             <div className="space-y-2">
-                <Label>Horário Início *</Label>
+                <Label>{agendaT.form?.startTime} *</Label>
                 <Select
                     value={formData.horario_inicio}
                     onValueChange={v => onChange({ horario_inicio: v })}

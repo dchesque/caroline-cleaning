@@ -2,6 +2,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Loader2, Search, X, User } from 'lucide-react'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface ClientSelectorProps {
     selectedClient: any
@@ -20,11 +21,14 @@ export function ClientSelector({
     onSearchChange,
     isLoading
 }: ClientSelectorProps) {
+    const { t } = useAdminI18n()
+    const agendaT = t('agenda')
+
     return (
         <div className="space-y-2">
             <Label className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                Cliente *
+                {agendaT.form?.selectClient} *
             </Label>
             {selectedClient ? (
                 <div className="flex items-center justify-between p-3 bg-[#FDF8F6] rounded-lg border border-[#C48B7F]/20">
@@ -51,14 +55,14 @@ export function ClientSelector({
                         <Input
                             value={searchTerm}
                             onChange={e => onSearchChange(e.target.value)}
-                            placeholder="Buscar por nome ou telefone..."
+                            placeholder={agendaT.form?.searchClient}
                             className="pl-10 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                         />
                     </div>
                     {isLoading && (
                         <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            Buscando...
+                            {t('common').loading}
                         </div>
                     )}
                     {clients.length > 0 && (
@@ -75,6 +79,11 @@ export function ClientSelector({
                                     <p className="text-sm text-muted-foreground">{client.telefone}</p>
                                 </div>
                             ))}
+                        </div>
+                    )}
+                    {searchTerm.length >= 2 && !isLoading && clients.length === 0 && (
+                        <div className="p-3 text-sm text-muted-foreground text-center border rounded-lg border-dashed">
+                            {agendaT.form?.noClientsFound}
                         </div>
                     )}
                 </>

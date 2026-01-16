@@ -1,8 +1,9 @@
 import { startOfWeek, endOfWeek, eachDayOfInterval, format, isSameDay, addDays } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { ptBR, enUS } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { AppointmentCard } from './appointment-card'
 import { useEffect, useState } from 'react'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface WeekViewProps {
     currentDate: Date
@@ -20,6 +21,9 @@ interface PositionedAppointment {
 }
 
 export function WeekView({ currentDate, appointments, onSlotClick, onAppointmentClick }: WeekViewProps) {
+    const { locale } = useAdminI18n()
+    const dateLocale = locale === 'pt-BR' ? ptBR : enUS
+
     const start = startOfWeek(currentDate)
     const end = endOfWeek(currentDate)
     const days = eachDayOfInterval({ start, end })
@@ -118,7 +122,7 @@ export function WeekView({ currentDate, appointments, onSlotClick, onAppointment
                         {days.map(day => (
                             <div key={day.toISOString()} className="p-2 text-center border-r border-[#EAE0D5] last:border-r-0">
                                 <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                                    {format(day, 'EEE', { locale: ptBR })}
+                                    {format(day, 'EEE', { locale: dateLocale })}
                                 </div>
                                 <div className={cn(
                                     "text-sm font-bold mt-0.5 inline-flex items-center justify-center size-7 rounded-full",

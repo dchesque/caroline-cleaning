@@ -1,7 +1,7 @@
 'use client'
 
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { ptBR, enUS } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import {
     Dialog,
@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatCurrencyUSD } from '@/lib/formatters'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface AppointmentDetailModalProps {
     appointment: any | null
@@ -41,6 +42,10 @@ export function AppointmentDetailModal({
     onEdit,
     onDelete
 }: AppointmentDetailModalProps) {
+    const { t, locale } = useAdminI18n()
+    const agendaT = t('agenda')
+    const dateLocale = locale === 'pt-BR' ? ptBR : enUS
+
     if (!appointment) return null
 
     const statusColors = {
@@ -49,6 +54,10 @@ export function AppointmentDetailModal({
         em_andamento: 'bg-yellow-100 text-yellow-700',
         concluido: 'bg-slate-100 text-slate-700',
         cancelado: 'bg-red-100 text-red-700',
+    }
+
+    const getStatusLabel = (status: string) => {
+        return agendaT.status?.[status as keyof typeof agendaT.status] || status
     }
 
     const formatTime = (time: string) => time?.substring(0, 5)
@@ -65,7 +74,7 @@ export function AppointmentDetailModal({
                                 statusColors[appointment.status as keyof typeof statusColors]
                             )}
                         >
-                            {appointment.status}
+                            {getStatusLabel(appointment.status)}
                         </Badge>
                         <div className="flex gap-1">
                             <Button
@@ -87,7 +96,7 @@ export function AppointmentDetailModal({
                         </div>
                     </div>
                     <DialogTitle className="text-2xl font-heading text-[#2C211A] pt-2">
-                        Detalhes do Agendamento
+                        {agendaT.detail?.title}
                     </DialogTitle>
                 </DialogHeader>
 
@@ -99,7 +108,7 @@ export function AppointmentDetailModal({
                         </div>
                         <div>
                             <p className="text-lg font-bold text-[#2C211A] leading-tight">
-                                {appointment.cliente?.nome || 'Cliente'}
+                                {appointment.cliente?.nome || agendaT.detail?.client}
                             </p>
                             <div className="flex items-center gap-1.5 text-sm text-[#BE9982] mt-0.5 font-medium">
                                 <Phone className="w-3.5 h-3.5" />
@@ -115,9 +124,9 @@ export function AppointmentDetailModal({
                                 <Calendar className="w-4 h-4 text-[#C48B7F]" />
                             </div>
                             <div>
-                                <p className="text-[10px] uppercase font-bold text-[#BE9982] tracking-wider">Data</p>
+                                <p className="text-[10px] uppercase font-bold text-[#BE9982] tracking-wider">{agendaT.detail?.date}</p>
                                 <p className="font-bold text-[#5D5D5D] whitespace-nowrap">
-                                    {format(new Date(appointment.data), 'dd/MM/yyyy')}
+                                    {format(new Date(appointment.data), locale === 'pt-BR' ? 'dd/MM/yyyy' : 'MM/dd/yyyy', { locale: dateLocale })}
                                 </p>
                             </div>
                         </div>
@@ -126,7 +135,7 @@ export function AppointmentDetailModal({
                                 <Clock className="w-4 h-4 text-[#C48B7F]" />
                             </div>
                             <div>
-                                <p className="text-[10px] uppercase font-bold text-[#BE9982] tracking-wider">Horário</p>
+                                <p className="text-[10px] uppercase font-bold text-[#BE9982] tracking-wider">{agendaT.detail?.time}</p>
                                 <p className="font-bold text-[#5D5D5D] whitespace-nowrap">
                                     {formatTime(appointment.horario_inicio)} - {formatTime(appointment.horario_fim_estimado) || '...'}
                                 </p>
@@ -138,8 +147,8 @@ export function AppointmentDetailModal({
                     <div className="flex items-start gap-3">
                         <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
                         <div className="text-sm">
-                            <p className="text-xs text-muted-foreground">Localização</p>
-                            <p>{appointment.cliente?.endereco_completo || 'Endereço não informado'}</p>
+                            <p className="text-xs text-muted-foreground">{agendaT.detail?.location}</p>
+                            <p>{appointment.cliente?.endereco_completo || agendaT.detail?.addressNotProvided}</p>
                         </div>
                     </div>
 
@@ -175,7 +184,7 @@ export function AppointmentDetailModal({
                             <div className="flex items-start gap-3">
                                 <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
                                 <div className="text-sm">
-                                    <p className="text-xs text-muted-foreground">Notas</p>
+                                    <p className="text-xs text-muted-foreground">{agendaT.detail?.notes}</p>
                                     <p className="text-gray-600 italic">"{appointment.notas}"</p>
                                 </div>
                             </div>
@@ -187,7 +196,7 @@ export function AppointmentDetailModal({
                             className="w-full bg-[#C48B7F] hover:bg-[#A66D60]"
                             onClick={() => onOpenChange(false)}
                         >
-                            Fechar
+                            {t('common').close}
                         </Button>
                     </div>
                 </div>

@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sparkles, Clock } from 'lucide-react'
 import { DURACOES } from './constants'
 import { ServicoTipo, AppointmentFormData } from '../types'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface ServiceSectionProps {
     formData: AppointmentFormData
@@ -17,19 +18,22 @@ export function ServiceSection({
     onServiceChange,
     serviceTypes
 }: ServiceSectionProps) {
+    const { t } = useAdminI18n()
+    const agendaT = t('agenda')
+
     return (
         <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4" />
-                    Tipo de Serviço *
+                    {agendaT.form?.serviceType} *
                 </Label>
                 <Select
                     value={formData.tipo}
                     onValueChange={onServiceChange}
                 >
                     <SelectTrigger className="bg-white border-gray-200 shadow-sm">
-                        <SelectValue placeholder="Selecione um serviço" />
+                        <SelectValue placeholder={agendaT.validation?.serviceRequired} />
                     </SelectTrigger>
                     <SelectContent>
                         {serviceTypes.map(t => (
@@ -49,7 +53,7 @@ export function ServiceSection({
             <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    Duração Base
+                    {agendaT.form?.duration}
                 </Label>
                 <Select
                     value={formData.duracao_minutos}

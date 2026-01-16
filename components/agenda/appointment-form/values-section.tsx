@@ -5,6 +5,7 @@ import { DollarSign } from 'lucide-react'
 import { formatCurrencyInput } from '@/lib/formatters'
 import { STATUS_OPTIONS } from './constants'
 import { AppointmentFormData } from '../types'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface ValuesSectionProps {
     formData: AppointmentFormData
@@ -12,15 +13,18 @@ interface ValuesSectionProps {
 }
 
 export function ValuesSection({ formData, onChange }: ValuesSectionProps) {
+    const { t } = useAdminI18n()
+    const agendaT = t('agenda')
+
     return (
         <div className="space-y-3">
             <Label className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Valores
+                {agendaT.detail?.value}
             </Label>
             <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Valor Base</Label>
+                    <Label className="text-xs text-muted-foreground">{agendaT.form?.baseValue}</Label>
                     <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                         <Input
@@ -32,7 +36,7 @@ export function ValuesSection({ formData, onChange }: ValuesSectionProps) {
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Desconto (%)</Label>
+                    <Label className="text-xs text-muted-foreground">{agendaT.form?.discount}</Label>
                     <div className="relative">
                         <Input
                             type="number"
@@ -47,7 +51,7 @@ export function ValuesSection({ formData, onChange }: ValuesSectionProps) {
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Status</Label>
+                    <Label className="text-xs text-muted-foreground">{t('common').status}</Label>
                     <Select
                         value={formData.status}
                         onValueChange={v => onChange({ status: v })}
@@ -57,7 +61,9 @@ export function ValuesSection({ formData, onChange }: ValuesSectionProps) {
                         </SelectTrigger>
                         <SelectContent>
                             {STATUS_OPTIONS.map(s => (
-                                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                <SelectItem key={s.value} value={s.value}>
+                                    {(agendaT.status as any)?.[s.value] || s.label}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

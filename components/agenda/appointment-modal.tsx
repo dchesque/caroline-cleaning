@@ -12,6 +12,7 @@ import { AddonSection } from './appointment-form/addon-section'
 import { ValuesSection } from './appointment-form/values-section'
 import { SummaryCard } from './appointment-form/summary-card'
 import { NotesSection } from './appointment-form/notes-section'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface AppointmentModalProps {
     open: boolean
@@ -30,8 +31,8 @@ export function AppointmentModal({
     preSelectedClientId,
     onSuccess
 }: AppointmentModalProps) {
-    // Note: appointmentId support is not fully implemented in the hook yet as per original code, 
-    // but the props are there for future editing support.
+    const { t } = useAdminI18n()
+    const agendaT = t('agenda')
 
     const {
         formData,
@@ -72,10 +73,10 @@ export function AppointmentModal({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Calendar className="w-5 h-5 text-[#C48B7F]" />
-                        {appointmentId ? 'Editar Agendamento' : 'Novo Agendamento'}
+                        {appointmentId ? agendaT.modal?.editTitle : agendaT.modal?.newTitle}
                     </DialogTitle>
                     <DialogDescription>
-                        {appointmentId ? 'Altere os dados do agendamento' : 'Preencha os dados para criar um novo agendamento'}
+                        {appointmentId ? agendaT.modal?.editDescription : agendaT.modal?.newDescription}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -133,7 +134,7 @@ export function AppointmentModal({
                             variant="outline"
                             onClick={() => onOpenChange(false)}
                         >
-                            Cancelar
+                            {agendaT.modal?.cancel}
                         </Button>
                         <Button
                             type="submit"
@@ -143,10 +144,10 @@ export function AppointmentModal({
                             {isSaving ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Salvando...
+                                    {agendaT.modal?.saving}
                                 </>
                             ) : (
-                                appointmentId ? 'Salvar Alterações' : 'Criar Agendamento'
+                                appointmentId ? t('common').saveChanges : agendaT.modal?.save
                             )}
                         </Button>
                     </div>
