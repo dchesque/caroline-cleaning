@@ -2,6 +2,16 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [1.9.6] - 2026-01-16
+
+### Corrigido
+- **Admin (Conta)**: 
+  - Correção de erro de tradução onde chaves como `changePhoto` e `title` de alertas estavam ausentes ou hardcoded.
+  - Internacionalização completa da "Zona de Perigo", incluindo o campo de confirmação por digitação.
+  - Correção de tipagem (`any`) no hook de internacionalização e remoção de strings fixas residuais.
+  - Restauração da funcionalidade de logout ao desativar a conta.
+
+
 ## [1.9.5] - 2026-01-15
 
 ### Adicionado

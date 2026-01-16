@@ -62,8 +62,8 @@ export default function ContaPage() {
     const router = useRouter()
     const supabase = createClient()
 
-    const accountT = (t as any)('account')
-    const commonT = (t as any)('common')
+    const accountT = t('account')
+    const commonT = t('common')
     const dateLocale = locale === 'pt-BR' ? ptBR : enUS
 
     const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -173,20 +173,17 @@ export default function ContaPage() {
     }
 
     async function handleDeactivateAccount() {
-        const confirmText = locale === 'pt-BR' ? 'DESATIVAR' : 'DEACTIVATE'
+        const confirmText = accountT.danger.confirmWord
         if (deactivateConfirm !== confirmText) return
 
         try {
-            // Implementar lógica de desativação (soft delete ou flag na tabela)
-            // Por enquanto, vamos apenas deslogar e mostrar mensagem
             const { error } = await supabase.auth.signOut()
             if (error) throw error
-
-            toast.success('Conta desativada com sucesso.')
+            toast.success(accountT.danger.deactivateSuccess)
             router.push('/login')
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao desativar conta.')
+            toast.error(accountT.danger.deactivateError)
         }
     }
 
@@ -246,7 +243,7 @@ export default function ContaPage() {
                                         </AvatarFallback>
                                     </Avatar>
                                     <Button variant="outline" size="sm" className="w-full">
-                                        Alterar Foto
+                                        {accountT.profile.changePhoto}
                                     </Button>
                                 </div>
 
@@ -558,7 +555,7 @@ export default function ContaPage() {
 
                             {/* Tipos de Alerta */}
                             <div className="space-y-4">
-                                <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{accountT.preferences.notificationTypes.title || 'Tipos de Alerta'}</Label>
+                                <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{accountT.preferences.notificationTypes.title}</Label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                                     {Object.entries(profile.notification_types).map(([key, value]) => (
                                         <div key={key} className="flex items-center justify-between">
@@ -630,13 +627,13 @@ export default function ContaPage() {
                                     <p className="font-semibold text-red-500">{accountT.danger.deactivateWarning}</p>
                                     <div className="space-y-2">
                                         <Label htmlFor="confirm-deactivate" className="text-gray-900">
-                                            {accountT.danger.typeToConfirm}
+                                            {accountT.danger.typeToConfirm.replace('{word}', accountT.danger.confirmWord)}
                                         </Label>
                                         <Input
                                             id="confirm-deactivate"
                                             value={deactivateConfirm}
                                             onChange={(e) => setDeactivateConfirm(e.target.value)}
-                                            placeholder={locale === 'pt-BR' ? 'DESATIVAR' : 'DEACTIVATE'}
+                                            placeholder={accountT.danger.confirmWord}
                                             className="border-red-200 focus:border-red-500 focus:ring-red-500"
                                         />
                                     </div>
@@ -646,7 +643,7 @@ export default function ContaPage() {
                                 <AlertDialogCancel>{commonT.cancel}</AlertDialogCancel>
                                 <AlertDialogAction
                                     onClick={handleDeactivateAccount}
-                                    disabled={deactivateConfirm !== (locale === 'pt-BR' ? 'DESATIVAR' : 'DEACTIVATE')}
+                                    disabled={deactivateConfirm !== accountT.danger.confirmWord}
                                     className="bg-red-600 hover:bg-red-700 text-white"
                                 >
                                     {accountT.danger.deactivateAccount}
