@@ -19,6 +19,7 @@ export function DateTimeSection({ formData, onChange }: DateTimeSectionProps) {
                     value={formData.data}
                     onChange={e => onChange({ data: e.target.value })}
                     required
+                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                 />
             </div>
             <div className="space-y-2">
@@ -27,7 +28,7 @@ export function DateTimeSection({ formData, onChange }: DateTimeSectionProps) {
                     value={formData.horario_inicio}
                     onValueChange={v => onChange({ horario_inicio: v })}
                 >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

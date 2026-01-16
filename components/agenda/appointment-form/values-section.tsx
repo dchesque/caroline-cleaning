@@ -27,7 +27,7 @@ export function ValuesSection({ formData, onChange }: ValuesSectionProps) {
                             value={formData.valor}
                             onChange={e => onChange({ valor: formatCurrencyInput(e.target.value) })}
                             placeholder="0.00"
-                            className="pl-7"
+                            className="pl-7 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                         />
                     </div>
                 </div>
@@ -41,6 +41,7 @@ export function ValuesSection({ formData, onChange }: ValuesSectionProps) {
                             value={formData.desconto_percentual}
                             onChange={e => onChange({ desconto_percentual: e.target.value })}
                             placeholder="0"
+                            className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
                     </div>
@@ -51,7 +52,7 @@ export function ValuesSection({ formData, onChange }: ValuesSectionProps) {
                         value={formData.status}
                         onValueChange={v => onChange({ status: v })}
                     >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

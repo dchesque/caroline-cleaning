@@ -78,6 +78,7 @@ export function CategoryQuickForm({ tipo, onSuccess }: CategoryQuickFormProps) {
                             placeholder="Ex: Consultoria, Frete, etc."
                             required
                             autoFocus
+                            className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                         />
                     </div>
                     <DialogFooter>

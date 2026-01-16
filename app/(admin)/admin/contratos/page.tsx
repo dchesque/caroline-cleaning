@@ -187,11 +187,11 @@ export default function ContratosPage() {
                         placeholder={contractsT.filters.search}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9"
+                        className="pl-9 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                     />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[180px] bg-white border-gray-200 shadow-sm">
                         <SelectValue placeholder={contractsT.filters.statusPlaceholder || "Status"} />
                     </SelectTrigger>
                     <SelectContent>

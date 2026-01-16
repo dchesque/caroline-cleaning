@@ -262,11 +262,11 @@ export default function LeadsPage() {
                         placeholder={leadsT.filters.search}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9"
+                        className="pl-9 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                     />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[180px] bg-white border-gray-200 shadow-sm">
                         <Filter className="w-4 h-4 mr-2" />
                         <SelectValue placeholder={leadsT.filters.statusPlaceholder} />
                     </SelectTrigger>
@@ -413,7 +413,7 @@ export default function LeadsPage() {
                                     onValueChange={(value) => updateLeadStatus(selectedLead.id, value)}
                                     disabled={isSaving}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -437,6 +437,7 @@ export default function LeadsPage() {
                                         }
                                     }}
                                     rows={3}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400 resize-none"
                                 />
                             </div>
 

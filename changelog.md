@@ -2,8 +2,14 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
-
-
+## [1.9.3] - 2026-01-15
+### Melhorado
+- **Admin (UI)**:
+  - Padronização visual completa de todos os inputs, textareas e selects em todas as páginas do módulo admin.
+  - Aplicação de estilo consistente com fundo branco (`bg-white`), bordas suaves (`border-gray-200`), sombra sutil (`shadow-sm`) e focus state com cor da marca (`brandy-rose-400`).
+  - Páginas atualizadas: Serviços, Leads, Contratos, Financeiro (Receitas/Despesas), Equipe, Mensagens e Agenda.
+  - Componentes atualizados: modais de cliente, filtros, formulários de transação, formulários de agendamento.
+  - Criação de constantes de estilo reutilizáveis em `lib/admin-styles.ts`.
 
 
 

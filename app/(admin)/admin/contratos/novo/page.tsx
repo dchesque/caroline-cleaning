@@ -174,7 +174,7 @@ export default function NovoContratoPage() {
                                     placeholder="Buscar por nome..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10"
+                                    className="pl-10 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
 
@@ -242,7 +242,7 @@ export default function NovoContratoPage() {
                                         value={formData.tipo_servico}
                                         onValueChange={(v) => setFormData({ ...formData, tipo_servico: v })}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -261,7 +261,7 @@ export default function NovoContratoPage() {
                                         value={formData.frequencia}
                                         onValueChange={(v) => setFormData({ ...formData, frequencia: v })}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -284,7 +284,7 @@ export default function NovoContratoPage() {
                                             value={formData.dia_preferido}
                                             onValueChange={(v) => setFormData({ ...formData, dia_preferido: v })}
                                         >
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="bg-white border-gray-200 shadow-sm"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="monday">Segunda-feira</SelectItem>
                                                 <SelectItem value="tuesday">Terça-feira</SelectItem>
@@ -300,6 +300,7 @@ export default function NovoContratoPage() {
                                             type="time"
                                             value={formData.horario_preferido}
                                             onChange={(e) => setFormData({ ...formData, horario_preferido: e.target.value })}
+                                            className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                         />
                                     </div>
                                 </div>
@@ -315,6 +316,7 @@ export default function NovoContratoPage() {
                                         value={formData.valor_acordado}
                                         onChange={(e) => setFormData({ ...formData, valor_acordado: e.target.value })}
                                         placeholder="150.00"
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
 
@@ -326,6 +328,7 @@ export default function NovoContratoPage() {
                                         max="100"
                                         value={formData.desconto_percentual}
                                         onChange={(e) => setFormData({ ...formData, desconto_percentual: e.target.value })}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                             </div>
@@ -337,6 +340,7 @@ export default function NovoContratoPage() {
                                         type="date"
                                         value={formData.data_inicio}
                                         onChange={(e) => setFormData({ ...formData, data_inicio: e.target.value })}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
 
@@ -346,6 +350,7 @@ export default function NovoContratoPage() {
                                         type="date"
                                         value={formData.data_fim}
                                         onChange={(e) => setFormData({ ...formData, data_fim: e.target.value })}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                             </div>

@@ -28,7 +28,7 @@ export function ServiceSection({
                     value={formData.tipo}
                     onValueChange={onServiceChange}
                 >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                         <SelectValue placeholder="Selecione um serviço" />
                     </SelectTrigger>
                     <SelectContent>
@@ -55,7 +55,7 @@ export function ServiceSection({
                     value={formData.duracao_minutos}
                     onValueChange={v => onChange({ duracao_minutos: v })}
                 >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

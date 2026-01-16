@@ -374,6 +374,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         value={formData.nome}
                                         onChange={e => handleChange('nome', e.target.value)}
                                         placeholder="Nome do cliente"
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -382,6 +383,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         value={formData.telefone}
                                         onChange={e => handleChange('telefone', formatPhoneUS(e.target.value))}
                                         placeholder="(555) 555-5555"
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -390,6 +392,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         value={formData.email}
                                         onChange={e => handleChange('email', e.target.value)}
                                         placeholder="email@example.com"
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                             </div>
@@ -408,6 +411,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                             if (val.length === 5) fetchAddressByZip(val)
                                         }}
                                         maxLength={5}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                                 <div className="col-span-2 space-y-2">
@@ -415,6 +419,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                     <Input
                                         value={formData.endereco_completo}
                                         onChange={e => handleChange('endereco_completo', e.target.value)}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -422,6 +427,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                     <Input
                                         value={formData.cidade}
                                         onChange={e => handleChange('cidade', e.target.value)}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -430,7 +436,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         value={formData.estado}
                                         onValueChange={v => handleChange('estado', v)}
                                     >
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="bg-white border-gray-200 shadow-sm"><SelectValue /></SelectTrigger>
                                         <SelectContent className='max-h-[200px]'>
                                             {US_STATES.map(s => (
                                                 <SelectItem key={s.value} value={s.value}>{s.value}</SelectItem>
@@ -444,7 +450,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         value={formData.tipo_residencia}
                                         onValueChange={v => handleChange('tipo_residencia', v)}
                                     >
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="bg-white border-gray-200 shadow-sm"><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             {TIPOS_RESIDENCIA.map(t => (
                                                 <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
@@ -460,6 +466,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         type="number"
                                         value={formData.bedrooms}
                                         onChange={e => handleChange('bedrooms', e.target.value)}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -469,6 +476,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         step="0.5"
                                         value={formData.bathrooms}
                                         onChange={e => handleChange('bathrooms', e.target.value)}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -477,6 +485,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         type="number"
                                         value={formData.square_feet}
                                         onChange={e => handleChange('square_feet', e.target.value)}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                             </div>
@@ -500,7 +509,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                             }
                                         }}
                                     >
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="bg-white border-gray-200 shadow-sm"><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             {FREQUENCIAS.map(f => (
                                                 <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
@@ -530,7 +539,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                                         value={ds.dia}
                                                         onValueChange={v => updateDiaServico(index, 'dia', v)}
                                                     >
-                                                        <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                                                        <SelectTrigger className="w-[140px] bg-white border-gray-200 shadow-sm"><SelectValue /></SelectTrigger>
                                                         <SelectContent>
                                                             {DIAS_SEMANA.map(d => (
                                                                 <SelectItem key={d.value} value={d.value} disabled={isDiaUsado(d.value, index)}>{d.label}</SelectItem>
@@ -541,7 +550,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                                         value={ds.servico}
                                                         onValueChange={v => updateDiaServico(index, 'servico', v)}
                                                     >
-                                                        <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                                                        <SelectTrigger className="flex-1 bg-white border-gray-200 shadow-sm"><SelectValue /></SelectTrigger>
                                                         <SelectContent>
                                                             {servicosDisponiveis.map(s => (
                                                                 <SelectItem key={s.codigo} value={s.codigo}>{s.nome}</SelectItem>
@@ -586,7 +595,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         value={formData.acesso_tipo}
                                         onValueChange={v => handleChange('acesso_tipo', v)}
                                     >
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectTrigger className="bg-white border-gray-200 shadow-sm"><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             {TIPOS_ACESSO.map(t => (
                                                 <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
@@ -601,6 +610,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                             <Input
                                                 value={formData.acesso_codigo}
                                                 onChange={e => handleChange('acesso_codigo', e.target.value)}
+                                                className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -608,6 +618,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                             <Textarea
                                                 value={formData.acesso_instrucoes}
                                                 onChange={e => handleChange('acesso_instrucoes', e.target.value)}
+                                                className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400 resize-none"
                                             />
                                         </div>
                                     </>
@@ -628,6 +639,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                         <Textarea
                                             value={formData.pets_detalhes}
                                             onChange={e => handleChange('pets_detalhes', e.target.value)}
+                                            className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400 resize-none"
                                         />
                                     </div>
                                 )}
@@ -636,6 +648,7 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                                     <Textarea
                                         value={formData.notas_internas}
                                         onChange={e => handleChange('notas_internas', e.target.value)}
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400 resize-none"
                                     />
                                 </div>
                             </div>

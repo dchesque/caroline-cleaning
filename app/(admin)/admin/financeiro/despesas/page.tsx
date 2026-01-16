@@ -310,14 +310,14 @@ export default function DespesasPage() {
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Buscar por descrição..."
-                                    className="pl-9"
+                                    className="pl-9 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
                             <div className="flex gap-2">
                                 <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                                    <SelectTrigger className="w-[140px]">
+                                    <SelectTrigger className="w-[140px] bg-white border-gray-200 shadow-sm">
                                         <SelectValue placeholder="Período" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -328,7 +328,7 @@ export default function DespesasPage() {
                                 </Select>
 
                                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="w-[140px]">
+                                    <SelectTrigger className="w-[140px] bg-white border-gray-200 shadow-sm">
                                         <SelectValue placeholder="Categoria" />
                                     </SelectTrigger>
                                     <SelectContent>

@@ -668,6 +668,7 @@ export default function ServicosPage() {
                                     })}
                                     placeholder="regular_cleaning"
                                     disabled={!!editingServico}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                                 <p className="text-xs text-muted-foreground">
                                     {servicesT.modals.fields.codeHelp}
@@ -679,6 +680,7 @@ export default function ServicosPage() {
                                     value={servicoForm.nome}
                                     onChange={(e) => setServicoForm({ ...servicoForm, nome: e.target.value })}
                                     placeholder="Regular Cleaning"
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
                         </div>
@@ -690,6 +692,7 @@ export default function ServicosPage() {
                                 onChange={(e) => setServicoForm({ ...servicoForm, descricao: e.target.value })}
                                 placeholder={servicesT.modals.fields.descriptionPlaceholder}
                                 rows={2}
+                                className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400 resize-none"
                             />
                         </div>
 
@@ -702,6 +705,7 @@ export default function ServicosPage() {
                                     min="0.1"
                                     value={servicoForm.multiplicador_preco}
                                     onChange={(e) => setServicoForm({ ...servicoForm, multiplicador_preco: e.target.value })}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                                 <p className="text-xs text-muted-foreground">
                                     {servicesT.modals.fields.multiplierHelp}
@@ -715,6 +719,7 @@ export default function ServicosPage() {
                                     step="30"
                                     value={servicoForm.duracao_base_minutos}
                                     onChange={(e) => setServicoForm({ ...servicoForm, duracao_base_minutos: e.target.value })}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
                         </div>
@@ -795,6 +800,7 @@ export default function ServicosPage() {
                                     })}
                                     placeholder="inside_fridge"
                                     disabled={!!editingAddon}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -803,6 +809,7 @@ export default function ServicosPage() {
                                     value={addonForm.nome}
                                     onChange={(e) => setAddonForm({ ...addonForm, nome: e.target.value })}
                                     placeholder="Inside Fridge"
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
                         </div>
@@ -814,6 +821,7 @@ export default function ServicosPage() {
                                 onChange={(e) => setAddonForm({ ...addonForm, descricao: e.target.value })}
                                 placeholder={servicesT.modals.fields.descriptionPlaceholder}
                                 rows={2}
+                                className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400 resize-none"
                             />
                         </div>
 
@@ -829,7 +837,7 @@ export default function ServicosPage() {
                                             preco: formatCurrencyInput(e.target.value)
                                         })}
                                         placeholder="25.00"
-                                        className="pl-7"
+                                        className="pl-7 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                             </div>
@@ -839,7 +847,7 @@ export default function ServicosPage() {
                                     value={addonForm.tipo_cobranca}
                                     onValueChange={(v) => setAddonForm({ ...addonForm, tipo_cobranca: v })}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -860,6 +868,7 @@ export default function ServicosPage() {
                                     value={addonForm.unidade}
                                     onChange={(e) => setAddonForm({ ...addonForm, unidade: e.target.value })}
                                     placeholder="window, room, etc."
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
                         )}
@@ -873,6 +882,7 @@ export default function ServicosPage() {
                                     step="5"
                                     value={addonForm.minutos_adicionais}
                                     onChange={(e) => setAddonForm({ ...addonForm, minutos_adicionais: e.target.value })}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
                             <div className="flex items-center gap-2 pt-6">

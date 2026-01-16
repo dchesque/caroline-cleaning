@@ -52,7 +52,7 @@ export function ClientSelector({
                             value={searchTerm}
                             onChange={e => onSearchChange(e.target.value)}
                             placeholder="Buscar por nome ou telefone..."
-                            className="pl-10"
+                            className="pl-10 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                         />
                     </div>
                     {isLoading && (

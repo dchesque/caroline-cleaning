@@ -31,7 +31,7 @@ export function ClientsFilters({ filters, onChange }: ClientsFiltersProps) {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                     placeholder={clientsT.filters.search}
-                    className="pl-8 bg-white"
+                    className="pl-8 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                     value={filters.search}
                     onChange={(e) => onChange({ ...filters, search: e.target.value })}
                 />
@@ -40,7 +40,7 @@ export function ClientsFilters({ filters, onChange }: ClientsFiltersProps) {
                 value={filters.status}
                 onValueChange={(value) => onChange({ ...filters, status: value })}
             >
-                <SelectTrigger className="w-[180px] bg-white">
+                <SelectTrigger className="w-[180px] bg-white border-gray-200 shadow-sm">
                     <SelectValue placeholder={clientsT.filters.statusPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
@@ -58,7 +58,7 @@ export function ClientsFilters({ filters, onChange }: ClientsFiltersProps) {
                     onChange({ ...filters, sortBy, sortOrder })
                 }}
             >
-                <SelectTrigger className="w-[180px] bg-white">
+                <SelectTrigger className="w-[180px] bg-white border-gray-200 shadow-sm">
                     <SelectValue placeholder={clientsT.filters.orderBy} />
                 </SelectTrigger>
                 <SelectContent>

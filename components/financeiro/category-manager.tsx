@@ -215,6 +215,7 @@ export function CategoryManager() {
                                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                                 required
                                 autoFocus
+                                className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                             />
                         </div>
                         <div className="space-y-2">
@@ -223,7 +224,7 @@ export function CategoryManager() {
                                 value={formData.tipo}
                                 onValueChange={(val) => setFormData({ ...formData, tipo: val })}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

@@ -101,7 +101,7 @@ export function CalendarView({ appointments, onRefresh }: CalendarViewProps) {
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Select value={view} onValueChange={(v) => setView(v as ViewType)}>
-                        <SelectTrigger className="w-full sm:w-[120px]">
+                        <SelectTrigger className="w-full sm:w-[120px] bg-white border-gray-200 shadow-sm">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>

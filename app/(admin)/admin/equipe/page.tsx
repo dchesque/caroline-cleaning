@@ -435,6 +435,7 @@ export default function EquipePage() {
                                         nome: e.target.value
                                     })}
                                     placeholder={teamT.modal.fullName}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
 
@@ -448,6 +449,7 @@ export default function EquipePage() {
                                             telefone: e.target.value
                                         })}
                                         placeholder="(00) 00000-0000"
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -460,6 +462,7 @@ export default function EquipePage() {
                                             email: e.target.value
                                         })}
                                         placeholder="email@exemplo.com"
+                                        className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                     />
                                 </div>
                             </div>
@@ -474,7 +477,7 @@ export default function EquipePage() {
                                             cargo: v
                                         })}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -493,7 +496,7 @@ export default function EquipePage() {
                                             cor: v
                                         })}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                             <div className="flex items-center gap-2">
                                                 <div
                                                     className="w-4 h-4 rounded-full"
@@ -528,6 +531,7 @@ export default function EquipePage() {
                                         ...editingMembro,
                                         data_admissao: e.target.value
                                     })}
+                                    className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                                 />
                             </div>
                         </div>

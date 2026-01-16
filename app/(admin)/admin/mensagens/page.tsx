@@ -84,7 +84,7 @@ export default function MensagensPage() {
                     placeholder={messagesT.searchPlaceholder}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                 />
             </div>
 

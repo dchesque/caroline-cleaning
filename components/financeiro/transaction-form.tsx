@@ -187,7 +187,7 @@ export function TransactionForm({
                                 value={formData.cliente_id}
                                 onValueChange={(val) => setFormData({ ...formData, cliente_id: val })}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                     <SelectValue placeholder="Selecione um cliente" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -211,7 +211,7 @@ export function TransactionForm({
                                     onValueChange={(val) => setFormData({ ...formData, categoria: val })}
                                     required
                                 >
-                                    <SelectTrigger className="flex-1">
+                                    <SelectTrigger className="flex-1 bg-white border-gray-200 shadow-sm">
                                         <SelectValue placeholder="Selecione" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -241,6 +241,7 @@ export function TransactionForm({
                                 value={formData.valor}
                                 onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
                                 required
+                                className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                             />
                         </div>
                     </div>
@@ -252,6 +253,7 @@ export function TransactionForm({
                             onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                             placeholder="Ex: Limpeza Residencial"
                             required
+                            className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                         />
                     </div>
 
@@ -263,6 +265,7 @@ export function TransactionForm({
                                 value={formData.data}
                                 onChange={(e) => setFormData({ ...formData, data: e.target.value })}
                                 required
+                                className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                             />
                         </div>
 
@@ -272,7 +275,7 @@ export function TransactionForm({
                                 value={formData.forma_pagamento}
                                 onValueChange={(val) => setFormData({ ...formData, forma_pagamento: val })}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                     <SelectValue placeholder="Selecione" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -293,7 +296,7 @@ export function TransactionForm({
                                 value={formData.status}
                                 onValueChange={(val) => setFormData({ ...formData, status: val })}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger className="bg-white border-gray-200 shadow-sm">
                                     <SelectValue placeholder="Selecione" />
                                 </SelectTrigger>
                                 <SelectContent>
