@@ -2,16 +2,37 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.1.3] - 2026-01-16
+### Fixed
+- Correção de strings hardcoded em português na página de Webhooks.
+- Internacionalização completa das categorias de Webhooks (Chat, Leads, Appointments, etc.).
+- Tradução de labels técnicas, placeholders de segurança e indicadores de status na aba de configuração e modais.
+
+## [2.1.2] - 2026-01-16
+### Added
+- Internacionalização completa da nova página de Webhooks (pt-BR, en-US).
+- Novas chaves de tradução `yes` e `no` no módulo `common`.
+
+### Changed
+- Ajuste de layout na página de Webhooks para preencher toda a largura disponível no painel admin.
+- Refatoração dos componentes de Webhooks para utilizar o hook `useAdminI18n`.
+
+## [2.1.1] - 2026-01-16
+
+### Alterado
+- **Refatoração UX Webhooks**:
+  - Implementação de sistema de **Tabs** para separar Visão Geral, Outbound, Inbound e Configurações.
+  - Substituição da listagem densa por **Cards clicáveis** com modal de detalhes.
+  - Modal de detalhes organizado em sub-abas (Config, Payload, Exemplo, cURL).
+  - Adição de casos de uso e explicação simplificada da arquitetura.
+  - Melhora significativa na legibilidade e redução de carga cognitiva.
+
 ## [2.1.0] - 2026-01-16
 
 ### Adicionado
 - **Documentação de Webhooks**:
   - Nova página técnica em `/admin/configuracoes/webhooks` para desenvolvedores.
   - Detalhamento de 15 webhooks Outbound (App → n8n) e 4 webhooks Inbound (n8n → App).
-  - Painel interativo com: payloads TypeScript, exemplos JSON, comandos cURL de teste e tabelas de parâmetros.
-  - Banner de status de configuração em tempo real.
-  - Componente `CopyCodeBlock` para facilitar a cópia de snippets técnicos.
-  - Visão geral da arquitetura de integração com n8n.
 
 ## [2.0.0] - 2026-01-16
 

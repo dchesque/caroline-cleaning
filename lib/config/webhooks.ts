@@ -4,7 +4,7 @@ import type { WebhookEventType } from '@/types/webhook'
 // CONFIGURAÇÃO BASE
 // ============================================
 
-const getBaseUrl = (): string => {
+export const getBaseUrl = (): string => {
     const url = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL
     if (!url) {
         console.warn('[Webhooks] NEXT_PUBLIC_N8N_WEBHOOK_URL não configurada')

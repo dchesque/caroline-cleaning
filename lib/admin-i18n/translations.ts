@@ -66,6 +66,8 @@ export const translations = {
                 saturday: 'Sábado',
                 sunday: 'Domingo',
             },
+            yes: 'Sim',
+            no: 'Não',
         },
         sidebar: {
             overview: 'Visão Geral',
@@ -831,6 +833,137 @@ export const translations = {
                     tip4: 'Sempre teste os eventos antes de ativar em produção',
                 },
             },
+
+            // Webhooks
+            webhooks: {
+                title: 'Webhooks & Integrações',
+                subtitle: 'Documentação técnica para orquestração de fluxos com n8n',
+                back: 'Voltar',
+                tabs: {
+                    overview: 'Visão Geral',
+                    outbound: 'Outbound',
+                    inbound: 'Inbound',
+                    config: 'Configuração'
+                },
+                status: {
+                    ready: 'Webhooks configurados e prontos',
+                    pending: 'Configuração pendente',
+                    configureNow: 'Configurar agora',
+                    active: 'Ativo'
+                },
+                seconds: 'segundos',
+                howItWorks: {
+                    title: 'Como funciona',
+                    subtitle: 'O sistema utiliza uma arquitetura de webhooks bidirecional para orquestrar automações no n8n.'
+                },
+                cards: {
+                    outbound: {
+                        title: 'Outbound',
+                        direction: 'App → n8n',
+                        description: 'O app dispara eventos (JSON via POST) para endpoints específicos no n8n sempre que uma ação relevante ocorre no sistema.',
+                        events: '15 eventos disponíveis',
+                        retry: 'Mecanismo de retry automático',
+                        cta: 'Ver webhooks outbound'
+                    },
+                    inbound: {
+                        title: 'Inbound',
+                        direction: 'n8n → App',
+                        description: 'O n8n envia dados de volta para o app através de um endpoint único, processando as respostas através de handlers internos.',
+                        events: '4 eventos de entrada',
+                        endpoint: 'Endpoint: /api/webhook/n8n',
+                        cta: 'Ver webhooks inbound'
+                    }
+                },
+                useCases: {
+                    title: 'Casos de Uso Comuns',
+                    leads: {
+                        title: 'Capturar Leads',
+                        desc: 'Processamento de novos contatos e IA'
+                    },
+                    notifications: {
+                        title: 'Notificações',
+                        desc: 'Alertas e confirmações automáticas'
+                    },
+                    postService: {
+                        title: 'Pós-Serviço',
+                        desc: 'Reviews e integração financeira'
+                    },
+                    engagement: {
+                        title: 'Reengajamento',
+                        desc: 'Fidelização de clientes inativos'
+                    }
+                },
+                list: {
+                    search: 'Buscar webhook...',
+                    empty: 'Nenhum webhook encontrado',
+                    clearSearch: 'Limpar busca',
+                    outboundTitle: 'Webhooks Outbound',
+                    outboundSubtitle: 'Eventos disparados pelo App para o n8n',
+                    inboundTitle: 'Webhooks Inbound',
+                    inboundSubtitle: 'Eventos disparados pelo n8n para o App',
+                    inboundAlert: 'Endpoint Único: Todas as requisições de entrada devem ser enviadas para POST /api/webhook/n8n. O sistema identifica o evento pelo campo event presente no body.'
+                },
+                configTab: {
+                    title: 'Configuração',
+                    subtitle: 'Gerencie as variáveis de ambiente necessárias para habilitar o sistema de webhooks',
+                    status: 'Status Atual',
+                    envFile: 'Arquivo de Ambiente',
+                    envHelp: 'Adicione ao seu arquivo .env.local',
+                    copyEnv: 'Copiar .env',
+                    security: {
+                        title: 'Segurança',
+                        item1: 'Todas as requisições (Inbound/Outbound) incluem obrigatoriamente o header x-webhook-secret.',
+                        item2: 'Em desenvolvimento (NODE_ENV !== "production"), a validação de secret é opcional para facilitar testes locais.'
+                    },
+                    technical: {
+                        title: 'Configurações Técnicas',
+                        timeout: 'Timeout Padrão',
+                        timeoutChat: 'Timeout Chat',
+                        retries: 'Tentativas (Retry)',
+                        retryDelay: 'Atraso entre Retry'
+                    }
+                },
+                modal: {
+                    config: 'Configuração',
+                    payload: 'Payload (TS)',
+                    payloadTitle: 'Payload para o evento',
+                    secretPlaceholder: 'SUA_CHAVE_SECRET',
+                    example: 'Exemplo',
+                    curl: 'Testar (cURL)',
+                    endpoint: 'Endpoint',
+                    method: 'Método',
+                    timeout: 'Timeout',
+                    retries: 'Retries',
+                    interface: 'Interface',
+                    url: 'URL Completa',
+                    hook: 'React Hook',
+                    handler: 'Handler Interno',
+                    tsInterface: 'Interface TypeScript',
+                    copyInterface: 'Copiar Interface',
+                    objectFields: 'Campos do Objeto',
+                    table: {
+                        field: 'Campo',
+                        type: 'Tipo',
+                        required: 'Obr',
+                        desc: 'Descrição'
+                    },
+                    jsonBody: 'Corpo da Requisição (JSON)',
+                    copyJson: 'Copiar JSON',
+                    curlTitle: 'Comando para Teste',
+                    copyCurl: 'Comando completo para teste via cURL:',
+                    howToTest: 'Como testar',
+                    howToTestDesc: 'Certifique-se de que o seu servidor local ou endpoint n8n esteja acessível. Se configurado corretamente, o n8n receberá este payload e iniciará o workflow correspondente.'
+                },
+                categories: {
+                    chat: 'Chat',
+                    leads: 'Leads',
+                    appointments: 'Agendamentos',
+                    feedback: 'Feedback',
+                    payments: 'Pagamentos',
+                    clients: 'Clientes',
+                    notifications: 'Notificações'
+                }
+            },
         },
         account: {
             title: 'Minha Conta',
@@ -1000,6 +1133,8 @@ export const translations = {
                 saturday: 'Saturday',
                 sunday: 'Sunday',
             },
+            yes: 'Yes',
+            no: 'No',
         },
         sidebar: {
             overview: 'Overview',
@@ -1765,6 +1900,137 @@ export const translations = {
                     tip4: 'Always test events before activating in production',
                 },
             },
+
+            // Webhooks
+            webhooks: {
+                title: 'Webhooks & Integrations',
+                subtitle: 'Technical documentation for workflow orchestration with n8n',
+                back: 'Back',
+                tabs: {
+                    overview: 'Overview',
+                    outbound: 'Outbound',
+                    inbound: 'Inbound',
+                    config: 'Configuration'
+                },
+                status: {
+                    ready: 'Webhooks configured and ready',
+                    pending: 'Configuration pending',
+                    configureNow: 'Configure now',
+                    active: 'Active'
+                },
+                seconds: 'seconds',
+                howItWorks: {
+                    title: 'How it works',
+                    subtitle: 'The system uses a bidirectional webhook architecture to orchestrate automations in n8n.'
+                },
+                cards: {
+                    outbound: {
+                        title: 'Outbound',
+                        direction: 'App → n8n',
+                        description: 'The app triggers events (JSON via POST) to specific endpoints in n8n whenever a relevant action occurs in the system.',
+                        events: '15 events available',
+                        retry: 'Automatic retry mechanism',
+                        cta: 'View outbound webhooks'
+                    },
+                    inbound: {
+                        title: 'Inbound',
+                        direction: 'n8n → App',
+                        description: 'n8n sends data back to the app through a single endpoint, processing responses through internal handlers.',
+                        events: '4 input events',
+                        endpoint: 'Endpoint: /api/webhook/n8n',
+                        cta: 'View inbound webhooks'
+                    }
+                },
+                useCases: {
+                    title: 'Common Use Cases',
+                    leads: {
+                        title: 'Capture Leads',
+                        desc: 'Processing new contacts and AI'
+                    },
+                    notifications: {
+                        title: 'Notifications',
+                        desc: 'Automatic alerts and confirmations'
+                    },
+                    postService: {
+                        title: 'Post-Service',
+                        desc: 'Reviews and financial integration'
+                    },
+                    engagement: {
+                        title: 'Reengagement',
+                        desc: 'Loyalty for inactive clients'
+                    }
+                },
+                list: {
+                    search: 'Search webhook...',
+                    empty: 'No webhooks found',
+                    clearSearch: 'Clear search',
+                    outboundTitle: 'Outbound Webhooks',
+                    outboundSubtitle: 'Events triggered by the App to n8n',
+                    inboundTitle: 'Inbound Webhooks',
+                    inboundSubtitle: 'Events triggered by n8n to the App',
+                    inboundAlert: 'Single Endpoint: All inbound requests must be sent to POST /api/webhook/n8n. The system identifies the event by the event field present in the body.'
+                },
+                configTab: {
+                    title: 'Configuration',
+                    subtitle: 'Manage environment variables needed to enable the webhook system',
+                    status: 'Current Status',
+                    envFile: 'Environment File',
+                    envHelp: 'Add to your .env.local file',
+                    copyEnv: 'Copy .env',
+                    security: {
+                        title: 'Security',
+                        item1: 'All requests (Inbound/Outbound) must include the x-webhook-secret header.',
+                        item2: 'In development (NODE_ENV !== "production"), secret validation is optional.'
+                    },
+                    technical: {
+                        title: 'Technical Settings',
+                        timeout: 'Default Timeout',
+                        timeoutChat: 'Chat Timeout',
+                        retries: 'Attempts (Retry)',
+                        retryDelay: 'Delay between Retry'
+                    }
+                },
+                modal: {
+                    config: 'Configuration',
+                    payload: 'Payload (TS)',
+                    payloadTitle: 'Payload for event',
+                    secretPlaceholder: 'YOUR_SECRET_KEY',
+                    example: 'Example',
+                    curl: 'Test (cURL)',
+                    endpoint: 'Endpoint',
+                    method: 'Method',
+                    timeout: 'Timeout',
+                    retries: 'Retries',
+                    interface: 'Interface',
+                    url: 'Full URL',
+                    hook: 'React Hook',
+                    handler: 'Internal Handler',
+                    tsInterface: 'TypeScript Interface',
+                    copyInterface: 'Copy Interface',
+                    objectFields: 'Object Fields',
+                    table: {
+                        field: 'Field',
+                        type: 'Type',
+                        required: 'Req',
+                        desc: 'Description'
+                    },
+                    jsonBody: 'Request Body (JSON)',
+                    copyJson: 'Copy JSON',
+                    curlTitle: 'Test Command',
+                    copyCurl: 'Copy cURL',
+                    howToTest: 'How to test',
+                    howToTestDesc: 'Make sure your local server or n8n endpoint is accessible. If correctly configured, n8n will receive this payload and start the corresponding workflow.'
+                },
+                categories: {
+                    chat: 'Chat',
+                    leads: 'Leads',
+                    appointments: 'Appointments',
+                    feedback: 'Feedback',
+                    payments: 'Payments',
+                    clients: 'Clients',
+                    notifications: 'Notifications'
+                }
+            },
         },
         account: {
             title: 'My Account',
@@ -1867,7 +2133,6 @@ export const translations = {
                 typeToConfirm: 'Type "{word}" to confirm',
                 confirmWord: 'DEACTIVATE',
                 deactivateSuccess: 'Account deactivated successfully.',
-                deactivateError: 'Error deactivating account.',
             },
         },
     },
