@@ -2,7 +2,7 @@
 
 import { MessageCircle, CalendarCheck, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
+import { useBusinessSettings } from '@/lib/context/business-settings-context'
 const steps = [
     {
         number: '01',
@@ -25,6 +25,8 @@ const steps = [
 ]
 
 export function HowItWorks() {
+    const settings = useBusinessSettings()
+
     const openChat = () => {
         window.dispatchEvent(new CustomEvent('open-chat'))
     }
@@ -35,10 +37,10 @@ export function HowItWorks() {
                 {/* Section Header */}
                 <div className="text-center max-w-2xl mx-auto mb-16">
                     <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-4">
-                        How Scheduling Works
+                        {settings.how_it_works_title || 'How Scheduling Works'}
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                        Keeping your space clean has never been easier.
+                        {settings.how_it_works_subtitle || 'Keeping your space clean has never been easier.'}
                     </p>
                 </div>
 
@@ -74,7 +76,7 @@ export function HowItWorks() {
                 <div className="text-center">
                     <Button size="lg" onClick={openChat} className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white">
                         <MessageCircle className="w-4 h-4" />
-                        Request a Visit
+                        {settings.how_it_works_cta || 'Request a Visit'}
                     </Button>
                 </div>
             </div>

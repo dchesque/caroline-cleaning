@@ -1,4 +1,4 @@
-import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/static'
 import {
     BusinessSettings,
     DEFAULT_SETTINGS,
@@ -7,7 +7,7 @@ import {
 
 export async function getBusinessSettingsServer(): Promise<BusinessSettings> {
     try {
-        const supabase = await createServerClient();
+        const supabase = createStaticClient();
         const { data } = await supabase
             .from('configuracoes')
             .select('chave, valor');

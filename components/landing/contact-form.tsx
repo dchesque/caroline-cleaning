@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Phone, User, MapPin, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useBusinessSettings } from '@/lib/context/business-settings-context'
 
 export function ContactForm() {
+    const settings = useBusinessSettings()
     const [formData, setFormData] = useState({
         nome: '',
         telefone: '',
@@ -81,10 +83,10 @@ export function ContactForm() {
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h2 className="font-heading text-2xl md:text-3xl font-bold text-foreground mb-3">
-                            Prefer a Callback?
+                            {settings.contact_title || 'Prefer a Callback?'}
                         </h2>
                         <p className="text-muted-foreground">
-                            Leave your info and we'll reach out to you — no chat required.
+                            {settings.contact_subtitle || "Leave your info and we'll reach out to you — no chat required."}
                         </p>
                     </div>
 

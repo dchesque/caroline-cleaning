@@ -187,7 +187,7 @@ export function Header() {
                                 }}
                             >
                                 <MessageCircle className="w-4 h-4" />
-                                Chat with {settings.chat_bot_name}
+                                Chat with {settings.ai_name}
                             </Button>
                         </nav>
                     </div>

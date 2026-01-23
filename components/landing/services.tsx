@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sparkles, Home, Building2, MessageCircle, ArrowRight } from 'lucide-react'
+import { useBusinessSettings } from '@/lib/context/business-settings-context'
 
 const services = [
     {
@@ -47,6 +48,8 @@ const services = [
 ]
 
 export function Services() {
+    const settings = useBusinessSettings()
+
     const openChat = () => {
         window.dispatchEvent(new CustomEvent('open-chat'))
     }
@@ -57,10 +60,10 @@ export function Services() {
                 {/* Section Header */}
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="font-heading text-3xl md:text-5xl font-bold text-foreground mb-6">
-                        Cleaning Services
+                        {settings.services_title || 'Cleaning Services'}
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                        From routine care to detailed deep cleaning, each service is customized to meet the specific needs of your space.
+                        {settings.services_subtitle || 'From routine care to detailed deep cleaning, each service is customized to meet the specific needs of your space.'}
                     </p>
                     <div className="mt-8 font-heading text-2xl font-bold text-foreground">
                         Most Requested Services

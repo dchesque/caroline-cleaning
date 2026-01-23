@@ -18,7 +18,7 @@ export function ChatHeader({ onClose, onMinimize }: ChatHeaderProps) {
                     <MessageCircle className="w-4 h-4 text-brandy-rose-600" />
                 </div>
                 <div>
-                    <h3 className="font-heading font-semibold text-foreground">{settings.chat_bot_name}</h3>
+                    <h3 className="font-heading font-semibold text-foreground">{settings.ai_name}</h3>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
                         Online

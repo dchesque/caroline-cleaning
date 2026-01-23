@@ -2,6 +2,49 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.2.3] - 2026-01-23
+### Added
+- **Pricing**: Configuração da seção de Pricing no Painel Admin com suporte a formato "Starting at" (A partir de) ou "Range" (Faixa de Preço).
+
+### Changed
+- **UX/UI Admin**: Refatoração da página de configurações da Landing Page para um layout de Accordion organizado, com cores alternadas (zebra stripes), bordas reforçadas e efeitos de hover para melhor usabilidade.
+
+### Fixed
+- **Sincronização**: Resolução de problema de persistência onde alterações no admin não refletiam na Landing Page.
+  - Implementação de política de RLS (Supabase) para leitura pública da tabela `configuracoes`.
+  - Adição de Server Action para revalidação de cache manual (`revalidatePath`) ao salvar configurações.
+  - Desativação de cache estático na busca de configurações pelo servidor (force-dynamic).
+
+## [2.2.2] - 2026-01-22
+### Changed
+- **Página Inicial**: Atualização do card flutuante na seção "Sobre Nós" para exibir o nome da proprietária Thayna e seu cargo.
+
+## [2.2.1] - 2026-01-22
+### Fixed
+- **Configurações**: Correção de erro de duplicidade no `upsert` das configurações via `lib/business-config.ts`.
+- **Internacionalização**: Sincronização de chaves de tradução entre `pt-BR` e `en-US` para evitar falhas de build.
+- **Frontend**: Atualização de componentes para utilizar preferencialmente o campo `ai_name` em vez de `chat_bot_name` (depreciado).
+
+## [2.2.0] - 2026-01-22
+### Added
+- **Landing Page Dinâmica**:
+  - Implementação de gerenciamento dinâmico para as seções de FAQ e "Sobre Nós".
+  - Novos cards no Painel Admin para adicionar, editar e remover itens de FAQ.
+  - Controle total via UI para o conteúdo de "Sobre Nós" (título, parágrafos, imagem e destaques).
+- **Internacionalização**:
+  - Novas chaves de tradução para os módulos de FAQ e Sobre Nós.
+
+### Changed
+- **Configurações do Assistente**: Remoção do campo "Tom de Comunicação" (ai_tone) por obsolescência técnica.
+- **Frontend**: Componentes de FAQ e Sobre Nós agora consomem dados dinâmicos do banco de dados em vez de constantes hardcoded.
+
+### Fixed
+- Correção de erro de build em Client Components que usam hooks sem a diretiva `"use client"`.
+
+### Fixed
+- Correção de erro fatal na página `/admin/financeiro` causado pelo uso de hooks de cliente em um Server Component.
+- Refatoração da página de Finanças em componentes de Servidor (busca de dados) e Cliente (UI/Traduções).
+
 ## [2.1.5] - 2026-01-16
 ### Changed
 - Atualização abrangente da documentação técnica no diretório `.context/`.

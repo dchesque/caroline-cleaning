@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, Sparkles, Home, Building2, Loader2 } from 'lucide-react'
+import { useBusinessSettings } from '@/lib/context/business-settings-context'
 
 interface PricingItem {
     id: string
@@ -33,6 +34,7 @@ const serviceColors: Record<string, { text: string; bg: string }> = {
 }
 
 export function Pricing() {
+    const settings = useBusinessSettings()
     const [pricing, setPricing] = useState<PricingItem[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -82,10 +84,10 @@ export function Pricing() {
                 {/* Section Header */}
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="font-heading text-3xl md:text-5xl font-bold text-foreground mb-6">
-                        Transparent Pricing
+                        {settings.pricing_title || 'Transparent Pricing'}
                     </h2>
                     <p className="text-lg text-muted-foreground">
-                        Honest pricing with no hidden fees. Final quote depends on home size and specific needs.
+                        {settings.pricing_subtitle || 'Honest pricing with no hidden fees. Final quote depends on home size and specific needs.'}
                     </p>
                 </div>
 
@@ -123,15 +125,26 @@ export function Pricing() {
                                     </p>
 
                                     <div className="mb-2">
-                                        <span className="text-3xl font-bold text-foreground">
-                                            ${Number(item.price_min).toFixed(0)}
-                                        </span>
-                                        <span className="text-xl text-muted-foreground">
-                                            {' '}-{' '}
-                                        </span>
-                                        <span className="text-3xl font-bold text-foreground">
-                                            ${Number(item.price_max).toFixed(0)}
-                                        </span>
+                                        {settings.pricing_format === 'starting_at' ? (
+                                            <>
+                                                <span className="text-sm text-muted-foreground">Starting at </span>
+                                                <span className="text-3xl font-bold text-foreground">
+                                                    ${Number(item.price_min).toFixed(0)}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="text-3xl font-bold text-foreground">
+                                                    ${Number(item.price_min).toFixed(0)}
+                                                </span>
+                                                <span className="text-xl text-muted-foreground">
+                                                    {' '}-{' '}
+                                                </span>
+                                                <span className="text-3xl font-bold text-foreground">
+                                                    ${Number(item.price_max).toFixed(0)}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
 
                                     <p className="text-xs text-muted-foreground">
@@ -146,7 +159,7 @@ export function Pricing() {
                 {/* CTA */}
                 <div className="text-center">
                     <p className="text-muted-foreground mb-4">
-                        Want an exact quote? Chat with Carol — most quotes ready in under 5 minutes.
+                        {settings.pricing_cta_subtext || 'Want an exact quote? Chat with Carol — most quotes ready in under 5 minutes.'}
                     </p>
                     <Button
                         size="lg"
@@ -154,7 +167,7 @@ export function Pricing() {
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
                     >
                         <MessageCircle className="w-5 h-5" />
-                        Schedule Visit Now
+                        {settings.pricing_cta_text || 'Schedule Visit Now'}
                     </Button>
                 </div>
             </div>

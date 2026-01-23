@@ -1,29 +1,36 @@
-import { Shield, UserCheck, Sparkles, Clock } from 'lucide-react'
+'use client'
 
-const badges = [
-    {
-        icon: Shield,
-        title: 'Local company',
-        description: 'Serving Charlotte & Fort Mill with pride',
-    },
-    {
-        icon: UserCheck,
-        title: 'Verified professionals',
-        description: 'Trusted and background-checked team',
-    },
-    {
-        icon: Sparkles,
-        title: 'Premium standards',
-        description: 'Consistent high-quality cleaning',
-    },
-    {
-        icon: Clock,
-        title: 'Flexible scheduling',
-        description: 'No contracts, pause anytime',
-    },
-]
+import { Shield, UserCheck, Sparkles, Clock, Star, Award } from 'lucide-react'
+import { useBusinessSettings } from '@/lib/context/business-settings-context'
 
 export function TrustBadges() {
+    const settings = useBusinessSettings()
+
+    if (!settings.badges_enabled) return null
+
+    const badges = [
+        {
+            icon: Star,
+            title: `${settings.badges_rating || '4.9'} Rating`,
+            description: `Based on ${settings.badges_reviews_count || '200+'} reviews`,
+        },
+        {
+            icon: Award,
+            title: `${settings.badges_years_experience || '5+'} Years`,
+            description: 'Of trusted service',
+        },
+        {
+            icon: UserCheck,
+            title: 'Verified professionals',
+            description: 'Trusted and background-checked team',
+        },
+        {
+            icon: Clock,
+            title: 'Flexible scheduling',
+            description: 'No contracts, pause anytime',
+        },
+    ]
+
     return (
         <section className="py-20 bg-white border-y border-pampas">
             <div className="container">
@@ -49,3 +56,4 @@ export function TrustBadges() {
         </section>
     )
 }
+

@@ -18,10 +18,10 @@ export function CTASection() {
 
             <div className="container relative text-center">
                 <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-white mb-4">
-                    Ready for a Spotless Home or Office?
+                    {settings.cta_title || 'Ready for a Spotless Home or Office?'}
                 </h2>
                 <p className="text-lg text-brandy-rose-100 mb-8 max-w-2xl mx-auto">
-                    Serving Charlotte, NC, Fort Mill, SC, and nearby cities. Chat with Carol for a fast quote and easy scheduling.
+                    {settings.cta_subtitle || 'Serving Charlotte, NC, Fort Mill, SC, and nearby cities. Chat with Carol for a fast quote and easy scheduling.'}
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -32,7 +32,7 @@ export function CTASection() {
                         onClick={openChat}
                     >
                         <MessageCircle className="w-5 h-5" />
-                        Request a Visit
+                        {settings.cta_button_text || 'Request a Visit'}
                     </Button>
                 </div>
 

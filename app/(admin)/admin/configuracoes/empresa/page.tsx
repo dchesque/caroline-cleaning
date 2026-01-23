@@ -28,6 +28,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { getBusinessSettingsByGrupo, saveBusinessSettings, DEFAULT_SETTINGS } from '@/lib/business-config'
+import { revalidateLandingPage } from '@/lib/actions/revalidate'
 import { ConfigLinkCard } from '@/components/admin/config-link-card'
 
 export default function EmpresaConfigPage() {
@@ -56,6 +57,7 @@ export default function EmpresaConfigPage() {
         setIsSaving(true)
         try {
             await saveBusinessSettings(config, 'empresa')
+            await revalidateLandingPage()
             toast.success(settingsT.saved)
         } catch (error) {
             console.error('Error saving company config:', error)
