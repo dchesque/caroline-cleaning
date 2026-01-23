@@ -237,6 +237,35 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
         return { status: 'error', message: 'Client not found. Create lead first.' }
     }
 
+    // ===== NOVA VALIDAÇÃO: VERIFICAR SE CLIENTE TEM ENDEREÇO =====
+    const { data: client, error: clientError } = await supabase
+        .from('clientes')
+        .select('id, nome, telefone, endereco_completo, cidade, zip_code')
+        .eq('id', clientId)
+        .single()
+
+    if (clientError || !client) {
+        return {
+            status: 'error',
+            message: 'Client not found'
+        }
+    }
+
+    // CRÍTICO: Verificar se tem endereço completo e ZIP code
+    if (!client.endereco_completo || !client.zip_code) {
+        return {
+            status: 'missing_address',
+            message: 'Client address is required to schedule an appointment. Please provide the full address and ZIP code first.',
+            client_id: client.id,
+            client_name: client.nome,
+            required_fields: {
+                endereco_completo: !client.endereco_completo,
+                zip_code: !client.zip_code
+            }
+        }
+    }
+    // ===== FIM DA VALIDAÇÃO =====
+
     // Verificar disponibilidade
     const { data: conflicts } = await supabase
         .from('agendamentos')
@@ -284,7 +313,7 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
         return { status: 'error', message: error.message }
     }
 
-    // ADICIONAR: Disparar evento de Schedule
+    // Disparar evento de Schedule
     try {
         await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/tracking/event`, {
             method: 'POST',
@@ -307,23 +336,16 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
         console.error('Tracking error:', e);
     }
 
-    // Buscar dados do cliente para confirmação
-    const { data: client } = await supabase
-        .from('clientes')
-        .select('nome, telefone, endereco_completo')
-        .eq('id', clientId)
-        .single()
-
     return {
         status: 'created',
         appointment_id: appointment.id,
         details: {
-            client_name: client?.nome,
+            client_name: client.nome,
             service: service_type,
             date,
             time,
             duration,
-            address: client?.endereco_completo
+            address: client.endereco_completo
         },
         confirmation_message: `Great! I've scheduled your ${service_type} cleaning for ${date} at ${time}. We'll send you a confirmation shortly!`
     }

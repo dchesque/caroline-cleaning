@@ -2,6 +2,10 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.2.5] - 2026-01-23
+### Added
+- **Carol Actions**: Validação na API que exige endereço (`endereco_completo` e `zip_code`) antes de criar um agendamento.
+
 ## [2.2.4] - 2026-01-23
 ### Fixed
 - **Carol Actions**: Correção de erro na criação de leads onde a coluna `session_id` era referenciada em vez de `session_id_origem` na tabela `clientes`.
