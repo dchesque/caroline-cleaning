@@ -2,6 +2,10 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.2.4] - 2026-01-23
+### Fixed
+- **Carol Actions**: Correção de erro na criação de leads onde a coluna `session_id` era referenciada em vez de `session_id_origem` na tabela `clientes`.
+
 ## [2.2.3] - 2026-01-23
 ### Added
 - **Pricing**: Configuração da seção de Pricing no Painel Admin com suporte a formato "Starting at" (A partir de) ou "Range" (Faixa de Preço).

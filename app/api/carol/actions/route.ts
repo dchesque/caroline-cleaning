@@ -114,7 +114,7 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
             origem: 'chat_carol',
             tipo_servico_padrao: service_interest || null,
             notas: notes || null,
-            session_id: sessionId,
+            session_id_origem: sessionId,
         })
         .select()
         .single()
