@@ -114,19 +114,23 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
     }
 
     // Criar novo lead
+    const insertData: any = {
+        nome: name || 'New Lead',
+        telefone: phone,
+        status: 'lead',
+        origem: 'chat_carol',
+        session_id_origem: sessionId,
+    }
+
+    // Adicionar campos opcionais apenas se tiverem valor
+    if (email) insertData.email = email
+    if (zip_code) insertData.zip_code = zip_code
+    if (service_interest) insertData.tipo_servico_padrao = service_interest
+    if (notes) insertData.notas = notes
+
     const { data, error } = await supabase
         .from('clientes')
-        .insert({
-            nome: name || 'New Lead',
-            telefone: phone,
-            email: email || null,
-            zip_code: zip_code || null,
-            status: 'lead',
-            origem: 'chat_carol',
-            tipo_servico_padrao: service_interest || null,
-            notas: notes || null,
-            session_id_origem: sessionId,
-        })
+        .insert(insertData)
         .select()
         .single()
 
