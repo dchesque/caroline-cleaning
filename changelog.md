@@ -2,6 +2,10 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.2.8] - 2026-01-23
+### Fixed
+- **Carol Actions**: Refino nas funções de criação e atualização de leads para garantir limpeza de dados (trim), filtragem de campos vazios/inválidos e melhor tratamento de erros.
+
 ## [2.2.7] - 2026-01-23
 ### Fixed
 - **Carol Actions**: Ajuste na criação de leads para não enviar campos opcionais vazios (email, zip_code, notas, interesse) para o banco de dados.

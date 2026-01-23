@@ -113,8 +113,8 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
         }
     }
 
-    // Criar novo lead
-    const insertData: any = {
+    // 🆕 CONSTRUIR OBJETO APENAS COM CAMPOS QUE TÊM VALOR
+    const insertData: Record<string, any> = {
         nome: name || 'New Lead',
         telefone: phone,
         status: 'lead',
@@ -122,11 +122,16 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
         session_id_origem: sessionId,
     }
 
-    // Adicionar campos opcionais apenas se tiverem valor
-    if (email) insertData.email = email
-    if (zip_code) insertData.zip_code = zip_code
-    if (service_interest) insertData.tipo_servico_padrao = service_interest
-    if (notes) insertData.notas = notes
+    // Adicionar campos opcionais apenas se tiverem valor real
+    if (email && email.trim()) insertData.email = email.trim()
+    if (zip_code && zip_code.trim()) insertData.zip_code = zip_code.trim()
+    if (notes && notes.trim()) insertData.notas = notes.trim()
+
+    // Para service_interest, se vier vazio ou inválido, não enviar
+    // O banco vai usar o default 'regular' automaticamente
+    if (service_interest && service_interest.trim() && service_interest !== '=') {
+        insertData.tipo_servico_padrao = service_interest.trim()
+    }
 
     const { data, error } = await supabase
         .from('clientes')
@@ -135,10 +140,11 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
         .single()
 
     if (error) {
-        return { status: 'error', message: error.message }
+        console.error('[Create Lead] Error:', error)
+        return { status: 'error', message: error.message, details: error }
     }
 
-    // ADICIONAR: Disparar evento de Lead
+    // Disparar evento de Lead
     try {
         await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/tracking/event`, {
             method: 'POST',
@@ -148,9 +154,9 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
                 event_id: `lead_chat_${data.id}`,
                 user_data: {
                     phone: phone,
-                    email: email,
+                    email: email || undefined,
                     first_name: name?.split(' ')[0],
-                    zip_code: zip_code,
+                    zip_code: zip_code || undefined,
                 },
                 custom_data: {
                     content_name: 'Chat Carol',
@@ -197,13 +203,26 @@ async function actionUpdateLead(supabase: any, params: any) {
         'cidade', 'estado', 'tipo_residencia', 'bedrooms',
         'bathrooms', 'square_feet', 'tipo_servico_padrao',
         'frequencia', 'dia_preferido', 'tem_pets', 'pets_detalhes',
-        'notas'
+        'status', 'notas'
     ]
 
     const filteredUpdates: Record<string, any> = {}
     for (const [key, value] of Object.entries(updates)) {
         if (allowedFields.includes(key)) {
-            filteredUpdates[key] = value
+            // 🆕 FILTRAR valores vazios ou inválidos
+            if (value !== null && value !== undefined && value !== '' && value !== '=') {
+                filteredUpdates[key] = value
+            }
+        }
+    }
+
+    // Se não tem nada para atualizar, retornar sucesso mesmo assim
+    if (Object.keys(filteredUpdates).length === 0) {
+        return {
+            status: 'updated',
+            client_id: clientId,
+            updated_fields: [],
+            message: 'No fields to update'
         }
     }
 
@@ -213,7 +232,8 @@ async function actionUpdateLead(supabase: any, params: any) {
         .eq('id', clientId)
 
     if (error) {
-        return { status: 'error', message: error.message }
+        console.error('[Update Lead] Error:', error)
+        return { status: 'error', message: error.message, details: error }
     }
 
     return {
