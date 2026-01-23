@@ -2,6 +2,10 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.2.6] - 2026-01-23
+### Changed
+- **Carol Actions**: Transição para uso do `SUPABASE_SERVICE_ROLE_KEY` na API de ações para garantir permissões totais na execução de comandos via bot.
+
 ## [2.2.5] - 2026-01-23
 ### Added
 - **Carol Actions**: Validação na API que exige endereço (`endereco_completo` e `zip_code`) antes de criar um agendamento.
