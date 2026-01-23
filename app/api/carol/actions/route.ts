@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js' // 👈 MUDOU: importação direta
+import { createClient } from '@supabase/supabase-js'
 
 type ActionType =
     | 'create_lead'
@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
     try {
         const payload: ActionPayload = await request.json()
 
-        // 👇 CRIAR CLIENT COM SERVICE ROLE KEY
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -30,10 +29,9 @@ export async function POST(request: NextRequest) {
                     persistSession: false
                 }
             }
-        ) // 👈 FECHAR parêntese
+        )
 
         const { action, session_id, params } = payload
-
         let result: any = null
 
         switch (action) {
@@ -113,25 +111,27 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
         }
     }
 
-    // 🆕 CONSTRUIR OBJETO APENAS COM CAMPOS QUE TÊM VALOR
+    // 🆕 CONSTRUIR OBJETO APENAS COM CAMPOS QUE TÊM VALOR (LIMPANDO COM cleanValue)
     const insertData: Record<string, any> = {
-        nome: name || 'New Lead',
-        telefone: phone,
+        nome: cleanValue(name) || 'New Lead',
+        telefone: cleanValue(phone),
         status: 'lead',
         origem: 'chat_carol',
         session_id_origem: sessionId,
     }
 
     // Adicionar campos opcionais apenas se tiverem valor real
-    if (email && email.trim()) insertData.email = email.trim()
-    if (zip_code && zip_code.trim()) insertData.zip_code = zip_code.trim()
-    if (notes && notes.trim()) insertData.notas = notes.trim()
+    const cleanEmail = cleanValue(email)
+    if (cleanEmail) insertData.email = cleanEmail
 
-    // Para service_interest, se vier vazio ou inválido, não enviar
-    // O banco vai usar o default 'regular' automaticamente
-    if (service_interest && service_interest.trim() && service_interest !== '=') {
-        insertData.tipo_servico_padrao = service_interest.trim()
-    }
+    const cleanZip = cleanValue(zip_code)
+    if (cleanZip) insertData.zip_code = cleanZip
+
+    const cleanNotes = cleanValue(notes)
+    if (cleanNotes) insertData.notas = cleanNotes
+
+    const cleanService = cleanValue(service_interest)
+    if (cleanService) insertData.tipo_servico_padrao = cleanService
 
     const { data, error } = await supabase
         .from('clientes')
@@ -154,9 +154,9 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
                 event_id: `lead_chat_${data.id}`,
                 user_data: {
                     phone: phone,
-                    email: email || undefined,
+                    email: cleanEmail || undefined,
                     first_name: name?.split(' ')[0],
-                    zip_code: zip_code || undefined,
+                    zip_code: cleanZip || undefined,
                 },
                 custom_data: {
                     content_name: 'Chat Carol',
@@ -209,9 +209,20 @@ async function actionUpdateLead(supabase: any, params: any) {
     const filteredUpdates: Record<string, any> = {}
     for (const [key, value] of Object.entries(updates)) {
         if (allowedFields.includes(key)) {
-            // 🆕 FILTRAR valores vazios ou inválidos
-            if (value !== null && value !== undefined && value !== '' && value !== '=') {
-                filteredUpdates[key] = value
+            const cleanedValue = cleanValue(value)
+
+            if (cleanedValue !== null) {
+                // Conversões de tipo
+                if (key === 'tem_pets') {
+                    filteredUpdates[key] = cleanedValue.toLowerCase() === 'true' || cleanedValue === 'yes' || cleanedValue === '1'
+                } else if (['bedrooms', 'bathrooms', 'square_feet'].includes(key)) {
+                    if (isValidNumber(cleanedValue)) {
+                        filteredUpdates[key] = Number(cleanedValue)
+                    }
+                } else {
+                    // 🆕 Aceita qualquer string agora que as constraints foram removidas
+                    filteredUpdates[key] = cleanedValue
+                }
             }
         }
     }
@@ -248,7 +259,7 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
     const {
         client_id,
         phone,
-        service_type = 'regular',
+        service_type,
         date,
         time,
         duration = 180,
@@ -272,7 +283,7 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
         return { status: 'error', message: 'Client not found. Create lead first.' }
     }
 
-    // ===== NOVA VALIDAÇÃO: VERIFICAR SE CLIENTE TEM ENDEREÇO =====
+    // VALIDAÇÃO: VERIFICAR SE CLIENTE TEM ENDEREÇO
     const { data: client, error: clientError } = await supabase
         .from('clientes')
         .select('id, nome, telefone, endereco_completo, cidade, zip_code')
@@ -280,10 +291,7 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
         .single()
 
     if (clientError || !client) {
-        return {
-            status: 'error',
-            message: 'Client not found'
-        }
+        return { status: 'error', message: 'Client not found' }
     }
 
     // CRÍTICO: Verificar se tem endereço completo e ZIP code
@@ -299,7 +307,8 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
             }
         }
     }
-    // ===== FIM DA VALIDAÇÃO =====
+
+    const cleanServiceType = cleanValue(service_type) || 'regular'
 
     // Verificar disponibilidade
     const { data: conflicts } = await supabase
@@ -308,10 +317,7 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
         .eq('data', date)
         .not('status', 'in', '("cancelado","reagendado")')
 
-    // Verificar conflito de horário
-    const hasConflict = conflicts?.some((apt: any) => {
-        return apt.horario_inicio === time
-    })
+    const hasConflict = conflicts?.some((apt: any) => apt.horario_inicio === time)
 
     if (hasConflict) {
         return {
@@ -332,19 +338,20 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
         .from('agendamentos')
         .insert({
             cliente_id: clientId,
-            tipo: service_type,
+            tipo: cleanServiceType,
             data: date,
             horario_inicio: time,
             horario_fim_estimado: endTime,
             duracao_minutos: duration,
             status: 'agendado',
             origem: 'chat_carol',
-            notas: notes || null,
+            notas: cleanValue(notes),
         })
         .select()
         .single()
 
     if (error) {
+        console.error('[Create Appointment] Error:', error)
         return { status: 'error', message: error.message }
     }
 
@@ -356,11 +363,9 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
             body: JSON.stringify({
                 event_name: 'Schedule',
                 event_id: `schedule_${appointment.id}`,
-                user_data: {
-                    external_id: clientId,
-                },
+                user_data: { external_id: clientId },
                 custom_data: {
-                    content_name: service_type || 'Cleaning Service',
+                    content_name: cleanServiceType || 'Cleaning Service',
                     content_category: 'Appointment',
                     value: appointment.valor || 0,
                     currency: 'USD',
@@ -376,13 +381,13 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
         appointment_id: appointment.id,
         details: {
             client_name: client.nome,
-            service: service_type,
+            service: cleanServiceType,
             date,
             time,
             duration,
             address: client.endereco_completo
         },
-        confirmation_message: `Great! I've scheduled your ${service_type} cleaning for ${date} at ${time}. We'll send you a confirmation shortly!`
+        confirmation_message: `Great! I've scheduled your ${cleanServiceType} cleaning for ${date} at ${time}. We'll send you a confirmation shortly!`
     }
 }
 
@@ -395,14 +400,9 @@ async function actionConfirmAppointment(supabase: any, params: any) {
         .update({ status: 'confirmado' })
         .eq('id', appointment_id)
 
-    if (error) {
-        return { status: 'error', message: error.message }
-    }
+    if (error) return { status: 'error', message: error.message }
 
-    return {
-        status: 'confirmed',
-        appointment_id
-    }
+    return { status: 'confirmed', appointment_id }
 }
 
 // Cancelar agendamento
@@ -413,13 +413,11 @@ async function actionCancelAppointment(supabase: any, params: any) {
         .from('agendamentos')
         .update({
             status: 'cancelado',
-            motivo_cancelamento: reason || 'Cancelled via chat'
+            motivo_cancelamento: cleanValue(reason) || 'Cancelled via chat'
         })
         .eq('id', appointment_id)
 
-    if (error) {
-        return { status: 'error', message: error.message }
-    }
+    if (error) return { status: 'error', message: error.message }
 
     return {
         status: 'cancelled',
@@ -430,20 +428,14 @@ async function actionCancelAppointment(supabase: any, params: any) {
 
 // Enviar orçamento
 async function actionSendQuote(supabase: any, sessionId: string, params: any) {
-    const {
-        client_id,
-        service_type,
-        estimated_price,
-        details
-    } = params
+    const { client_id, service_type, estimated_price, details } = params
 
-    // Registrar orçamento
     const { data, error } = await supabase
         .from('orcamentos')
         .insert({
             cliente_id: client_id,
             session_id: sessionId,
-            tipo_servico: service_type,
+            tipo_servico: cleanValue(service_type),
             valor_estimado: estimated_price,
             detalhes: details,
             status: 'enviado',
@@ -451,9 +443,7 @@ async function actionSendQuote(supabase: any, sessionId: string, params: any) {
         .select()
         .single()
 
-    if (error) {
-        return { status: 'error', message: error.message }
-    }
+    if (error) return { status: 'error', message: error.message }
 
     return {
         status: 'sent',
@@ -472,17 +462,15 @@ async function actionScheduleCallback(supabase: any, sessionId: string, params: 
         .insert({
             cliente_id: client_id,
             session_id: sessionId,
-            telefone: phone,
-            horario_preferido: preferred_time,
-            notas: notes,
+            telefone: cleanValue(phone),
+            horario_preferido: cleanValue(preferred_time),
+            notas: cleanValue(notes),
             status: 'pending',
         })
         .select()
         .single()
 
-    if (error) {
-        return { status: 'error', message: error.message }
-    }
+    if (error) return { status: 'error', message: error.message }
 
     return {
         status: 'scheduled',
@@ -491,10 +479,22 @@ async function actionScheduleCallback(supabase: any, sessionId: string, params: 
     }
 }
 
-// Helper: Sugerir horários alternativos
+// Helpers
 async function getSuggestedTimes(supabase: any, date: string, conflicts: any[]) {
     const bookedTimes = conflicts?.map(c => c.horario_inicio) || []
     const allTimes = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00']
-
     return allTimes.filter(t => !bookedTimes.includes(t)).slice(0, 3)
+}
+
+function cleanValue(val: any): string | null {
+    if (val === null || val === undefined) return null
+    const cleaned = String(val).trim()
+    if (cleaned === '' || cleaned === '=') return null
+    return cleaned
+}
+
+function isValidNumber(val: any): boolean {
+    if (val === null || val === undefined) return false
+    const num = Number(val)
+    return !isNaN(num)
 }

@@ -2,6 +2,12 @@
 
 Este arquivo registra todas as alterações notáveis feitas no projeto Carolinas Premium Cleaning.
 
+## [2.3.0] - 2026-01-23
+### Changed
+- **Carol Actions**: Flexibilização total da API para suportar a remoção de constraints CHECK no banco de dados.
+- **Carol Actions**: Simplificação do código com novos helpers `cleanValue` e `isValidNumber`.
+- **Carol Actions**: Adição de conversão automática de tipos para `tem_pets` (boolean) e dimensões da residência (number).
+
 ## [2.2.8] - 2026-01-23
 ### Fixed
 - **Carol Actions**: Refino nas funções de criação e atualização de leads para garantir limpeza de dados (trim), filtragem de campos vazios/inválidos e melhor tratamento de erros.
