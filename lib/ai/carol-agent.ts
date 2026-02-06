@@ -7,7 +7,6 @@ import type {
     ChatMessage,
     ChatResponse,
     CheckAvailabilityParams,
-    CalculatePriceParams,
     CreateLeadParams,
     CreateBookingParams,
     CheckZipCoverageParams,
@@ -155,8 +154,6 @@ export class CarolAgent {
             switch (name) {
                 case 'check_availability':
                     return await this.checkAvailability(params)
-                case 'calculate_price':
-                    return await this.calculatePrice(params)
                 case 'create_lead':
                     return await this.createLead(params, sessionId)
                 case 'create_booking':
@@ -189,41 +186,6 @@ export class CarolAgent {
         }
     }
 
-    private async calculatePrice(params: CalculatePriceParams) {
-        const supabase = await createClient()
-        const { data, error } = await supabase.rpc('calculate_service_price', {
-            p_bedrooms: params.bedrooms,
-            p_bathrooms: params.bathrooms,
-            p_tipo_servico: params.service_type,
-            p_frequencia: params.frequency || 'one_time'
-        })
-
-        if (error) throw error
-
-        // Calcular add-ons manualmente (lógica de negócio frontend/agente)
-        let addonsPrice = 0
-        if (params.addons) {
-            const addonPrices: Record<string, number> = {
-                cabinets: 30,
-                fridge: 35,
-                oven: 30,
-                laundry: 25,
-                windows: 45
-            }
-            addonsPrice = params.addons.reduce((sum, addon) => sum + (addonPrices[addon] || 0), 0)
-        }
-
-        const basePrices = data && data[0] ? data[0] : { preco_sugerido: 0 }
-
-        return {
-            success: true,
-            base_price: basePrices.preco_sugerido,
-            addons_price: addonsPrice,
-            total_price: (basePrices.preco_sugerido || 0) + addonsPrice,
-            currency: 'USD',
-            service_details: params
-        }
-    }
 
     private async createLead(params: CreateLeadParams, sessionId: string) {
         const supabase = await createClient()
