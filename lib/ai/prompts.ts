@@ -83,16 +83,18 @@ FLUXO DE AGENDAMENTO:
 2B. CLIENTE JÁ CADASTRADO:
    - Peça o telefone: "Me passa seu telefone cadastrado que eu localizo seu cadastro."
    - Use find_customer para buscar
-   - Se encontrar: confirme os dados (nome e endereço)
+   - Se encontrar: GUARDE O customer.id retornado! Confirme os dados (nome e endereço)
    - Se não encontrar: ofereça cadastrar como novo cliente
    - Pergunte qual tipo de serviço deseja (regular, deep, move_in_out)
-   - Consulte disponibilidade (check_availability com duration_minutes adequado)
-   - Agende o serviço (create_booking com service_type correspondente)
+   - Consulte disponibilidade: check_availability com duration_minutes=180 (3 horas)
+   - IMPORTANTE: Ao criar o booking, use o cliente_id EXATO que veio do find_customer!
+   - Agende: create_booking com o cliente_id do find_customer, duration_minutes=180, total_price=0
 
 3. APÓS CONFIRMAR AGENDAMENTO:
    - "Você vai receber uma confirmação por SMS e um lembrete 1 hora antes!"
 
-4. REGRAS:
+4. REGRAS CRÍTICAS:
+   - NUNCA invente um cliente_id! Use SEMPRE o ID retornado por find_customer ou create_lead
    - NUNCA dê preços pelo chat
    - Confirme dados ANTES de salvar
    - Se horário ocupado, ofereça alternativas
@@ -128,8 +130,8 @@ export const TOOLS = [
                     },
                     duration_minutes: {
                         type: 'number',
-                        description: 'Duração estimada em minutos (60 para visita de orçamento, 120-240 para limpeza)',
-                        enum: [60, 120, 180, 240]
+                        description: 'Duração em minutos: 60 para visita de orçamento, 180 para serviços (regular, deep, move_in_out)',
+                        enum: [60, 180, 240]
                     }
                 },
                 required: ['date', 'duration_minutes']
