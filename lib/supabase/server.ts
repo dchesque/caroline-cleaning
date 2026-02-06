@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
@@ -24,6 +25,23 @@ export async function createClient() {
                     }
                 },
             },
+        }
+    )
+}
+
+/**
+ * Cliente admin com service role key - BYPASS de RLS
+ * Use apenas em operações server-side seguras (ex: CarolAgent)
+ */
+export function createAdminClient() {
+    return createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
         }
     )
 }

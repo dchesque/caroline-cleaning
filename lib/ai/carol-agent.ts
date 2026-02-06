@@ -1,7 +1,7 @@
 // lib/ai/carol-agent.ts
 import { openrouter, MODELS } from './openrouter'
 import { CAROL_SYSTEM_PROMPT, TOOLS } from './prompts'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import type {
     ChatMessage,
@@ -188,7 +188,8 @@ export class CarolAgent {
 
 
     private async createLead(params: CreateLeadParams, sessionId: string) {
-        const supabase = await createClient()
+        // Usar admin client para bypass de RLS em operações de escrita
+        const supabase = createAdminClient()
 
         const { data, error } = await supabase
             .from('clientes')
@@ -218,7 +219,8 @@ export class CarolAgent {
     }
 
     private async createBooking(params: CreateBookingParams) {
-        const supabase = await createClient()
+        // Usar admin client para bypass de RLS em operações de escrita
+        const supabase = createAdminClient()
 
         // 1. Re-validar disponibilidade no momento exato da criação para evitar conflitos
         const { data: availability, error: availError } = await supabase.rpc('get_available_slots', {
