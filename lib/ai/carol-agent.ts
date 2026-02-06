@@ -267,13 +267,22 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
             }
         }
 
-        // 2. Prosseguir com o agendamento
+        // 2. Calcular horário de fim para verificação de conflitos
+        const [hours, minutes] = params.time_slot.split(':').map(Number)
+        const startMinutes = hours * 60 + minutes
+        const endMinutes = startMinutes + params.duration_minutes
+        const endHours = Math.floor(endMinutes / 60)
+        const endMins = endMinutes % 60
+        const horarioFimEstimado = `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}:00`
+
+        // 3. Prosseguir com o agendamento
         const { data, error } = await supabase
             .from('agendamentos')
             .insert({
                 cliente_id: params.cliente_id,
                 data: params.date,
                 horario_inicio: params.time_slot + ':00',
+                horario_fim_estimado: horarioFimEstimado,
                 tipo: params.service_type,
                 duracao_minutos: params.duration_minutes,
                 valor: params.total_price,
