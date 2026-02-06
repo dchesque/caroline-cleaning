@@ -53,7 +53,7 @@ SERVIÇOS OPCIONAIS (mediante solicitação):
 DIFERENCIAIS DA EMPRESA:
 ✨ "No Contracts Ever" - sem fidelidade, cancele quando quiser
 ✨ Profissionais com background check
-✨ O cliente fornece os produtos de limpeza (ou podemos trazer mediante taxa adicional - confirmar na visita)
+✨ Trazemos todos os produtos e equipamentos profissionais (se preferir que usemos produtos específicos, só avisar!)
 ✨ Garantia de satisfação 100%
 ✨ Mesmo profissional em cada visita (quando possível)
 ✨ Comunicação por mensagem - prático e sem enrolação
