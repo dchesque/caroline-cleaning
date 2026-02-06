@@ -1,4 +1,24 @@
-# Changelog - v3.0.0 (2026-02-05)
+# Changelog - v3.2.0 (2026-02-06)
+
+## [3.2.0] - 2026-02-06
+
+### Added
+- **Notificações Admin (WhatsApp)**: Implementação de alertas via WhatsApp para o proprietário sobre novos agendamentos e leads capturados.
+- **Cron de Lembretes Nativo**: Novo sistema de cron via Supabase/Next.js que envia lembretes (WhatsApp/SMS) 1 hora antes de cada serviço.
+- **Configurações de Segurança**: Proteção do endpoint de cron via `CRON_SECRET` e cabeçalhos de autorização.
+- **Supabase pg_cron**: Migração SQL para agendamento automático de tarefas diretamente no banco de dados.
+
+### Changed
+- **Twilio Integration**: Extensão da biblioteca de comunicação para suportar mensagens via WhatsApp (prefixo `whatsapp:`).
+- **Serviço de Webhooks**: Refatoração do `WebhookService` para priorizar notificações nativas Twilio, mantendo fallback opcional para N8N.
+
+### Fixed
+- **Resiliência SQL**: Correção no script de migração de cron para permitir re-execução segura (idempotência).
+- **Estabilidade da UI**: Correção de erros de sintaxe no catálogo de webhooks do painel administrativo.
+
+---
+
+# Changelog - v3.1.0 (2026-02-05)
 
 ## [3.0.0] - 2026-02-05
 

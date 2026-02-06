@@ -10,6 +10,7 @@ import type {
     WebhookResponse,
     WebhookOptions,
 } from '@/types/webhook'
+import { notify, notifyOwner } from '@/lib/notifications'
 
 // ============================================
 // CONFIGURAÇÕES PADRÃO
@@ -21,42 +22,83 @@ const DEFAULT_OPTIONS: Required<WebhookOptions> = {
     retryDelay: 1000,  // 1 segundo entre tentativas
 }
 
-// ============================================
-// FUNÇÃO DE DELAY
-// ============================================
-
 const delay = (ms: number): Promise<void> =>
     new Promise(resolve => setTimeout(resolve, ms))
 
-// ============================================
-// CLASSE PRINCIPAL
-// ============================================
-
 class WebhookService {
     /**
-     * Envia um webhook para o n8n
+     * Envia um webhook ou notificação native (Twilio)
      */
     async send<T extends WebhookPayload>(
         event: WebhookEventType,
         payload: T,
         options?: WebhookOptions
     ): Promise<WebhookResponse> {
-        // Verificar se está configurado
-        if (!isWebhookConfigured()) {
-            console.warn(`[Webhook] n8n não configurado. Evento ignorado: ${event}`)
-            return {
-                success: false,
-                error: 'Webhook URL não configurada',
+        // 1. Desviar eventos de agendamento e leads para notificações nativas (Twilio)
+        const notificationMapping: any = {
+            'appointment.created': 'appointment_created',
+            'appointment.confirmed': 'appointment_confirmed',
+            'appointment.cancelled': 'appointment_cancelled',
+            'appointment.rescheduled': 'appointment_rescheduled',
+            'lead.created': 'owner_new_customer',
+        };
+
+        const notificationType = notificationMapping[event];
+
+        if (notificationType) {
+            console.log(`[WebhookService] ⚡ Notificação nativa Twilio para ${event}`);
+            const data = payload as any;
+
+            // Gatilho para o Proprietário (WhatsApp)
+            if (event === 'appointment.created') {
+                await notifyOwner('owner_new_appointment', {
+                    name: data.client_name || data.nome,
+                    phone: data.client_phone || data.telefone,
+                    service: data.service_type || data.tipo,
+                    date: data.date || data.data,
+                    time: data.time_start || data.horario
+                });
+            }
+
+            if (event === 'lead.created') {
+                await notifyOwner('owner_new_customer', {
+                    name: data.nome,
+                    phone: data.telefone
+                });
+                return { success: true, data: { channel: 'twilio_whatsapp', target: 'owner' } };
+            }
+
+            // Gatilho para o Cliente (SMS)
+            const recipient = data.client_phone || data.telefone;
+
+            if (recipient) {
+                try {
+                    const result = await notify(recipient, notificationType, {
+                        name: data.client_name || data.nome,
+                        date: data.date || data.data,
+                        time: data.time_start || data.horario,
+                        service: data.service_type || data.tipo
+                    }) as any;
+
+                    if (result.success) {
+                        return { success: true, data: { channel: 'twilio', sid: result.messageSid } };
+                    }
+                } catch (e) {
+                    console.error(`[WebhookService] Erro Twilio para ${event}:`, e);
+                }
             }
         }
 
-        const url = getWebhookUrl(event)
-        if (!url) {
+        // 2. Fallback para n8n
+        if (!isWebhookConfigured()) {
             return {
-                success: false,
-                error: 'URL do webhook não encontrada',
+                success: !!notificationType, // Sucesso se já tentamos o Twilio
+                error: notificationType ? undefined : 'n8n not configured',
             }
         }
+
+        const url = getWebhookUrl(event);
+        if (!url) return { success: true };
 
         const config: Required<WebhookOptions> = {
             ...DEFAULT_OPTIONS,
@@ -64,49 +106,28 @@ class WebhookService {
             ...options,
         }
 
-        // Tentar com retry
-        let lastError: Error | null = null
-
+        let lastError: Error | null = null;
         for (let attempt = 1; attempt <= config.retries; attempt++) {
             try {
-                const result = await this.executeRequest(url, event, payload, config.timeout)
-
-                console.log(`[Webhook] ✅ ${event} enviado com sucesso (tentativa ${attempt})`)
-                return result
-
+                const result = await this.executeRequest(url, event, payload, config.timeout);
+                return result;
             } catch (error) {
-                lastError = error instanceof Error ? error : new Error(String(error))
-                console.warn(
-                    `[Webhook] ⚠️ ${event} falhou (tentativa ${attempt}/${config.retries}):`,
-                    lastError.message
-                )
-
-                // Se não for a última tentativa, aguardar antes de retry
-                if (attempt < config.retries) {
-                    await delay(config.retryDelay)
-                }
+                lastError = error instanceof Error ? error : new Error(String(error));
+                if (attempt < config.retries) await delay(config.retryDelay);
             }
         }
 
-        // Todas as tentativas falharam
-        console.error(`[Webhook] ❌ ${event} falhou após ${config.retries} tentativas`)
-        return {
-            success: false,
-            error: lastError?.message || 'Erro desconhecido',
-        }
+        return { success: false, error: lastError?.message || 'Error sending to n8n' };
     }
 
-    /**
-     * Executa a requisição HTTP
-     */
     private async executeRequest<T extends WebhookPayload>(
         url: string,
         event: WebhookEventType,
         payload: T,
         timeout: number
     ): Promise<WebhookResponse> {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), timeout)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         try {
             const response = await fetch(url, {
@@ -117,101 +138,41 @@ class WebhookService {
                     'X-Webhook-Event': event,
                     'X-Webhook-Timestamp': new Date().toISOString(),
                 },
-                body: JSON.stringify({
-                    event,
-                    timestamp: new Date().toISOString(),
-                    data: payload,
-                }),
+                body: JSON.stringify({ event, timestamp: new Date().toISOString(), data: payload }),
                 signal: controller.signal,
-            })
+            });
 
-            clearTimeout(timeoutId)
+            clearTimeout(timeoutId);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-            }
-
-            // Tentar parsear resposta JSON
-            let data: Record<string, any> | undefined
-            try {
-                data = await response.json()
-            } catch {
-                // Resposta não é JSON, tudo bem
-            }
-
-            return {
-                success: true,
-                data,
-            }
-
+            let data: any;
+            try { data = await response.json(); } catch { }
+            return { success: true, data };
         } catch (error) {
-            clearTimeout(timeoutId)
-
-            if (error instanceof Error && error.name === 'AbortError') {
-                throw new Error(`Timeout após ${timeout}ms`)
-            }
-
-            throw error
+            clearTimeout(timeoutId);
+            throw error;
         }
     }
 
-    /**
-     * Verifica se o serviço de webhooks está disponível
-     */
     isAvailable(): boolean {
-        return isWebhookConfigured()
+        return isWebhookConfigured();
     }
 }
 
-// ============================================
-// INSTÂNCIA SINGLETON
-// ============================================
-
-export const webhookService = new WebhookService()
-
-// ============================================
-// FUNÇÕES HELPER TIPADAS
-// ============================================
-
-// Helpers (Legados - Chat removido)
-
-// Leads
-export const notifyLeadCreated = (payload: import('@/types/webhook').LeadCreatedPayload) =>
-    webhookService.send('lead.created', payload)
-
-export const notifyLeadUpdated = (payload: import('@/types/webhook').LeadUpdatedPayload) =>
-    webhookService.send('lead.updated', payload)
-
-export const notifyLeadConverted = (payload: import('@/types/webhook').LeadConvertedPayload) =>
-    webhookService.send('lead.converted', payload)
+export const webhookService = new WebhookService();
 
 // Agendamentos
-export const notifyAppointmentCreated = (payload: import('@/types/webhook').AppointmentCreatedPayload) =>
-    webhookService.send('appointment.created', payload)
+export const notifyAppointmentCreated = (payload: any) => webhookService.send('appointment.created', payload)
+export const notifyAppointmentConfirmed = (payload: any) => webhookService.send('appointment.confirmed', payload)
+export const notifyAppointmentCompleted = (payload: any) => webhookService.send('appointment.completed', payload)
+export const notifyAppointmentCancelled = (payload: any) => webhookService.send('appointment.cancelled', payload)
+export const notifyAppointmentRescheduled = (payload: any) => webhookService.send('appointment.rescheduled', payload)
 
-export const notifyAppointmentConfirmed = (payload: import('@/types/webhook').AppointmentConfirmedPayload) =>
-    webhookService.send('appointment.confirmed', payload)
-
-export const notifyAppointmentCompleted = (payload: import('@/types/webhook').AppointmentCompletedPayload) =>
-    webhookService.send('appointment.completed', payload)
-
-export const notifyAppointmentCancelled = (payload: import('@/types/webhook').AppointmentCancelledPayload) =>
-    webhookService.send('appointment.cancelled', payload)
-
-export const notifyAppointmentRescheduled = (payload: import('@/types/webhook').AppointmentRescheduledPayload) =>
-    webhookService.send('appointment.rescheduled', payload)
+// Leads
+export const notifyLeadCreated = (payload: any) => webhookService.send('lead.created', payload)
+export const notifyLeadUpdated = (payload: any) => webhookService.send('lead.updated', payload)
+export const notifyLeadConverted = (payload: any) => webhookService.send('lead.converted', payload)
 
 // Feedback
-export const notifyFeedbackReceived = (payload: import('@/types/webhook').FeedbackReceivedPayload) =>
-    webhookService.send('feedback.received', payload)
-
-// Pagamentos
-export const notifyPaymentReceived = (payload: import('@/types/webhook').PaymentReceivedPayload) =>
-    webhookService.send('payment.received', payload)
-
-// Clientes
-export const notifyClientInactive = (payload: import('@/types/webhook').ClientInactiveAlertPayload) =>
-    webhookService.send('client.inactive_alert', payload)
-
-export const notifyClientBirthday = (payload: import('@/types/webhook').ClientBirthdayPayload) =>
-    webhookService.send('client.birthday', payload)
+export const notifyFeedbackReceived = (payload: any) => webhookService.send('feedback.received', payload)
+export const notifyPaymentReceived = (payload: any) => webhookService.send('payment.received', payload)

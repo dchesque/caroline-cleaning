@@ -14,7 +14,7 @@ export interface WebhookConfig {
     categoryIcon: string
     description: string    // Nova curta descrição
     endpoint: string
-    method: 'POST'
+    method: 'POST' | 'GET'
     timeout: number
     retries?: number
     hook?: string           // Para outbound
@@ -154,7 +154,7 @@ export const WEBHOOKS_DATA: WebhookConfig[] = [
         direction: 'outbound',
         category: 'Agendamentos',
         categoryIcon: '📅',
-        description: 'Notifica novo agendamento criado',
+        description: '[NATIVO TWILIO] Notifica novo agendamento via SMS',
         endpoint: '/appointments/created',
         method: 'POST',
         timeout: 30000,
@@ -200,7 +200,7 @@ export const WEBHOOKS_DATA: WebhookConfig[] = [
         direction: 'outbound',
         category: 'Agendamentos',
         categoryIcon: '📅',
-        description: 'Notifica quando cliente confirma',
+        description: '[NATIVO TWILIO] Confirmação de agendamento via SMS',
         endpoint: '/appointments/confirmed',
         method: 'POST',
         timeout: 30000,
@@ -266,7 +266,7 @@ export const WEBHOOKS_DATA: WebhookConfig[] = [
         direction: 'outbound',
         category: 'Agendamentos',
         categoryIcon: '📅',
-        description: 'Notifica cancelamento',
+        description: '[NATIVO TWILIO] Notifica cancelamento via SMS',
         endpoint: '/appointments/cancelled',
         method: 'POST',
         timeout: 30000,
@@ -303,7 +303,7 @@ export const WEBHOOKS_DATA: WebhookConfig[] = [
         direction: 'outbound',
         category: 'Agendamentos',
         categoryIcon: '📅',
-        description: 'Notifica reagendamento',
+        description: '[NATIVO TWILIO] Notifica reagendamento via SMS',
         endpoint: '/appointments/rescheduled',
         method: 'POST',
         timeout: 30000,
@@ -461,40 +461,7 @@ export const WEBHOOKS_DATA: WebhookConfig[] = [
         }
     },
 
-    // INBOUND
-    {
-        id: 'chat.response',
-        direction: 'inbound',
-        category: 'Chat',
-        categoryIcon: '💬',
-        description: 'Recebe resposta da Carol IA',
-        endpoint: '/api/webhook/n8n',
-        method: 'POST',
-        timeout: 30000,
-        handler: 'handleChatResponse()',
-        interfaceName: 'ChatResponsePayload',
-        fields: [
-            { name: 'event', type: "'chat.response'", required: true, description: 'Tipo do evento' },
-            { name: 'timestamp', type: 'string', required: true, description: 'Data/hora ISO 8601' },
-            { name: 'data.session_id', type: 'string', required: true, description: 'ID da sessão do chat' },
-            { name: 'data.message', type: 'string', required: true, description: 'Resposta da Carol' },
-            { name: 'data.source', type: "'website' | 'whatsapp'", required: true, description: 'Canal de origem' },
-            { name: 'data.metadata', type: 'Record<string, any>', required: false, description: 'Metadados (intent, confidence)' },
-        ],
-        example: {
-            event: "chat.response",
-            timestamp: "2025-01-16T14:30:00.000Z",
-            data: {
-                session_id: "sess_abc123xyz",
-                message: "Olá! Ficarei feliz em ajudar com seu agendamento. Qual o melhor dia para você?",
-                source: "website",
-                metadata: {
-                    intent: "scheduling",
-                    confidence: 0.95
-                }
-            }
-        }
-    },
+    // INBOUND (Depreciado)
     {
         id: 'notification.dashboard',
         direction: 'inbound',
@@ -581,6 +548,29 @@ export const WEBHOOKS_DATA: WebhookConfig[] = [
                     notas: "Cliente confirmou via WhatsApp"
                 }
             }
+        }
+    },
+    // OWNER NOTIFICATIONS
+    {
+        id: 'owner.reminder',
+        direction: 'outbound',
+        category: 'Admin',
+        categoryIcon: '👑',
+        description: '[NATIVO TWILIO] Lembrete 1h antes para o dono via WhatsApp',
+        endpoint: '/api/cron/reminders',
+        method: 'GET',
+        timeout: 30000,
+        handler: 'notifyOwner()',
+        interfaceName: 'OwnerReminderPayload',
+        fields: [
+            { name: 'service', type: 'string', required: true, description: 'Tipo do serviço' },
+            { name: 'time', type: 'string', required: true, description: 'Horário de início' },
+            { name: 'name', type: 'string', required: true, description: 'Nome do cliente' },
+        ],
+        example: {
+            service: "Limpeza Residencial",
+            time: "14:00",
+            name: "João Silva"
         }
     }
 ]

@@ -33,40 +33,47 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 })
         }
 
-        // 2. Disparar envio (Integração com provedor real seria aqui)
-        // Se for WhatsApp, usaríamos a Evolution API
-        // Se for Email, Resend ou SendGrid
+        // 2. Disparar envio (Integração com Twilio real)
+        const { notify } = await import('@/lib/notifications')
 
-        // Simulação de envio
-        const isSuccess = true
+        const result = await notify(
+            recipient,
+            template as any,
+            data
+        ) as any // Cast temporário para simplificar acesso aos campos do resultado
 
-        if (isSuccess) {
+        if (result.success) {
             await supabase
                 .from('notificacoes')
                 .update({
                     status: 'sent',
-                    enviado_em: new Date().toISOString()
+                    enviado_em: new Date().toISOString(),
+                    metadata: {
+                        message: result.message,
+                        sid: result.messageSid
+                    }
                 })
                 .eq('id', notification.id)
 
             return NextResponse.json({
                 success: true,
                 notification_id: notification.id,
-                status: 'sent'
+                status: 'sent',
+                message: result.message
             })
         } else {
             await supabase
                 .from('notificacoes')
                 .update({
                     status: 'error',
-                    erro: 'Failed to send'
+                    erro: result.error?.toString() || 'Failed to send'
                 })
                 .eq('id', notification.id)
 
             return NextResponse.json({
                 success: false,
                 notification_id: notification.id,
-                error: 'Failed to send'
+                error: result.error
             }, { status: 500 })
         }
 

@@ -8,8 +8,11 @@ const requiredEnvVars = [
 
 const optionalEnvVars = [
     'SUPABASE_SERVICE_ROLE_KEY',
-    'NEXT_PUBLIC_N8N_WEBHOOK_URL',
-    'N8N_WEBHOOK_SECRET',
+    'TWILIO_ACCOUNT_SID',
+    'TWILIO_AUTH_TOKEN',
+    'TWILIO_PHONE_NUMBER',
+    'OWNER_PHONE_NUMBER',
+    'CRON_SECRET',
     'NEXT_PUBLIC_APP_URL',
     'NEXT_PUBLIC_GA_ID',
     'SENTRY_DSN',
@@ -53,9 +56,12 @@ export const env = {
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 
-    // N8N Webhooks
-    n8nWebhookUrl: process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL,
-    n8nWebhookSecret: process.env.N8N_WEBHOOK_SECRET,
+    // Twilio (SMS)
+    twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
+    twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
+    twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
+    ownerPhone: process.env.OWNER_PHONE_NUMBER,
+    cronSecret: process.env.CRON_SECRET,
 
     // Analytics
     gaId: process.env.NEXT_PUBLIC_GA_ID,

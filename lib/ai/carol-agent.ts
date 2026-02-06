@@ -1,6 +1,6 @@
 // lib/ai/carol-agent.ts
 import { openrouter, MODELS } from './openrouter'
-import { CAROL_SYSTEM_PROMPT, TOOLS } from './prompts'
+import { buildCarolPrompt, CarolConfig, TOOLS } from './prompts'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import type {
@@ -19,6 +19,63 @@ export class CarolAgent {
     constructor(model: string = MODELS.CLAUDE_SONNET) {
         this.model = model
     }
+
+    /**
+     * Busca configurações dinâmicas do banco: horários e serviços
+     */
+    private async getSystemConfig(): Promise<CarolConfig> {
+        const supabase = await createClient()
+
+        // Buscar configs do sistema
+        const { data: settings } = await supabase
+            .from('business_settings')
+            .select('chave, valor')
+            .in('chave', ['operating_start', 'operating_end', 'booking_default_duration'])
+
+        // Buscar serviços ativos
+        const { data: services } = await supabase
+            .from('servicos_tipos')
+            .select('codigo, nome, duracao_base_minutos')
+            .eq('ativo', true)
+            .eq('disponivel_agendamento_online', true)
+            .order('ordem', { ascending: true })
+
+        // Montar config com valores padrão se não existirem
+        const settingsMap = new Map(settings?.map(s => [s.chave, s.valor]) || [])
+
+        return {
+            services: services || [],
+            operatingStart: settingsMap.get('operating_start') || '08:00',
+            operatingEnd: settingsMap.get('operating_end') || '17:00',
+            visitDuration: parseInt(settingsMap.get('booking_default_duration') || '60', 10)
+        }
+    }
+
+    /**
+     * Atualiza o contexto da sessão (memória persistente)
+     */
+    private async updateSessionContext(sessionId: string, updates: Record<string, any>) {
+        const supabase = createAdminClient()
+
+        // Buscar contexto atual
+        const { data: session } = await supabase
+            .from('chat_sessions')
+            .select('contexto')
+            .eq('id', sessionId)
+            .single()
+
+        const currentContext = session?.contexto || {}
+        const newContext = { ...currentContext, ...updates }
+
+        // Atualizar contexto
+        await supabase
+            .from('chat_sessions')
+            .update({ contexto: newContext })
+            .eq('id', sessionId)
+
+        logger.info('Session context updated', { sessionId, updates })
+    }
+
 
     /**
      * Processa uma mensagem do usuário e retorna a resposta da Carol
@@ -40,6 +97,16 @@ export class CarolAgent {
         if (historyError) {
             logger.error('Error fetching chat history', { sessionId, error: historyError })
         }
+
+        // 1.1 Buscar contexto da sessão (memória persistente)
+        const { data: sessionData } = await supabase
+            .from('chat_sessions')
+            .select('contexto')
+            .eq('id', sessionId)
+            .single()
+
+        const sessionContext = sessionData?.contexto || {}
+
 
         // 2. Salvar mensagem do usuário (usando admin para bypass RLS)
         const { error: saveUserError } = await adminSupabase
@@ -70,8 +137,16 @@ export class CarolAgent {
             nextDays.push(`${dayName} = ${formatted} (${isoDate})`)
         }
 
+        // Calcular primeiro horário disponível para hoje (+3h)
+        const minTimeToday = new Date(today.getTime() + 3 * 60 * 60 * 1000)
+        const minHour = minTimeToday.getHours()
+        const firstAvailableSlot = minHour >= 17 ? 'NÃO DISPONÍVEL HOJE (após fechamento)' : `${String(minHour + (minTimeToday.getMinutes() > 0 ? 1 : 0)).padStart(2, '0')}:00`
+
         const dateContext = `
-DATA DE HOJE: ${today.toISOString().split('T')[0]} (${weekdays[today.getDay()]}, ${today.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })})
+DATA E HORA ATUAL: ${today.toISOString().split('T')[0]} ${today.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (${weekdays[today.getDay()]})
+
+PRIMEIRO HORÁRIO DISPONÍVEL PARA HOJE: ${firstAvailableSlot}
+NUNCA ofereça horários antes deste para o dia de hoje!
 
 CALENDARÍO DOS PRÓXIMOS 7 DIAS:
 ${nextDays.join('\n')}
@@ -80,8 +155,25 @@ IMPORTANTE: Quando o cliente disser "próxima terça", "semana que vem", etc., u
 Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feira, dia 10/02").
 `
 
+        // Gerar contexto de sessão para injetar no prompt
+        let sessionContextStr = ''
+        if (Object.keys(sessionContext).length > 0) {
+            sessionContextStr = `\n\n📋 MEMÓRIA DA CONVERSA (use estas informações!):\n`
+            if (sessionContext.cliente_id) sessionContextStr += `- Cliente ID: ${sessionContext.cliente_id}\n`
+            if (sessionContext.cliente_nome) sessionContextStr += `- Nome: ${sessionContext.cliente_nome}\n`
+            if (sessionContext.cliente_telefone) sessionContextStr += `- Telefone: ${sessionContext.cliente_telefone}\n`
+            if (sessionContext.servico_selecionado) sessionContextStr += `- Serviço escolhido: ${sessionContext.servico_selecionado}\n`
+            if (sessionContext.data_selecionada) sessionContextStr += `- Data escolhida: ${sessionContext.data_selecionada}\n`
+            if (sessionContext.horario_selecionado) sessionContextStr += `- Horário escolhido: ${sessionContext.horario_selecionado}\n`
+            sessionContextStr += `\nUSE o cliente_id acima ao chamar create_booking! NÃO peça o telefone novamente!\n`
+        }
+
+        // Buscar configurações dinâmicas
+        const config = await this.getSystemConfig()
+        const systemPrompt = buildCarolPrompt(config)
+
         const apiMessages: any[] = [
-            { role: 'system', content: CAROL_SYSTEM_PROMPT + '\n\n' + dateContext },
+            { role: 'system', content: systemPrompt + '\n\n' + dateContext + sessionContextStr },
             ...(history || []).map(h => ({ role: h.role, content: h.content })),
             { role: 'user', content: message }
         ]
@@ -176,17 +268,58 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
         logger.info('Executing tool', { toolName: name, sessionId, params })
 
         try {
+            let result: any
+
             switch (name) {
                 case 'check_availability':
-                    return await this.checkAvailability(params)
+                    result = await this.checkAvailability(params)
+                    // Salvar data selecionada no contexto
+                    if (result.success && params.date) {
+                        await this.updateSessionContext(sessionId, {
+                            data_selecionada: params.date
+                        })
+                    }
+                    return result
+
                 case 'create_lead':
-                    return await this.createLead(params, sessionId)
+                    result = await this.createLead(params, sessionId)
+                    // Salvar dados do novo lead no contexto
+                    if (result.success && result.cliente_id) {
+                        await this.updateSessionContext(sessionId, {
+                            cliente_id: result.cliente_id,
+                            cliente_nome: params.name,
+                            cliente_telefone: params.phone
+                        })
+                    }
+                    return result
+
                 case 'create_booking':
-                    return await this.createBooking(params)
+                    result = await this.createBooking(params)
+                    // Salvar dados do agendamento no contexto
+                    if (result.success) {
+                        await this.updateSessionContext(sessionId, {
+                            agendamento_confirmado: true,
+                            agendamento_id: result.booking_id,
+                            horario_selecionado: params.time || params.time_slot
+                        })
+                    }
+                    return result
+
                 case 'check_zip_coverage':
                     return await this.checkZipCoverage(params)
+
                 case 'find_customer':
-                    return await this.findCustomer(params)
+                    result = await this.findCustomer(params)
+                    // IMPORTANTE: Salvar dados do cliente no contexto para não esquecer!
+                    if (result.found && result.cliente_id) {
+                        await this.updateSessionContext(sessionId, {
+                            cliente_id: result.cliente_id,
+                            cliente_nome: result.customer?.name,
+                            cliente_telefone: result.customer?.phone
+                        })
+                    }
+                    return result
+
                 default:
                     return { error: `Tool ${name} not implemented` }
             }
@@ -206,10 +339,39 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
         })
 
         if (error) throw error
+
+        // Filtrar apenas slots disponíveis (disponivel = true)
+        const now = new Date()
+        const todayStr = now.toISOString().split('T')[0]
+        let availableSlots = (data || []).filter((s: { disponivel: boolean }) => s.disponivel)
+
+        // Se for hoje, filtrar slots passados (+3h)
+        if (params.date === todayStr) {
+            const minTime = new Date(now.getTime() + 3 * 60 * 60 * 1000)
+            const minHour = minTime.getHours()
+            const minMinutes = minTime.getMinutes()
+
+            availableSlots = availableSlots.filter((slot: { slot_inicio: string }) => {
+                const timeParts = slot.slot_inicio.split(':')
+                const slotHour = parseInt(timeParts[0], 10)
+                const slotMin = parseInt(timeParts[1], 10)
+                return slotHour > minHour || (slotHour === minHour && slotMin >= minMinutes)
+            })
+        }
+
+        // Formatar para resposta
+        const formattedSlots = availableSlots.map((s: { slot_inicio: string, slot_fim: string }) => ({
+            horario: s.slot_inicio.substring(0, 5),
+            horario_fim: s.slot_fim.substring(0, 5)
+        }))
+
         return {
             success: true,
-            slots: data || [],
-            date: params.date
+            slots: formattedSlots,
+            date: params.date,
+            message: formattedSlots.length === 0
+                ? 'Não há horários disponíveis para esta data.'
+                : `Horários disponíveis: ${formattedSlots.map((s: { horario: string }) => s.horario).join(', ')}`
         }
     }
 
@@ -245,9 +407,18 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
         return { success: true, cliente_id: data.id }
     }
 
-    private async createBooking(params: CreateBookingParams) {
+    private async createBooking(params: CreateBookingParams & { time?: string }) {
         // Usar admin client para bypass de RLS em operações de escrita
         const supabase = createAdminClient()
+
+        // Suportar tanto `time` quanto `time_slot` (a IA pode enviar qualquer um)
+        const timeSlot = params.time_slot || params.time
+        if (!timeSlot) {
+            return {
+                success: false,
+                error: 'Horário não informado. Por favor, informe o horário desejado.'
+            }
+        }
 
         // 1. Re-validar disponibilidade no momento exato da criação para evitar conflitos
         const { data: availability, error: availError } = await supabase.rpc('get_available_slots', {
@@ -257,8 +428,10 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
 
         if (availError) throw availError
 
+        // Normalizar formato do horário para comparação (slot_inicio pode ter segundos)
+        const normalizedTime = timeSlot.length === 5 ? timeSlot + ':00' : timeSlot
         const isStillAvailable = availability?.some((slot: any) =>
-            slot.slot_inicio === (params.time_slot + ':00') && slot.disponivel
+            slot.slot_inicio === normalizedTime && slot.disponivel
         )
 
         if (!isStillAvailable) {
@@ -270,7 +443,7 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
         }
 
         // 2. Calcular horário de fim para verificação de conflitos
-        const [hours, minutes] = params.time_slot.split(':').map(Number)
+        const [hours, minutes] = timeSlot.split(':').map(Number)
         const startMinutes = hours * 60 + minutes
         const endMinutes = startMinutes + params.duration_minutes
         const endHours = Math.floor(endMinutes / 60)
@@ -283,11 +456,11 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
             .insert({
                 cliente_id: params.cliente_id,
                 data: params.date,
-                horario_inicio: params.time_slot + ':00',
+                horario_inicio: normalizedTime,
                 horario_fim_estimado: horarioFimEstimado,
                 tipo: params.service_type,
                 duracao_minutos: params.duration_minutes,
-                valor: params.total_price,
+                valor: params.total_price || 0,
                 status: 'agendado',
                 notas: params.special_instructions
             })
@@ -295,7 +468,11 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
             .single()
 
         if (error) throw error
-        return { success: true, booking_id: data.id }
+        return {
+            success: true,
+            booking_id: data.id,
+            message: `Agendamento criado com sucesso! ID: ${data.id}`
+        }
     }
 
     private async checkZipCoverage(params: CheckZipCoverageParams) {
@@ -313,7 +490,6 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
     private async findCustomer(params: { phone: string }) {
         const supabase = await createClient()
 
-        // Buscar cliente por telefone (status != lead para ser considerado cliente ativo)
         const { data, error } = await supabase
             .from('clientes')
             .select('id, nome, telefone, endereco_completo, email, status')
@@ -327,8 +503,10 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
             }
         }
 
+        // IMPORTANTE: Retornar cliente_id em destaque para a IA usar corretamente
         return {
             found: true,
+            cliente_id: data.id, // USE ESTE ID ao chamar create_booking!
             customer: {
                 id: data.id,
                 name: data.nome,
@@ -336,7 +514,8 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                 email: data.email,
                 address: data.endereco_completo,
                 status: data.status
-            }
+            },
+            instrucao: `IMPORTANTE: Para agendar, use cliente_id="${data.id}" no create_booking.`
         }
     }
 }
