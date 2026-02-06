@@ -34,7 +34,10 @@ export async function middleware(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith('/api/')) {
         const ip = (request as any).ip || request.headers.get('x-forwarded-for') || 'unknown'
 
-        if (!rateLimit(ip)) {
+        // Stricter limit for chat
+        const limit = request.nextUrl.pathname === '/api/chat' ? 30 : 100
+
+        if (!rateLimit(ip, limit)) {
             return NextResponse.json(
                 { error: 'Too many requests' },
                 { status: 429 }

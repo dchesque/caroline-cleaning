@@ -1,9 +1,9 @@
 import { cn } from '@/lib/utils'
-import { Message } from '@/hooks/use-chat'
+import type { ChatMessage } from '@/types/carol'
 import { format } from 'date-fns'
 
 interface MessageBubbleProps {
-    message: Message
+    message: ChatMessage
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
@@ -24,7 +24,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                     "text-[10px] mt-1 text-right opacity-70",
                     isUser ? "text-white" : "text-muted-foreground"
                 )}>
-                    {message.created_at ? format(new Date(message.created_at), 'HH:mm') : ''}
+                    {message.timestamp ? format(new Date(message.timestamp), 'HH:mm') : ''}
                 </div>
             </div>
         </div>

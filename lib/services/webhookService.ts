@@ -173,9 +173,7 @@ export const webhookService = new WebhookService()
 // FUNÇÕES HELPER TIPADAS
 // ============================================
 
-// Chat
-export const sendChatMessage = (payload: import('@/types/webhook').ChatMessagePayload) =>
-    webhookService.send('chat.message_received', payload)
+// Helpers (Legados - Chat removido)
 
 // Leads
 export const notifyLeadCreated = (payload: import('@/types/webhook').LeadCreatedPayload) =>

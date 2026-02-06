@@ -344,6 +344,7 @@ DECLARE
   v_horario_fim TIME;
   v_buffer_minutos INTEGER;
   v_slot_atual TIME;
+  v_slot_fim TIME;
 BEGIN
   /* Buscar configurações */
   SELECT 
@@ -356,31 +357,36 @@ BEGIN
   
   v_horario_inicio := COALESCE(v_horario_inicio, '08:00'::TIME);
   v_horario_fim := COALESCE(v_horario_fim, '18:00'::TIME);
-  v_buffer_minutos := COALESCE(v_buffer_minutos, 60);
+  v_buffer_minutos := COALESCE(v_buffer_minutos, 60); -- Default 60 min buffer
   
   v_slot_atual := v_horario_inicio;
   
   WHILE v_slot_atual + (p_duracao_minutos || ' minutes')::INTERVAL <= v_horario_fim LOOP
+    v_slot_fim := (v_slot_atual + (p_duracao_minutos || ' minutes')::INTERVAL)::TIME;
+    
     RETURN QUERY
     SELECT 
       v_slot_atual,
-      (v_slot_atual + (p_duracao_minutos || ' minutes')::INTERVAL)::TIME,
+      v_slot_fim,
       NOT EXISTS (
         SELECT 1 
         FROM public.agendamentos a
         WHERE a.data = p_data
           AND a.status NOT IN ('cancelado', 'reagendado')
           AND (
-            (v_slot_atual >= a.horario_inicio AND v_slot_atual < a.horario_fim_estimado)
+            /* Verifica sobreposição com buffer de v_buffer_minutos antes e depois */
+            (v_slot_atual >= (a.horario_inicio - (v_buffer_minutos || ' minutes')::INTERVAL) 
+             AND v_slot_atual < (a.horario_fim_estimado + (v_buffer_minutos || ' minutes')::INTERVAL))
             OR
-            ((v_slot_atual + (p_duracao_minutos || ' minutes')::INTERVAL)::TIME > a.horario_inicio 
-             AND (v_slot_atual + (p_duracao_minutos || ' minutes')::INTERVAL)::TIME <= a.horario_fim_estimado)
+            (v_slot_fim > (a.horario_inicio - (v_buffer_minutos || ' minutes')::INTERVAL) 
+             AND v_slot_fim <= (a.horario_fim_estimado + (v_buffer_minutos || ' minutes')::INTERVAL))
             OR
-            (v_slot_atual <= a.horario_inicio 
-             AND (v_slot_atual + (p_duracao_minutos || ' minutes')::INTERVAL)::TIME >= a.horario_fim_estimado)
+            (v_slot_atual <= (a.horario_inicio - (v_buffer_minutos || ' minutes')::INTERVAL) 
+             AND v_slot_fim >= (a.horario_fim_estimado + (v_buffer_minutos || ' minutes')::INTERVAL))
           )
       );
     
+    /* Pula para o próximo slot (incremento de 1 hora para opções) */
     v_slot_atual := v_slot_atual + '1 hour'::INTERVAL;
   END LOOP;
   RETURN;

@@ -1,10 +1,10 @@
 import { useRef, useEffect } from 'react'
-import { Message } from '@/hooks/use-chat'
+import type { ChatMessage } from '@/types/carol'
 import { MessageBubble } from './message-bubble'
 import { TypingIndicator } from './typing-indicator'
 
 interface ChatMessagesProps {
-    messages: Message[]
+    messages: ChatMessage[]
     isLoading: boolean
 }
 

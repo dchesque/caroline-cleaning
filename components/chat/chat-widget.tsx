@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { MessageCircle } from 'lucide-react'
 import { ChatWindow } from './chat-window'
 import { ChatBubbleNotification } from './chat-bubble-notification'
-import { useChat } from '@/hooks/use-chat'
+import { useCarolChat } from '@/hooks/use-carol-chat'
 import { cn } from '@/lib/utils'
 import { useTracking } from '@/components/tracking/tracking-provider'
 
@@ -18,7 +18,7 @@ export function ChatWidget() {
         title: "Hi! I'm Carol.",
         message: "Need help scheduling a cleaning? 😊"
     })
-    const chat = useChat()
+    const chat = useCarolChat()
 
     const INITIAL_DELAY_MS = 15000 // 15 seconds
     const SECOND_DELAY_MS = 45000 // 45 seconds total
