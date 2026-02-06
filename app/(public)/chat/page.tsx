@@ -1,11 +1,11 @@
 'use client'
 
 import { ChatWindow } from '@/components/chat/chat-window'
-import { useChat } from '@/hooks/use-chat'
+import { useCarolChat } from '@/hooks/use-carol-chat'
 import { useRouter } from 'next/navigation'
 
 export default function MobileChatPage() {
-    const chat = useChat()
+    const chat = useCarolChat()
     const router = useRouter()
 
     return (

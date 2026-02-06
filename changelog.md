@@ -13,8 +13,9 @@
 - **Serviço de Webhooks**: Refatoração do `WebhookService` para priorizar notificações nativas Twilio, mantendo fallback opcional para N8N.
 
 ### Fixed
+- **Erro de Deploy**: Correção de erro de tipo no `app/(public)/chat/page.tsx` migrando para o hook `useCarolChat`.
+- **Limpeza de Código**: Remoção de hooks (`useChat`, `useChatSession`) e utilitários (`chat-session.ts`) legados que não eram mais compatíveis com a Carol AI Nativa.
 - **Resiliência SQL**: Correção no script de migração de cron para permitir re-execução segura (idempotência).
-- **Estabilidade da UI**: Correção de erros de sintaxe no catálogo de webhooks do painel administrativo.
 
 ---
 
