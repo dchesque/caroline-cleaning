@@ -185,6 +185,8 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                     return await this.createBooking(params)
                 case 'check_zip_coverage':
                     return await this.checkZipCoverage(params)
+                case 'find_customer':
+                    return await this.findCustomer(params)
                 default:
                     return { error: `Tool ${name} not implemented` }
             }
@@ -306,5 +308,35 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
 
         const result = data && data[0] ? data[0] : { atendido: false }
         return { success: true, covered: result.atendido }
+    }
+
+    private async findCustomer(params: { phone: string }) {
+        const supabase = await createClient()
+
+        // Buscar cliente por telefone (status != lead para ser considerado cliente ativo)
+        const { data, error } = await supabase
+            .from('clientes')
+            .select('id, nome, telefone, endereco_completo, email, status')
+            .eq('telefone', params.phone)
+            .single()
+
+        if (error || !data) {
+            return {
+                found: false,
+                message: 'Cliente não encontrado com este telefone.'
+            }
+        }
+
+        return {
+            found: true,
+            customer: {
+                id: data.id,
+                name: data.nome,
+                phone: data.telefone,
+                email: data.email,
+                address: data.endereco_completo,
+                status: data.status
+            }
+        }
     }
 }

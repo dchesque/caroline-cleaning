@@ -32,6 +32,8 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
 
     // Layout compacto para visualização mensal
     if (variant === 'compact') {
+        const isVisit = appointment.tipo === 'visit'
+
         return (
             <div
                 className={cn(
@@ -43,6 +45,15 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
                 )}
                 onClick={onClick}
             >
+                {/* Badge de Tipo */}
+                <span className={cn(
+                    "text-[8px] font-bold uppercase px-1 py-0.5 rounded shrink-0",
+                    isVisit
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-emerald-100 text-emerald-700"
+                )}>
+                    {isVisit ? '1ª Visita' : 'Serviço'}
+                </span>
                 <span className="font-bold text-[11px] text-[#C48B7F] shrink-0">
                     {formatTime(appointment.horario_inicio)}-{getEndTime()}
                 </span>
@@ -91,9 +102,17 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
                         {appointment.cliente?.nome || 'Cliente'}
                     </h4>
 
-                    {/* 4. Serviços */}
+                    {/* 4. Serviços com Badge de Tipo */}
                     <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] text-[#C48B7F] shrink-0">✨</span>
+                        {/* Badge de Tipo */}
+                        <span className={cn(
+                            "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0",
+                            appointment.tipo === 'visit'
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-emerald-100 text-emerald-700"
+                        )}>
+                            {appointment.tipo === 'visit' ? '1ª Visita' : 'Serviço'}
+                        </span>
                         <p className="text-[11px] text-[#5D5D5D] font-medium truncate">
                             {appointment.tipo}
                         </p>
