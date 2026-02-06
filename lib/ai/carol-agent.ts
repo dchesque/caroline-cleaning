@@ -26,7 +26,8 @@ export class CarolAgent {
     async chat(message: string, sessionId: string): Promise<ChatResponse> {
         logger.info('Carol processing message', { sessionId, messageLength: message.length })
 
-        const supabase = await createClient()
+        const supabase = await createClient() // Para leitura
+        const adminSupabase = createAdminClient() // Para escrita (bypass RLS)
 
         // 1. Buscar histórico da conversa (últimas 20 mensagens)
         const { data: history, error: historyError } = await supabase
@@ -40,8 +41,8 @@ export class CarolAgent {
             logger.error('Error fetching chat history', { sessionId, error: historyError })
         }
 
-        // 2. Salvar mensagem do usuário
-        const { error: saveUserError } = await supabase
+        // 2. Salvar mensagem do usuário (usando admin para bypass RLS)
+        const { error: saveUserError } = await adminSupabase
             .from('mensagens_chat')
             .insert({
                 session_id: sessionId,
@@ -54,9 +55,12 @@ export class CarolAgent {
             logger.error('Error saving user message', { sessionId, error: saveUserError })
         }
 
-        // 3. Preparar mensagens para o LLM
+        // 3. Preparar mensagens para o LLM com data atual
+        const today = new Date()
+        const dateContext = `DATA ATUAL: ${today.toISOString().split('T')[0]} (${today.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}). Use esta data como referência para calcular "próxima terça", "semana que vem", etc.`
+
         const apiMessages: any[] = [
-            { role: 'system', content: CAROL_SYSTEM_PROMPT },
+            { role: 'system', content: CAROL_SYSTEM_PROMPT + '\n\n' + dateContext },
             ...(history || []).map(h => ({ role: h.role, content: h.content })),
             { role: 'user', content: message }
         ]
@@ -105,8 +109,8 @@ export class CarolAgent {
                 }
             }
 
-            // 5. Salvar resposta final da Carol
-            const { error: saveAssistantError } = await supabase
+            // 5. Salvar resposta final da Carol (usando admin para bypass RLS)
+            const { error: saveAssistantError } = await adminSupabase
                 .from('mensagens_chat')
                 .insert({
                     session_id: sessionId,
@@ -119,8 +123,8 @@ export class CarolAgent {
                 logger.error('Error saving assistant message', { sessionId, error: saveAssistantError })
             }
 
-            // 6. Atualizar última atividade da sessão
-            await supabase
+            // 6. Atualizar última atividade da sessão (usando admin para bypass RLS)
+            await adminSupabase
                 .from('chat_sessions')
                 .upsert({
                     id: sessionId,
