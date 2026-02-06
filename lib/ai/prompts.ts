@@ -181,7 +181,7 @@ export const TOOLS = [
                     },
                     service_type: {
                         type: 'string',
-                        description: 'Tipo de serviço (ex: visita_orcamento, regular, deep, move_in_out)'
+                        description: 'Tipo de serviço: visit (visita de orçamento), regular, deep, move_in_out, office, airbnb'
                     },
                     duration_minutes: {
                         type: 'number',
