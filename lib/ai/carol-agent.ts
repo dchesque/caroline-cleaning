@@ -55,9 +55,30 @@ export class CarolAgent {
             logger.error('Error saving user message', { sessionId, error: saveUserError })
         }
 
-        // 3. Preparar mensagens para o LLM com data atual
+        // 3. Preparar mensagens para o LLM com data atual e contexto de dias
         const today = new Date()
-        const dateContext = `DATA ATUAL: ${today.toISOString().split('T')[0]} (${today.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}). Use esta data como referência para calcular "próxima terça", "semana que vem", etc.`
+        const weekdays = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado']
+
+        // Gerar os próximos 7 dias com dia da semana
+        const nextDays = []
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(today)
+            date.setDate(date.getDate() + i)
+            const dayName = weekdays[date.getDay()]
+            const formatted = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            const isoDate = date.toISOString().split('T')[0]
+            nextDays.push(`${dayName} = ${formatted} (${isoDate})`)
+        }
+
+        const dateContext = `
+DATA DE HOJE: ${today.toISOString().split('T')[0]} (${weekdays[today.getDay()]}, ${today.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })})
+
+CALENDARÍO DOS PRÓXIMOS 7 DIAS:
+${nextDays.join('\n')}
+
+IMPORTANTE: Quando o cliente disser "próxima terça", "semana que vem", etc., use o calendário acima para calcular a data CORRETA.
+Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feira, dia 10/02").
+`
 
         const apiMessages: any[] = [
             { role: 'system', content: CAROL_SYSTEM_PROMPT + '\n\n' + dateContext },
