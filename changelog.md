@@ -13,7 +13,8 @@
 - **Serviço de Webhooks**: Refatoração do `WebhookService` para priorizar notificações nativas Twilio, mantendo fallback opcional para N8N.
 
 ### Fixed
-- **Erro de Deploy**: Correção de erro de tipo no `app/(public)/chat/page.tsx` migrando para o hook `useCarolChat`.
+- **Erro de Build (Credentials)**: Correção do erro `Missing credentials` durante o build do Next.js. A rota `/api/chat` foi marcada como dinâmica e a inicialização do cliente OpenAI foi atrasada via Proxy para evitar execução prematura sem chaves de API.
+- **Erro de Deploy (Types)**: Correção de erro de tipo no `app/(public)/chat/page.tsx` migrando para o hook `useCarolChat`.
 - **Limpeza de Código**: Remoção de hooks (`useChat`, `useChatSession`) e utilitários (`chat-session.ts`) legados que não eram mais compatíveis com a Carol AI Nativa.
 - **Resiliência SQL**: Correção no script de migração de cron para permitir re-execução segura (idempotência).
 

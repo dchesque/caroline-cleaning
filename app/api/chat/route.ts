@@ -4,6 +4,8 @@ import { logger } from '@/lib/logger'
 import { nanoid } from 'nanoid'
 import type { ChatResponse } from '@/types/carol'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
