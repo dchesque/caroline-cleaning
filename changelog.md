@@ -1,6 +1,13 @@
 # Changelog - v3.2.0 (2026-02-06)
 
-## [3.2.0] - 2026-02-06
+## [3.2.3] - 2026-02-07
+### Fixed
+- Correção no módulo de Mensagens Admin: as conversas com a Carol IA agora são exibidas corretamente através da view `v_conversas_recentes`.
+- Recuperação de informações de leads (nome/telefone) a partir do contexto da sessão de chat.
+- Diferenciação visual entre "Clientes Registrados" e "Leads/Visitantes" com badges e ações contextuais no admin.
+- Atualização da view de banco de dados para incluir suporte a papéis e contexto estendido.
+
+## [3.2.2] - 2026-02-07
 
 ### Added
 - **Notificações Admin (WhatsApp)**: Implementação de alertas via WhatsApp para o proprietário sobre novos agendamentos e leads capturados.

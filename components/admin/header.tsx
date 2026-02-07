@@ -28,7 +28,9 @@ export function AdminHeader({ user }: { user: any }) {
                 <LanguageSelector />
                 <div className="flex items-center gap-2">
                     <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-foreground">{user?.email}</p>
+                        <p className="text-sm font-medium text-foreground truncate max-w-[150px] lg:max-w-none">
+                            {user?.email}
+                        </p>
                         <p className="text-xs text-muted-foreground">{common.admin}</p>
                     </div>
                     <DropdownMenu>

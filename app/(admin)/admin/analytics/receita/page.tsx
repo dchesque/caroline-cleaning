@@ -199,7 +199,7 @@ export default function ReceitaPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
@@ -249,9 +249,22 @@ export default function ReceitaPage() {
                     <CardContent>
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart data={data.byMonth}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#E8E4E1" />
-                                <XAxis dataKey="month" stroke="#9A8478" fontSize={12} />
-                                <YAxis stroke="#9A8478" fontSize={12} tickFormatter={(v) => `$${v}`} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E8E4E1" vertical={false} />
+                                <XAxis
+                                    dataKey="month"
+                                    stroke="#9A8478"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    minTickGap={10}
+                                />
+                                <YAxis
+                                    stroke="#9A8478"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(v) => `$${v}`}
+                                />
                                 <Tooltip
                                     formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Receita']}
                                     contentStyle={{

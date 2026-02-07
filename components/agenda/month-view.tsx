@@ -38,7 +38,7 @@ export function MonthView({ currentDate, appointments, onDayClick, onAppointment
             ))}
 
             {blanks.map((_, i) => (
-                <div key={`blank-${i}`} className="bg-white h-32 md:h-40" />
+                <div key={`blank-${i}`} className="bg-white h-24 sm:h-32 md:h-40" />
             ))}
 
             {days.map(day => {
@@ -48,10 +48,10 @@ export function MonthView({ currentDate, appointments, onDayClick, onAppointment
                 return (
                     <div
                         key={day.toISOString()}
-                        className={`relative bg-white h-32 md:h-40 p-1 flex flex-col hover:bg-gray-50 transition-colors cursor-pointer overflow-visible ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}`}
+                        className={`relative bg-white h-24 sm:h-32 md:h-40 p-0.5 sm:p-1 flex flex-col hover:bg-gray-50 transition-colors cursor-pointer overflow-visible ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}`}
                         onClick={() => onDayClick(day)}
                     >
-                        <div className={`text-right p-1 text-sm ${isToday ? 'bg-[#C48B7F] text-white rounded-full w-6 h-6 flex items-center justify-center ml-auto' : 'text-[#5D5D5D]'}`}>
+                        <div className={`text-right p-0.5 sm:p-1 text-[10px] sm:text-xs md:text-sm ${isToday ? 'bg-[#C48B7F] text-white rounded-full w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center ml-auto' : 'text-[#5D5D5D]'}`}>
                             {format(day, 'd')}
                         </div>
                         <div className="flex-1 overflow-y-auto space-y-1.5 mt-1 scrollbar-hide">

@@ -34,6 +34,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface PricingConfig {
     id: string
@@ -50,6 +51,10 @@ interface PricingConfig {
 }
 
 export default function PricingConfigPage() {
+    const { t } = useAdminI18n()
+    const pricingT = t('services').modals.pricing
+    const common = t('common')
+
     const [pricing, setPricing] = useState<PricingConfig[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [editingItem, setEditingItem] = useState<PricingConfig | null>(null)
@@ -70,7 +75,7 @@ export default function PricingConfigPage() {
             .order('display_order', { ascending: true })
 
         if (error) {
-            toast.error('Erro ao carregar preços')
+            toast.error(pricingT.messages.errorLoading)
             console.error(error)
         } else {
             setPricing(data || [])
@@ -104,10 +109,10 @@ export default function PricingConfigPage() {
             .eq('id', editingItem.id)
 
         if (error) {
-            toast.error('Erro ao salvar')
+            toast.error(pricingT.messages.errorSaving)
             console.error(error)
         } else {
-            toast.success('Preço atualizado com sucesso!')
+            toast.success(pricingT.messages.successUpdate)
             setIsModalOpen(false)
             fetchPricing()
         }
@@ -122,9 +127,9 @@ export default function PricingConfigPage() {
             .eq('id', item.id)
 
         if (error) {
-            toast.error('Erro ao atualizar')
+            toast.error(common.error)
         } else {
-            toast.success(item.is_active ? 'Serviço desativado' : 'Serviço ativado')
+            toast.success(item.is_active ? pricingT.messages.statusDeactivated : pricingT.messages.statusActivated)
             fetchPricing()
         }
     }
@@ -140,10 +145,10 @@ export default function PricingConfigPage() {
                 </Link>
                 <div>
                     <h1 className="font-heading text-2xl font-bold text-foreground">
-                        Configuração de Preços
+                        {pricingT.title}
                     </h1>
                     <p className="text-sm text-muted-foreground">
-                        Gerencie os ranges de preço exibidos no site
+                        {pricingT.subtitle}
                     </p>
                 </div>
             </div>
@@ -153,9 +158,8 @@ export default function PricingConfigPage() {
                 <CardContent className="flex items-start gap-3 pt-4">
                     <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                     <div className="text-sm text-blue-800">
-                        <p className="font-medium">Como funciona:</p>
-                        <p>Os preços configurados aqui são exibidos na seção "Pricing" da landing page.
-                            O valor final é sempre definido via chat com base no tamanho da casa.</p>
+                        <p className="font-medium">{pricingT.howItWorks.title}</p>
+                        <p>{pricingT.howItWorks.description}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -165,10 +169,10 @@ export default function PricingConfigPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <DollarSign className="w-5 h-5" />
-                        Serviços e Preços
+                        {pricingT.table.title}
                     </CardTitle>
                     <CardDescription>
-                        Clique em editar para modificar os valores
+                        {pricingT.table.description}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -180,13 +184,13 @@ export default function PricingConfigPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Ordem</TableHead>
-                                    <TableHead>Serviço</TableHead>
-                                    <TableHead>Preço Min</TableHead>
-                                    <TableHead>Preço Max</TableHead>
-                                    <TableHead>Badge</TableHead>
-                                    <TableHead>Ativo</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
+                                    <TableHead>{pricingT.table.order}</TableHead>
+                                    <TableHead>{pricingT.table.service}</TableHead>
+                                    <TableHead>{pricingT.table.minPrice}</TableHead>
+                                    <TableHead>{pricingT.table.maxPrice}</TableHead>
+                                    <TableHead>{pricingT.table.badge}</TableHead>
+                                    <TableHead>{pricingT.table.active}</TableHead>
+                                    <TableHead className="text-right">{common.actions}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -243,14 +247,14 @@ export default function PricingConfigPage() {
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Editar Preço</DialogTitle>
+                        <DialogTitle>{common.edit} {pricingT.table.service}</DialogTitle>
                     </DialogHeader>
 
                     {editingItem && (
                         <div className="space-y-4">
                             {/* Service Name */}
                             <div className="space-y-2">
-                                <Label>Nome do Serviço</Label>
+                                <Label>{pricingT.fields.serviceName}</Label>
                                 <Input
                                     value={editingItem.service_name}
                                     onChange={(e) => setEditingItem({
@@ -262,21 +266,21 @@ export default function PricingConfigPage() {
 
                             {/* Description */}
                             <div className="space-y-2">
-                                <Label>Descrição</Label>
+                                <Label>{pricingT.fields.description}</Label>
                                 <Input
                                     value={editingItem.description || ''}
                                     onChange={(e) => setEditingItem({
                                         ...editingItem,
                                         description: e.target.value
                                     })}
-                                    placeholder="Breve descrição do serviço"
+                                    placeholder={pricingT.fields.description}
                                 />
                             </div>
 
                             {/* Price Range */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Preço Mínimo ($)</Label>
+                                    <Label>{pricingT.fields.minPrice}</Label>
                                     <Input
                                         type="number"
                                         value={editingItem.price_min}
@@ -287,7 +291,7 @@ export default function PricingConfigPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Preço Máximo ($)</Label>
+                                    <Label>{pricingT.fields.maxPrice}</Label>
                                     <Input
                                         type="number"
                                         value={editingItem.price_max}
@@ -301,20 +305,20 @@ export default function PricingConfigPage() {
 
                             {/* Badge */}
                             <div className="space-y-2">
-                                <Label>Badge (opcional)</Label>
+                                <Label>{pricingT.fields.badge}</Label>
                                 <Input
                                     value={editingItem.badge || ''}
                                     onChange={(e) => setEditingItem({
                                         ...editingItem,
                                         badge: e.target.value
                                     })}
-                                    placeholder="Ex: Most Popular, Best Value"
+                                    placeholder={pricingT.fields.badgePlaceholder}
                                 />
                             </div>
 
                             {/* Display Order */}
                             <div className="space-y-2">
-                                <Label>Ordem de Exibição</Label>
+                                <Label>{pricingT.fields.displayOrder}</Label>
                                 <Input
                                     type="number"
                                     value={editingItem.display_order}
@@ -327,21 +331,21 @@ export default function PricingConfigPage() {
 
                             {/* Notes */}
                             <div className="space-y-2">
-                                <Label>Notas Internas</Label>
+                                <Label>{pricingT.fields.internalNotes}</Label>
                                 <Textarea
                                     value={editingItem.notes || ''}
                                     onChange={(e) => setEditingItem({
                                         ...editingItem,
                                         notes: e.target.value
                                     })}
-                                    placeholder="Notas visíveis apenas para admin..."
+                                    placeholder={pricingT.fields.notesPlaceholder}
                                     rows={2}
                                 />
                             </div>
 
                             {/* Active Toggle */}
                             <div className="flex items-center justify-between">
-                                <Label>Ativo no site</Label>
+                                <Label>{pricingT.fields.activeOnSite}</Label>
                                 <Switch
                                     checked={editingItem.is_active}
                                     onCheckedChange={(checked) => setEditingItem({
@@ -358,7 +362,7 @@ export default function PricingConfigPage() {
                             variant="outline"
                             onClick={() => setIsModalOpen(false)}
                         >
-                            Cancelar
+                            {common.cancel}
                         </Button>
                         <Button
                             onClick={handleSave}
@@ -370,7 +374,7 @@ export default function PricingConfigPage() {
                             ) : (
                                 <Save className="w-4 h-4 mr-2" />
                             )}
-                            Salvar
+                            {common.save}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

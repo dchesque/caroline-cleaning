@@ -37,10 +37,15 @@ import {
     ResponsiveContainer
 } from 'recharts'
 import { format, subDays } from 'date-fns'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 const COLORS = ['#BE9982', '#22c55e', '#f59e0b', '#3b82f6', '#ef4444']
 
 export default function CarolPerformancePage() {
+    const { t } = useAdminI18n()
+    const analytics = t('analytics_carol')
+    const common = t('common')
+
     const [period, setPeriod] = useState('30')
     const [data, setData] = useState<any>({
         stats: {},
@@ -158,9 +163,9 @@ export default function CarolPerformancePage() {
                 intentDistribution,
                 dailyActivity,
                 responseQuality: [
-                    { name: 'Resolvido', value: 75 },
-                    { name: 'Transferido', value: 15 },
-                    { name: 'Abandonado', value: 10 },
+                    { name: analytics.qualityItems.resolved, value: 75 },
+                    { name: analytics.qualityItems.transferred, value: 15 },
+                    { name: analytics.qualityItems.abandoned, value: 10 },
                 ],
                 topQuestions: [
                     'Quanto custa a limpeza?',
@@ -175,10 +180,10 @@ export default function CarolPerformancePage() {
         }
 
         fetchData()
-    }, [period])
+    }, [period, analytics.qualityItems.resolved, analytics.qualityItems.transferred, analytics.qualityItems.abandoned])
 
     if (isLoading) {
-        return <div className="h-[400px] flex items-center justify-center text-muted-foreground">Carregando...</div>
+        return <div className="h-[400px] flex items-center justify-center text-muted-foreground">{common.loading}</div>
     }
 
     return (
@@ -192,26 +197,26 @@ export default function CarolPerformancePage() {
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="font-heading text-h2 text-foreground">Performance da Carol</h1>
+                        <h1 className="font-heading text-h2 text-foreground">{analytics.title}</h1>
                         <p className="text-body text-muted-foreground">
-                            Análise de desempenho da assistente virtual
+                            {analytics.subtitle}
                         </p>
                     </div>
                 </div>
                 <Select value={period} onValueChange={setPeriod}>
-                    <SelectTrigger className="w-[150px]">
-                        <SelectValue />
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder={analytics.period.label} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="7">Últimos 7 dias</SelectItem>
-                        <SelectItem value="30">Últimos 30 dias</SelectItem>
-                        <SelectItem value="90">Últimos 90 dias</SelectItem>
+                        <SelectItem value="7">{analytics.period.last7Days}</SelectItem>
+                        <SelectItem value="30">{analytics.period.last30Days}</SelectItem>
+                        <SelectItem value="90">{analytics.period.last90Days}</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-4">
@@ -219,7 +224,7 @@ export default function CarolPerformancePage() {
                                 <MessageSquare className="w-6 h-6 text-primary" />
                             </div>
                             <div>
-                                <p className="text-caption text-muted-foreground">Total Mensagens</p>
+                                <p className="text-caption text-muted-foreground">{analytics.stats.messages}</p>
                                 <p className="text-h3 font-semibold">{data.stats.totalMessages}</p>
                             </div>
                         </div>
@@ -232,7 +237,7 @@ export default function CarolPerformancePage() {
                                 <Users className="w-6 h-6 text-info" />
                             </div>
                             <div>
-                                <p className="text-caption text-muted-foreground">Sessões Únicas</p>
+                                <p className="text-caption text-muted-foreground">{analytics.stats.sessions}</p>
                                 <p className="text-h3 font-semibold">{data.stats.uniqueSessions}</p>
                             </div>
                         </div>
@@ -245,7 +250,7 @@ export default function CarolPerformancePage() {
                                 <Target className="w-6 h-6 text-success" />
                             </div>
                             <div>
-                                <p className="text-caption text-muted-foreground">Leads Gerados</p>
+                                <p className="text-caption text-muted-foreground">{analytics.stats.leads}</p>
                                 <p className="text-h3 font-semibold">{data.stats.leadsGenerated}</p>
                             </div>
                         </div>
@@ -258,7 +263,7 @@ export default function CarolPerformancePage() {
                                 <TrendingUp className="w-6 h-6 text-warning" />
                             </div>
                             <div>
-                                <p className="text-caption text-muted-foreground">Taxa Conversão</p>
+                                <p className="text-caption text-muted-foreground">{analytics.stats.conversion}</p>
                                 <p className="text-h3 font-semibold">{data.stats.conversionRate?.toFixed(1)}%</p>
                             </div>
                         </div>
@@ -271,19 +276,32 @@ export default function CarolPerformancePage() {
                 {/* Daily Activity */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-h4">Atividade Diária</CardTitle>
+                        <CardTitle className="text-h4">{analytics.charts.dailyActivity}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={300}>
                             <LineChart data={data.dailyActivity}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#E8E4E1" />
-                                <XAxis dataKey="date" stroke="#9A8478" fontSize={12} />
-                                <YAxis stroke="#9A8478" fontSize={12} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E8E4E1" vertical={false} />
+                                <XAxis
+                                    dataKey="date"
+                                    stroke="#9A8478"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    minTickGap={10}
+                                />
+                                <YAxis
+                                    stroke="#9A8478"
+                                    fontSize={10}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: 'white',
                                         border: '1px solid #E8E4E1',
-                                        borderRadius: '8px'
+                                        borderRadius: '8px',
+                                        fontSize: '12px'
                                     }}
                                 />
                                 <Line
@@ -291,14 +309,14 @@ export default function CarolPerformancePage() {
                                     dataKey="mensagens"
                                     stroke="#BE9982"
                                     strokeWidth={2}
-                                    name="Mensagens"
+                                    name={analytics.stats.messages}
                                 />
                                 <Line
                                     type="monotone"
                                     dataKey="sessoes"
                                     stroke="#3b82f6"
                                     strokeWidth={2}
-                                    name="Sessões"
+                                    name={analytics.stats.sessions}
                                 />
                             </LineChart>
                         </ResponsiveContainer>
@@ -308,7 +326,7 @@ export default function CarolPerformancePage() {
                 {/* Intent Distribution */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-h4">Intenções Detectadas</CardTitle>
+                        <CardTitle className="text-h4">{analytics.charts.intentDistribution}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={300}>
@@ -339,8 +357,8 @@ export default function CarolPerformancePage() {
                 {/* Response Quality */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-h4">Qualidade das Respostas</CardTitle>
-                        <CardDescription>Resultado das interações</CardDescription>
+                        <CardTitle className="text-h4">{analytics.charts.responseQuality}</CardTitle>
+                        <CardDescription>{analytics.charts.qualityDesc}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
@@ -368,8 +386,8 @@ export default function CarolPerformancePage() {
                 {/* Top Questions */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-h4">Perguntas Mais Frequentes</CardTitle>
-                        <CardDescription>O que os usuários mais perguntam</CardDescription>
+                        <CardTitle className="text-h4">{analytics.topQuestions.title}</CardTitle>
+                        <CardDescription>{analytics.topQuestions.subtitle}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
@@ -392,29 +410,29 @@ export default function CarolPerformancePage() {
             {/* Performance Metrics */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-h4">Métricas de Performance</CardTitle>
+                    <CardTitle className="text-h4">{analytics.performance}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div className="text-center p-4 bg-desert-storm rounded-lg">
                             <Bot className="w-8 h-8 text-primary mx-auto mb-2" />
                             <p className="text-h4 font-semibold">{data.stats.carolMessages}</p>
-                            <p className="text-caption text-muted-foreground">Respostas da Carol</p>
+                            <p className="text-caption text-muted-foreground">{analytics.stats.carolResponses}</p>
                         </div>
                         <div className="text-center p-4 bg-desert-storm rounded-lg">
                             <Zap className="w-8 h-8 text-warning mx-auto mb-2" />
                             <p className="text-h4 font-semibold">{data.stats.avgMessagesPerSession?.toFixed(1)}</p>
-                            <p className="text-caption text-muted-foreground">Msgs por Sessão</p>
+                            <p className="text-caption text-muted-foreground">{analytics.stats.msgsPerSession}</p>
                         </div>
                         <div className="text-center p-4 bg-desert-storm rounded-lg">
                             <Clock className="w-8 h-8 text-info mx-auto mb-2" />
                             <p className="text-h4 font-semibold">&lt; 1s</p>
-                            <p className="text-caption text-muted-foreground">Tempo de Resposta</p>
+                            <p className="text-caption text-muted-foreground">{analytics.stats.responseTime}</p>
                         </div>
                         <div className="text-center p-4 bg-desert-storm rounded-lg">
                             <ThumbsUp className="w-8 h-8 text-success mx-auto mb-2" />
                             <p className="text-h4 font-semibold">{data.stats.appointmentsBooked}</p>
-                            <p className="text-caption text-muted-foreground">Agendamentos via Chat</p>
+                            <p className="text-caption text-muted-foreground">{analytics.stats.appointments}</p>
                         </div>
                     </div>
                 </CardContent>

@@ -1,18 +1,19 @@
 // lib/ai/openrouter.ts
 import OpenAI from 'openai'
+import { env } from '@/lib/env'
 
 let _openrouter: OpenAI | null = null
 
 export const getOpenRouter = () => {
     if (!_openrouter) {
-        if (!process.env.OPENROUTER_API_KEY) {
+        if (!env.openRouterKey) {
             throw new Error('OPENROUTER_API_KEY is missing')
         }
         _openrouter = new OpenAI({
-            apiKey: process.env.OPENROUTER_API_KEY,
+            apiKey: env.openRouterKey,
             baseURL: 'https://openrouter.ai/api/v1',
             defaultHeaders: {
-                'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+                'HTTP-Referer': env.appUrl,
                 'X-Title': 'Caroline Premium Cleaning'
             }
         })

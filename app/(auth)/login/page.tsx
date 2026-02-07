@@ -51,7 +51,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-desert-storm">
                 <div className="mx-auto grid w-full max-w-[400px] gap-6">
                     <div className="flex flex-col space-y-2 text-center">
-                        <h1 className="text-3xl font-heading font-semibold tracking-tight text-foreground">
+                        <h1 className="text-2xl sm:text-3xl font-heading font-semibold tracking-tight text-foreground">
                             Welcome back
                         </h1>
                         <p className="text-sm text-muted-foreground">

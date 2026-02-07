@@ -4,9 +4,10 @@
 const requiredEnvVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'OPENROUTER_API_KEY',
 ] as const
 
-const optionalEnvVars = [
+const productionEnvVars = [
     'SUPABASE_SERVICE_ROLE_KEY',
     'TWILIO_ACCOUNT_SID',
     'TWILIO_AUTH_TOKEN',
@@ -14,10 +15,6 @@ const optionalEnvVars = [
     'OWNER_PHONE_NUMBER',
     'CRON_SECRET',
     'NEXT_PUBLIC_APP_URL',
-    'NEXT_PUBLIC_GA_ID',
-    'SENTRY_DSN',
-    'PORT',
-    'HOSTNAME',
 ] as const
 
 export function validateEnv() {
@@ -36,15 +33,15 @@ export function validateEnv() {
     }
 
     if (process.env.NODE_ENV === 'production') {
-        const missingOptional: string[] = []
-        for (const envVar of optionalEnvVars) {
+        const missingProd: string[] = []
+        for (const envVar of productionEnvVars) {
             if (!process.env[envVar]) {
-                missingOptional.push(envVar)
+                missingProd.push(envVar)
             }
         }
-        if (missingOptional.length > 0) {
-            console.warn(
-                `Warning: Missing optional environment variables:\n${missingOptional.join('\n')}`
+        if (missingProd.length > 0) {
+            console.error(
+                `CRITICAL: Missing production environment variables:\n${missingProd.join('\n')}`
             )
         }
     }
@@ -56,20 +53,25 @@ export const env = {
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 
-    // Twilio (SMS)
+    // AI
+    openRouterKey: process.env.OPENROUTER_API_KEY!,
+    defaultModel: process.env.CAROL_DEFAULT_MODEL || 'anthropic/claude-3.5-sonnet',
+
+    // Twilio (SMS/WhatsApp)
     twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
     twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
     twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
     ownerPhone: process.env.OWNER_PHONE_NUMBER,
     cronSecret: process.env.CRON_SECRET,
 
-    // Analytics
-    gaId: process.env.NEXT_PUBLIC_GA_ID,
-
     // App
     appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
     nodeEnv: process.env.NODE_ENV || 'development',
     isProduction: process.env.NODE_ENV === 'production',
+
+    // Analytics / Monitoring
+    gaId: process.env.NEXT_PUBLIC_GA_ID,
+    sentryDsn: process.env.SENTRY_DSN,
 
     // Server
     port: parseInt(process.env.PORT || '3000', 10),

@@ -40,7 +40,7 @@ export function ClientsFilters({ filters, onChange }: ClientsFiltersProps) {
                 value={filters.status}
                 onValueChange={(value) => onChange({ ...filters, status: value })}
             >
-                <SelectTrigger className="w-[180px] bg-white border-gray-200 shadow-sm">
+                <SelectTrigger className="w-full sm:w-[180px] bg-white border-gray-200 shadow-sm">
                     <SelectValue placeholder={clientsT.filters.statusPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
@@ -58,7 +58,7 @@ export function ClientsFilters({ filters, onChange }: ClientsFiltersProps) {
                     onChange({ ...filters, sortBy, sortOrder })
                 }}
             >
-                <SelectTrigger className="w-[180px] bg-white border-gray-200 shadow-sm">
+                <SelectTrigger className="w-full sm:w-[180px] bg-white border-gray-200 shadow-sm">
                     <SelectValue placeholder={clientsT.filters.orderBy} />
                 </SelectTrigger>
                 <SelectContent>

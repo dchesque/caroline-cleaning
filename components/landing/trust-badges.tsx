@@ -32,9 +32,9 @@ export function TrustBadges() {
     ]
 
     return (
-        <section className="py-20 bg-white border-y border-pampas">
+        <section className="py-12 sm:py-20 bg-white border-y border-pampas">
             <div className="container">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12">
+                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
                     {badges.map((badge) => (
                         <div
                             key={badge.title}

@@ -23,8 +23,8 @@ export function Hero() {
             <div className="container relative">
                 <div className="max-w-3xl mx-auto text-center">
                     {/* Badge */}
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <span className="flex items-center gap-1.5 text-sm font-medium text-brandy-rose-600">
+                    <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-white shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-full">
+                        <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-brandy-rose-600 text-center">
                             Premium cleaning services in Charlotte, NC & Fort Mill, SC
                         </span>
                     </div>
@@ -95,26 +95,26 @@ export function Hero() {
                 </div>
 
                 {/* Trust Indicators */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 text-sm font-medium text-muted-foreground animate-in fade-in duration-1000 delay-500">
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 text-sm font-medium text-muted-foreground animate-in fade-in duration-1000 delay-500">
+                    <div className="flex items-center gap-2 justify-center xs:justify-start">
                         <div className="p-1 rounded-full bg-success/10 text-success">
                             <Shield className="w-4 h-4" />
                         </div>
                         <span>Local service in Charlotte & Fort Mill</span>
                     </div>
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <div className="flex items-center gap-2 justify-center xs:justify-start">
                         <div className="p-1 rounded-full bg-success/10 text-success">
                             <Shield className="w-4 h-4" />
                         </div>
                         <span>Trusted professionals</span>
                     </div>
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <div className="flex items-center gap-2 justify-center xs:justify-start">
                         <div className="p-1 rounded-full bg-success/10 text-success">
                             <Shield className="w-4 h-4" />
                         </div>
                         <span>Premium cleaning standards</span>
                     </div>
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <div className="flex items-center gap-2 justify-center xs:justify-start">
                         <div className="p-1 rounded-full bg-success/10 text-success">
                             <Shield className="w-4 h-4" />
                         </div>

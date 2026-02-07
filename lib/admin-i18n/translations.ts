@@ -68,6 +68,14 @@ export const translations = {
             },
             yes: 'Sim',
             no: 'Não',
+            periods: {
+                thisMonth: 'Este Mês',
+                lastMonth: 'Mês Passado',
+                last3Months: 'Últimos 3 Meses',
+                last6Months: 'Últimos 6 Meses',
+                thisYear: 'Este Ano',
+            },
+            exportCSV: 'Exportar CSV',
         },
         sidebar: {
             overview: 'Visão Geral',
@@ -508,6 +516,78 @@ export const translations = {
                 editAddon: 'Editar Adicional',
                 newAddon: 'Novo Adicional',
                 addonDescription: 'Configure os detalhes do serviço adicional',
+                addons: {
+                    title: 'Serviços Adicionais',
+                    subtitle: 'Configure os extras (addons) disponíveis para agendamento',
+                    newAddon: 'Novo Addon',
+                    errorLoading: 'Erro ao carregar addons',
+                    successCreate: 'Addon criado!',
+                    successUpdate: 'Addon atualizado!',
+                    successDelete: 'Addon excluído!',
+                    successStatusUpdate: 'Status do addon atualizado!',
+                    confirmDelete: 'Tem certeza que deseja excluir',
+                    noDescription: 'Sem descrição definida',
+                    billingTypes: {
+                        fixed: 'Preço Fixo',
+                        perUnit: 'Por Unidade',
+                        perHour: 'Por Hora',
+                        hourShort: 'hora',
+                        unitShort: 'unidade'
+                    },
+                    fields: {
+                        name: 'Nome',
+                        code: 'Código (Slug)',
+                        description: 'Descrição',
+                        price: 'Preço ($)',
+                        billingType: 'Tipo de Cobrança',
+                        unitName: 'Nome da Unidade',
+                        additionalTime: 'Tempo Adicional (minutos)',
+                        additionalTimeHelp: 'Tempo extra adicionado à duração total do serviço',
+                        active: 'Ativo',
+                        activeHelp: 'Disponível para seleção'
+                    },
+                    validation: {
+                        addonRequired: 'Código e Nome são obrigatórios',
+                        codeFormat: 'Código deve conter apenas letras minúsculas e underscore'
+                    }
+                },
+                pricing: {
+                    title: 'Configuração de Preços',
+                    subtitle: 'Gerencie os ranges de preço exibidos no site',
+                    howItWorks: {
+                        title: 'Como funciona:',
+                        description: 'Os preços configurados aqui são exibidos na seção "Pricing" da landing page. O valor final é sempre definido via chat com base no tamanho da casa.'
+                    },
+                    table: {
+                        title: 'Serviços e Preços',
+                        description: 'Clique em editar para modificar os valores',
+                        order: 'Ordem',
+                        service: 'Serviço',
+                        minPrice: 'Preço Mín',
+                        maxPrice: 'Preço Máx',
+                        badge: 'Selo (Badge)',
+                        active: 'Ativo'
+                    },
+                    fields: {
+                        serviceName: 'Nome do Serviço',
+                        description: 'Descrição',
+                        minPrice: 'Preço Mínimo ($)',
+                        maxPrice: 'Preço Máximo ($)',
+                        badge: 'Selo (opcional)',
+                        badgePlaceholder: 'Ex: Mais Popular, Melhor Valor',
+                        displayOrder: 'Ordem de Exibição',
+                        internalNotes: 'Notas Internas',
+                        notesPlaceholder: 'Notas visíveis apenas para admin...',
+                        activeOnSite: 'Ativo no site'
+                    },
+                    messages: {
+                        errorLoading: 'Erro ao carregar preços',
+                        errorSaving: 'Erro ao salvar',
+                        successUpdate: 'Preço atualizado com sucesso!',
+                        statusActivated: 'Serviço ativado',
+                        statusDeactivated: 'Serviço desativado'
+                    }
+                },
                 fields: {
                     code: 'Código',
                     codeHelp: 'Apenas letras minúsculas e underscore',
@@ -539,6 +619,43 @@ export const translations = {
                     addonRequired: 'Código, Nome e Preço são obrigatórios',
                 },
                 confirmDelete: 'Tem certeza que deseja excluir?',
+            }
+        },
+        pricing: {
+            title: 'Configuração de Preços',
+            subtitle: 'Gerencie os ranges de preço exibidos no site',
+            howItWorks: {
+                title: 'Como funciona:',
+                description: 'Os preços configurados aqui são exibidos na seção "Pricing" da landing page. O valor final é sempre definido via chat com base no tamanho da casa.'
+            },
+            table: {
+                title: 'Serviços e Preços',
+                description: 'Clique em editar para modificar os valores',
+                order: 'Ordem',
+                service: 'Serviço',
+                minPrice: 'Preço Mín',
+                maxPrice: 'Preço Máx',
+                badge: 'Selo (Badge)',
+                active: 'Ativo'
+            },
+            fields: {
+                serviceName: 'Nome do Serviço',
+                description: 'Descrição',
+                minPrice: 'Preço Mínimo ($)',
+                maxPrice: 'Preço Máximo ($)',
+                badge: 'Selo (opcional)',
+                badgePlaceholder: 'Ex: Mais Popular, Melhor Valor',
+                displayOrder: 'Ordem de Exibição',
+                internalNotes: 'Notas Internas',
+                notesPlaceholder: 'Notas visíveis apenas para admin...',
+                activeOnSite: 'Ativo no site'
+            },
+            messages: {
+                errorLoading: 'Erro ao carregar preços',
+                errorSaving: 'Erro ao salvar',
+                successUpdate: 'Preço atualizado com sucesso!',
+                statusActivated: 'Serviço ativado',
+                statusDeactivated: 'Serviço desativado'
             }
         },
         messages: {
@@ -1067,6 +1184,89 @@ export const translations = {
                 deactivateError: 'Erro ao desativar conta.',
             },
         },
+        // Novas seções para subpáginas
+        analytics_carol: {
+            title: 'Carol IA - Performance',
+            subtitle: 'Métricas de desempenho e conversão da assistente virtual',
+            period: {
+                label: 'Período',
+                last7Days: 'Últimos 7 dias',
+                last30Days: 'Últimos 30 dias',
+                last90Days: 'Últimos 90 dias',
+            },
+            stats: {
+                sessions: 'Sessões Únicas',
+                conversion: 'Taxa de Conversão',
+                avgTime: 'Tempo Médio',
+                messages: 'Total Mensagens',
+                carolResponses: 'Respostas da Carol',
+                msgsPerSession: 'Msgs por Sessão',
+                responseTime: 'Tempo de Resposta',
+                appointments: 'Agendamentos via Chat',
+                leads: 'Leads Gerados',
+            },
+            charts: {
+                dailyActivity: 'Atividade Diária',
+                intentDistribution: 'Intenções Detectadas',
+                responseQuality: 'Qualidade das Respostas',
+                qualityDesc: 'Resultado das interações',
+            },
+            qualityItems: {
+                resolved: 'Resolvido',
+                transferred: 'Transferido',
+                abandoned: 'Abandonado',
+            },
+            topQuestions: {
+                title: 'Perguntas Mais Frequentes',
+                subtitle: 'O que os usuários mais perguntam',
+            },
+            performance: 'Métricas de Performance',
+        },
+        finance_transactions: {
+            revenueTitle: 'Gestão de Receitas',
+            expenseTitle: 'Gestão de Despesas',
+            newRevenue: 'Nova Receita',
+            newExpense: 'Nova Despesa',
+            filters: {
+                search: 'Buscar transação...',
+                category: 'Categoria',
+                status: 'Status',
+            },
+            table: {
+                description: 'Descrição',
+                category: 'Categoria',
+                value: 'Valor',
+                date: 'Data',
+                status: 'Status',
+            }
+        },
+        finance_categories: {
+            title: 'Categorias Financeiras',
+            subtitle: 'Gerencie categorias de receitas e despesas',
+            newCategory: 'Nova Categoria',
+            table: {
+                name: 'Nome',
+                type: 'Tipo',
+                active: 'Ativa',
+            }
+        },
+        finance_reports: {
+            title: 'Relatórios Financeiros',
+            subtitle: 'Análise detalhada de fluxo de caixa e DRE',
+            cashFlow: {
+                title: 'Fluxo de Caixa',
+                inflow: 'Entradas',
+                outflow: 'Saídas',
+                balance: 'Saldo',
+            },
+            dre: {
+                title: 'Demonstrativo de Resultados (DRE)',
+                grossRevenue: 'Receita Bruta',
+                netRevenue: 'Receita Líquida',
+                operatingExpenses: 'Despesas Operacionais',
+                netProfit: 'Lucro Líquido',
+            }
+        },
     },
     'en-US': {
         common: {
@@ -1133,6 +1333,14 @@ export const translations = {
             },
             yes: 'Yes',
             no: 'No',
+            periods: {
+                thisMonth: 'This Month',
+                lastMonth: 'Last Month',
+                last3Months: 'Last 3 Months',
+                last6Months: 'Last 6 Months',
+                thisYear: 'This Year',
+            },
+            exportCSV: 'Export CSV',
         },
         sidebar: {
             overview: 'Overview',
@@ -2131,6 +2339,89 @@ export const translations = {
                 deactivateSuccess: 'Account deactivated successfully.',
                 deactivateError: 'Error deactivating account.',
             },
+        },
+        // New sections for subpages
+        analytics_carol: {
+            title: 'Carol IA - Performance',
+            subtitle: 'Virtual assistant performance and conversion metrics',
+            period: {
+                label: 'Period',
+                last7Days: 'Last 7 days',
+                last30Days: 'Last 30 days',
+                last90Days: 'Last 90 days',
+            },
+            stats: {
+                sessions: 'Unique Sessions',
+                conversion: 'Conversion Rate',
+                avgTime: 'Average Time',
+                messages: 'Total Messages',
+                carolResponses: 'Carol Responses',
+                msgsPerSession: 'Msgs per Session',
+                responseTime: 'Response Time',
+                appointments: 'Chat Appointments',
+                leads: 'Leads Generated',
+            },
+            charts: {
+                dailyActivity: 'Daily Activity',
+                intentDistribution: 'Intents Detected',
+                responseQuality: 'Response Quality',
+                qualityDesc: 'Interaction outcomes',
+            },
+            qualityItems: {
+                resolved: 'Resolved',
+                transferred: 'Transferred',
+                abandoned: 'Abandoned',
+            },
+            topQuestions: {
+                title: 'Frequently Asked Questions',
+                subtitle: 'What users ask the most',
+            },
+            performance: 'Performance Metrics',
+        },
+        finance_transactions: {
+            revenueTitle: 'Revenue Management',
+            expenseTitle: 'Expense Management',
+            newRevenue: 'New Revenue',
+            newExpense: 'New Expense',
+            filters: {
+                search: 'Search transaction...',
+                category: 'Category',
+                status: 'Status',
+            },
+            table: {
+                description: 'Description',
+                category: 'Category',
+                value: 'Value',
+                date: 'Date',
+                status: 'Status',
+            }
+        },
+        finance_categories: {
+            title: 'Financial Categories',
+            subtitle: 'Manage revenue and expense categories',
+            newCategory: 'New Category',
+            table: {
+                name: 'Name',
+                type: 'Type',
+                active: 'Active',
+            }
+        },
+        finance_reports: {
+            title: 'Financial Reports',
+            subtitle: 'Detailed cash flow and DRE analysis',
+            cashFlow: {
+                title: 'Cash Flow',
+                inflow: 'Inflow',
+                outflow: 'Outflow',
+                balance: 'Balance',
+            },
+            dre: {
+                title: 'Income Statement (DRE)',
+                grossRevenue: 'Gross Revenue',
+                netRevenue: 'Net Revenue',
+                operatingExpenses: 'Operating Expenses',
+                netProfit: 'Net Profit',
+            }
         },
     },
 };

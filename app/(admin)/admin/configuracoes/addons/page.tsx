@@ -36,6 +36,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 // Interfaces
 interface AddonType {
@@ -51,13 +52,11 @@ interface AddonType {
     ordem: number
 }
 
-const TIPOS_COBRANCA = [
-    { value: 'fixo', label: 'Preço Fixo' },
-    { value: 'por_unidade', label: 'Por Unidade' },
-    { value: 'por_hora', label: 'Por Hora' },
-]
-
 export default function AddonsPage() {
+    const { t } = useAdminI18n()
+    const services = t('services')
+    const common = t('common')
+
     const [addons, setAddons] = useState<AddonType[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -65,6 +64,12 @@ export default function AddonsPage() {
     const [editingItem, setEditingItem] = useState<AddonType | null>(null)
 
     const supabase = createClient()
+
+    const TIPOS_COBRANCA = [
+        { value: 'fixo', label: services.addons.billingTypes.fixed },
+        { value: 'por_unidade', label: services.addons.billingTypes.perUnit },
+        { value: 'por_hora', label: services.addons.billingTypes.perHour },
+    ]
 
     useEffect(() => {
         fetchAddons()
@@ -79,7 +84,7 @@ export default function AddonsPage() {
 
         if (error) {
             console.error('Error fetching addons:', error)
-            toast.error('Erro ao carregar addons')
+            toast.error(services.addons.errorLoading)
         } else {
             setAddons(data || [])
         }
@@ -111,12 +116,12 @@ export default function AddonsPage() {
         if (!editingItem) return
 
         if (!editingItem.codigo || !editingItem.nome) {
-            toast.error('Código e Nome são obrigatórios')
+            toast.error(services.addons.validation.addonRequired)
             return
         }
 
         if (!/^[a-z_]+$/.test(editingItem.codigo)) {
-            toast.error('Código deve conter apenas letras minúsculas e underscore')
+            toast.error(services.addons.validation.codeFormat)
             return
         }
 
@@ -132,7 +137,7 @@ export default function AddonsPage() {
                     .eq('id', id)
 
                 if (error) throw error
-                toast.success('Addon atualizado!')
+                toast.success(services.addons.successUpdate)
             } else {
                 // Insert
                 const { error } = await supabase
@@ -140,21 +145,21 @@ export default function AddonsPage() {
                     .insert(dataToSave)
 
                 if (error) throw error
-                toast.success('Addon criado!')
+                toast.success(services.addons.successCreate)
             }
 
             setIsModalOpen(false)
             fetchAddons()
         } catch (error) {
             console.error('Error saving addon:', error)
-            toast.error('Erro ao salvar addon')
+            toast.error(common.error)
         } finally {
             setIsSaving(false)
         }
     }
 
     const handleDelete = async (id: string, nome: string) => {
-        if (!confirm(`Tem certeza que deseja excluir "${nome}"?`)) return
+        if (!confirm(`${services.addons.confirmDelete} "${nome}"?`)) return
 
         try {
             const { error } = await supabase
@@ -163,11 +168,11 @@ export default function AddonsPage() {
                 .eq('id', id)
 
             if (error) throw error
-            toast.success('Addon excluído!')
+            toast.success(services.addons.successDelete)
             fetchAddons()
         } catch (error) {
             console.error('Error deleting addon:', error)
-            toast.error('Erro ao excluir')
+            toast.error(common.error)
         }
     }
 
@@ -179,19 +184,22 @@ export default function AddonsPage() {
                 .eq('id', item.id)
 
             if (error) throw error
-            toast.success(`Addon ${!item.ativo ? 'ativado' : 'desativado'}!`)
+            toast.success(services.addons.successStatusUpdate)
             fetchAddons()
         } catch (error) {
             console.error('Error toggling addon status:', error)
-            toast.error('Erro ao atualizar status')
+            toast.error(common.error)
         }
     }
 
     const getPriceLabel = (addon: AddonType) => {
-        const price = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(addon.preco)
+        const locale = common.locale === 'pt-BR' ? 'pt-BR' : 'en-US'
+        const currency = common.locale === 'pt-BR' ? 'BRL' : 'USD'
+        const price = new Intl.NumberFormat(locale, { style: 'currency', currency }).format(addon.preco)
+
         if (addon.tipo_cobranca === 'fixo') return price
-        if (addon.tipo_cobranca === 'por_hora') return `${price}/hour`
-        if (addon.tipo_cobranca === 'por_unidade') return `${price}/${addon.unidade || 'unit'}`
+        if (addon.tipo_cobranca === 'por_hora') return `${price}/${services.addons.billingTypes.hourShort}`
+        if (addon.tipo_cobranca === 'por_unidade') return `${price}/${addon.unidade || services.addons.billingTypes.unitShort}`
         return price
     }
 
@@ -207,16 +215,16 @@ export default function AddonsPage() {
                     </Link>
                     <div>
                         <h1 className="font-heading text-2xl font-bold text-foreground">
-                            Serviços Adicionais
+                            {services.addons.title}
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            Configure os extras (addons) disponíveis para agendamento
+                            {services.addons.subtitle}
                         </p>
                     </div>
                 </div>
                 <Button onClick={handleCreate}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Novo Addon
+                    {services.addons.newAddon}
                 </Button>
             </div>
 
@@ -251,7 +259,7 @@ export default function AddonsPage() {
 
                                 <div className="mb-4 flex-1">
                                     <p className="text-sm text-muted-foreground line-clamp-2">
-                                        {addon.descricao || 'Sem descrição definida'}
+                                        {addon.descricao || services.addons.noDescription}
                                     </p>
                                 </div>
 
@@ -272,7 +280,7 @@ export default function AddonsPage() {
                                     <div className="flex items-center justify-end gap-2 pt-2">
                                         <Button variant="ghost" size="sm" onClick={() => handleEdit(addon)}>
                                             <Pencil className="w-4 h-4 mr-2" />
-                                            Editar
+                                            {common.edit}
                                         </Button>
                                         <Button variant="ghost" size="icon" className="text-destructive/70 hover:text-destructive" onClick={() => handleDelete(addon.id, addon.nome)}>
                                             <Trash2 className="w-4 h-4" />
@@ -288,7 +296,7 @@ export default function AddonsPage() {
                         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                             <Plus className="w-6 h-6 text-primary" />
                         </div>
-                        <p className="font-semibold text-primary">Adicionar Addon</p>
+                        <p className="font-semibold text-primary">{services.addons.newAddon}</p>
                     </Card>
                 </div>
             )}
@@ -298,7 +306,7 @@ export default function AddonsPage() {
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
                         <DialogTitle>
-                            {editingItem?.id ? 'Editar Addon' : 'Novo Addon'}
+                            {editingItem?.id ? common.edit : services.addons.newAddon}
                         </DialogTitle>
                     </DialogHeader>
 
@@ -306,7 +314,7 @@ export default function AddonsPage() {
                         <div className="grid gap-6 py-4">
                             <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Nome</Label>
+                                    <Label>{services.addons.fields.name}</Label>
                                     <Input
                                         value={editingItem.nome}
                                         onChange={e => setEditingItem({ ...editingItem, nome: e.target.value })}
@@ -314,7 +322,7 @@ export default function AddonsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Código (Slug)</Label>
+                                    <Label>{services.addons.fields.code}</Label>
                                     <Input
                                         value={editingItem.codigo}
                                         onChange={e => setEditingItem({ ...editingItem, codigo: e.target.value.toLowerCase() })}
@@ -325,7 +333,7 @@ export default function AddonsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Descrição</Label>
+                                <Label>{services.addons.fields.description}</Label>
                                 <Textarea
                                     value={editingItem.descricao || ''}
                                     onChange={e => setEditingItem({ ...editingItem, descricao: e.target.value })}
@@ -335,7 +343,7 @@ export default function AddonsPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Preço ($)</Label>
+                                    <Label>{services.addons.fields.price}</Label>
                                     <Input
                                         type="number"
                                         min="0"
@@ -345,7 +353,7 @@ export default function AddonsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Tipo de Cobrança</Label>
+                                    <Label>{services.addons.fields.billingType}</Label>
                                     <Select
                                         value={editingItem.tipo_cobranca}
                                         onValueChange={(val: any) => setEditingItem({ ...editingItem, tipo_cobranca: val })}
@@ -364,17 +372,17 @@ export default function AddonsPage() {
 
                             {editingItem.tipo_cobranca === 'por_unidade' && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                    <Label>Nome da Unidade</Label>
+                                    <Label>{services.addons.fields.unitName}</Label>
                                     <Input
                                         value={editingItem.unidade || ''}
                                         onChange={e => setEditingItem({ ...editingItem, unidade: e.target.value })}
-                                        placeholder="Ex: por janela, por cômodo"
+                                        placeholder="Ex: window, room"
                                     />
                                 </div>
                             )}
 
                             <div className="space-y-2">
-                                <Label>Tempo Adicional (minutos)</Label>
+                                <Label>{services.addons.fields.additionalTime}</Label>
                                 <div className="flex items-center gap-4">
                                     <Input
                                         type="number"
@@ -385,15 +393,15 @@ export default function AddonsPage() {
                                         className="w-32"
                                     />
                                     <p className="text-sm text-muted-foreground">
-                                        Tempo extra adicionado à duração total do serviço
+                                        {services.addons.fields.additionalTimeHelp}
                                     </p>
                                 </div>
                             </div>
 
                             <div className="flex items-center justify-between border rounded-lg p-3">
                                 <div className="space-y-0.5">
-                                    <Label className="text-base">Ativo</Label>
-                                    <p className="text-xs text-muted-foreground">Disponível para seleção</p>
+                                    <Label className="text-base">{services.addons.fields.active}</Label>
+                                    <p className="text-xs text-muted-foreground">{services.addons.fields.activeHelp}</p>
                                 </div>
                                 <Switch
                                     checked={editingItem.ativo}
@@ -405,11 +413,11 @@ export default function AddonsPage() {
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                            Cancelar
+                            {common.cancel}
                         </Button>
                         <Button onClick={handleSave} disabled={isSaving}>
                             {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Salvar
+                            {common.save}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

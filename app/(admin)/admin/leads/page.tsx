@@ -293,60 +293,104 @@ export default function LeadsPage() {
                             <p>{common.noResults}</p>
                         </div>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{leadsT.table.name}</TableHead>
-                                    <TableHead>{leadsT.table.phone}</TableHead>
-                                    <TableHead>{leadsT.table.city}</TableHead>
-                                    <TableHead>{leadsT.table.status}</TableHead>
-                                    <TableHead>{leadsT.table.received}</TableHead>
-                                    <TableHead className="text-right">{common.actions}</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
+                        <>
+                            <div className="hidden md:block">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>{leadsT.table.name}</TableHead>
+                                            <TableHead>{leadsT.table.phone}</TableHead>
+                                            <TableHead>{leadsT.table.city}</TableHead>
+                                            <TableHead>{leadsT.table.status}</TableHead>
+                                            <TableHead>{leadsT.table.received}</TableHead>
+                                            <TableHead className="text-right">{common.actions}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredLeads.map((lead) => {
+                                            const status = statusConfig[lead.status]
+                                            return (
+                                                <TableRow key={lead.id}>
+                                                    <TableCell className="font-medium">
+                                                        {lead.nome}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <a
+                                                            href={`tel:${lead.telefone}`}
+                                                            className="text-brandy-rose-600 hover:underline"
+                                                        >
+                                                            {lead.telefone}
+                                                        </a>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {lead.cidade || '—'}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge className={status.color}>
+                                                            {status.label}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-sm text-muted-foreground">
+                                                        {formatDistanceToNow(new Date(lead.created_at), {
+                                                            addSuffix: true
+                                                        })}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleViewLead(lead)}
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            {/* Mobile View */}
+                            <div className="md:hidden divide-y divide-pampas">
                                 {filteredLeads.map((lead) => {
                                     const status = statusConfig[lead.status]
                                     return (
-                                        <TableRow key={lead.id}>
-                                            <TableCell className="font-medium">
-                                                {lead.nome}
-                                            </TableCell>
-                                            <TableCell>
-                                                <a
-                                                    href={`tel:${lead.telefone}`}
-                                                    className="text-brandy-rose-600 hover:underline"
-                                                >
-                                                    {lead.telefone}
-                                                </a>
-                                            </TableCell>
-                                            <TableCell>
-                                                {lead.cidade || '—'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge className={status.color}>
-                                                    {status.label}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-sm text-muted-foreground">
-                                                {formatDistanceToNow(new Date(lead.created_at), {
-                                                    addSuffix: true
-                                                })}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleViewLead(lead)}
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
+                                        <div
+                                            key={lead.id}
+                                            className="p-4 bg-white flex items-center justify-between hover:bg-desert-storm/50 cursor-pointer"
+                                            onClick={() => handleViewLead(lead)}
+                                        >
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-semibold text-foreground">
+                                                        {lead.nome}
+                                                    </span>
+                                                    <Badge className={`${status.color} text-[10px] h-4 px-1.5`}>
+                                                        {status.label}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex flex-col text-sm text-muted-foreground">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <MapPin className="w-3 h-3" />
+                                                        {lead.cidade || 'Charlotte, NC'}
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Clock className="w-3 h-3" />
+                                                        {formatDistanceToNow(new Date(lead.created_at), {
+                                                            addSuffix: true
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Button variant="ghost" size="icon" className="text-muted-foreground">
+                                                <Eye className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     )
                                 })}
-                            </TableBody>
-                        </Table>
+                            </div>
+                        </>
                     )}
                 </CardContent>
             </Card>

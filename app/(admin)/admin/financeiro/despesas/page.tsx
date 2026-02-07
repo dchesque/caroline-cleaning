@@ -1,11 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
     Table,
     TableBody,
@@ -22,83 +19,69 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogDescription,
-} from '@/components/ui/dialog'
-import {
-    ArrowLeft,
     Plus,
+    Tags,
     Search,
-    Loader2,
-    DollarSign,
-    TrendingDown,
+    Download,
     Filter,
+    Loader2,
+    Calendar as CalendarIcon,
     MoreHorizontal,
-    Pencil,
     Trash2,
-    PieChart as PieChartIcon,
-    Tags
 } from 'lucide-react'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
-import { TransactionForm } from '@/components/financeiro/transaction-form'
-import { ExpenseCategory } from '@/components/financeiro/expense-categories'
-import { CATEGORIAS_DESPESA, FORMAS_PAGAMENTO } from '@/components/financeiro/constants'
+import Link from 'next/link'
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu'
+import { Card, CardContent } from '@/components/ui/card'
 import {
-    PieChart,
-    Pie,
-    Cell,
-    ResponsiveContainer,
-    Tooltip as RechartsTooltip,
-    Legend
+    PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend
 } from 'recharts'
+import { TransitionForm } from '@/components/financeiro/transaction-form'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
-const PERIOD_OPTIONS = [
-    { value: 'this_month', label: 'Este Mês' },
-    { value: 'last_month', label: 'Mês Anterior' },
-    { value: 'last_3_months', label: 'Últimos 3 Meses' },
-    { value: 'this_year', label: 'Este Ano' },
-    { value: 'all', label: 'Todo o Período' },
-]
+interface Transaction {
+    id: string
+    tipo: 'receita' | 'custo'
+    categoria: string
+    descricao?: string
+    valor: number
+    data: string
+    status: string
+    forma_pagamento?: string
+}
 
-const COLORS = ['#C48B7F', '#6B8E6B', '#C4A35A', '#C17B7B', '#7B9EB8', '#8E8E8E'];
+const COLORS = ['#C17B7B', '#C48B7F', '#C4A35A', '#A18B72', '#8E8E8E'];
 
 export default function DespesasPage() {
+    const { t } = useAdminI18n()
+    const financeT = t('finance_transactions')
+    const common = t('common')
+
+    const [transactions, setTransactions] = useState<Transaction[]>([])
     const [loading, setLoading] = useState(true)
-    const [despesas, setDespesas] = useState<any[]>([])
-    const [summary, setSummary] = useState({
+    const [period, setPeriod] = useState('this_month')
+    const [categoryFilter, setCategoryFilter] = useState('all')
+    const [isFormOpen, setIsFormOpen] = useState(false)
+    const [stats, setStats] = useState({
         total: 0,
-        topCategory: '-',
+        topCategory: '',
         dailyAverage: 0
     })
-    const [categoryData, setCategoryData] = useState<any[]>([])
-    const [dbCategories, setDbCategories] = useState<any[]>([])
-
-    // Filters
-    const [searchTerm, setSearchTerm] = useState('')
-    const [categoryFilter, setCategoryFilter] = useState('all')
-    const [periodFilter, setPeriodFilter] = useState('this_month')
-
-    // Modals
-    const [isNewOpen, setIsNewOpen] = useState(false)
-    const [editingItem, setEditingItem] = useState<any | null>(null)
-    const [deletingItem, setDeletingItem] = useState<any | null>(null)
+    const [chartData, setChartData] = useState<any[]>([])
 
     const supabase = createClient()
 
-    const fetchDespesas = async () => {
+    useEffect(() => {
+        fetchTransactions()
+    }, [period, categoryFilter])
+
+    const fetchTransactions = async () => {
         setLoading(true)
         try {
             let query = supabase
@@ -107,121 +90,64 @@ export default function DespesasPage() {
                 .eq('tipo', 'custo')
                 .order('data', { ascending: false })
 
-            // Apply Period Filter
-            const now = new Date()
-            let startDate
-            let daysInPeriod = 30 // Approximate default
-
-            if (periodFilter === 'this_month') {
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-                daysInPeriod = now.getDate()
-            } else if (periodFilter === 'last_month') {
-                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-                const endDate = new Date(now.getFullYear(), now.getMonth(), 0)
-                query = query.lte('data', endDate.toISOString().split('T')[0])
-                daysInPeriod = endDate.getDate()
-            } else if (periodFilter === 'last_3_months') {
-                startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-                daysInPeriod = 90
-            } else if (periodFilter === 'this_year') {
-                startDate = new Date(now.getFullYear(), 0, 1)
-                const diff = now.getTime() - startDate.getTime()
-                daysInPeriod = Math.ceil(diff / (1000 * 3600 * 24))
-            }
-
-            if (startDate && periodFilter !== 'all') {
-                query = query.gte('data', startDate.toISOString().split('T')[0])
+            if (categoryFilter !== 'all') {
+                query = query.eq('categoria', categoryFilter)
             }
 
             const { data, error } = await query
 
             if (error) throw error
 
-            // Client-side filtering
-            let filtered = data || []
-
-            if (searchTerm) {
-                const lowerSearch = searchTerm.toLowerCase()
-                filtered = filtered.filter(item =>
-                    item.descricao?.toLowerCase().includes(lowerSearch)
-                )
+            if (data) {
+                setTransactions(data)
+                processStats(data)
             }
-
-            if (categoryFilter !== 'all') {
-                filtered = filtered.filter(item => item.categoria === categoryFilter)
-            }
-
-            setDespesas(filtered)
-
-            // Calculate Summary
-            const total = filtered.reduce((acc, r) => acc + r.valor, 0)
-
-            // Category Breakdown
-            const catMap = new Map<string, number>()
-            filtered.forEach(d => {
-                const current = catMap.get(d.categoria) || 0
-                catMap.set(d.categoria, current + d.valor)
-            })
-
-            const chartData = Array.from(catMap.entries()).map(([name, value]) => ({
-                name: CATEGORIAS_DESPESA.find(c => c.value === name)?.label || name,
-                value
-            })).sort((a, b) => b.value - a.value)
-
-            setCategoryData(chartData)
-
-            const topCat = chartData.length > 0 ? chartData[0].name : '-'
-            const dailyAvg = periodFilter !== 'all' && daysInPeriod > 0 ? total / daysInPeriod : 0
-
-            setSummary({
-                total,
-                topCategory: topCat,
-                dailyAverage: dailyAvg
-            })
-
         } catch (error) {
-            console.error('Erro ao buscar despesas:', error)
-            toast.error('Erro ao carregar despesas')
+            console.error(error)
+            toast.error(common.error)
         } finally {
             setLoading(false)
         }
     }
 
-    const fetchCategories = async () => {
-        const { data } = await supabase
-            .from('financeiro_categorias')
-            .select('*')
-            .eq('tipo', 'custo')
-            .eq('ativo', true)
-            .order('nome')
-        if (data) setDbCategories(data)
+    const processStats = (data: Transaction[]) => {
+        const total = data.reduce((acc, curr) => acc + curr.valor, 0)
+
+        // Group by category
+        const categories = new Map<string, number>()
+        data.forEach(t => {
+            const current = categories.get(t.categoria) || 0
+            categories.set(t.categoria, current + t.valor)
+        })
+
+        const sortedCategories = Array.from(categories.entries())
+            .sort((a, b) => b[1] - a[1])
+
+        const chart = sortedCategories.map(([name, value]) => ({ name, value }))
+        setChartData(chart)
+
+        setStats({
+            total,
+            topCategory: sortedCategories[0]?.[0] || '-',
+            dailyAverage: total / 30 // Rough estimate
+        })
     }
 
-    useEffect(() => {
-        fetchCategories()
-    }, [])
-
-    useEffect(() => {
-        fetchDespesas()
-    }, [periodFilter, searchTerm, categoryFilter])
-
-    const handleDelete = async () => {
-        if (!deletingItem) return
+    const handleDelete = async (id: string) => {
+        if (!confirm(common.confirmDeleteDesc)) return
 
         try {
             const { error } = await supabase
                 .from('financeiro')
                 .delete()
-                .eq('id', deletingItem.id)
+                .eq('id', id)
 
             if (error) throw error
-
-            toast.success('Despesa excluída com sucesso')
-            setDeletingItem(null)
-            fetchDespesas()
+            toast.success(common.success)
+            fetchTransactions()
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao excluir despesa')
+            toast.error(common.error)
         }
     }
 
@@ -229,183 +155,172 @@ export default function DespesasPage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href="/admin/financeiro">
-                            <ArrowLeft className="w-4 h-4" />
-                        </Link>
-                    </Button>
-                    <div>
-                        <h1 className="font-heading text-h2 text-foreground">Despesas</h1>
-                        <p className="text-body text-muted-foreground">
-                            Controle de custos e pagamentos
-                        </p>
-                    </div>
+                <div>
+                    <h1 className="font-heading text-h2 text-foreground">{financeT.expenses.title}</h1>
+                    <p className="text-body text-muted-foreground">
+                        {financeT.expenses.subtitle}
+                    </p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" asChild>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" asChild className="hidden sm:flex">
                         <Link href="/admin/financeiro/categorias">
                             <Tags className="w-4 h-4 mr-2" />
-                            Gerenciar Categorias
+                            {common.manageCategories || 'Categorias'}
                         </Link>
                     </Button>
-                    <Button onClick={() => setIsNewOpen(true)} className="bg-destructive hover:bg-destructive/90 text-white">
+                    <Button onClick={() => setIsFormOpen(true)} className="bg-destructive hover:bg-destructive/90">
                         <Plus className="w-4 h-4 mr-2" />
-                        Nova Despesa
+                        {financeT.expenses.newExpense}
                     </Button>
                 </div>
             </div>
 
+            {/* Content Grid */}
             <div className="grid lg:grid-cols-3 gap-6">
-                {/* Summary Cards */}
+                {/* Stats & Chart */}
+                <div className="lg:col-span-1 space-y-4">
+                    <Card>
+                        <CardContent className="pt-6">
+                            <p className="text-caption text-muted-foreground">{financeT.stats.periodTotal}</p>
+                            <p className="text-h3 font-semibold text-destructive">{formatCurrency(stats.total)}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <p className="text-caption text-muted-foreground">{financeT.stats.topCategory}</p>
+                            <p className="text-h4 font-medium text-foreground">{stats.topCategory}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <p className="text-caption text-muted-foreground">{financeT.stats.dailyAverage}</p>
+                            <p className="text-h4 font-medium text-foreground">{formatCurrency(stats.dailyAverage)}</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="h-[300px]">
+                        <CardContent className="pt-6 h-full">
+                            <p className="text-sm font-medium mb-4">{financeT.charts.byCategory}</p>
+                            <ResponsiveContainer width="100%" height="80%">
+                                <PieChart>
+                                    <Pie
+                                        data={chartData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={80}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {chartData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <RechartsTooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Table Section */}
                 <div className="lg:col-span-2 space-y-4">
-                    <div className="grid sm:grid-cols-3 gap-4">
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-caption text-muted-foreground">Total do Período</p>
-                                        <p className="text-h3 font-semibold text-destructive">{formatCurrency(summary.total)}</p>
-                                    </div>
-                                    <div className="p-3 bg-destructive/10 rounded-lg">
-                                        <TrendingDown className="w-6 h-6 text-destructive" />
-                                    </div>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="flex flex-wrap gap-4">
+                                <div className="flex-1 min-w-[150px]">
+                                    <Select value={period} onValueChange={setPeriod}>
+                                        <SelectTrigger>
+                                            <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
+                                            <SelectValue placeholder={common.period} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="this_month">{common.periods.thisMonth}</SelectItem>
+                                            <SelectItem value="last_month">{common.periods.lastMonth}</SelectItem>
+                                            <SelectItem value="last_3_months">{common.periods.last3Months}</SelectItem>
+                                            <SelectItem value="last_6_months">{common.periods.last6Months}</SelectItem>
+                                            <SelectItem value="this_year">{common.periods.thisYear}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-caption text-muted-foreground">Maior Categoria</p>
-                                        <p className="text-body font-semibold truncate max-w-[120px]" title={summary.topCategory}>{summary.topCategory}</p>
-                                    </div>
-                                    <div className="p-3 bg-warning/10 rounded-lg">
-                                        <PieChartIcon className="w-6 h-6 text-warning" />
-                                    </div>
+                                <div className="flex-1 min-w-[150px]">
+                                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                        <SelectTrigger>
+                                            <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                                            <SelectValue placeholder={financeT.filters.allCategories} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">{financeT.filters.allCategories}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-caption text-muted-foreground">Média Diária</p>
-                                        <p className="text-h3 font-semibold">{formatCurrency(summary.dailyAverage)}</p>
-                                    </div>
-                                    <div className="p-3 bg-info/10 rounded-lg">
-                                        <DollarSign className="w-6 h-6 text-info" />
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Table */}
-                    <div className="rounded-md border bg-white">
-                        <div className="p-4 border-b flex flex-col sm:flex-row gap-4">
-                            <div className="flex-1 relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Buscar por descrição..."
-                                    className="pl-9 bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                                <Button variant="outline" size="icon">
+                                    <Download className="w-4 h-4" />
+                                </Button>
                             </div>
-                            <div className="flex gap-2">
-                                <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                                    <SelectTrigger className="w-[140px] bg-white border-gray-200 shadow-sm">
-                                        <SelectValue placeholder="Período" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {PERIOD_OPTIONS.map(opt => (
-                                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                        </CardContent>
+                    </Card>
 
-                                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="w-[140px] bg-white border-gray-200 shadow-sm">
-                                        <SelectValue placeholder="Categoria" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Todas</SelectItem>
-                                        {dbCategories.map(cat => (
-                                            <SelectItem key={cat.id} value={cat.nome}>{cat.nome}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
+                    <div className="rounded-md border bg-white shadow-sm overflow-hidden">
                         <Table>
-                            <TableHeader>
+                            <TableHeader className="bg-muted/50">
                                 <TableRow>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead>Categoria</TableHead>
-                                    <TableHead>Descrição</TableHead>
-                                    <TableHead>Valor</TableHead>
-                                    <TableHead>Forma Pgto</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
+                                    <TableHead className="w-[120px]">{common.date}</TableHead>
+                                    <TableHead>{financeT.table.description}</TableHead>
+                                    <TableHead>{financeT.table.category}</TableHead>
+                                    <TableHead>{financeT.table.paymentMethod}</TableHead>
+                                    <TableHead className="text-right">{common.value}</TableHead>
+                                    <TableHead className="w-[50px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">
-                                            <div className="flex justify-center">
-                                                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                                        <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Loader2 className="w-8 h-8 animate-spin" />
+                                                <span>{common.loading}</span>
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : despesas.length === 0 ? (
+                                ) : transactions.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-64 text-center">
-                                            <div className="flex flex-col items-center justify-center text-muted-foreground">
-                                                <DollarSign className="w-12 h-12 mb-4 opacity-20" />
-                                                <p className="font-medium">Nenhuma despesa encontrada</p>
-                                                <p className="text-sm">Tente ajustar os filtros ou adicione uma nova despesa.</p>
-                                            </div>
+                                        <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
+                                            {common.noData}
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    despesas.map((despesa) => (
-                                        <TableRow key={despesa.id}>
-                                            <TableCell>{formatDate(despesa.data)}</TableCell>
-                                            <TableCell>
-                                                <ExpenseCategory category={despesa.categoria} />
-                                            </TableCell>
-                                            <TableCell className="max-w-[200px] truncate" title={despesa.descricao}>
-                                                {despesa.descricao}
-                                            </TableCell>
-                                            <TableCell className="font-medium">
-                                                {formatCurrency(despesa.valor)}
+                                    transactions.map((t) => (
+                                        <TableRow key={t.id} className="hover:bg-muted/50 transition-colors">
+                                            <TableCell className="text-sm font-medium">
+                                                {new Date(t.data).toLocaleDateString()}
                                             </TableCell>
                                             <TableCell>
-                                                {FORMAS_PAGAMENTO.find(f => f.value === despesa.forma_pagamento)?.label || despesa.forma_pagamento || '-'}
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-foreground">{t.descricao || '-'}</span>
+                                                    <span className="text-xs text-muted-foreground">ID: {t.id.slice(0, 8)}</span>
+                                                </div>
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell>
+                                                <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium">
+                                                    {t.categoria}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">{t.forma_pagamento || '-'}</TableCell>
+                                            <TableCell className="text-right font-semibold text-destructive">
+                                                {formatCurrency(t.valor)}
+                                            </TableCell>
+                                            <TableCell>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Open menu</span>
-                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                                                            <MoreHorizontal className="w-4 h-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => setEditingItem(despesa)}>
-                                                            <Pencil className="mr-2 h-4 w-4" /> Editar
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() => setDeletingItem(despesa)}
-                                                            className="text-destructive focus:text-destructive"
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                                                    <DropdownMenuContent align="end" className="w-[160px]">
+                                                        <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(t.id)}>
+                                                            <Trash2 className="w-4 h-4 mr-2" />
+                                                            {common.delete}
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -417,83 +332,17 @@ export default function DespesasPage() {
                         </Table>
                     </div>
                 </div>
-
-                {/* Pie Chart */}
-                <div>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-h4">Por Categoria</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-[300px]">
-                                {categoryData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={categoryData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={60}
-                                                outerRadius={80}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                            >
-                                                {categoryData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <RechartsTooltip
-                                                formatter={(value: any) => formatCurrency(value)}
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                            />
-                                            <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                                        Sem dados para exibir
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
             </div>
 
-            <TransactionForm
-                type="custo"
-                open={isNewOpen}
-                onOpenChange={setIsNewOpen}
-                onSuccess={fetchDespesas}
+            <TransitionForm
+                open={isFormOpen}
+                onOpenChange={setIsFormOpen}
+                tipo="custo"
+                onSuccess={() => {
+                    fetchTransactions()
+                    setIsFormOpen(false)
+                }}
             />
-
-            <TransactionForm
-                type="custo"
-                transaction={editingItem}
-                open={!!editingItem}
-                onOpenChange={(open) => !open && setEditingItem(null)}
-                onSuccess={fetchDespesas}
-            />
-
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Confirmar Exclusão</DialogTitle>
-                        <DialogDescription>
-                            Tem certeza que deseja excluir esta despesa? Esta ação não pode ser desfeita.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeletingItem(null)}>
-                            Cancelar
-                        </Button>
-                        <Button variant="destructive" onClick={handleDelete}>
-                            Excluir
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }

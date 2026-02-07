@@ -29,8 +29,13 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Loader2, Plus, Pencil, Trash2 } from 'lucide-react'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 export function CategoryManager() {
+    const { t } = useAdminI18n()
+    const categoriesT = t('finance_categories')
+    const common = t('common')
+
     const [categories, setCategories] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -59,7 +64,7 @@ export function CategoryManager() {
             setCategories(data || [])
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao carregar categorias')
+            toast.error(common.error)
         } finally {
             setLoading(false)
         }
@@ -101,26 +106,26 @@ export function CategoryManager() {
                     .update(formData)
                     .eq('id', editingCategory.id)
                 if (error) throw error
-                toast.success('Categoria atualizada!')
+                toast.success(common.success)
             } else {
                 const { error } = await supabase
                     .from('financeiro_categorias')
                     .insert([formData])
                 if (error) throw error
-                toast.success('Categoria criada!')
+                toast.success(common.success)
             }
             setIsDialogOpen(false)
             fetchCategories()
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao salvar categoria')
+            toast.error(common.error)
         } finally {
             setFormLoading(false)
         }
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Tem certeza que deseja desativar esta categoria?')) return
+        if (!confirm(common.confirmDeleteDesc || 'Tem certeza?')) return
 
         try {
             const { error } = await supabase
@@ -128,21 +133,21 @@ export function CategoryManager() {
                 .update({ ativo: false })
                 .eq('id', id)
             if (error) throw error
-            toast.success('Categoria removida!')
+            toast.success(common.success)
             fetchCategories()
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao remover categoria')
+            toast.error(common.error)
         }
     }
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-h4 font-semibold">Todas as Categorias</h2>
+                <h2 className="text-h4 font-semibold">{categoriesT.title}</h2>
                 <Button onClick={() => handleOpenDialog()} className="bg-primary hover:bg-primary/90">
                     <Plus className="w-4 h-4 mr-2" />
-                    Nova Categoria
+                    {categoriesT.newCategory}
                 </Button>
             </div>
 
@@ -150,9 +155,9 @@ export function CategoryManager() {
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow>
-                            <TableHead>Nome</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
+                            <TableHead>{categoriesT.table.name}</TableHead>
+                            <TableHead>{categoriesT.table.type}</TableHead>
+                            <TableHead className="text-right">{common.actions || 'Ações'}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -161,14 +166,14 @@ export function CategoryManager() {
                                 <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
                                     <div className="flex flex-col items-center gap-2">
                                         <Loader2 className="w-8 h-8 animate-spin" />
-                                        <span>Carregando categorias...</span>
+                                        <span>{common.loading || 'Carregando...'}</span>
                                     </div>
                                 </TableCell>
                             </TableRow>
                         ) : categories.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
-                                    Nenhuma categoria ativa encontrada.
+                                    {common.noResults || 'Nenhum resultado encontrado.'}
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -177,10 +182,10 @@ export function CategoryManager() {
                                     <TableCell className="font-medium text-foreground">{cat.nome}</TableCell>
                                     <TableCell>
                                         <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${cat.tipo === 'receita'
-                                                ? 'bg-success/10 text-success border border-success/20'
-                                                : 'bg-destructive/10 text-destructive border border-destructive/20'
+                                            ? 'bg-success/10 text-success border border-success/20'
+                                            : 'bg-destructive/10 text-destructive border border-destructive/20'
                                             }`}>
-                                            {cat.tipo === 'receita' ? 'Receita' : 'Despesa'}
+                                            {cat.tipo === 'receita' ? categoriesT.types.revenue : categoriesT.types.expense}
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -203,14 +208,14 @@ export function CategoryManager() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>{editingCategory ? 'Editar' : 'Nova'} Categoria</DialogTitle>
+                        <DialogTitle>{editingCategory ? common.edit : common.new || 'Novo'}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                         <div className="space-y-2">
-                            <Label htmlFor="nome">Nome da Categoria</Label>
+                            <Label htmlFor="nome">{categoriesT.fields.name}</Label>
                             <Input
                                 id="nome"
-                                placeholder="Ex: Manutenção, Consultoria..."
+                                placeholder={categoriesT.fields.namePlaceholder}
                                 value={formData.nome}
                                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                                 required
@@ -219,7 +224,7 @@ export function CategoryManager() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="tipo">Fluxo Financeiro</Label>
+                            <Label htmlFor="tipo">{categoriesT.fields.type}</Label>
                             <Select
                                 value={formData.tipo}
                                 onValueChange={(val) => setFormData({ ...formData, tipo: val })}
@@ -228,18 +233,18 @@ export function CategoryManager() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="receita">Receita (Entrada)</SelectItem>
-                                    <SelectItem value="custo">Despesa (Saída)</SelectItem>
+                                    <SelectItem value="receita">{categoriesT.types.revenue} ({common.inflow || 'Entrada'})</SelectItem>
+                                    <SelectItem value="custo">{categoriesT.types.expense} ({common.outflow || 'Saída'})</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <DialogFooter className="pt-2">
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1">
-                                Cancelar
+                                {common.cancel}
                             </Button>
                             <Button type="submit" disabled={formLoading} className="flex-1 bg-primary hover:bg-primary/90">
                                 {formLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                Salvar Categoria
+                                {common.save}
                             </Button>
                         </DialogFooter>
                     </form>
