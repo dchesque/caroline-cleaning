@@ -1,4 +1,10 @@
-# Changelog - v3.2.0 (2026-02-06)
+# Changelog - v3.2.4 (2026-02-07)
+
+## [3.2.4] - 2026-02-07
+### Fixed
+- **Correção Geral de Build**: Reescrita integral das páginas de `Despesas` e `Receitas` para eliminar erros de sintaxe JSX e nomes de variáveis inconsistentes.
+- **Internacionalização (i18n)**: Correção de erro de tipagem no `AdminI18nProvider` que bloqueava a compilação global.
+- **Módulo Financeiro**: Remoção de chaves de tradução dinâmicas inexistentes em `CategoryManager` e páginas financeiras, substituindo por fallbacks seguros.
 
 ## [3.2.3] - 2026-02-07
 ### Fixed

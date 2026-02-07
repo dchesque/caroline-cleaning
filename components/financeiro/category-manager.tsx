@@ -64,7 +64,7 @@ export function CategoryManager() {
             setCategories(data || [])
         } catch (error) {
             console.error(error)
-            toast.error(common.error)
+            toast.error('Erro ao processar operação')
         } finally {
             setLoading(false)
         }
@@ -106,26 +106,26 @@ export function CategoryManager() {
                     .update(formData)
                     .eq('id', editingCategory.id)
                 if (error) throw error
-                toast.success(common.success)
+                toast.success('Categoria atualizada com sucesso')
             } else {
                 const { error } = await supabase
                     .from('financeiro_categorias')
                     .insert([formData])
                 if (error) throw error
-                toast.success(common.success)
+                toast.success('Categoria criada com sucesso')
             }
             setIsDialogOpen(false)
             fetchCategories()
         } catch (error) {
             console.error(error)
-            toast.error(common.error)
+            toast.error('Erro ao salvar categoria')
         } finally {
             setFormLoading(false)
         }
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm(common.confirmDeleteDesc || 'Tem certeza?')) return
+        if (!confirm('Tem certeza que deseja remover esta categoria?')) return
 
         try {
             const { error } = await supabase
@@ -133,11 +133,11 @@ export function CategoryManager() {
                 .update({ ativo: false })
                 .eq('id', id)
             if (error) throw error
-            toast.success(common.success)
+            toast.success('Categoria removida com sucesso')
             fetchCategories()
         } catch (error) {
             console.error(error)
-            toast.error(common.error)
+            toast.error('Erro ao remover categoria')
         }
     }
 
@@ -147,7 +147,7 @@ export function CategoryManager() {
                 <h2 className="text-h4 font-semibold">{categoriesT.title}</h2>
                 <Button onClick={() => handleOpenDialog()} className="bg-primary hover:bg-primary/90">
                     <Plus className="w-4 h-4 mr-2" />
-                    {categoriesT.newCategory}
+                    Nova Categoria
                 </Button>
             </div>
 
@@ -155,9 +155,9 @@ export function CategoryManager() {
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow>
-                            <TableHead>{categoriesT.table.name}</TableHead>
-                            <TableHead>{categoriesT.table.type}</TableHead>
-                            <TableHead className="text-right">{common.actions || 'Ações'}</TableHead>
+                            <TableHead>Nome</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -166,14 +166,14 @@ export function CategoryManager() {
                                 <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
                                     <div className="flex flex-col items-center gap-2">
                                         <Loader2 className="w-8 h-8 animate-spin" />
-                                        <span>{common.loading || 'Carregando...'}</span>
+                                        <span>Carregando...</span>
                                     </div>
                                 </TableCell>
                             </TableRow>
                         ) : categories.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={3} className="h-48 text-center text-muted-foreground">
-                                    {common.noResults || 'Nenhum resultado encontrado.'}
+                                    Nenhum resultado encontrado.
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -185,7 +185,7 @@ export function CategoryManager() {
                                             ? 'bg-success/10 text-success border border-success/20'
                                             : 'bg-destructive/10 text-destructive border border-destructive/20'
                                             }`}>
-                                            {cat.tipo === 'receita' ? categoriesT.types.revenue : categoriesT.types.expense}
+                                            {cat.tipo === 'receita' ? 'Receita' : 'Despesa'}
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -208,14 +208,14 @@ export function CategoryManager() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
-                        <DialogTitle>{editingCategory ? common.edit : common.new || 'Novo'}</DialogTitle>
+                        <DialogTitle>{editingCategory ? 'Editar Categoria' : 'Nova Categoria'}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                         <div className="space-y-2">
-                            <Label htmlFor="nome">{categoriesT.fields.name}</Label>
+                            <Label htmlFor="nome">Nome</Label>
                             <Input
                                 id="nome"
-                                placeholder={categoriesT.fields.namePlaceholder}
+                                placeholder="Ex: Combustível, Alimentação..."
                                 value={formData.nome}
                                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                                 required
@@ -224,7 +224,7 @@ export function CategoryManager() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="tipo">{categoriesT.fields.type}</Label>
+                            <Label htmlFor="tipo">Tipo</Label>
                             <Select
                                 value={formData.tipo}
                                 onValueChange={(val) => setFormData({ ...formData, tipo: val })}
@@ -233,18 +233,18 @@ export function CategoryManager() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="receita">{categoriesT.types.revenue} ({common.inflow || 'Entrada'})</SelectItem>
-                                    <SelectItem value="custo">{categoriesT.types.expense} ({common.outflow || 'Saída'})</SelectItem>
+                                    <SelectItem value="receita">Receita (Entrada)</SelectItem>
+                                    <SelectItem value="custo">Despesa (Saída)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <DialogFooter className="pt-2">
                             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1">
-                                {common.cancel}
+                                Cancelar
                             </Button>
                             <Button type="submit" disabled={formLoading} className="flex-1 bg-primary hover:bg-primary/90">
                                 {formLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                {common.save}
+                                Salvar
                             </Button>
                         </DialogFooter>
                     </form>

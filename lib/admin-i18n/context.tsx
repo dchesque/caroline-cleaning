@@ -32,7 +32,7 @@ export function AdminI18nProvider({ children }: { children: ReactNode }) {
     // ou podemos fazer uma mais granular se preferir.
     // Para ser leve, vamos retornar a seção e usar nos componentes.
     const t = <T extends keyof TranslationKeys>(section: T): TranslationKeys[T] => {
-        return translations[locale][section];
+        return (translations[locale] as any)[section];
     };
 
     // Evita flash de conteúdo traduzido errado

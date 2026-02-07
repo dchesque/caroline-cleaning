@@ -53,7 +53,7 @@ interface AddonType {
 }
 
 export default function AddonsPage() {
-    const { t } = useAdminI18n()
+    const { t, locale } = useAdminI18n()
     const services = t('services')
     const common = t('common')
 
@@ -66,9 +66,9 @@ export default function AddonsPage() {
     const supabase = createClient()
 
     const TIPOS_COBRANCA = [
-        { value: 'fixo', label: services.addons.billingTypes.fixed },
-        { value: 'por_unidade', label: services.addons.billingTypes.perUnit },
-        { value: 'por_hora', label: services.addons.billingTypes.perHour },
+        { value: 'fixo', label: services.modals.addons.billingTypes.fixed },
+        { value: 'por_unidade', label: services.modals.addons.billingTypes.perUnit },
+        { value: 'por_hora', label: services.modals.addons.billingTypes.perHour },
     ]
 
     useEffect(() => {
@@ -84,7 +84,7 @@ export default function AddonsPage() {
 
         if (error) {
             console.error('Error fetching addons:', error)
-            toast.error(services.addons.errorLoading)
+            toast.error(services.modals.addons.errorLoading)
         } else {
             setAddons(data || [])
         }
@@ -116,12 +116,12 @@ export default function AddonsPage() {
         if (!editingItem) return
 
         if (!editingItem.codigo || !editingItem.nome) {
-            toast.error(services.addons.validation.addonRequired)
+            toast.error(services.modals.addons.validation.addonRequired)
             return
         }
 
         if (!/^[a-z_]+$/.test(editingItem.codigo)) {
-            toast.error(services.addons.validation.codeFormat)
+            toast.error(services.modals.addons.validation.codeFormat)
             return
         }
 
@@ -137,7 +137,7 @@ export default function AddonsPage() {
                     .eq('id', id)
 
                 if (error) throw error
-                toast.success(services.addons.successUpdate)
+                toast.success(services.modals.addons.successUpdate)
             } else {
                 // Insert
                 const { error } = await supabase
@@ -145,7 +145,7 @@ export default function AddonsPage() {
                     .insert(dataToSave)
 
                 if (error) throw error
-                toast.success(services.addons.successCreate)
+                toast.success(services.modals.addons.successCreate)
             }
 
             setIsModalOpen(false)
@@ -159,7 +159,7 @@ export default function AddonsPage() {
     }
 
     const handleDelete = async (id: string, nome: string) => {
-        if (!confirm(`${services.addons.confirmDelete} "${nome}"?`)) return
+        if (!confirm(`${services.modals.addons.confirmDelete} "${nome}"?`)) return
 
         try {
             const { error } = await supabase
@@ -168,7 +168,7 @@ export default function AddonsPage() {
                 .eq('id', id)
 
             if (error) throw error
-            toast.success(services.addons.successDelete)
+            toast.success(services.modals.addons.successDelete)
             fetchAddons()
         } catch (error) {
             console.error('Error deleting addon:', error)
@@ -184,7 +184,7 @@ export default function AddonsPage() {
                 .eq('id', item.id)
 
             if (error) throw error
-            toast.success(services.addons.successStatusUpdate)
+            toast.success(services.modals.addons.successStatusUpdate)
             fetchAddons()
         } catch (error) {
             console.error('Error toggling addon status:', error)
@@ -193,13 +193,13 @@ export default function AddonsPage() {
     }
 
     const getPriceLabel = (addon: AddonType) => {
-        const locale = common.locale === 'pt-BR' ? 'pt-BR' : 'en-US'
-        const currency = common.locale === 'pt-BR' ? 'BRL' : 'USD'
+        const isBR = locale === 'pt-BR'
+        const currency = isBR ? 'BRL' : 'USD'
         const price = new Intl.NumberFormat(locale, { style: 'currency', currency }).format(addon.preco)
 
         if (addon.tipo_cobranca === 'fixo') return price
-        if (addon.tipo_cobranca === 'por_hora') return `${price}/${services.addons.billingTypes.hourShort}`
-        if (addon.tipo_cobranca === 'por_unidade') return `${price}/${addon.unidade || services.addons.billingTypes.unitShort}`
+        if (addon.tipo_cobranca === 'por_hora') return `${price}/${services.modals.addons.billingTypes.hourShort}`
+        if (addon.tipo_cobranca === 'por_unidade') return `${price}/${addon.unidade || services.modals.addons.billingTypes.unitShort}`
         return price
     }
 
@@ -215,16 +215,16 @@ export default function AddonsPage() {
                     </Link>
                     <div>
                         <h1 className="font-heading text-2xl font-bold text-foreground">
-                            {services.addons.title}
+                            {services.modals.addons.title}
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            {services.addons.subtitle}
+                            {services.modals.addons.subtitle}
                         </p>
                     </div>
                 </div>
                 <Button onClick={handleCreate}>
                     <Plus className="w-4 h-4 mr-2" />
-                    {services.addons.newAddon}
+                    {services.modals.addons.newAddon}
                 </Button>
             </div>
 
@@ -259,7 +259,7 @@ export default function AddonsPage() {
 
                                 <div className="mb-4 flex-1">
                                     <p className="text-sm text-muted-foreground line-clamp-2">
-                                        {addon.descricao || services.addons.noDescription}
+                                        {addon.descricao || services.modals.addons.noDescription}
                                     </p>
                                 </div>
 
@@ -296,7 +296,7 @@ export default function AddonsPage() {
                         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                             <Plus className="w-6 h-6 text-primary" />
                         </div>
-                        <p className="font-semibold text-primary">{services.addons.newAddon}</p>
+                        <p className="font-semibold text-primary">{services.modals.addons.newAddon}</p>
                     </Card>
                 </div>
             )}
@@ -306,7 +306,7 @@ export default function AddonsPage() {
                 <DialogContent className="max-w-lg">
                     <DialogHeader>
                         <DialogTitle>
-                            {editingItem?.id ? common.edit : services.addons.newAddon}
+                            {editingItem?.id ? common.edit : services.modals.addons.newAddon}
                         </DialogTitle>
                     </DialogHeader>
 
@@ -314,7 +314,7 @@ export default function AddonsPage() {
                         <div className="grid gap-6 py-4">
                             <div className="grid sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>{services.addons.fields.name}</Label>
+                                    <Label>{services.modals.addons.fields.name}</Label>
                                     <Input
                                         value={editingItem.nome}
                                         onChange={e => setEditingItem({ ...editingItem, nome: e.target.value })}
@@ -322,7 +322,7 @@ export default function AddonsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>{services.addons.fields.code}</Label>
+                                    <Label>{services.modals.addons.fields.code}</Label>
                                     <Input
                                         value={editingItem.codigo}
                                         onChange={e => setEditingItem({ ...editingItem, codigo: e.target.value.toLowerCase() })}
@@ -333,7 +333,7 @@ export default function AddonsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>{services.addons.fields.description}</Label>
+                                <Label>{services.modals.addons.fields.description}</Label>
                                 <Textarea
                                     value={editingItem.descricao || ''}
                                     onChange={e => setEditingItem({ ...editingItem, descricao: e.target.value })}
@@ -343,7 +343,7 @@ export default function AddonsPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>{services.addons.fields.price}</Label>
+                                    <Label>{services.modals.addons.fields.price}</Label>
                                     <Input
                                         type="number"
                                         min="0"
@@ -353,7 +353,7 @@ export default function AddonsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>{services.addons.fields.billingType}</Label>
+                                    <Label>{services.modals.addons.fields.billingType}</Label>
                                     <Select
                                         value={editingItem.tipo_cobranca}
                                         onValueChange={(val: any) => setEditingItem({ ...editingItem, tipo_cobranca: val })}
@@ -372,7 +372,7 @@ export default function AddonsPage() {
 
                             {editingItem.tipo_cobranca === 'por_unidade' && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                    <Label>{services.addons.fields.unitName}</Label>
+                                    <Label>{services.modals.addons.fields.unitName}</Label>
                                     <Input
                                         value={editingItem.unidade || ''}
                                         onChange={e => setEditingItem({ ...editingItem, unidade: e.target.value })}
@@ -382,7 +382,7 @@ export default function AddonsPage() {
                             )}
 
                             <div className="space-y-2">
-                                <Label>{services.addons.fields.additionalTime}</Label>
+                                <Label>{services.modals.addons.fields.additionalTime}</Label>
                                 <div className="flex items-center gap-4">
                                     <Input
                                         type="number"
@@ -393,15 +393,15 @@ export default function AddonsPage() {
                                         className="w-32"
                                     />
                                     <p className="text-sm text-muted-foreground">
-                                        {services.addons.fields.additionalTimeHelp}
+                                        {services.modals.addons.fields.additionalTimeHelp}
                                     </p>
                                 </div>
                             </div>
 
                             <div className="flex items-center justify-between border rounded-lg p-3">
                                 <div className="space-y-0.5">
-                                    <Label className="text-base">{services.addons.fields.active}</Label>
-                                    <p className="text-xs text-muted-foreground">{services.addons.fields.activeHelp}</p>
+                                    <Label className="text-base">{services.modals.addons.fields.active}</Label>
+                                    <p className="text-xs text-muted-foreground">{services.modals.addons.fields.activeHelp}</p>
                                 </div>
                                 <Switch
                                     checked={editingItem.ativo}
