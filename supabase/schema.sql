@@ -723,8 +723,11 @@ INSERT INTO public.configuracoes (chave, valor, descricao, categoria) VALUES
 ON CONFLICT (chave) DO NOTHING;
 
 INSERT INTO public.areas_atendidas (nome, cidade, estado, zip_codes, ativo, ordem) VALUES
-  ('Charlotte', 'Charlotte', 'NC', ARRAY['28201','28202','28203','28204','28205'], TRUE, 1),
-  ('Fort Mill', 'Fort Mill', 'SC', ARRAY['29708','29715'], TRUE, 2)
+  ('Charlotte', 'Charlotte', 'NC', ARRAY['28201','28202','28203','28204','28205','28206','28207','28208','28209','28210','28211','28212','28213','28214','28215','28216','28217','28226','28227','28269','28270','28273','28277','28278'], TRUE, 1),
+  ('Fort Mill', 'Fort Mill', 'SC', ARRAY['29707','29708','29715','29716'], TRUE, 2),
+  ('Indian Land', 'Indian Land', 'SC', ARRAY['29707','29720'], TRUE, 3),
+  ('Pineville', 'Pineville', 'NC', ARRAY['28134','28210'], TRUE, 4),
+  ('Matthews', 'Matthews', 'NC', ARRAY['28104','28105','28106'], TRUE, 5)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.servicos_tipos (codigo, nome, descricao, multiplicador_preco, duracao_base_minutos, cor) VALUES
