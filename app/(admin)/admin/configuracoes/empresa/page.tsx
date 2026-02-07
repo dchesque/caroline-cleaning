@@ -365,7 +365,7 @@ export default function EmpresaConfigPage() {
                         className="py-4"
                     />
                     <ConfigLinkCard
-                        href="/admin/servicos" // Assuming areas fits here or use specific route
+                        href="/admin/configuracoes/areas"
                         icon={Map}
                         title={settingsT.company.relatedLinks.areas}
                         description={settingsT.company.relatedLinks.areasDesc}
