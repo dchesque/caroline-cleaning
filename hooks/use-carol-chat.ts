@@ -22,32 +22,18 @@ export function useCarolChat(): UseCarolChatReturn {
     const [sessionId, setSessionId] = useState<string>('')
     const [error, setError] = useState<string | null>(null)
 
-    // Inicializar session_id
+    // Inicializar session_id - SEMPRE novo a cada pageload (não persiste)
     useEffect(() => {
-        const stored = localStorage.getItem('carol_session_id')
-        if (stored) {
-            setSessionId(stored)
-
-            // Tentar carregar histórico do localStorage (opcional, já que Carol foca no banco)
-            const saved = localStorage.getItem(`chat_history_${stored}`)
-            if (saved) {
-                try {
-                    setMessages(JSON.parse(saved))
-                } catch (e) {
-                    console.error('Failed to parse saved chat history', e)
-                }
-            }
-        } else {
-            const newId = nanoid(16)
-            setSessionId(newId)
-            localStorage.setItem('carol_session_id', newId)
-        }
+        // Gerar novo session_id a cada vez que o componente monta (refresh = novo chat)
+        const newId = nanoid(16)
+        setSessionId(newId)
+        // Não persistir no localStorage - cada refresh é uma nova sessão
     }, [])
 
-    // Salvar no localStorage para persistência visual rápida
+    // Salvar no localStorage para persistência visual durante a sessão atual
     useEffect(() => {
         if (sessionId && messages.length > 0) {
-            localStorage.setItem(`chat_history_${sessionId}`, JSON.stringify(messages))
+            sessionStorage.setItem(`chat_history_${sessionId}`, JSON.stringify(messages))
         }
     }, [messages, sessionId])
 
@@ -122,14 +108,13 @@ export function useCarolChat(): UseCarolChatReturn {
 
     const clearMessages = useCallback(() => {
         if (sessionId) {
-            localStorage.removeItem(`chat_history_${sessionId}`)
+            sessionStorage.removeItem(`chat_history_${sessionId}`)
         }
         setMessages([])
         setError(null)
         // Gerar novo session_id para conversa limpa
         const newId = nanoid(16)
         setSessionId(newId)
-        localStorage.setItem('carol_session_id', newId)
     }, [sessionId])
 
     return {
