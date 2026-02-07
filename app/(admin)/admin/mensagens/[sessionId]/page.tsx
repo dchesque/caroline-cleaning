@@ -15,12 +15,15 @@ import {
     Mail,
     MapPin,
     Calendar,
-    UserPlus
+    UserPlus,
+    FileDown,
+    ScrollText
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { clsx } from 'clsx'
 import { cn } from '@/lib/utils'
+import { exportToMarkdown, exportLogs } from '@/lib/export-utils'
 
 export default function ConversaDetalhePage() {
     const params = useParams()
@@ -110,34 +113,58 @@ export default function ConversaDetalhePage() {
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" asChild className="rounded-full hover:bg-white shadow-sm border border-gray-100">
-                    <Link href="/admin/mensagens">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                </Button>
-                <div>
-                    <div className="flex items-center gap-3">
-                        <h1 className="font-heading text-h2 text-foreground">
-                            {leadInfo?.nome || 'Visitante'}
-                        </h1>
-                        {leadInfo?.contact_type === 'cliente' ? (
-                            <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 px-2 py-0.5">
-                                Cliente Registrado
-                            </Badge>
-                        ) : leadInfo?.contact_type === 'lead' ? (
-                            <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-100 px-2 py-0.5">
-                                Lead da Carol IA
-                            </Badge>
-                        ) : (
-                            <Badge variant="outline" className="text-muted-foreground font-normal px-2 py-0.5">
-                                Visitante
-                            </Badge>
-                        )}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild className="rounded-full hover:bg-white shadow-sm border border-gray-100">
+                        <Link href="/admin/mensagens">
+                            <ArrowLeft className="w-5 h-5" />
+                        </Link>
+                    </Button>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <h1 className="font-heading text-h2 text-foreground">
+                                {leadInfo?.nome || 'Visitante'}
+                            </h1>
+                            {leadInfo?.contact_type === 'cliente' ? (
+                                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 px-2 py-0.5">
+                                    Cliente Registrado
+                                </Badge>
+                            ) : leadInfo?.contact_type === 'lead' ? (
+                                <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-100 px-2 py-0.5">
+                                    Lead da Carol IA
+                                </Badge>
+                            ) : (
+                                <Badge variant="outline" className="text-muted-foreground font-normal px-2 py-0.5">
+                                    Visitante
+                                </Badge>
+                            )}
+                        </div>
+                        <p className="text-caption text-muted-foreground mt-0.5">
+                            ID da Sessão: <code className="bg-pampas px-1.5 py-0.5 rounded text-[10px]">{sessionId}</code>
+                        </p>
                     </div>
-                    <p className="text-caption text-muted-foreground mt-0.5">
-                        ID da Sessão: <code className="bg-pampas px-1.5 py-0.5 rounded text-[10px]">{sessionId}</code>
-                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 border-brandy-rose-200 text-brandy-rose-700 hover:bg-brandy-rose-50 hover:text-brandy-rose-800 transition-all duration-200 bg-white"
+                        onClick={() => exportLogs(messages, `logs-${leadInfo?.nome || 'visitante'}`)}
+                    >
+                        <ScrollText className="w-4 h-4" />
+                        <span className="hidden sm:inline">Baixar Logs</span>
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 border-brandy-rose-200 text-brandy-rose-700 hover:bg-brandy-rose-50 hover:text-brandy-rose-800 transition-all duration-200 bg-white"
+                        onClick={() => exportToMarkdown(messages, leadInfo, `conversa-${leadInfo?.nome || 'visitante'}`)}
+                    >
+                        <FileDown className="w-4 h-4" />
+                        <span className="hidden sm:inline">Exportar Markdown</span>
+                    </Button>
                 </div>
             </div>
 

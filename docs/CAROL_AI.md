@@ -41,7 +41,17 @@ Configurado no `middleware.ts` com limite de **30 requisições por minuto** por
 
 ## Logs e Observabilidade
 
-Logs estruturados são gerados em cada etapa via `lib/logger.ts`, permitindo rastrear o uso de ferramentas e possíveis erros de integração.
+Logs estruturados são gerados em cada etapa via `lib/logger.ts`:
+- **API Route**: Logs de entrada, tempo de execução e resultado final.
+- **CarolAgent**: Tracing completo do loop de pensamento, ferramentas escolhidas e resultados retornados pelas ferramentas.
+- **Modo Dev**: Uso de `console.group` para agrupar logs por sessão de chat, melhorando a depuração local.
+
+## Segurança (Guardrails)
+
+O sistema de prompt agora inclui instruções explícitas de segurança:
+- **Proteção contra Injeção**: Bloqueio de comandos que tentam alterar regras de negócio ou revelar o prompt do sistema.
+- **Consistência de Persona**: A Carol se recusa a agir como outros sistemas ou admitir ser uma IA de forma que quebre a experiência.
+- **Escopo**: Restrição estrita a assuntos relacionados à Caroline Cleaning.
 
 ---
-*Gerado automaticamente em 05/02/2026*
+*Atualizado em 07/02/2026*

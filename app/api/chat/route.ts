@@ -28,18 +28,23 @@ export async function POST(req: NextRequest) {
 
         // Garantir session_id
         const currentSessionId = sessionId || nanoid(16)
+        const startTime = Date.now()
 
-        logger.info('Processing chat message', {
+        logger.info('Chat Request Received', {
             sessionId: currentSessionId,
-            messageLength: message.length
+            messageLength: message.length,
+            timestamp: new Date().toISOString()
         })
 
         // Instanciar e processar com Carol
         const carol = new CarolAgent()
         const response: ChatResponse = await carol.chat(message, currentSessionId)
 
-        logger.info('Chat processed successfully', {
+        const duration = Date.now() - startTime
+
+        logger.info('Chat Request Completed', {
             sessionId: currentSessionId,
+            durationMs: duration,
             toolCallsExecuted: response.tool_calls_executed
         })
 
@@ -49,7 +54,10 @@ export async function POST(req: NextRequest) {
         }, { status: 200 })
 
     } catch (error) {
-        logger.error('Chat API error', { error })
+        logger.error('Chat API error', {
+            error,
+            timestamp: new Date().toISOString()
+        })
 
         const errorMessage = error instanceof Error ? error.message : 'Failed to process message'
 

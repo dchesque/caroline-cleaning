@@ -6,11 +6,11 @@ export function exportToExcel(data: any[], filename: string) {
 
   // Get headers from first object
   const headers = Object.keys(data[0])
-  
+
   // Create CSV content
   const csvContent = [
     headers.join(','),
-    ...data.map(row => 
+    ...data.map(row =>
       headers.map(header => {
         const value = row[header]
         // Handle nested objects
@@ -30,11 +30,11 @@ export function exportToExcel(data: any[], filename: string) {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
-  
+
   link.setAttribute('href', url)
   link.setAttribute('download', `${filename}-${new Date().toISOString().split('T')[0]}.csv`)
   link.style.visibility = 'hidden'
-  
+
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -150,11 +150,11 @@ export function exportToPDF(options: {
             ${data.slice(0, 50).map(row => `
               <tr>
                 ${Object.values(row).map(val => {
-                  if (typeof val === 'object' && val !== null) {
-                    return `<td>${(val as any).nome || JSON.stringify(val)}</td>`
-                  }
-                  return `<td>${val ?? '-'}</td>`
-                }).join('')}
+    if (typeof val === 'object' && val !== null) {
+      return `<td>${(val as any).nome || JSON.stringify(val)}</td>`
+    }
+    return `<td>${val ?? '-'}</td>`
+  }).join('')}
               </tr>
             `).join('')}
           </tbody>
@@ -180,4 +180,72 @@ export function exportToPDF(options: {
       printWindow.close()
     }, 250)
   }
+}
+
+// Export to Markdown
+export function exportToMarkdown(messages: any[], leadInfo: any, filename: string) {
+  if (!messages || messages.length === 0) return
+
+  const dateStr = new Date().toLocaleDateString('pt-BR')
+
+  let content = `# Relatório de Conversa - ${leadInfo?.nome || 'Visitante'}\n\n`
+  content += `**Data do Relatório:** ${dateStr}\n`
+  content += `**ID da Sessão:** ${messages[0]?.session_id || '-'}\n\n`
+
+  content += `## Informações do Lead/Cliente\n`
+  content += `- **Nome:** ${leadInfo?.nome || '-'}\n`
+  content += `- **Telefone:** ${leadInfo?.telefone || '-'}\n`
+  content += `- **E-mail:** ${leadInfo?.email || '-'}\n`
+  if (leadInfo?.zip_code) content += `- **ZIP Code:** ${leadInfo.zip_code}\n`
+  if (leadInfo?.servico_interesse) content += `- **Serviço de Interesse:** ${leadInfo.servico_interesse}\n`
+  content += `\n---\n\n## Histórico da Conversa\n\n`
+
+  messages.forEach(msg => {
+    const role = msg.role === 'user' ? '**Usuário**' : '**Carol IA**'
+    const time = new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    content += `### [${time}] ${role}\n${msg.content}\n\n`
+  })
+
+  // Create blob and download
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' })
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+
+  link.setAttribute('href', url)
+  link.setAttribute('download', `${filename}-${new Date().toISOString().split('T')[0]}.md`)
+  link.style.visibility = 'hidden'
+
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+/**
+ * Exporta logs técnicos da execução da IA para um arquivo .txt
+ */
+export function exportLogs(messages: any[], filename: string) {
+  let content = `LOGS DE EXECUÇÃO TÉCNICA - CAROL IA\n`
+  content += `==========================================\n\n`
+
+  const messagesWithLogs = messages.filter(m => m.role === 'assistant' && m.execution_logs)
+
+  if (messagesWithLogs.length === 0) {
+    content += `Nenhum log técnico encontrado para esta conversa.`
+  } else {
+    messagesWithLogs.forEach((msg, index) => {
+      const date = msg.created_at ? new Date(msg.created_at).toLocaleString('pt-BR') : 'Data n/a'
+      content += `--- TURN ${index + 1} (${date}) ---\n`
+      content += msg.execution_logs
+      content += `\n\n`
+    })
+  }
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${filename}-logs.txt`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }

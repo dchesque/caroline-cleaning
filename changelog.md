@@ -1,3 +1,24 @@
+# Changelog - v3.3.2 (2026-02-07)
+
+## [3.3.2] - 2026-02-07
+### Added
+- **Logs Persistentes**: Alteração no banco de dados para salvar os logs técnicos de execução da Carol IA em cada mensagem da assistente.
+- **Botão "Baixar Logs"**: Adicionado botão no painel de administração para baixar o arquivo `.txt` com o tracing técnico da IA.
+
+# Changelog - v3.3.1 (2026-02-07)
+
+## [3.3.1] - 2026-02-07
+### Added
+- **Logs de Depuração**: Implementação de logs detalhados na rota `/api/chat` e na classe `CarolAgent` para facilitar o rastreamento de erros e chamadas de ferramentas.
+- **Guardrails de Segurança**: Adição de proteções no sistema de prompt contra injeção de prompt (prompt injection), tentativas de jailbreak e fuga de escopo.
+
+# Changelog - v3.3.0 (2026-02-07)
+
+## [3.3.0] - 2026-02-07
+### Added
+- **Exportação de Conversa**: Novo botão na página de detalhes da mensagem (`/admin/mensagens/[sessionId]`) que permite exportar o histórico completo em formato Markdown (`.md`).
+- **Markdown Utility**: Função `exportToMarkdown` em `lib/export-utils.ts` para geração de relatórios de chat.
+
 # Changelog - v3.2.4 (2026-02-07)
 
 ## [3.2.4] - 2026-02-07

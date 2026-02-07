@@ -15,9 +15,24 @@ import type {
 
 export class CarolAgent {
     private model: string
+    private executionLogs: string[] = []
 
     constructor(model: string = MODELS.CLAUDE_SONNET) {
         this.model = model
+    }
+
+    /**
+     * Grava logs técnicos tanto no logger global quanto no acumulador da sessão
+     */
+    private trace(message: string, context?: Record<string, any>, level: 'info' | 'debug' | 'error' = 'info') {
+        const timestamp = new Date().toISOString()
+        const logEntry = `[${timestamp}] ${level.toUpperCase()}: ${message} ${context ? JSON.stringify(context) : ''}`
+        this.executionLogs.push(logEntry)
+
+        // Propagar para o logger global
+        if (level === 'info') logger.info(message, context)
+        else if (level === 'debug') logger.debug(message, context)
+        else if (level === 'error') logger.error(message, context)
     }
 
     /**
@@ -73,7 +88,7 @@ export class CarolAgent {
             .update({ contexto: newContext })
             .eq('id', sessionId)
 
-        logger.info('Session context updated', { sessionId, updates })
+        this.trace('Session context updated', { sessionId, updates })
     }
 
 
@@ -81,7 +96,7 @@ export class CarolAgent {
      * Processa uma mensagem do usuário e retorna a resposta da Carol
      */
     async chat(message: string, sessionId: string): Promise<ChatResponse> {
-        logger.info('Carol processing message', { sessionId, messageLength: message.length })
+        this.trace('Carol processing message', { sessionId, messageLength: message.length })
 
         const supabase = await createClient() // Para leitura
         const adminSupabase = createAdminClient() // Para escrita (bypass RLS)
@@ -95,7 +110,7 @@ export class CarolAgent {
             .limit(20)
 
         if (historyError) {
-            logger.error('Error fetching chat history', { sessionId, error: historyError })
+            this.trace('Error fetching chat history', { sessionId, error: historyError }, 'error')
         }
 
         // 1.1 Buscar contexto da sessão (memória persistente)
@@ -119,7 +134,7 @@ export class CarolAgent {
             })
 
         if (saveUserError) {
-            logger.error('Error saving user message', { sessionId, error: saveUserError })
+            this.trace('Error saving user message', { sessionId, error: saveUserError }, 'error')
         }
 
         // 3. Preparar mensagens para o LLM com data atual e contexto de dias
@@ -168,9 +183,16 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
             sessionContextStr += `\nUSE o cliente_id acima ao chamar create_booking! NÃO peça o telefone novamente!\n`
         }
 
-        // Buscar configurações dinâmicas
         const config = await this.getSystemConfig()
         const systemPrompt = buildCarolPrompt(config)
+
+        if (process.env.NODE_ENV === 'development') {
+            console.group(`🤖 CAROL CHAT - ${sessionId}`)
+            this.trace('Context constructed', {
+                dateContext: dateContext.trim(),
+                sessionContext: sessionContextStr.trim()
+            }, 'debug')
+        }
 
         const apiMessages: any[] = [
             { role: 'system', content: systemPrompt + '\n\n' + dateContext + sessionContextStr },
@@ -200,14 +222,19 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                 currentMessages.push(assistantMessage)
 
                 if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-                    logger.info('Carol executing tool calls', {
+                    this.trace('Carol deciding to use tools', {
                         sessionId,
-                        count: assistantMessage.tool_calls.length
+                        tools: (assistantMessage.tool_calls as any[]).map(tc => tc.function?.name)
                     })
 
                     for (const toolCall of assistantMessage.tool_calls) {
                         const toolResult = await this.executeTool(toolCall as unknown as ToolCall, sessionId)
                         toolCallsExecuted++
+
+                        this.trace('Tool execution result', {
+                            tool: (toolCall as any).function?.name,
+                            result: toolResult
+                        }, 'debug')
 
                         currentMessages.push({
                             role: 'tool',
@@ -218,6 +245,10 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                     // Loop continua para a IA processar os resultados das tools
                 } else {
                     finalContent = assistantMessage.content || ''
+                    this.trace('Carol generated final response', {
+                        sessionId,
+                        charCount: finalContent.length
+                    })
                     keepProcessing = false
                 }
             }
@@ -229,11 +260,12 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                     session_id: sessionId,
                     role: 'assistant',
                     content: finalContent,
-                    source: 'website'
+                    source: 'website',
+                    execution_logs: this.executionLogs.join('\n')
                 })
 
             if (saveAssistantError) {
-                logger.error('Error saving assistant message', { sessionId, error: saveAssistantError })
+                this.trace('Error saving assistant message', { sessionId, error: saveAssistantError }, 'error')
             }
 
             // 6. Atualizar última atividade da sessão (usando admin para bypass RLS)
@@ -245,6 +277,10 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                     status: 'active'
                 })
 
+            if (process.env.NODE_ENV === 'development') {
+                console.groupEnd()
+            }
+
             return {
                 message: finalContent,
                 session_id: sessionId,
@@ -253,7 +289,7 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
             }
 
         } catch (error) {
-            logger.error('Carol Agent chat error', { sessionId, error })
+            this.trace('Carol Agent chat error', { sessionId, error }, 'error')
             throw error
         }
     }
@@ -265,7 +301,7 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
         const { name, arguments: argsString } = toolCall.function
         const params = JSON.parse(argsString)
 
-        logger.info('Executing tool', { toolName: name, sessionId, params })
+        this.trace('Executing tool', { toolName: name, sessionId, params })
 
         try {
             let result: any
@@ -324,7 +360,7 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                     return { error: `Tool ${name} not implemented` }
             }
         } catch (error) {
-            logger.error('Tool execution error', { toolName: name, sessionId, error })
+            this.trace('Tool execution error', { toolName: name, sessionId, error }, 'error')
             return { error: 'Failed to execute tool' }
         }
     }
