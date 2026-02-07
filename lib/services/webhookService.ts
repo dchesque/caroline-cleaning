@@ -78,7 +78,7 @@ class WebhookService {
                         date: data.date || data.data,
                         time: data.time_start || data.horario,
                         service: data.service_type || data.tipo
-                    }) as any;
+                    }, data.canal_preferencia || 'sms') as any;
 
                     if (result.success) {
                         return { success: true, data: { channel: 'twilio', sid: result.messageSid } };

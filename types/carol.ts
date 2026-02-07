@@ -51,13 +51,10 @@ export interface CreateLeadParams {
     name: string
     phone: string
     email?: string
-    address?: {
-        street?: string
-        city?: string
-        state?: string
-        zip_code?: string
-    }
+    address?: string
+    zip_code?: string
     notes?: string
+    canal_preferencia?: 'sms' | 'whatsapp'
 }
 
 export interface CreateBookingParams {
@@ -68,6 +65,7 @@ export interface CreateBookingParams {
     duration_minutes: number
     total_price: number
     special_instructions?: string
+    canal_preferencia?: 'sms' | 'whatsapp'
 }
 
 export interface CheckZipCoverageParams {

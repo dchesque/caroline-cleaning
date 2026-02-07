@@ -324,7 +324,9 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                         await this.updateSessionContext(sessionId, {
                             cliente_id: result.cliente_id,
                             cliente_nome: params.name,
-                            cliente_telefone: params.phone
+                            cliente_telefone: params.phone,
+                            cliente_endereco: params.address,
+                            cliente_zip: params.zip_code
                         })
                     }
                     return result
@@ -422,12 +424,13 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                 nome: params.name,
                 telefone: params.phone,
                 email: params.email,
-                endereco_completo: params.address?.street || '',
-                zip_code: params.address?.zip_code,
+                endereco_completo: params.address || '',
+                zip_code: params.zip_code,
                 notas: params.notes,
                 status: 'lead',
                 origem: 'website',
-                origem_detalhe: 'carol-chat'
+                origem_detalhe: 'carol-chat',
+                canal_preferencia: params.canal_preferencia || 'sms'
             })
             .select()
             .single()
@@ -498,7 +501,8 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terça-feir
                 duracao_minutos: params.duration_minutes,
                 valor: params.total_price || 0,
                 status: 'agendado',
-                notas: params.special_instructions
+                notas: params.special_instructions,
+                canal_preferencia: params.canal_preferencia || 'sms'
             })
             .select()
             .single()

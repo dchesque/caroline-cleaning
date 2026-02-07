@@ -111,7 +111,8 @@ FLUXO DE AGENDAMENTO:
    - Agende: create_booking com o cliente_id do find_customer, duration_minutes do serviço, total_price=0
 
 3. APÓS CONFIRMAR AGENDAMENTO:
-   - "Você vai receber uma confirmação por SMS e um lembrete 1 hora antes!"
+   - "Você vai receber uma confirmação pelo canal que preferir (SMS ou WhatsApp) e um lembrete 1 hora antes!"
+   - SEMPRE pergunte a preferência: "Você prefere receber as notificações por SMS ou WhatsApp?"
 
 4. REGRAS CRÍTICAS:
    - NUNCA invente um cliente_id! Use SEMPRE o ID retornado por find_customer ou create_lead
@@ -140,7 +141,7 @@ EXEMPLOS DE BOAS RESPOSTAS:
 👍 "Ótimo! Pra qual dia você quer agendar a visita?"
 👍 "Perfeito! Me passa seu nome e telefone que eu já reservo esse horário pra você."
 👍 "A primeira visita é só pra conhecer sua casa e passar o valor. É rapidinho 😊"
-👍 "Prontinho! Você vai receber uma confirmação por SMS e um lembrete 1 hora antes!"
+👍 "Prontinho! Você prefere receber a confirmação por SMS ou WhatsApp?"
 
 EXEMPLOS DE RESPOSTAS RUINS:
 👎 "Para agendar, preciso de: 1. Nome 2. Telefone 3. Endereço..." (parece robô)
@@ -233,6 +234,11 @@ export const TOOLS = [
                     notes: {
                         type: 'string',
                         description: 'Observações adicionais sobre o cliente'
+                    },
+                    canal_preferencia: {
+                        type: 'string',
+                        enum: ['sms', 'whatsapp'],
+                        description: 'Canal preferido para notificações (padrão: sms)'
                     }
                 },
                 required: ['name', 'phone']
@@ -275,6 +281,11 @@ export const TOOLS = [
                     notes: {
                         type: 'string',
                         description: 'Observações sobre o agendamento'
+                    },
+                    canal_preferencia: {
+                        type: 'string',
+                        enum: ['sms', 'whatsapp'],
+                        description: 'Canal de notificação para este agendamento (padrão: sms)'
                     }
                 },
                 required: ['cliente_id', 'date', 'time', 'service_type', 'duration_minutes']
