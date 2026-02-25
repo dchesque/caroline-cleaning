@@ -1,3 +1,10 @@
+# Changelog - v3.3.3 (2026-02-25)
+
+## [3.3.3] - 2026-02-25
+### Fixed
+- **Performance do Middleware**: Otimização radical do middleware para reduzir latência de login/navegação em >3s, ignorando assets e executando `getUser` apenas sob demanda.
+- **Bloqueio Admin**: Correção do erro "Bloqueado" ao acessar `/admin`, causado por conflitos de headers RSC e redirecionamentos ineficientes.
+
 # Changelog - v3.3.2 (2026-02-07)
 
 ## [3.3.2] - 2026-02-07

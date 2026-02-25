@@ -15,7 +15,7 @@ export async function updateSession(request: NextRequest) {
                     return request.cookies.getAll()
                 },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) =>
+                    cookiesToSet.forEach(({ name, value }) =>
                         request.cookies.set(name, value)
                     )
                     supabaseResponse = NextResponse.next({
@@ -29,6 +29,8 @@ export async function updateSession(request: NextRequest) {
         }
     )
 
+    // Apenas atualiza a sessão se necessário. 
+    // Em middlewares específicos de Supabase, geralmente queremos apenas garantir que o cookie de refresh seja enviado.
     await supabase.auth.getUser()
 
     return supabaseResponse

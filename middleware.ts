@@ -24,18 +24,23 @@ function rateLimit(ip: string, limit: number = 100, windowMs: number = 60000): b
 }
 
 export async function middleware(request: NextRequest) {
-    // Skip middleware for health and ready endpoints
-    if (request.nextUrl.pathname === '/api/health' ||
-        request.nextUrl.pathname === '/api/ready') {
+    const { pathname } = request.nextUrl
+
+    // 1. Skip middleware for health, ready, static assets and favicon early
+    if (
+        pathname === '/api/health' ||
+        pathname === '/api/ready' ||
+        pathname.startsWith('/_next/') ||
+        pathname.includes('/favicon.ico') ||
+        pathname.includes('.') // common for static files
+    ) {
         return NextResponse.next()
     }
 
-    // Rate limiting for APIs
-    if (request.nextUrl.pathname.startsWith('/api/')) {
+    // 2. Rate limiting for APIs
+    if (pathname.startsWith('/api/')) {
         const ip = (request as any).ip || request.headers.get('x-forwarded-for') || 'unknown'
-
-        // Stricter limit for chat
-        const limit = request.nextUrl.pathname === '/api/chat' ? 30 : 100
+        const limit = pathname === '/api/chat' ? 30 : 100
 
         if (!rateLimit(ip, limit)) {
             return NextResponse.json(
@@ -45,6 +50,7 @@ export async function middleware(request: NextRequest) {
         }
     }
 
+    // 3. Supabase session handling
     let supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(
@@ -66,23 +72,26 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    const { data: { user } } = await supabase.auth.getUser()
-    const { pathname } = request.nextUrl
+    // IMPORTANT: getUser() is expensive (50-100ms + Roundtrip). 
+    // Only call it if we are on a protected route or login page.
+    const isProtectedRoute = pathname.startsWith('/admin')
+    const isLoginPage = pathname === '/login'
 
-    // Rotas protegidas
-    if (pathname.startsWith('/admin')) {
-        if (!user) {
+    if (isProtectedRoute || isLoginPage) {
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (isProtectedRoute && !user) {
             const url = request.nextUrl.clone()
             url.pathname = '/login'
+            // Keep original query params if needed
             return NextResponse.redirect(url)
         }
-    }
 
-    // Redirecionar se já logado
-    if (pathname === '/login' && user) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/admin'
-        return NextResponse.redirect(url)
+        if (isLoginPage && user) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/admin'
+            return NextResponse.redirect(url)
+        }
     }
 
     return supabaseResponse
@@ -90,9 +99,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        '/admin/:path*',
-        '/login',
-        // Excluir explicitamente rotas de saúde do matcher
-        '/((?!api/health|api/ready|_next/static|_next/image|favicon.ico).*)',
+        /*
+         * Match all request paths except for the ones starting with:
+         * - api (specifically excluding health/ready if needed, though handled in code)
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         */
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 }
