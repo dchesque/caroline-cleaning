@@ -21,6 +21,7 @@ Carol possui acesso às seguintes capacidades dinâmicas:
 -   `create_lead`: Registra informações de contato na tabela `clientes`.
 -   `create_booking`: Cria agendamentos confirmados na tabela `agendamentos`.
 -   `check_zip_coverage`: Valida cobertura de área via RPC `check_zip_code_coverage`.
+-   `find_customer`: Busca clientes existentes na base pelo telefone normalizado.
 
 ## Configuração
 
@@ -52,6 +53,10 @@ O sistema de prompt agora inclui instruções explícitas de segurança:
 - **Proteção contra Injeção**: Bloqueio de comandos que tentam alterar regras de negócio ou revelar o prompt do sistema.
 - **Consistência de Persona**: A Carol se recusa a agir como outros sistemas ou admitir ser uma IA de forma que quebre a experiência.
 - **Escopo**: Restrição estrita a assuntos relacionados à Caroline Cleaning.
+- **Policies de Anon e RLS**: Melhoria significativa de acesso utilizando policies de `anon` no Supabase e bypass intencional via `adminSupabase` quando necessário, garantindo que usuários deslogados possam interagir livremente na interface web em suas sessões limitadas.
+- **Security Definer**: Funções RPC como `get_available_slots` ajustadas para "security definer" para evitar restrições de RLS indevidas ao recuperar dados.
 
 ---
-*Atualizado em 07/02/2026*
+*Atualizado em 06/03/2026*
+
+**Nota de Correções Recentes:** Foram aplicadas correções de RLS e Security Definer no banco de dados, além de novas áreas implementadas em código com tratamento otimizado. Adicionou-se loop limits de agents e fallback elegante para serviços de orçamentos.

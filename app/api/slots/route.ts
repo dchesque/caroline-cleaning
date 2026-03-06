@@ -1,23 +1,35 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const supabase = await createClient()
 
-        // In a real scenario, we would call the RPC function:
-        // const { data, error } = await supabase.rpc('get_available_slots', { ... })
+        const { searchParams } = new URL(request.url)
+        const date = searchParams.get('date')
+        const durationParam = searchParams.get('duration')
+        const duration = durationParam ? parseInt(durationParam, 10) : 180
 
-        // For Phase 3, we can return mock slots to verify the endpoint works
-        const mockSlots = [
-            { date: '2025-12-15', times: ['09:00', '14:00'] },
-            { date: '2025-12-16', times: ['10:00', '15:00'] },
-        ]
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return NextResponse.json(
+                { success: false, error: 'Date is required and must be in YYYY-MM-DD format' },
+                { status: 400 }
+            )
+        }
 
-        return NextResponse.json({ slots: mockSlots })
+        const { data, error } = await supabase.rpc('get_available_slots', {
+            p_data: date,
+            p_duracao_minutos: duration
+        })
+
+        if (error) throw error
+
+        const availableSlots = (data || []).filter((s: any) => s.disponivel)
+
+        return NextResponse.json({ success: true, date, slots: availableSlots })
     } catch (error) {
         return NextResponse.json(
-            { error: 'Internal Server Error' },
+            { success: false, error: 'Internal Server Error' },
             { status: 500 }
         )
     }

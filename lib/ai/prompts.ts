@@ -268,8 +268,8 @@ export const TOOLS = [
                     },
                     service_type: {
                         type: 'string',
-                        enum: ['visit', 'regular', 'deep', 'move_in_out', 'post_construction'],
-                        description: 'Tipo de serviço: visit (visita de orçamento), regular, deep, move_in_out, post_construction'
+                        enum: ['visit', 'regular', 'deep', 'move_in_out'],
+                        description: 'Tipo de serviço: visit (visita de orçamento), regular, deep, move_in_out'
                     },
                     duration_minutes: {
                         type: 'number',

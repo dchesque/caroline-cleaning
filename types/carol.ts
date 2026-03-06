@@ -60,10 +60,12 @@ export interface CreateLeadParams {
 export interface CreateBookingParams {
     cliente_id: string
     date: string
-    time_slot: string // HH:MM
+    time: string // HH:MM
+    time_slot?: string // HH:MM
     service_type: string
     duration_minutes: number
     total_price: number
+    notes?: string
     special_instructions?: string
     canal_preferencia?: 'sms' | 'whatsapp'
 }

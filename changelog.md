@@ -1,5 +1,12 @@
-# Changelog - v3.3.3 (2026-02-25)
+# Changelog - v3.3.4 (2026-03-06)
 
+## [3.3.4] - 2026-03-06
+### Fixed
+- **Carol AI**: Corrigida a inicialização do `adminSupabase` e leituras de configurações do banco (`configuracoes`).
+- **Tools Carol AI**: Implementado normalização de telefone, fallback para orçamentos (remoção de cálculo direto) e alinhamento de parâmetros entre schema e executor da IA.
+- **Segurança e Estabilidade**: Endpoint `/api/slots` agora utiliza funções persistentes no banco de dados. Limite de loops lógicos incluído no agente.
+
+# Changelog - v3.3.3 (2026-02-25)
 ## [3.3.3] - 2026-02-25
 ### Fixed
 - **Performance do Middleware**: Otimização radical do middleware para reduzir latência de login/navegação em >3s, ignorando assets e executando `getUser` apenas sob demanda.
