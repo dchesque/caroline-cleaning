@@ -2,7 +2,7 @@
 
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { ConfigLinkCard } from '@/components/admin/config-link-card'
-import { Building2, Layout, Cog, BarChart3, FileText } from 'lucide-react'
+import { Building2, Layout, Cog, BarChart3 } from 'lucide-react'
 
 export default function ConfiguracoesPage() {
     const { t } = useAdminI18n()
@@ -44,13 +44,6 @@ export default function ConfiguracoesPage() {
                     icon={BarChart3}
                     title={settings.overview.trackingCard.title}
                     description={settings.overview.trackingCard.description}
-                />
-
-                <ConfigLinkCard
-                    href="/admin/configuracoes/webhooks"
-                    icon={FileText}
-                    title={settings.overview.webhooksCard.title}
-                    description={settings.overview.webhooksCard.description}
                 />
             </div>
 

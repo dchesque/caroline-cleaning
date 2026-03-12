@@ -1,3 +1,12 @@
+# Changelog - v3.3.6 (2026-03-12)
+
+## [3.3.6] - 2026-03-12
+### Changed
+- **Configurações Admin**: Remoção completa da aba e página de configurações de Webhooks, que não será mais utilizada.
+
+### Fixed
+- **Seletor de Idioma**: Substituição dos emojis de bandeira por SVGs nativos para garantir renderização correta em sistemas OS Windows.
+
 # Changelog - v3.3.5 (2026-03-12)
 
 ## [3.3.5] - 2026-03-12

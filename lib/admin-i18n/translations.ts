@@ -93,7 +93,6 @@ export const translations = {
             settingsLanding: 'Página Inicial',
             settingsSystem: 'Sistema',
             settingsTracking: 'Trackeamento',
-            settingsWebhooks: 'Webhooks',
             menu: 'Menu de Navegação',
         },
         dashboard: {
@@ -720,10 +719,6 @@ export const translations = {
                 trackingCard: {
                     title: 'Trackeamento',
                     description: 'Pixels, tags e scripts de rastreamento',
-                },
-                webhooksCard: {
-                    title: 'Webhooks',
-                    description: 'Documentação técnica e integração com n8n',
                 },
             },
 
