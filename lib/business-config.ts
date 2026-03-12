@@ -21,7 +21,6 @@ export interface BusinessSettings {
     hero_title_2: string;
     hero_subtitle: string;
     hero_cta_text: string;
-    hero_cta_secondary: string;
     hero_image: string;
 
     // Página Inicial - Badges
@@ -53,6 +52,10 @@ export interface BusinessSettings {
     about_note: string;
     about_quote: string;
     about_highlights: string[];
+    about_divider_subtitle: string;
+    about_bio_p1: string;
+    about_bio_p2: string;
+    about_bio_p3: string;
     about_founder_name: string;
     about_founder_role: string;
 
@@ -160,25 +163,24 @@ export interface BusinessSettings {
 }
 
 export const DEFAULT_SETTINGS: BusinessSettings = {
-    business_name: 'Caroline Premium Cleaning',
+    business_name: 'Carolina Premium Cleaning',
     business_phone: '(551) 389-7394',
     business_phone_display: '(551) 389-7394',
     business_email: 'hello@carolinecleaning.com',
     business_address: '123 Ocean Drive, Miami, FL 33139',
     business_website: 'www.carolinecleaning.com',
     business_logo: '',
-    business_description: 'Serving Charlotte, NC and nearby cities with premium cleaning services.',
+    business_description: 'Serving Fort Mill, SC, Charlotte, NC, and nearby cities with premium cleaning services.',
     social_facebook: '',
     social_instagram: '',
     social_twitter: '',
     social_google: '',
 
-    hero_title: 'Premium Cleaning for Homes & Offices in Charlotte & Fort Mill',
+    hero_title: 'Premium Cleaning for Homes & Offices in Fort Mill & Charlotte',
     hero_title_1: 'Premium Cleaning for Homes & Offices in',
-    hero_title_2: 'Charlotte & Fort Mill',
+    hero_title_2: 'Fort Mill & Charlotte',
     hero_subtitle: 'Reliable residential and commercial cleaning services with carefully selected professionals, flexible scheduling, and consistent results. Schedule in just a few minutes.',
     hero_cta_text: 'Schedule a Visit',
-    hero_cta_secondary: 'Talk to Carol',
     hero_image: '',
 
     badges_enabled: true,
@@ -191,7 +193,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     chat_bot_name: 'Carol',
     ai_name: 'Carol',
     ai_avatar: '',
-    ai_greeting: "Hi! I'm Carol from Caroline Premium Cleaning. How can I help you today?",
+    ai_greeting: "Hi! I'm Carol from Carolina Premium Cleaning. How can I help you today?",
     chat_position: 'bottom-right',
 
     faq_title: 'Frequently Asked Questions',
@@ -199,15 +201,11 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     faq_items: [
         {
             question: "Which areas do you serve?",
-            answer: "We serve Charlotte, NC, Fort Mill, SC, and nearby cities in the surrounding region. Text us your ZIP code and we'll confirm availability.",
+            answer: "We serve Fort Mill and Charlotte, and nearby cities in the surrounding region. Text us your ZIP code and we'll confirm availability.",
         },
         {
             question: "Do you clean both homes and offices?",
             answer: "Yes! We offer residential and office cleaning with flexible scheduling options for both.",
-        },
-        {
-            question: "Are you insured?",
-            answer: "Yes — we're fully bonded and insured for your complete peace of mind.",
         },
         {
             question: "Are your cleaners background-checked?",
@@ -215,7 +213,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
         },
         {
             question: "What's your cancellation policy?",
-            answer: "Life happens! You can reschedule or cancel with 24-hour notice — no fees, no hassle. We understand plans change.",
+            answer: "You can reschedule or cancel with 48-hour notice — no fees, no hassle. We understand plans change.",
         },
         {
             question: "Do I need to sign a contract?",
@@ -231,7 +229,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
         },
         {
             question: "Do you bring supplies and equipment?",
-            answer: "Yes — we bring all professional-grade supplies and equipment. If you prefer we use specific products, just let us know!",
+            answer: "Supplies and equipment are provided by the client by default. However, we can provide professional-grade supplies if agreed in advance — just let us know!",
         },
         {
             question: "Do you clean homes with pets?",
@@ -247,23 +245,27 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
         },
         {
             question: "What if I'm not satisfied?",
-            answer: "We stand behind our work with a 100% satisfaction guarantee. If we miss something, let us know within 24 hours and we'll re-clean the area for free.",
+            answer: "If anything does not meet your expectations, we will make it right at no extra cost.",
         }
     ],
 
-    about_title: 'Commitment to Quality & Trust',
+    about_title: 'Built on Trust. Delivered with Care.',
     about_image: '/images/thayna.jpg',
-    about_intro_p1: 'Every cleaning follows a rigorous quality standard with close attention to detail.',
-    about_intro_p2: 'If anything does not meet your expectations, we will make the necessary adjustments.',
-    about_note: 'We proudly serve Charlotte, NC & Fort Mill, SC with a local focus and personalized service. Once you become a client, we keep your preferences on file to ensure consistency at every visit.',
-    about_quote: 'Our goal is simple: deliver high-quality cleaning with trust and no complications.',
+    about_intro_p1: 'Every cleaning follows the highest quality standards with close attention to detail.',
+    about_intro_p2: 'If anything does not meet your expectations, we will make it right at no extra cost.',
+    about_note: 'We proudly serve Fort Mill, SC & Charlotte, NC with a local focus and personalized service. Once you become a client, we keep your preferences on file to ensure consistency at every visit.',
+    about_quote: 'Our goal is simple: your home should feel fresh, clean, and taken care of — every single time.',
     about_highlights: [
         'Experienced professionals',
-        'Well-defined processes',
+        'Proven cleaning process',
         'Commitment to excellence',
         'Freedom to pause or cancel anytime',
     ],
-    about_founder_name: 'Thayna',
+    about_divider_subtitle: '— The Person Behind the Service —',
+    about_bio_p1: "Thayna founded Carolina Premium Cleaning with one mission: to bring the same care and attention to your home that she gives to her own. Originally from Brazil, she built this business on trust, dedication, and a passion for making people's lives easier.",
+    about_bio_p2: "With over 2 years of hands-on experience serving homes across New York and New Jersey, she personally ensures that every team member delivers the same high standard in every visit.",
+    about_bio_p3: "As a mother and homeowner herself, Thayna understands how important it is to come home to a clean, welcoming space — and that's the experience she's committed to creating for every client, every time.",
+    about_founder_name: 'Thayna Chesque',
     about_founder_role: 'Founder & Owner',
 
     // Services Section Defaults
@@ -321,7 +323,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
 
     // CTA Section Defaults
     cta_title: 'Ready for a Spotless Home or Office?',
-    cta_subtitle: 'Serving Charlotte, NC, Fort Mill, SC, and nearby cities. Chat with Carol for a fast quote and easy scheduling.',
+    cta_subtitle: 'Serving Fort Mill, SC, Charlotte, NC, and nearby cities. Chat with Carol for a fast quote and easy scheduling.',
     cta_button_text: 'Request a Visit',
 
     // Contact Form Defaults
@@ -331,11 +333,11 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     // Pricing Section Defaults
     pricing_title: 'Transparent Pricing',
     pricing_subtitle: 'Honest pricing with no hidden fees. Final quote depends on home size and specific needs.',
-    pricing_format: 'range' as const,
+    pricing_format: 'starting_at' as const,
     pricing_cta_text: 'Schedule Visit Now',
     pricing_cta_subtext: 'Want an exact quote? Chat with Carol — most quotes ready in under 5 minutes.',
 
-    seo_title: 'Caroline Premium Cleaning | Professional House Cleaning',
+    seo_title: 'Carolina Premium Cleaning | Professional House Cleaning',
     seo_description: 'Professional house cleaning services. Book your free estimate 24/7.',
     seo_keywords: 'house cleaning, cleaning service, professional cleaning',
     seo_og_image: '',

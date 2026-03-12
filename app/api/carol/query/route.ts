@@ -268,7 +268,7 @@ async function queryBusinessInfo(supabase: any) {
     const settings = data?.settings || {}
 
     return {
-        name: settings.business_name || 'Caroline Premium Cleaning',
+        name: settings.business_name || 'Carolina Premium Cleaning',
         phone: settings.business_phone || '(551) 389-7394',
         email: settings.business_email || 'hello@carolinecleaning.com',
         hours: {

@@ -10,7 +10,7 @@ const services = [
     {
         icon: Sparkles,
         title: 'Regular Cleaning',
-        idealFor: 'Occupied homes that require ongoing maintenance.',
+        idealFor: 'Busy homeowners who need reliable, ongoing cleaning services.',
         badge: 'Most Popular',
         badgeVariant: 'default' as const,
         color: 'text-[#6B8E6B]',

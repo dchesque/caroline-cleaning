@@ -25,7 +25,7 @@ export function Hero() {
                     {/* Badge */}
                     <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-white shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-full">
                         <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-brandy-rose-600 text-center">
-                            Premium cleaning services in Charlotte, NC & Fort Mill, SC
+                            Premium cleaning services in Fort Mill, SC & Charlotte, NC
                         </span>
                     </div>
 
@@ -33,7 +33,7 @@ export function Hero() {
                     <h1 className="font-heading text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight text-foreground mb-6 text-balance animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
                         {settings.hero_title_1 || 'Premium Cleaning for Homes & Offices in'}
                         <br />
-                        <span className="text-brandy-rose-500">{settings.hero_title_2 || 'Charlotte & Fort Mill'}</span>
+                        <span className="text-brandy-rose-500">{settings.hero_title_2 || 'Fort Mill & Charlotte'}</span>
                     </h1>
 
                     {/* Subheadline */}
@@ -50,17 +50,6 @@ export function Hero() {
                         >
                             <MessageCircle className="w-5 h-5" />
                             {settings.hero_cta_text}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="lg"
-                            className="gap-2 h-12 px-8 w-full sm:w-auto text-base border-brandy-rose-200 hover:bg-brandy-rose-50 text-brandy-rose-700"
-                            onClick={() => {
-                                const element = document.getElementById('services')
-                                if (element) element.scrollIntoView({ behavior: 'smooth' })
-                            }}
-                        >
-                            {settings.hero_cta_secondary || 'Services'}
                         </Button>
                     </div>
 
@@ -100,7 +89,7 @@ export function Hero() {
                         <div className="p-1 rounded-full bg-success/10 text-success">
                             <Shield className="w-4 h-4" />
                         </div>
-                        <span>Local service in Charlotte & Fort Mill</span>
+                        <span>Local service in Fort Mill & Charlotte</span>
                     </div>
                     <div className="flex items-center gap-2 justify-center xs:justify-start">
                         <div className="p-1 rounded-full bg-success/10 text-success">

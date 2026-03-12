@@ -32,7 +32,7 @@ export function AboutUs() {
                 </div>
 
                 {/* Content Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center max-w-6xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start max-w-6xl mx-auto">
                     {/* Image - Left Side */}
                     <div className="relative order-1 lg:order-1">
                         <div className="relative aspect-[4/5] max-w-md mx-auto lg:max-w-none">
@@ -69,15 +69,15 @@ export function AboutUs() {
                     {/* Content - Right Side */}
                     <div className="order-2 lg:order-2 text-center lg:text-left">
                         {/* Company Intro */}
-                        <div className="space-y-6 text-muted-foreground mb-10">
-                            <p className="text-lg text-foreground font-medium">
+                        <div className="space-y-3 text-muted-foreground mb-5">
+                            <p className="text-base text-foreground font-medium">
                                 {settings.about_intro_p1}
                             </p>
-                            <p>
+                            <p className="text-base">
                                 {settings.about_intro_p2}
                             </p>
                             {settings.about_note && (
-                                <p className="p-4 bg-brandy-rose-50 rounded-2xl border border-brandy-rose-100 text-brandy-rose-700 text-sm">
+                                <p className="p-3 bg-brandy-rose-50 rounded-xl border border-brandy-rose-100 text-brandy-rose-700 text-xs">
                                     <strong>Note:</strong> {settings.about_note}
                                 </p>
                             )}
@@ -85,20 +85,34 @@ export function AboutUs() {
 
                         {/* Quote */}
                         {settings.about_quote && (
-                            <blockquote className="relative mb-10 pl-6 border-l-4 border-brandy-rose-300 italic text-xl text-foreground leading-relaxed">
+                            <blockquote className="relative mb-5 pl-5 border-l-4 border-brandy-rose-300 italic text-base text-foreground leading-relaxed">
                                 &quot;{settings.about_quote}&quot;
                             </blockquote>
                         )}
 
                         {/* Highlights */}
-                        <ul className="space-y-3">
+                        <ul className="space-y-2 mb-5">
                             {(settings.about_highlights || []).map((item, index) => (
-                                <li key={index} className="flex items-center gap-3 justify-center lg:justify-start">
-                                    <CheckCircle2 className="w-5 h-5 text-brandy-rose-500 flex-shrink-0" />
-                                    <span className="text-foreground">{item}</span>
+                                <li key={index} className="flex items-center gap-2.5 justify-center lg:justify-start">
+                                    <CheckCircle2 className="w-4 h-4 text-brandy-rose-500 flex-shrink-0" />
+                                    <span className="text-foreground text-sm">{item}</span>
                                 </li>
                             ))}
                         </ul>
+
+                        {/* Bio / Divider Section */}
+                        {settings.about_divider_subtitle && (
+                            <div className="pt-5 border-t border-brandy-rose-100">
+                                <h3 className="text-center lg:text-left text-xs font-semibold tracking-wider text-brandy-rose-600 uppercase mb-3">
+                                    {settings.about_divider_subtitle}
+                                </h3>
+                                <div className="space-y-3 text-muted-foreground text-sm text-left">
+                                    {settings.about_bio_p1 && <p>{settings.about_bio_p1}</p>}
+                                    {settings.about_bio_p2 && <p>{settings.about_bio_p2}</p>}
+                                    {settings.about_bio_p3 && <p>{settings.about_bio_p3}</p>}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

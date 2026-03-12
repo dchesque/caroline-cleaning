@@ -1,4 +1,4 @@
-﻿import { openrouter } from './openrouter'
+import { openrouter } from './openrouter'
 import { buildCarolPrompt, CarolConfig, TOOLS } from './prompts'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
@@ -463,7 +463,7 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terÃ§a-fe
             if (!coverageResult.covered) {
                 return {
                     success: false,
-                    error: `Desculpe, ainda nÃ£o atendemos a regiÃ£o do CEP ${zipCode}. Atualmente atendemos Charlotte (NC), Fort Mill (SC) e cidades prÃ³ximas.`,
+                    error: `Desculpe, ainda nÃ£o atendemos a regiÃ£o do CEP ${zipCode}. Atualmente atendemos Fort Mill (SC), Charlotte (NC) e cidades prÃ³ximas.`,
                     zip_not_covered: true
                 }
             }

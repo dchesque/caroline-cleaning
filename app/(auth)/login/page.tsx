@@ -144,7 +144,7 @@ export default function LoginPage() {
                         <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
                             <span className="font-heading font-bold text-white">C</span>
                         </div>
-                        <span className="font-heading text-xl font-medium tracking-tight">Caroline Premium Cleaning</span>
+                        <span className="font-heading text-xl font-medium tracking-tight">Carolina Premium Cleaning</span>
                     </div>
 
                     <div className="space-y-6 max-w-lg">

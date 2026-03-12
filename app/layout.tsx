@@ -15,7 +15,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Caroline Premium Cleaning - Plataforma de Atendimento e Gestão",
+  title: "Carolina Premium Cleaning - Plataforma de Atendimento e Gestão",
   description: "Professional cleaning, instantly scheduled.",
 };
 

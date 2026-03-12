@@ -163,7 +163,7 @@ export function exportToPDF(options: {
       ` : ''}
       
       <div class="footer">
-        <p>Caroline Premium Cleaning - Relatório Confidencial</p>
+        <p>Carolina Premium Cleaning - Relatório Confidencial</p>
       </div>
     </body>
     </html>

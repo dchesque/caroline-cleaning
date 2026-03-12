@@ -41,9 +41,6 @@ export function Testimonials() {
                     <h2 className="font-heading text-3xl md:text-4xl text-foreground mb-4">
                         {settings.testimonials_title || 'What Our Clients Say'}
                     </h2>
-                    <p className="text-lg text-muted-foreground mb-4">
-                        {settings.testimonials_subtitle || '⭐ Average rating 4.9 based on 150+ reviews'}
-                    </p>
                     <a
                         href={settings.badges_google_reviews_url || '#'}
                         target="_blank"

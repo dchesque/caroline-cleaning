@@ -84,7 +84,7 @@ function SidebarContent({ pathname, onLinkClick }: SidebarContentProps) {
         <div className="flex flex-col h-full bg-white">
             <div className="flex items-center h-16 px-6 border-b border-[#EAE0D5]">
                 <Link href="/admin" className="flex items-center gap-2">
-                    <span className="font-heading text-2xl text-[#C48B7F]">Caroline</span>
+                    <span className="font-heading text-2xl text-[#C48B7F]">Carolina</span>
                     <span className="font-heading text-2xl text-[#5D5D5D]">Admin</span>
                 </Link>
             </div>

@@ -1,4 +1,4 @@
-export const APP_NAME = "Caroline Premium Cleaning";
+export const APP_NAME = "Carolina Premium Cleaning";
 export const APP_DESCRIPTION = "Professional cleaning, instantly scheduled.";
 
 export const STATUS_CONFIG = {

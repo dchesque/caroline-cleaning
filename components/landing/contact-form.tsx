@@ -167,7 +167,7 @@ export function ContactForm() {
                                             id="cidade"
                                             name="cidade"
                                             type="text"
-                                            placeholder="Charlotte, NC"
+                                            placeholder="Fort Mill, SC"
                                             value={formData.cidade}
                                             onChange={handleChange}
                                             className="pl-10"

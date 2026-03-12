@@ -14,7 +14,7 @@ export const getOpenRouter = () => {
             baseURL: 'https://openrouter.ai/api/v1',
             defaultHeaders: {
                 'HTTP-Referer': env.appUrl,
-                'X-Title': 'Caroline Premium Cleaning'
+                'X-Title': 'Carolina Premium Cleaning'
             }
         })
     }

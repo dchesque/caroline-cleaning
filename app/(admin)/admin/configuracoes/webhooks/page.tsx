@@ -3,7 +3,7 @@ import { WebhooksTabs } from './components/webhooks-tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export const metadata = {
-    title: 'Webhooks & Integrações | Caroline Admin',
+    title: 'Webhooks & Integrações | Carolina Admin',
     description: 'Documentação técnica de webhooks para integração com n8n.',
 }
 

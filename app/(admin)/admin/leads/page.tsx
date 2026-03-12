@@ -373,7 +373,7 @@ export default function LeadsPage() {
                                                 <div className="flex flex-col text-sm text-muted-foreground">
                                                     <div className="flex items-center gap-1.5">
                                                         <MapPin className="w-3 h-3" />
-                                                        {lead.cidade || 'Charlotte, NC'}
+                                                        {lead.cidade || 'Fort Mill, SC'}
                                                     </div>
                                                     <div className="flex items-center gap-1.5">
                                                         <Clock className="w-3 h-3" />

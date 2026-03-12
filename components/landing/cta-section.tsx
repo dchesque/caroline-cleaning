@@ -21,7 +21,7 @@ export function CTASection() {
                     {settings.cta_title || 'Ready for a Spotless Home or Office?'}
                 </h2>
                 <p className="text-lg text-brandy-rose-100 mb-8 max-w-2xl mx-auto">
-                    {settings.cta_subtitle || 'Serving Charlotte, NC, Fort Mill, SC, and nearby cities. Chat with Carol for a fast quote and easy scheduling.'}
+                    {settings.cta_subtitle || 'Serving Fort Mill, SC, Charlotte, NC, and nearby cities. Chat with Carol for a fast quote and easy scheduling.'}
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">

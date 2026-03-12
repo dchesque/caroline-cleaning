@@ -1,8 +1,8 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'Terms of Service | Caroline Premium Cleaning',
-    description: 'Terms of Service for Caroline Premium Cleaning. Understanding our cleaning service agreements, policies, and conditions.',
+    title: 'Terms of Service | Carolina Premium Cleaning',
+    description: 'Terms of Service for Carolina Premium Cleaning. Understanding our cleaning service agreements, policies, and conditions.',
 }
 
 export default function TermsOfServicePage() {
@@ -16,7 +16,7 @@ export default function TermsOfServicePage() {
                     <section>
                         <h2 className="text-2xl font-heading text-foreground mb-4">1. Acceptance of Terms</h2>
                         <p className="text-brandy-rose-900/80 leading-relaxed">
-                            By booking services with Caroline Premium Cleaning, you agree to comply with and be bound by the following terms and conditions. These terms govern our professional relationship with you.
+                            By booking services with Carolina Premium Cleaning, you agree to comply with and be bound by the following terms and conditions. These terms govern our professional relationship with you.
                         </p>
                     </section>
 
@@ -73,7 +73,7 @@ export default function TermsOfServicePage() {
                     <section>
                         <h2 className="text-2xl font-heading text-foreground mb-4">8. Changes to Terms</h2>
                         <p className="text-brandy-rose-900/80 leading-relaxed">
-                            Caroline Premium Cleaning reserves the right to update these terms at any time. Changes will be effective immediately upon posting to our website.
+                            Carolina Premium Cleaning reserves the right to update these terms at any time. Changes will be effective immediately upon posting to our website.
                         </p>
                     </section>
                 </div>

@@ -33,7 +33,7 @@ export async function Footer() {
                     <div className="col-span-1 md:col-span-1">
                         <Link href="/" className="inline-block mb-6">
                             <span className="font-heading text-2xl text-white">
-                                {config.business_name || 'Caroline'}
+                                {config.business_name || 'Carolina'}
                             </span>
                             <br />
                             <span className="font-heading text-2xl text-brandy-rose-400">
@@ -41,7 +41,7 @@ export async function Footer() {
                             </span>
                         </Link>
                         <p className="text-sm text-brandy-rose-200/80 mb-6">
-                            {config.business_description || 'Serving Charlotte, NC, Fort Mill, SC, and nearby cities with premium cleaning services tailored to your lifestyle.'}
+                            {config.business_description || 'Serving Fort Mill, SC, Charlotte, NC, and nearby cities with premium cleaning services tailored to your lifestyle.'}
                         </p>
                         <div className="flex gap-4">
                             {config.social_facebook && (
@@ -82,8 +82,8 @@ export async function Footer() {
                                 ))
                             ) : (
                                 <>
-                                    <li>Charlotte, NC</li>
                                     <li>Fort Mill, SC</li>
+                                    <li>Charlotte, NC</li>
                                     <li>Matthews, NC</li>
                                     <li>Pineville, NC</li>
                                 </>
@@ -113,14 +113,14 @@ export async function Footer() {
                             </li>
                             <li className="flex gap-3">
                                 <MapPin className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <span>{config.business_address || 'Charlotte, NC • Fort Mill, SC'}</span>
+                                <span>{config.business_address || 'Fort Mill, SC • Charlotte, NC'}</span>
                             </li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-brandy-rose-200/60">
-                    <p>© {new Date().getFullYear()} {config.business_name || 'Caroline Premium Cleaning'}. All rights reserved.</p>
+                    <p>© {new Date().getFullYear()} {config.business_name || 'Carolina Premium Cleaning'}. All rights reserved.</p>
                     <div className="flex gap-6">
                         <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
                         <Link href="/terms" className="hover:text-white">Terms of Service</Link>
