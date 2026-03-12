@@ -1,3 +1,11 @@
+# Changelog - v3.3.5 (2026-03-12)
+
+## [3.3.5] - 2026-03-12
+### Changed
+- **Landing Page Copy**: Atualização completa de todos os textos da Landing Page para aplicar técnicas de Direct Response Copywriting, visando maior conversão.
+- Modificados os componentes `hero.tsx`, `services.tsx`, e `testimonials.tsx` para refletirem as novas chamadas, estruturas e depoimentos agrupados.
+- Atualização das configurações padrão em `lib/business-config.ts` para alinhar com o documento aprovado.
+
 # Changelog - v3.3.4 (2026-03-06)
 
 ## [3.3.4] - 2026-03-06

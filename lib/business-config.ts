@@ -173,17 +173,17 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     social_twitter: '',
     social_google: '',
 
-    hero_title: 'Professional Cleaning, Instantly Scheduled',
-    hero_title_1: 'Professional Cleaning,',
-    hero_title_2: 'Instantly Scheduled',
-    hero_subtitle: 'Book your free estimate 24/7 through our chat assistant. No contracts, background-checked staff, satisfaction guaranteed.',
-    hero_cta_text: 'Schedule Visit Now',
+    hero_title: 'Premium Cleaning for Homes & Offices in Charlotte & Fort Mill',
+    hero_title_1: 'Premium Cleaning for Homes & Offices in',
+    hero_title_2: 'Charlotte & Fort Mill',
+    hero_subtitle: 'Reliable residential and commercial cleaning services with carefully selected professionals, flexible scheduling, and consistent results. Schedule in just a few minutes.',
+    hero_cta_text: 'Schedule a Visit',
     hero_cta_secondary: 'Talk to Carol',
     hero_image: '',
 
     badges_enabled: true,
     badges_rating: '4.9',
-    badges_reviews_count: '200+',
+    badges_reviews_count: '150+',
     badges_years_experience: '5+',
     badges_google_reviews_url: '',
 
@@ -251,7 +251,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
         }
     ],
 
-    about_title: 'A Cleaning Team You Can Trust',
+    about_title: 'Commitment to Quality & Trust',
     about_image: '/images/thayna.jpg',
     about_intro_p1: 'Every cleaning follows a rigorous quality standard with close attention to detail.',
     about_intro_p2: 'If anything does not meet your expectations, we will make the necessary adjustments.',
@@ -297,7 +297,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
 
     // Testimonials Defaults
     testimonials_title: 'What Our Clients Say',
-    testimonials_subtitle: 'Real feedback from clients in Charlotte, NC & Fort Mill, SC.',
+    testimonials_subtitle: '⭐ Average rating 4.9 based on 150+ reviews',
     testimonials_items: [
         {
             name: 'Client Feedback',
@@ -341,7 +341,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     seo_og_image: '',
 
     announcement_enabled: true,
-    announcement_text: 'Serving Charlotte, NC & nearby cities. • Chat with Carol 24/7',
+    announcement_text: 'Personalized service available 24/7',
     announcement_bg_color: '#C48B7F',
 
     operating_start: '08:00',

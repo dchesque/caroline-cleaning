@@ -42,7 +42,7 @@ export function Testimonials() {
                         {settings.testimonials_title || 'What Our Clients Say'}
                     </h2>
                     <p className="text-lg text-muted-foreground mb-4">
-                        {settings.testimonials_subtitle || 'Real feedback from clients in Charlotte, NC & Fort Mill, SC.'}
+                        {settings.testimonials_subtitle || '⭐ Average rating 4.9 based on 150+ reviews'}
                     </p>
                     <a
                         href={settings.badges_google_reviews_url || '#'}
@@ -96,7 +96,7 @@ export function Testimonials() {
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
                     >
                         <MessageCircle className="w-4 h-4" />
-                        Schedule Visit Now
+                        Schedule a Visit
                     </Button>
                 </div>
             </div>

@@ -15,7 +15,7 @@ const services = [
         badgeVariant: 'default' as const,
         color: 'text-[#6B8E6B]',
         bgColor: 'bg-[#E8F0E8]',
-        features: ['Kitchen cleaning (external faces)', 'Full bathroom cleaning', 'Accessible surfaces', 'Vacuuming & mopping', 'Trash removal'],
+        features: ['Kitchen cleaning (external surfaces, sink, and countertops)', 'Full bathroom cleaning (sinks, toilets, mirrors, and surfaces)', 'Cleaning of accessible surfaces throughout the home', 'Vacuuming of floors and carpets', 'Floor cleaning (when applicable)', 'Trash removal'],
     },
     {
         icon: Sparkles,
@@ -25,25 +25,25 @@ const services = [
         badgeVariant: 'secondary' as const,
         color: 'text-[#C4A35A]',
         bgColor: 'bg-[#FAF6EB]',
-        features: ['Everything in Regular', 'Detailed kitchen/bath', 'Baseboard cleaning', 'Doors & handles', 'Heavy buildup removal'],
+        features: ['Everything included in Regular Cleaning', 'Detailed kitchen and bathroom cleaning', 'Baseboard cleaning', 'Cleaning of doors, handles, and light switches', 'Interior cleaning of accessible windows', 'Cleaning of areas with heavy buildup', 'Extra attention to details, corners, and finishes'],
     },
     {
         icon: Home,
-        title: 'Move-in/Move-out',
+        title: 'Move-In / Move-Out Cleaning',
         idealFor: 'Empty homes preparing for new occupants.',
         badge: null,
         color: 'text-[#7B9EB8]',
         bgColor: 'bg-[#F0F5F8]',
-        features: ['Full room cleaning', 'Inside empty cabinets', 'Inside appliances', 'Detailed kitchen/bath', 'Window/door tracks'],
+        features: ['Full cleaning of all rooms', 'Interior and exterior cleaning of empty cabinets', 'Interior and exterior cleaning of appliances', 'Detailed kitchen and bathroom cleaning', 'Vacuuming and cleaning of all floors', 'Cleaning of window and door tracks', 'Removal of light debris left in the property'],
     },
     {
         icon: Building2,
         title: 'Office Cleaning',
-        idealFor: 'Professional environments that value cleanliness.',
+        idealFor: 'Professional environments that value cleanliness and organization.',
         badge: null,
         color: 'text-[#9B8BB8]',
         bgColor: 'bg-[#F5F3F8]',
-        features: ['Workstations & desks', 'Common areas', 'Bathroom & kitchen', 'Vacuuming & floor cleaning', 'Trash removal'],
+        features: ['Cleaning of workstations', 'Cleaning of desks, surfaces, and common areas', 'Bathroom cleaning', 'Kitchen or breakroom cleaning', 'Vacuuming and floor cleaning', 'Trash removal'],
     },
 ]
 
@@ -117,7 +117,7 @@ export function Services() {
                                     onClick={openChat}
                                     className="mt-4 gap-2 text-brandy-rose-600 hover:text-brandy-rose-700 hover:bg-brandy-rose-50 p-0 h-auto font-semibold"
                                 >
-                                    Schedule Visit Now
+                                    Request a quote
                                     <ArrowRight className="w-4 h-4" />
                                 </Button>
                             </CardContent>
@@ -137,9 +137,9 @@ export function Services() {
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white min-w-[240px] h-14 text-lg"
                     >
                         <MessageCircle className="w-5 h-5" />
-                        Schedule Visit Now
+                        Request a Quote
                     </Button>
-                    <p className="mt-4 text-sm text-muted-foreground italic">Get a quote now.</p>
+                    <p className="mt-4 text-sm text-muted-foreground italic">Get a quote today.</p>
                 </div>
             </div>
         </section>

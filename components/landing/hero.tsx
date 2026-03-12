@@ -31,9 +31,9 @@ export function Hero() {
 
                     {/* Headline */}
                     <h1 className="font-heading text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold leading-tight text-foreground mb-6 text-balance animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                        {settings.hero_title_1 || 'Professional Cleaning,'}
+                        {settings.hero_title_1 || 'Premium Cleaning for Homes & Offices in'}
                         <br />
-                        <span className="text-brandy-rose-500">{settings.hero_title_2 || 'Instantly Scheduled'}</span>
+                        <span className="text-brandy-rose-500">{settings.hero_title_2 || 'Charlotte & Fort Mill'}</span>
                     </h1>
 
                     {/* Subheadline */}
