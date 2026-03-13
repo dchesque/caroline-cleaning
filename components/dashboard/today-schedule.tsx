@@ -22,7 +22,7 @@ export function TodaySchedule() {
                 .from('agendamentos')
                 .select(`
                     *,
-                    cliente:clientes(nome, endereco_completo)
+                    cliente:clientes(nome, endereco_completo, cidade, estado, zip_code)
                 `)
                 .gte('data', startOfDay(today).toISOString())
                 .lte('data', endOfDay(today).toISOString())
@@ -63,7 +63,11 @@ export function TodaySchedule() {
                                             <span>{appointment.duracao_estimada || 2}h</span>
                                             <span className="text-xs">•</span>
                                             <MapPin className="w-3 h-3 shrink-0" />
-                                            <span className="truncate max-w-[150px]">{appointment.cliente?.endereco_completo || dashboardT.todaySchedule.addressNotProvided}</span>
+                                            <span className="truncate max-w-[150px]">{[
+                                                appointment.cliente?.endereco_completo,
+                                                appointment.cliente?.cidade,
+                                                (appointment.cliente?.estado || appointment.cliente?.zip_code) ? `${appointment.cliente?.estado || ''} ${appointment.cliente?.zip_code || ''}`.trim() : null
+                                            ].filter(Boolean).join(', ') || dashboardT.todaySchedule.addressNotProvided}</span>
                                         </div>
                                     </div>
                                 </div>

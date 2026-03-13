@@ -62,6 +62,17 @@ export function AppointmentDetailModal({
 
     const formatTime = (time: string) => time?.substring(0, 5)
 
+    const getFullAddress = (client: any) => {
+        if (!client) return agendaT.detail?.addressNotProvided;
+        const parts = [];
+        if (client.endereco_completo) parts.push(client.endereco_completo);
+        if (client.cidade) parts.push(client.cidade);
+        if (client.estado || client.zip_code) {
+            parts.push(`${client.estado || ''} ${client.zip_code || ''}`.trim());
+        }
+        return parts.join(', ') || agendaT.detail?.addressNotProvided;
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md bg-[#FDF8F6] border-[#C48B7F]/20">
@@ -148,7 +159,7 @@ export function AppointmentDetailModal({
                         <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
                         <div className="text-sm">
                             <p className="text-xs text-muted-foreground">{agendaT.detail?.location}</p>
-                            <p>{appointment.cliente?.endereco_completo || agendaT.detail?.addressNotProvided}</p>
+                            <p>{getFullAddress(appointment.cliente)}</p>
                         </div>
                     </div>
 

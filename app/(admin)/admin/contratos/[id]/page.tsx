@@ -7,17 +7,18 @@ import { Badge } from '@/components/ui/badge'
 import {
     ArrowLeft,
     Download,
-    Send,
     Edit,
     CheckCircle,
     Clock,
     User,
     Calendar,
     DollarSign,
-    FileText
+    FileText,
+    Send
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { SERVICE_TYPES, FREQUENCIES, WEEKDAYS } from '@/lib/constants'
+import { SendContractButton } from './SendContractButton'
 
 const STATUS_CONTRACT = {
     rascunho: { label: 'Rascunho', variant: 'secondary' },
@@ -82,21 +83,29 @@ export default async function ContratoDetalhePage({ params }: PageProps) {
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     {contract.status === 'rascunho' && (
                         <>
                             <Button variant="outline" className="gap-2">
                                 <Edit className="w-4 h-4" />
                                 Editar
                             </Button>
-                            <Button className="gap-2">
-                                <Send className="w-4 h-4" />
-                                Enviar para Cliente
-                            </Button>
+                            <SendContractButton contractId={contract.id} />
                         </>
                     )}
+                    
+                    {/* Button for iPad or local signature check */}
+                    {(contract.status === 'enviado' || contract.status === 'rascunho' || contract.status === 'pendente') && (
+                        <Button className="gap-2 bg-brandy-rose-600 hover:bg-brandy-rose-700 text-white" asChild>
+                            <Link href={`/contrato/${contract.id}/assinar`}>
+                                <Edit className="w-4 h-4" />
+                                Assinar neste dispositivo
+                            </Link>
+                        </Button>
+                    )}
+
                     {contract.status === 'enviado' && (
-                        <Button className="gap-2">
+                        <Button variant="outline" className="gap-2">
                             <CheckCircle className="w-4 h-4" />
                             Marcar como Assinado
                         </Button>
@@ -182,6 +191,48 @@ export default async function ContratoDetalhePage({ params }: PageProps) {
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Contract Document */}
+                    {contract.documento_corpo && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-h4">
+                                    <FileText className="w-5 h-5 text-muted-foreground" />
+                                    Termos do Contrato
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="bg-pampas/50 p-4 rounded-md text-sm font-mono whitespace-pre-wrap">
+                                    {contract.documento_corpo}
+                                </div>
+                                {contract.assinatura_cliente && (
+                                    <div className="mt-6 border-t pt-6">
+                                        <p className="text-body font-semibold mb-4">Assinatura Digital do Cliente</p>
+                                        <div className="bg-white border rounded p-4 inline-block shadow-sm">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img 
+                                                src={contract.assinatura_cliente} 
+                                                alt="Assinatura do Cliente" 
+                                                className="max-h-32 object-contain"
+                                            />
+                                        </div>
+                                        <div className="mt-4 space-y-1">
+                                            {contract.data_assinatura && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    Assinado em: {formatDate(contract.data_assinatura)} às {new Date(contract.data_assinatura).toLocaleTimeString()}
+                                                </p>
+                                            )}
+                                            {contract.ip_assinatura && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    IP de registro: {contract.ip_assinatura}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Timeline */}
                     <Card>

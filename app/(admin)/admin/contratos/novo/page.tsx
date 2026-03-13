@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
     Select,
@@ -53,8 +54,94 @@ export default function NovoContratoPage() {
         dia_preferido: 'monday',
         horario_preferido: '09:00',
     })
+    
+    // State do texto do contrato editável
+    const [contractBody, setContractBody] = useState('')
+    const [isCustomText, setIsCustomText] = useState(false)
 
     const supabase = createClient()
+
+    // Função que constrói o texto padrão do contrato se o admin não editou manualmente
+    useEffect(() => {
+        if (isCustomText) return; // Se ele editou na mão, não sobreescrevemos
+
+        const tipoNome = TIPOS_SERVICO.find(t => t.value === formData.tipo_servico)?.label || 'Outros'
+        const freqNome = FREQUENCIAS.find(f => f.value === formData.frequencia)?.label || 'Outros'
+        const valorFinal = formData.valor_acordado 
+            ? (parseFloat(formData.valor_acordado) * (1 - (parseFloat(formData.desconto_percentual || '0') / 100))).toFixed(2)
+            : '__________';
+
+        const getFullAddress = (client: any) => {
+            if (!client) return '___________________________';
+            const parts = [];
+            if (client.endereco_completo) parts.push(client.endereco_completo);
+            if (client.cidade) parts.push(client.cidade);
+            if (client.estado || client.zip_code) {
+                parts.push(`${client.estado || ''} ${client.zip_code || ''}`.trim());
+            }
+            return parts.join(', ') || '___________________________';
+        };
+
+        const defaultBody = `🧼 CLEANING SERVICES – TERMS OF SERVICE & SERVICE AGREEMENT
+
+CLIENT INFORMATION
+Name: ${selectedCliente?.nome || '___________________________'}
+Address: ${getFullAddress(selectedCliente)}
+Phone: ${selectedCliente?.telefone || '___________________________'}
+Email: ${selectedCliente?.email || '___________________________'}
+
+1. Agreement Overview
+This document outlines the terms and conditions for residential cleaning services provided by Caroline Premium Cleaning ("Company").
+By scheduling, booking, or authorizing cleaning services, the client ("Client") agrees to these Terms of Service.
+
+2. Services Provided
+The Company offers residential cleaning services, which may include, but are not limited to:
+Regular Cleaning / Deep Cleaning / Move-In / Move-Out Cleaning
+The scope of each service is based on the service selected by the Client and the details agreed upon at the time of booking.
+
+3. Additional Services & Extra Charges
+Some services are not included in standard cleaning packages and may result in additional charges. Additional services may increase the total price and cleaning time and must be approved by the Client before being performed.
+
+4. Access to the Property & Authorization to Enter
+The Client expressly authorizes the Company and its cleaning professionals to enter the property for the purpose of providing cleaning services, whether or not the Client is present at the time of service.
+The Company is not responsible for delays or inability to perform services due to access issues.
+
+5. Client Responsibilities
+The Client agrees to:
+Ensure the property is safe and accessible at the scheduled time. The Company is not responsible for pre-existing damage or normal wear and tear.
+
+6. Cleaning Products & Equipment
+Standard cleaning products are provided by the Client, unless otherwise agreed.
+
+7. Company Responsibilities & Limitations
+The Company agrees to perform services with reasonable care and professionalism. The Company does not guarantee the removal of permanent stains.
+
+8. Damages, Breakage & Claims
+In the unlikely event of damage caused directly by the Company, the Client must notify the Company within 24 hours of service completion. Liability is limited to repair or replacement at the Company's discretion.
+
+9. Cancellations, Pauses & Changes
+The Client may cancel, reschedule, or pause services at any time. There are no long-term commitments or cancellation penalties unless otherwise agreed in writing.
+
+10. Payments & Pricing
+Prices are based on the selected service type, property condition, size, frequency, and any additional services requested. Changes in condition, size, or scope may result in price adjustments.
+
+11. Service Details & Client Commitment
+This section confirms the specific service requested by the Client and establishes the agreed service terms.
+
+Type of Service: ${tipoNome}
+Service Frequency: ${freqNome}
+Service Dates: Starts on ${formData.data_inicio}${formData.data_fim ? ' until ' + formData.data_fim : ''}
+Scheduled Time: ${formData.horario_preferido || 'TBD'}
+Service Price: $ ${valorFinal}
+
+The Client acknowledges that these service details were reviewed, understood, and accepted, and agrees to maintain this commitment unless changes are requested in advance.
+
+12. Acceptance of Terms
+Client Name: ${selectedCliente ? selectedCliente.nome : '_______________________________'}
+Property Address: ${selectedCliente ? (selectedCliente.endereco_completo || '___________________________') : '___________________________'}`;
+
+        setContractBody(defaultBody)
+    }, [formData, selectedCliente, isCustomText])
 
     // Buscar clientes
     useEffect(() => {
@@ -62,7 +149,7 @@ export default function NovoContratoPage() {
             setIsLoading(true)
             const { data } = await supabase
                 .from('clientes')
-                .select('id, nome, telefone, email, endereco_completo')
+                .select('id, nome, telefone, email, endereco_completo, cidade, estado, zip_code')
                 .ilike('nome', `%${searchTerm}%`)
                 .limit(10)
                 .order('nome')
@@ -104,6 +191,7 @@ export default function NovoContratoPage() {
                     data_fim: formData.data_fim || null,
                     renovacao_automatica: formData.renovacao_automatica,
                     status: enviar ? 'enviado' : 'pendente',
+                    documento_corpo: contractBody, // Salva o texto do contrato
                 })
                 .select()
                 .single()
@@ -133,9 +221,9 @@ export default function NovoContratoPage() {
             toast.success(enviar ? 'Contrato criado e enviado!' : 'Contrato salvo como rascunho!')
             router.push(`/admin/contratos/${contrato.id}`)
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving contract:', error)
-            toast.error('Erro ao salvar contrato')
+            toast.error(`Erro: ${error.message || error.details || 'Falha ao salvar contrato'}`)
         } finally {
             setIsSaving(false)
         }
@@ -356,6 +444,37 @@ export default function NovoContratoPage() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Texto do Contrato */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Termos do Contrato</CardTitle>
+                            <CardDescription>
+                                Revise ou altere o detalhamento gerado para o termo/contrato deste cliente
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Textarea
+                                className="min-h-[400px] font-mono text-sm leading-relaxed"
+                                value={contractBody}
+                                onChange={(e) => {
+                                    setContractBody(e.target.value)
+                                    setIsCustomText(true)
+                                }}
+                            />
+                            {isCustomText && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    O texto foi editado manualmente. Alterar o formulário não irá mais sobrescrever o texto.
+                                    <button 
+                                        className="text-brandy-rose-600 ml-2 underline" 
+                                        onClick={() => setIsCustomText(false)}
+                                    >
+                                        Restaurar template dinâmico
+                                    </button>
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Sidebar */}
@@ -393,24 +512,18 @@ export default function NovoContratoPage() {
                         </CardContent>
                     </Card>
 
-                    <div className="space-y-2">
+                    <div className="space-y-4 pt-4 border-t">
                         <Button
-                            className="w-full gap-2"
-                            onClick={() => handleSave(true)}
-                            disabled={isSaving || !selectedCliente}
-                        >
-                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                            Criar e Enviar
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="w-full gap-2"
+                            className="w-full gap-2 h-12 text-base"
                             onClick={() => handleSave(false)}
                             disabled={isSaving || !selectedCliente}
                         >
-                            <Save className="w-4 h-4" />
-                            Salvar Rascunho
+                            {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
+                            Salvar Contrato
                         </Button>
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                            O contrato será salvo. Você poderá enviar para o cliente através da página de detalhes.
+                        </p>
                     </div>
                 </div>
             </div>

@@ -17,7 +17,7 @@ export default function AgendaPage() {
             .from('agendamentos')
             .select(`
             *,
-            cliente:clientes(id, nome, endereco_completo)
+            cliente:clientes(id, nome, endereco_completo, cidade, estado, zip_code, telefone)
         `)
 
         if (data) setAppointments(data)

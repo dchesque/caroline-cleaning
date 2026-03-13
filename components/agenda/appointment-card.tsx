@@ -30,6 +30,17 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
 
     const hasAddons = appointment.addons && Array.isArray(appointment.addons) && appointment.addons.length > 0
 
+    const getFullAddress = (client: any) => {
+        if (!client) return '';
+        const parts = [];
+        if (client.endereco_completo) parts.push(client.endereco_completo);
+        if (client.cidade) parts.push(client.cidade);
+        if (client.estado || client.zip_code) {
+            parts.push(`${client.estado || ''} ${client.zip_code || ''}`.trim());
+        }
+        return parts.join(', ');
+    };
+
     // Layout compacto para visualização mensal
     if (variant === 'compact') {
         const isVisit = appointment.tipo === 'visit'
@@ -154,10 +165,10 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
                             </div>
 
                             {/* Endereço */}
-                            {appointment.cliente?.endereco_completo && (
+                            {(appointment.cliente?.endereco_completo || appointment.cliente?.cidade) && (
                                 <div className="flex items-start gap-2 mb-2 text-xs">
                                     <MapPin className="size-3.5 text-[#C48B7F] mt-0.5 shrink-0" />
-                                    <span className="line-clamp-2">{appointment.cliente.endereco_completo}</span>
+                                    <span className="line-clamp-2">{getFullAddress(appointment.cliente)}</span>
                                 </div>
                             )}
 

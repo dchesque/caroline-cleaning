@@ -32,7 +32,8 @@ import {
     XCircle,
     Eye,
     Download,
-    MoreHorizontal
+    MoreHorizontal,
+    Send
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -288,6 +289,14 @@ export default function ContratosPage() {
                                                                 {common.view}
                                                             </Link>
                                                         </DropdownMenuItem>
+                                                        {(contract.status === 'rascunho' || contract.status === 'pendente') && (
+                                                            <DropdownMenuItem asChild>
+                                                                <Link href={`/admin/contratos/${contract.id}`}>
+                                                                    <Send className="w-4 h-4 mr-2 text-brandy-rose-600" />
+                                                                    Enviar p/ Assinar
+                                                                </Link>
+                                                            </DropdownMenuItem>
+                                                        )}
                                                         {contract.documento_url && (
                                                             <DropdownMenuItem>
                                                                 <Download className="w-4 h-4 mr-2" />
