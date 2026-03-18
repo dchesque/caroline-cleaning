@@ -1,6 +1,6 @@
 # 🔧 PROMPT DE IMPLANTAÇÃO: CORREÇÕES CAROL AI — CÓDIGO
 
-**Projeto:** Caroline Premium Cleaning  
+**Projeto:** Chesque Premium Cleaning  
 **Versão:** 1.1 (Correções pós-auditoria)  
 **Data:** 06/03/2026  
 **Objetivo:** Corrigir 12 problemas de código identificados na auditoria do sistema Carol AI  

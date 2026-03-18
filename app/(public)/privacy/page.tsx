@@ -1,8 +1,8 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'Privacy Policy | Carolina Premium Cleaning',
-    description: 'Privacy Policy for Carolina Premium Cleaning. Learn how we collect, use, and protect your personal information.',
+    title: 'Privacy Policy | Chesque Premium Cleaning',
+    description: 'Privacy Policy for Chesque Premium Cleaning. Learn how we collect, use, and protect your personal information.',
 }
 
 export default function PrivacyPolicyPage() {
@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
                     <section>
                         <h2 className="text-2xl font-heading text-foreground mb-4">1. Introduction</h2>
                         <p className="text-brandy-rose-900/80 leading-relaxed">
-                            At Carolina Premium Cleaning ("we," "our," or "us"), we value your privacy and are committed to protecting your personal information. This Privacy Policy outlines how we collect, use, store, and share your data when you visit our website or use our cleaning services in North Carolina and South Carolina.
+                            At Chesque Premium Cleaning ("we," "our," or "us"), we value your privacy and are committed to protecting your personal information. This Privacy Policy outlines how we collect, use, store, and share your data when you visit our website or use our cleaning services in North Carolina and South Carolina.
                         </p>
                     </section>
 
@@ -69,7 +69,7 @@ export default function PrivacyPolicyPage() {
                         <p className="text-brandy-rose-900/80 leading-relaxed">
                             If you have any questions about this Privacy Policy, please contact us at:
                             <br /><br />
-                            <strong>Email:</strong> contact@carolinecleaning.com<br />
+                            <strong>Email:</strong> contact@chesquecleaning.com<br />
                             <strong>Phone:</strong> (551) 389-7394
                         </p>
                     </section>

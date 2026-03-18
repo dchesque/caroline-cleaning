@@ -1,4 +1,4 @@
-# ROTAS E TELAS - CAROLINE PREMIUM CLEANING
+# ROTAS E TELAS - Chesque PREMIUM CLEANING
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -245,15 +245,15 @@ app/
 │  FOOTER                                                         │
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │                                                         │    │
-│  │  Caroline Premium Cleaning                              │    │
+│  │  Chesque Premium Cleaning                              │    │
 │  │                                                         │    │
 │  │  Contact                    Service Areas               │    │
 │  │  📞 (305) 555-1234          Miami                       │    │
-│  │  ✉️ hello@caroline.com      Miami Beach                 │    │
+│  │  ✉️ hello@Chesque.com      Miami Beach                 │    │
 │  │                             Coral Gables                │    │
 │  │                             Brickell                    │    │
 │  │                                                         │    │
-│  │  © 2024 Caroline Premium Cleaning. All rights reserved. │    │
+│  │  © 2024 Chesque Premium Cleaning. All rights reserved. │    │
 │  │                                                         │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
@@ -302,14 +302,14 @@ app/
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │  ←  Caroline Premium Cleaning                     ✕     │    │
+│  │  ←  Chesque Premium Cleaning                     ✕     │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │                                                         │    │
 │  │                                                         │    │
 │  │   ┌────────────────────────────────┐                    │    │
-│  │   │ Hi! I'm Carol from Caroline    │                    │    │
+│  │   │ Hi! I'm Carol from Chesque    │                    │    │
 │  │   │ Premium Cleaning. How can I    │                    │    │
 │  │   │ help you today?                │                    │    │
 │  │   └────────────────────────────────┘                    │    │
@@ -397,7 +397,7 @@ interface Message {
 │                                                                 │
 │               ┌─────────────────────────────────┐               │
 │               │                                 │               │
-│               │     [Logo Caroline Cleaning]    │               │
+│               │     [Logo Chesque Cleaning]    │               │
 │               │                                 │               │
 │               │     ─────────────────────────   │               │
 │               │                                 │               │
@@ -406,7 +406,7 @@ interface Message {
 │               │                                 │               │
 │               │     ┌───────────────────────┐   │               │
 │               │     │ Email                 │   │               │
-│               │     │ thayna@caroline.com   │   │               │
+│               │     │ thayna@Chesque.com   │   │               │
 │               │     └───────────────────────┘   │               │
 │               │                                 │               │
 │               │     ┌───────────────────────┐   │               │
@@ -493,7 +493,7 @@ interface Message {
 **Mobile (Sidebar como drawer):**
 ```
 ┌─────────────────────────────────────────┐
-│  ☰  Caroline Admin         [🔔] [👤]   │
+│  ☰  Chesque Admin         [🔔] [👤]   │
 ├─────────────────────────────────────────┤
 │                                         │
 │              PAGE CONTENT               │
@@ -945,7 +945,7 @@ interface DashboardData {
 │  │  │                                                 │   │    │
 │  │  │           [Pré-visualização do Contrato]        │   │    │
 │  │  │                                                 │   │    │
-│  │  │           Caroline Premium Cleaning             │   │    │
+│  │  │           Chesque Premium Cleaning             │   │    │
 │  │  │              Service Agreement                  │   │    │
 │  │  │                   ...                           │   │    │
 │  │  │                                                 │   │    │
@@ -1120,12 +1120,12 @@ interface DashboardData {
 │  │                                                         │    │
 │  │  Nome da Empresa                                        │    │
 │  │  ┌─────────────────────────────────────────────────┐   │    │
-│  │  │ Caroline Premium Cleaning                       │   │    │
+│  │  │ Chesque Premium Cleaning                       │   │    │
 │  │  └─────────────────────────────────────────────────┘   │    │
 │  │                                                         │    │
 │  │  Telefone                       Email                   │    │
 │  │  ┌───────────────────┐         ┌───────────────────┐   │    │
-│  │  │ (305) 555-1234    │         │ hello@caroline.com│   │    │
+│  │  │ (305) 555-1234    │         │ hello@Chesque.com│   │    │
 │  │  └───────────────────┘         └───────────────────┘   │    │
 │  │                                                         │    │
 │  │  Endereço base (para cálculo de deslocamento)           │    │

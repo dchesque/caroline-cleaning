@@ -1,5 +1,5 @@
 # FASE 1: SETUP & INFRAESTRUTURA
-## Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+## Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -27,7 +27,7 @@
 
 ### 1.1 Visão Geral
 
-**Nome:** Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+**Nome:** Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Tagline:** *"Professional cleaning, instantly scheduled."*
 
@@ -38,7 +38,7 @@ Uma plataforma completa que combina:
 
 ### 1.2 Problema que Resolve
 
-O mercado de house cleaning nos EUA usa modelo defasado (formulários + espera). Caroline Premium Cleaning:
+O mercado de house cleaning nos EUA usa modelo defasado (formulários + espera). Chesque Premium Cleaning:
 - Responde em segundos, 24/7
 - Agenda no calor do momento
 - Zero lead perdido por falta de resposta
@@ -148,7 +148,7 @@ Ao final da Fase 1, o projeto deve:
 Criar EXATAMENTE esta estrutura:
 
 ```
-caroline-cleaning/
+Chesque-cleaning/
 ├── app/
 │   ├── (public)/                    # Layout público (sem sidebar)
 │   │   ├── layout.tsx
@@ -267,7 +267,7 @@ caroline-cleaning/
 ### 5.1 Criar Projeto Next.js
 
 ```bash
-npx create-next-app@latest caroline-cleaning --typescript --tailwind --eslint --app --src-dir=false --import-alias="@/*"
+npx create-next-app@latest Chesque-cleaning --typescript --tailwind --eslint --app --src-dir=false --import-alias="@/*"
 ```
 
 **Opções durante criação:**
@@ -281,7 +281,7 @@ npx create-next-app@latest caroline-cleaning --typescript --tailwind --eslint --
 ### 5.2 Instalar Dependências
 
 ```bash
-cd caroline-cleaning
+cd Chesque-cleaning
 
 # UI Components
 npm install @radix-ui/react-slot
@@ -1047,18 +1047,18 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Caroline Premium Cleaning',
-    template: '%s | Caroline Premium Cleaning',
+    default: 'Chesque Premium Cleaning',
+    template: '%s | Chesque Premium Cleaning',
   },
   description: 'Professional house cleaning services in Miami. Chat with Carol to book your free estimate 24/7.',
   keywords: ['house cleaning', 'cleaning service', 'Miami', 'professional cleaning', 'maid service'],
-  authors: [{ name: 'Caroline Premium Cleaning' }],
+  authors: [{ name: 'Chesque Premium Cleaning' }],
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://carolinecleaning.com',
-    siteName: 'Caroline Premium Cleaning',
-    title: 'Caroline Premium Cleaning - Professional House Cleaning',
+    url: 'https://Chesquecleaning.com',
+    siteName: 'Chesque Premium Cleaning',
+    title: 'Chesque Premium Cleaning - Professional House Cleaning',
     description: 'Professional house cleaning services in Miami. Chat with Carol to book your free estimate 24/7.',
   },
 }
@@ -1686,7 +1686,7 @@ export default function TestPage() {
       <header className="bg-white border-b border-pampas">
         <div className="container py-4 flex items-center justify-between">
           <h1 className="font-heading text-h3 text-foreground">
-            Caroline Premium Cleaning
+            Chesque Premium Cleaning
           </h1>
           <Button>Chat with Carol</Button>
         </div>
@@ -1834,7 +1834,7 @@ export default function TestPage() {
       <footer className="bg-brandy-rose-950 text-white py-8">
         <div className="container text-center">
           <p className="text-body-sm opacity-80">
-            © 2024 Caroline Premium Cleaning. All rights reserved.
+            © 2024 Chesque Premium Cleaning. All rights reserved.
           </p>
         </div>
       </footer>

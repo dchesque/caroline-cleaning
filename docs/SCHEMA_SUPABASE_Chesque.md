@@ -1,4 +1,4 @@
-# SCHEMA SUPABASE - CAROLINE PREMIUM CLEANING
+# SCHEMA SUPABASE - Chesque PREMIUM CLEANING
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -1316,9 +1316,9 @@ ORDER BY mes DESC;
 
 ```sql
 INSERT INTO public.configuracoes (chave, valor, descricao) VALUES
-  ('empresa_nome', '"Caroline Premium Cleaning"', 'Nome da empresa'),
+  ('empresa_nome', '"Chesque Premium Cleaning"', 'Nome da empresa'),
   ('empresa_telefone', '"(551) 389-7394"', 'Telefone principal'),
-  ('empresa_email', '"hello@carolinecleaning.com"', 'Email principal'),
+  ('empresa_email', '"hello@Chesquecleaning.com"', 'Email principal'),
   ('empresa_endereco', '"500 Main St, Miami, FL 33139"', 'Endereço base'),
   
   ('horario_inicio', '"08:00"', 'Hora de início do expediente'),
@@ -1419,7 +1419,7 @@ Execute os scripts na seguinte ordem:
 
 ```sql
 -- ================================================
--- CAROLINE PREMIUM CLEANING - SCHEMA COMPLETO
+-- Chesque PREMIUM CLEANING - SCHEMA COMPLETO
 -- Execute este script no SQL Editor do Supabase
 -- ================================================
 

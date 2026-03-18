@@ -268,9 +268,9 @@ async function queryBusinessInfo(supabase: any) {
     const settings = data?.settings || {}
 
     return {
-        name: settings.business_name || 'Carolina Premium Cleaning',
+        name: settings.business_name || 'Chesque Premium Cleaning',
         phone: settings.business_phone || '(551) 389-7394',
-        email: settings.business_email || 'hello@carolinecleaning.com',
+        email: settings.business_email || 'hello@chesquecleaning.com',
         hours: {
             start: settings.operating_start || '08:00',
             end: settings.operating_end || '18:00',

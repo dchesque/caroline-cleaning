@@ -1,6 +1,6 @@
 # 🤖 PROMPT DE IMPLANTAÇÃO: CAROL AI NATIVA NO NEXT.JS
 
-**Projeto:** Caroline Premium Cleaning  
+**Projeto:** Chesque Premium Cleaning  
 **Versão:** 1.0  
 **Data:** Fevereiro 2026  
 **Objetivo:** Implementar assistente conversacional IA integrada nativamente ao Next.js (sem dependência de n8n)
@@ -117,7 +117,7 @@ export const openrouter = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
   defaultHeaders: {
     'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL,
-    'X-Title': 'Caroline Premium Cleaning'
+    'X-Title': 'Chesque Premium Cleaning'
   }
 })
 
@@ -246,7 +246,7 @@ export interface CheckZipCoverageParams {
 ```typescript
 // lib/ai/prompts.ts
 
-export const CAROL_SYSTEM_PROMPT = `Você é Carol, assistente virtual da Caroline Premium Cleaning em Miami/Charlotte.
+export const CAROL_SYSTEM_PROMPT = `Você é Carol, assistente virtual da Chesque Premium Cleaning em Miami/Charlotte.
 
 PERSONALIDADE:
 - Calorosa, amigável e profissional
@@ -1194,7 +1194,7 @@ CAROL_DEFAULT_MODEL=anthropic/claude-3.5-sonnet
 
 # App Configuration (para referer header)
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-# Produção: https://carolinecleaning.com
+# Produção: https://Chesquecleaning.com
 ```
 
 **Atualizar `.env.example`:**
@@ -1488,7 +1488,7 @@ N8N_TRIGGER_WEBHOOK_URL=...
 # 🤖 Carol AI - Documentação
 
 ## Visão Geral
-Carol é a assistente virtual conversacional da Caroline Premium Cleaning, implementada nativamente no Next.js usando OpenRouter (Claude 3.5 Sonnet).
+Carol é a assistente virtual conversacional da Chesque Premium Cleaning, implementada nativamente no Next.js usando OpenRouter (Claude 3.5 Sonnet).
 
 ## Arquitetura
 - **LLM Provider:** OpenRouter (https://openrouter.ai)

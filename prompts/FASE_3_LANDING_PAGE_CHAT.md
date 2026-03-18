@@ -1,5 +1,5 @@
 # FASE 3: LANDING PAGE + CHAT UI
-## Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+## Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -30,7 +30,7 @@
 
 ### 1.1 Resumo do Projeto
 
-**Caroline Premium Cleaning** é uma plataforma de atendimento e gestão para serviços de limpeza residencial/comercial nos EUA (Miami/Florida).
+**Chesque Premium Cleaning** é uma plataforma de atendimento e gestão para serviços de limpeza residencial/comercial nos EUA (Miami/Florida).
 
 **Objetivo desta fase:** Criar a interface pública que converte visitantes em leads através do chat com Carol (IA).
 
@@ -77,10 +77,10 @@
 **Exemplo de tom:**
 ```
 ❌ Errado:
-"Hello! 🎉 Welcome to Caroline Premium Cleaning! We are SO EXCITED to hear from you! How can I help you today?! 😊✨"
+"Hello! 🎉 Welcome to Chesque Premium Cleaning! We are SO EXCITED to hear from you! How can I help you today?! 😊✨"
 
 ✅ Certo:
-"Hi! I'm Carol from Caroline Premium Cleaning. How can I help you today?"
+"Hi! I'm Carol from Chesque Premium Cleaning. How can I help you today?"
 ```
 
 ---
@@ -298,7 +298,7 @@ export function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <span className="font-heading text-h4 md:text-h3 text-brandy-rose-600">
-              Caroline
+              Chesque
             </span>
             <span className="hidden sm:inline font-heading text-h4 md:text-h3 text-foreground">
               Premium Cleaning
@@ -813,7 +813,7 @@ const testimonials = [
     name: 'Jennifer K.',
     location: 'Coral Gables',
     rating: 5,
-    text: 'I\'ve tried many cleaning services, but Caroline Premium Cleaning is by far the best. The attention to detail is incredible.',
+    text: 'I\'ve tried many cleaning services, but Chesque Premium Cleaning is by far the best. The attention to detail is incredible.',
     date: 'October 2024',
   },
   {
@@ -949,7 +949,7 @@ export function Testimonials() {
         {/* Google Reviews Link */}
         <div className="text-center mt-8">
           <a
-            href="https://g.page/r/caroline-cleaning/review"
+            href="https://g.page/r/Chesque-cleaning/review"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-body-sm text-brandy-rose-600 hover:text-brandy-rose-700 transition-colors"
@@ -1128,7 +1128,7 @@ export function Footer() {
           <div className="md:col-span-2">
             <Link href="/" className="inline-block mb-4">
               <span className="font-heading text-h3 text-white">
-                Caroline Premium Cleaning
+                Chesque Premium Cleaning
               </span>
             </Link>
             <p className="text-body text-white/70 max-w-md mb-6">
@@ -1137,7 +1137,7 @@ export function Footer() {
             </p>
             <div className="flex gap-4">
               <a
-                href="https://facebook.com/carolinecleaning"
+                href="https://facebook.com/Chesquecleaning"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
@@ -1145,7 +1145,7 @@ export function Footer() {
                 <Facebook className="w-5 h-5" />
               </a>
               <a
-                href="https://instagram.com/carolinecleaning"
+                href="https://instagram.com/Chesquecleaning"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
@@ -1209,11 +1209,11 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="mailto:hello@carolinecleaning.com"
+                  href="mailto:hello@Chesquecleaning.com"
                   className="flex items-center gap-2 text-body-sm text-white/70 hover:text-white transition-colors"
                 >
                   <Mail className="w-4 h-4" />
-                  hello@carolinecleaning.com
+                  hello@Chesquecleaning.com
                 </a>
               </li>
               <li>
@@ -1233,7 +1233,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-caption text-white/50">
-              © {currentYear} Caroline Premium Cleaning. All rights reserved.
+              © {currentYear} Chesque Premium Cleaning. All rights reserved.
             </p>
             <div className="flex gap-6">
               <Link
@@ -1483,7 +1483,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
       {showWelcome && (
         <MessageBubble
           role="assistant"
-          content="Hi! I'm Carol from Caroline Premium Cleaning. How can I help you today? 😊"
+          content="Hi! I'm Carol from Chesque Premium Cleaning. How can I help you today? 😊"
           timestamp={new Date()}
         />
       )}
@@ -1844,7 +1844,7 @@ async function getMockResponse(userMessage: string): Promise<string> {
   }
 
   if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
-    return "Hello! 👋 Thanks for reaching out to Caroline Premium Cleaning. I'm Carol, your virtual assistant. How can I help you today?"
+    return "Hello! 👋 Thanks for reaching out to Chesque Premium Cleaning. I'm Carol, your virtual assistant. How can I help you today?"
   }
 
   if (message.includes('thank')) {
@@ -2259,7 +2259,7 @@ className="flex flex-col sm:flex-row"
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Caroline Premium Cleaning | Professional House Cleaning in Miami',
+  title: 'Chesque Premium Cleaning | Professional House Cleaning in Miami',
   description: 'Professional house cleaning services in Miami, Miami Beach, Coral Gables & surrounding areas. Book your free estimate 24/7. Fully insured, satisfaction guaranteed.',
   keywords: [
     'house cleaning Miami',
@@ -2271,10 +2271,10 @@ export const metadata: Metadata = {
     'residential cleaning service',
   ],
   openGraph: {
-    title: 'Caroline Premium Cleaning | Professional House Cleaning in Miami',
+    title: 'Chesque Premium Cleaning | Professional House Cleaning in Miami',
     description: 'Professional house cleaning services in Miami. Book your free estimate 24/7 through our chat assistant Carol.',
-    url: 'https://carolinecleaning.com',
-    siteName: 'Caroline Premium Cleaning',
+    url: 'https://Chesquecleaning.com',
+    siteName: 'Chesque Premium Cleaning',
     locale: 'en_US',
     type: 'website',
     images: [
@@ -2282,13 +2282,13 @@ export const metadata: Metadata = {
         url: '/images/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Caroline Premium Cleaning',
+        alt: 'Chesque Premium Cleaning',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Caroline Premium Cleaning',
+    title: 'Chesque Premium Cleaning',
     description: 'Professional house cleaning services in Miami. Book 24/7!',
     images: ['/images/twitter-image.jpg'],
   },
@@ -2297,7 +2297,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   alternates: {
-    canonical: 'https://carolinecleaning.com',
+    canonical: 'https://Chesquecleaning.com',
   },
 }
 ```
@@ -2312,11 +2312,11 @@ Adicionar ao `app/(public)/page.tsx`:
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'LocalBusiness',
-  name: 'Caroline Premium Cleaning',
+  name: 'Chesque Premium Cleaning',
   description: 'Professional house cleaning services in Miami',
-  url: 'https://carolinecleaning.com',
+  url: 'https://Chesquecleaning.com',
   telephone: '+1-305-555-1234',
-  email: 'hello@carolinecleaning.com',
+  email: 'hello@Chesquecleaning.com',
   address: {
     '@type': 'PostalAddress',
     addressLocality: 'Miami',

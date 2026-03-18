@@ -1,5 +1,5 @@
 # FASE 8: DEPLOY E PRODUÇÃO
-## Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+## Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -32,7 +32,7 @@ Esta fase cobre todo o processo de **deploy para produção** usando **Easypanel
 ```dockerfile
 # Dockerfile
 # ============================================
-# CAROLINE PREMIUM CLEANING - PRODUCTION BUILD
+# Chesque PREMIUM CLEANING - PRODUCTION BUILD
 # ============================================
 
 # ============================================
@@ -230,8 +230,8 @@ const nextConfig = {
       // Redirecionar www para não-www
       {
         source: '/:path*',
-        has: [{ type: 'host', value: 'www.carolinecleaning.com' }],
-        destination: 'https://carolinecleaning.com/:path*',
+        has: [{ type: 'host', value: 'www.Chesquecleaning.com' }],
+        destination: 'https://Chesquecleaning.com/:path*',
         permanent: true,
       },
     ]
@@ -388,8 +388,8 @@ export async function GET() {
 # easypanel.yml
 # Configuração declarativa para Easypanel
 
-name: caroline-cleaning
-description: Caroline Premium Cleaning Platform
+name: Chesque-cleaning
+description: Chesque Premium Cleaning Platform
 
 services:
   web:
@@ -397,7 +397,7 @@ services:
     source:
       type: github
       owner: your-github-username
-      repo: caroline-cleaning
+      repo: Chesque-cleaning
       branch: main
     build:
       type: dockerfile
@@ -412,11 +412,11 @@ services:
           cpu: "0.5"
           memory: "512Mi"
     domains:
-      - host: carolinecleaning.com
+      - host: Chesquecleaning.com
         https: true
-      - host: www.carolinecleaning.com
+      - host: www.Chesquecleaning.com
         https: true
-        redirect: carolinecleaning.com
+        redirect: Chesquecleaning.com
     healthCheck:
       path: /api/health
       interval: 30s
@@ -448,7 +448,7 @@ services:
 
 1. Acesse o painel do Easypanel
 2. Clique em "Create Project"
-3. Nome: `caroline-cleaning`
+3. Nome: `Chesque-cleaning`
 4. Clique em "Create"
 
 ## Passo 2: Criar Serviço
@@ -458,7 +458,7 @@ services:
 3. Configure:
    - Name: `web`
    - Source: GitHub (conecte sua conta)
-   - Repository: `seu-usuario/caroline-cleaning`
+   - Repository: `seu-usuario/Chesque-cleaning`
    - Branch: `main`
    - Build: Dockerfile
    - Dockerfile Path: `Dockerfile`
@@ -466,9 +466,9 @@ services:
 ## Passo 3: Configurar Domínio
 
 1. Na aba "Domains", clique em "Add Domain"
-2. Domain: `carolinecleaning.com`
+2. Domain: `Chesquecleaning.com`
 3. Habilite HTTPS (Let's Encrypt)
-4. Repita para `www.carolinecleaning.com` com redirect
+4. Repita para `www.Chesquecleaning.com` com redirect
 
 ## Passo 4: Variáveis de Ambiente
 
@@ -483,7 +483,7 @@ N8N_WEBHOOK_SECRET=seu-secret-seguro
 N8N_CHAT_WEBHOOK_URL=https://seu-n8n.com/webhook/carol
 EVOLUTION_API_URL=https://sua-evolution.com
 EVOLUTION_API_KEY=sua-api-key
-EVOLUTION_INSTANCE=caroline
+EVOLUTION_INSTANCE=Chesque
 ```
 
 ## Passo 5: Configurar Resources
@@ -524,7 +524,7 @@ EVOLUTION_INSTANCE=caroline
 # AMBIENTE
 # ============================================
 NODE_ENV=production
-NEXT_PUBLIC_APP_URL=https://carolinecleaning.com
+NEXT_PUBLIC_APP_URL=https://Chesquecleaning.com
 
 # ============================================
 # SUPABASE
@@ -545,7 +545,7 @@ N8N_TRIGGER_WEBHOOK_URL=https://seu-n8n.com/webhook/carol-trigger
 # ============================================
 EVOLUTION_API_URL=https://sua-evolution-api.com
 EVOLUTION_API_KEY=sua-api-key-evolution
-EVOLUTION_INSTANCE=caroline
+EVOLUTION_INSTANCE=Chesque
 
 # ============================================
 # OPENAI (para IA no n8n)
@@ -636,7 +636,7 @@ export const env = {
   // Evolution API
   evolutionUrl: process.env.EVOLUTION_API_URL,
   evolutionKey: process.env.EVOLUTION_API_KEY,
-  evolutionInstance: process.env.EVOLUTION_INSTANCE || 'caroline',
+  evolutionInstance: process.env.EVOLUTION_INSTANCE || 'Chesque',
   
   // Analytics
   gaId: process.env.NEXT_PUBLIC_GA_ID,
@@ -756,7 +756,7 @@ jobs:
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.EASYPANEL_API_KEY }}" \
             -d '{
-              "project": "caroline-cleaning",
+              "project": "Chesque-cleaning",
               "service": "web",
               "action": "deploy"
             }'
@@ -767,7 +767,7 @@ jobs:
       - name: Health check
         run: |
           for i in {1..10}; do
-            response=$(curl -s -o /dev/null -w "%{http_code}" https://carolinecleaning.com/api/health)
+            response=$(curl -s -o /dev/null -w "%{http_code}" https://Chesquecleaning.com/api/health)
             if [ "$response" = "200" ]; then
               echo "✅ Health check passed"
               exit 0
@@ -1056,7 +1056,7 @@ echo "✅ Backups antigos removidos"
 ### 7.2 Política de Backup
 
 ```markdown
-# POLÍTICA DE BACKUP - CAROLINE CLEANING
+# POLÍTICA DE BACKUP - Chesque CLEANING
 
 ## Frequência
 - **Banco de dados**: Diário (via Supabase automático)
@@ -1236,7 +1236,7 @@ export function middleware(request: NextRequest) {
 ## Site Fora do Ar
 1. Verificar status do Easypanel
 2. Checar logs do container
-3. Verificar health check: `curl https://carolinecleaning.com/api/health`
+3. Verificar health check: `curl https://Chesquecleaning.com/api/health`
 4. Se necessário, reiniciar serviço no Easypanel
 5. Verificar se Supabase está operacional
 
@@ -1273,10 +1273,10 @@ export function middleware(request: NextRequest) {
 
 ```bash
 # Build local
-docker build -t caroline-cleaning .
+docker build -t Chesque-cleaning .
 
 # Run local
-docker run -p 3000:3000 --env-file .env.local caroline-cleaning
+docker run -p 3000:3000 --env-file .env.local Chesque-cleaning
 
 # Ver logs
 docker logs -f <container_id>
@@ -1295,13 +1295,13 @@ docker system prune -a
 docker ps
 
 # Logs em tempo real
-docker logs -f caroline-cleaning-web
+docker logs -f Chesque-cleaning-web
 
 # Restart
-docker restart caroline-cleaning-web
+docker restart Chesque-cleaning-web
 
 # Health check manual
-curl -s https://carolinecleaning.com/api/health | jq
+curl -s https://Chesquecleaning.com/api/health | jq
 
 # Verificar uso de recursos
 docker stats
@@ -1344,7 +1344,7 @@ A Fase 8 está COMPLETA quando:
 
 ## 🎉 PROJETO COMPLETO!
 
-Com a conclusão da Fase 8, o projeto **Caroline Premium Cleaning** está completo e em produção!
+Com a conclusão da Fase 8, o projeto **Chesque Premium Cleaning** está completo e em produção!
 
 ### Resumo das Fases:
 

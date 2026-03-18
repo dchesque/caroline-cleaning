@@ -46,9 +46,9 @@ CREATE TABLE IF NOT EXISTS configuracoes (
 
 -- Inserir config padrão
 INSERT INTO configuracoes (id, settings) VALUES (1, '{
-  "business_name": "Caroline Premium Cleaning",
+  "business_name": "Chesque Premium Cleaning",
   "business_phone": "(551) 389-7394",
-  "business_email": "hello@carolinecleaning.com",
+  "business_email": "hello@Chesquecleaning.com",
   "operating_start": "08:00",
   "operating_end": "18:00",
   "operating_days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]

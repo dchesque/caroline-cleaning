@@ -1,3 +1,15 @@
+# Changelog - v3.4.0 (2026-03-18)
+
+## [3.4.0] - 2026-03-18
+### Added
+- **Rebranding Core**: Transição completa da identidade visual e textual de "Caroline Premium Cleaning" para "Chesque Premium Cleaning".
+- **Novas Docs**: Atualização de PRD, Design System, Flowcharts e Schemas para refletir a nova marca Chesque.
+- **Configuração de Metadados**: Implementação do `CONFIG_METADATA` em `lib/business-config.ts` para melhor organização de grupos de configuração (Empresa, Página Inicial, Sistema).
+
+### Changed
+- **Páginas Administrativas e Públicas**: Atualização de todos os títulos SEO, descrições e textos fixos para a nova marca.
+- **Package name**: De `caroline-cleaning` para `chesque-cleaning`.
+
 # Changelog - v3.3.6 (2026-03-12)
 
 ## [3.3.6] - 2026-03-12

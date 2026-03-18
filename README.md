@@ -1,4 +1,4 @@
-# Caroline Premium Cleaning - Plataforma de Gestão
+# Chesque Premium Cleaning - Plataforma de Gestão
 
 > *"Professional cleaning, instantly scheduled."*
 
@@ -57,7 +57,7 @@ Este projeto é uma aplicação web moderna construída com **Next.js 15** (App 
 ### 1. Clone o repositório
 ```bash
 git clone <repo-url>
-cd carolinas-premium
+cd chesque-cleaning
 ```
 
 ### 2. Instale as dependências
@@ -87,12 +87,12 @@ O projeto está configurado para deploy via Docker, compatível com Easypanel/Co
 
 ### Build da Imagem
 ```bash
-docker build -t caroline-cleaning .
+docker build -t chesque-cleaning .
 ```
 
 ### Executar Container
 ```bash
-docker run -p 3000:3000 caroline-cleaning
+docker run -p 3000:3000 chesque-cleaning
 ```
 
 **Nota sobre Deploy**: O `Dockerfile` foi otimizado para produção usando Next.js Standalone output. Certifique-se de que sua plataforma de deploy suporte Dockerfile builds.
@@ -116,4 +116,4 @@ Instruções para desenvolvimento:
 
 ---
 
-Desenvolvido para **Caroline Premium Cleaning**.
+Desenvolvido para **Chesque Premium Cleaning**.

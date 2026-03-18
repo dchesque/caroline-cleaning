@@ -62,7 +62,7 @@ INSERT INTO public.configuracoes (chave, valor, categoria, descricao) VALUES
   ('hero_title_2', '"Offices in Charlotte & Fort Mill"', 'geral', 'Título linha 2'),
   ('hero_subtitle', '"Reliable residential and commercial cleaning services with carefully selected professionals, flexible scheduling, and consistent results."', 'geral', 'Subtítulo do Hero'),
   ('hero_cta_text', '"Schedule a Visit"', 'geral', 'Texto do botão CTA'),
-  ('business_website', '"www.carolinecleaning.com"', 'geral', 'Website oficial'),
+  ('business_website', '"www.Chesquecleaning.com"', 'geral', 'Website oficial'),
   ('business_address', '"123 Ocean Drive, Miami, FL 33139"', 'geral', 'Endereço completo'),
   ('business_phone_display', '"(551) 389-7394"', 'geral', 'Telefone para exibição'),
   ('notify_new_booking', 'true', 'notificacoes', 'Notificar novo agendamento'),

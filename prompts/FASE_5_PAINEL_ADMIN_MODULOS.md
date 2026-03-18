@@ -1,5 +1,5 @@
 # FASE 5: PAINEL ADMIN - MÓDULOS AVANÇADOS
-## Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+## Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -2576,11 +2576,11 @@ export default function ConfiguracoesPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [config, setConfig] = useState({
     // Business Info
-    business_name: 'Caroline Premium Cleaning',
+    business_name: 'Chesque Premium Cleaning',
     business_phone: '(305) 555-0123',
-    business_email: 'hello@carolinecleaning.com',
+    business_email: 'hello@Chesquecleaning.com',
     business_address: '123 Ocean Drive, Miami, FL 33139',
-    business_website: 'www.carolinecleaning.com',
+    business_website: 'www.Chesquecleaning.com',
     
     // Operating Hours
     operating_start: '08:00',
@@ -3357,9 +3357,9 @@ CREATE TABLE IF NOT EXISTS configuracoes (
 
 -- Inserir config padrão
 INSERT INTO configuracoes (id, settings) VALUES (1, '{
-  "business_name": "Caroline Premium Cleaning",
+  "business_name": "Chesque Premium Cleaning",
   "business_phone": "(305) 555-0123",
-  "business_email": "hello@carolinecleaning.com",
+  "business_email": "hello@Chesquecleaning.com",
   "operating_start": "08:00",
   "operating_end": "18:00",
   "operating_days": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]

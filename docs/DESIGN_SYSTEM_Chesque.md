@@ -1,4 +1,4 @@
-# DESIGN SYSTEM - CAROLINE PREMIUM CLEANING
+# DESIGN SYSTEM - Chesque PREMIUM CLEANING
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -611,7 +611,7 @@
 │                                                                 │
 │  ASSISTANT (Carol)                                              │
 │  ┌────────────────────────────────────┐                        │
-│  │ Hi! I'm Carol from Caroline        │                        │
+│  │ Hi! I'm Carol from Chesque        │                        │
 │  │ Premium Cleaning. How can I        │                        │
 │  │ help you today?                    │                        │
 │  └────────────────────────────────────┘                        │
@@ -1119,7 +1119,7 @@ export default config
   </div>
   <div className="bg-pot-pourri rounded-2xl rounded-bl-sm px-4 py-3 max-w-[80%]">
     <p className="text-body text-foreground">
-      Hi! I'm Carol from Caroline Premium Cleaning. How can I help you today?
+      Hi! I'm Carol from Chesque Premium Cleaning. How can I help you today?
     </p>
   </div>
 </div>

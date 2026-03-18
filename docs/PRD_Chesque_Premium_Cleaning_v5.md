@@ -1,4 +1,4 @@
-# PRD - CAROLINE PREMIUM CLEANING
+# PRD - Chesque PREMIUM CLEANING
 
 **Versão:** 5.0  
 **Data:** Dezembro 2024  
@@ -26,7 +26,7 @@
 
 ## SEÇÃO 1: VISÃO GERAL DO PRODUTO
 
-**Nome do Produto:** Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+**Nome do Produto:** Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Tagline:** *"Professional cleaning, instantly scheduled."*
 
@@ -62,7 +62,7 @@ Por trás, a plataforma oferece um painel administrativo completo para gestão d
 
 Análise de 5 concorrentes revelou que 100% usam o modelo "preencha o formulário e aguarde contato".
 
-Caroline Premium Cleaning executa o cliente no calor do momento. Interesse vira agendamento em minutos, não dias.
+Chesque Premium Cleaning executa o cliente no calor do momento. Interesse vira agendamento em minutos, não dias.
 
 **Dados de mercado:**
 - 78% dos clientes fecham com a primeira empresa que responde
@@ -91,7 +91,7 @@ O lead de house cleaning é quente e impaciente. Quando alguém pesquisa "house 
 
 ### Problemas Específicos que a Plataforma Resolve
 
-| Problema | Impacto | Solução Caroline |
+| Problema | Impacto | Solução Chesque |
 |----------|---------|------------------|
 | Demora na resposta | Lead vai pro concorrente | Carol responde em segundos, 24/7 |
 | Formulários frios | Baixa conversão | Conversa natural que engaja |
@@ -202,7 +202,7 @@ O lead de house cleaning é quente e impaciente. Quando alguém pesquisa "house 
 
 **Nome:** Carol
 
-**Papel:** Secretária virtual da Caroline Premium Cleaning
+**Papel:** Secretária virtual da Chesque Premium Cleaning
 
 **Personalidade:**
 - Simpática, profissional, eficiente
@@ -221,10 +221,10 @@ O lead de house cleaning é quente e impaciente. Quando alguém pesquisa "house 
 **Exemplo de Tom:**
 
 ❌ **Errado:**
-*"Hello! 🎉 Welcome to Caroline Premium Cleaning! We are SO EXCITED to hear from you! How can I help you today?! 😊✨"*
+*"Hello! 🎉 Welcome to Chesque Premium Cleaning! We are SO EXCITED to hear from you! How can I help you today?! 😊✨"*
 
 ✅ **Certo:**
-*"Hi! I'm Carol from Caroline Premium Cleaning. How can I help you today?"*
+*"Hi! I'm Carol from Chesque Premium Cleaning. How can I help you today?"*
 
 **Limites da Carol:**
 - Não inventa preços (direciona para visita)
@@ -257,7 +257,7 @@ ETAPA 1: DESCOBERTA
 
 ETAPA 2: PRIMEIRO CONTATO
 ├── Cliente clica no chat (inicia a conversa)
-├── Carol: "Hi! I'm Carol from Caroline Premium Cleaning. How can I help you today?"
+├── Carol: "Hi! I'm Carol from Chesque Premium Cleaning. How can I help you today?"
 ├── Cliente: "I'm looking for house cleaning"
 └── Carol: "Great! I'd be happy to help. Let me get a few details."
 
@@ -282,7 +282,7 @@ ETAPA 4: AGENDAMENTO DA VISITA
 └── Carol: "Perfect! Thayna, our owner, will come by Wednesday at 3pm. You'll get a confirmation text shortly. Anything else I can help with?"
 
 ETAPA 5: CONFIRMAÇÃO AUTOMÁTICA
-├── SMS imediato: "Hi Sarah! Your free estimate visit with Caroline Premium Cleaning is confirmed for Wednesday, Dec 11 at 3pm. See you then! - Carol"
+├── SMS imediato: "Hi Sarah! Your free estimate visit with Chesque Premium Cleaning is confirmed for Wednesday, Dec 11 at 3pm. See you then! - Carol"
 ├── Email: confirmação formal com detalhes
 └── Sistema: cria registro no CRM + adiciona na agenda
 
@@ -381,7 +381,7 @@ ETAPA 5: CICLO CONTINUA
 | Cliente inativo 30 dias | Automático | "Hi Sarah! We miss you. Ready to schedule your next cleaning? Reply YES or chat with us anytime." |
 | Cliente inativo 60 dias | Automático | "It's been a while! We'd love to have you back." |
 | Cliente inativo 90 dias | Automático | "Is everything okay? We're here when you need us." |
-| Aniversário 1 ano como cliente | Anual | "Happy 1 year with Caroline Premium Cleaning! 🎉 Thank you for trusting us with your home." |
+| Aniversário 1 ano como cliente | Anual | "Happy 1 year with Chesque Premium Cleaning! 🎉 Thank you for trusting us with your home." |
 | Christmas/New Year | 2 semanas antes | "Start the new year fresh!" |
 | Spring | Março | "Spring cleaning time! 🌸" |
 | Back to School | Agosto | "Kids back to school? Treat yourself!" |
@@ -572,7 +572,7 @@ Próximo slot disponível: 1pm (12pm + 1h deslocamento)
 **Estrutura do Contrato:**
 
 ```
-CAROLINE PREMIUM CLEANING
+Chesque PREMIUM CLEANING
 Service Agreement
 
 ─────────────────────────────────────────────────────
@@ -663,7 +663,7 @@ By signing below, you agree to the terms above.
 
 Client Signature: _______________ Date: ___________
 
-Caroline Premium Cleaning
+Chesque Premium Cleaning
 Thayna [Sobrenome]
 [Phone] | [Email]
 Licensed & Insured
@@ -955,7 +955,7 @@ Antes de sair, Thayna marca no sistema:
 ### 7.4 ESTRUTURA DE PASTAS (NEXT.JS 15)
 
 ```
-caroline-app/
+Chesque-app/
 ├── app/
 │   ├── (public)/                    # Rotas públicas
 │   │   ├── page.tsx                 # Landing Page
@@ -1208,7 +1208,7 @@ CREATE TABLE feedback (
 │   │              AI AGENT ROTEADOR (GPT-4)                  │   │
 │   │                                                         │   │
 │   │   System Prompt:                                        │   │
-│   │   "Você é Carol, secretária virtual da Caroline         │   │
+│   │   "Você é Carol, secretária virtual da Chesque         │   │
 │   │    Premium Cleaning. Seu objetivo é qualificar leads    │   │
 │   │    e agendar visitas de orçamento..."                   │   │
 │   │                                                         │   │
@@ -1420,25 +1420,25 @@ N8N_WEBHOOK_URL=https://n8n.seudominio.com/webhook/carol-chat
 N8N_PASSWORD=senha-segura
 
 # App
-NEXT_PUBLIC_APP_URL=https://carolinecleaning.com
+NEXT_PUBLIC_APP_URL=https://Chesquecleaning.com
 ```
 
 ### 7.10 CONFIGURAÇÃO EASYPANEL
 
 ```yaml
 # easypanel app config
-name: caroline-cleaning
+name: Chesque-cleaning
 services:
   - name: web
     type: app
     source:
       type: github
-      repo: seu-usuario/caroline-app
+      repo: seu-usuario/Chesque-app
       branch: main
     build:
       type: dockerfile
     domains:
-      - host: carolinecleaning.com
+      - host: Chesquecleaning.com
     env:
       - NEXT_PUBLIC_SUPABASE_URL
       - NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -1509,7 +1509,7 @@ services:
 
 | Aspecto | Definição |
 |---------|-----------|
-| **Marca** | Caroline Premium Cleaning |
+| **Marca** | Chesque Premium Cleaning |
 | **Persona IA** | Carol (AI Agent no n8n) |
 | **Diferencial** | Atendimento instantâneo 24/7 + agendamento sem fricção |
 | **Público** | Residências e escritórios nos EUA |

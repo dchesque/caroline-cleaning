@@ -1,5 +1,5 @@
 # FASE 7: ANALYTICS E RELATÓRIOS
-## Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+## Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -2366,7 +2366,7 @@ export function exportToPDF(options: {
       ` : ''}
       
       <div class="footer">
-        <p>Caroline Premium Cleaning - Relatório Confidencial</p>
+        <p>Chesque Premium Cleaning - Relatório Confidencial</p>
       </div>
     </body>
     </html>

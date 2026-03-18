@@ -41,13 +41,13 @@ INSERT INTO public.configuracoes (chave, valor, categoria, grupo, descricao) VAL
   -- Chat/Carol AI
   ('ai_name', '"Carol"', 'pagina_inicial', 'pagina_inicial', 'Nome da assistente virtual'),
   ('ai_avatar', '""', 'pagina_inicial', 'pagina_inicial', 'URL do avatar da IA'),
-  ('ai_greeting', '"Hi! I''m Carol from Caroline Premium Cleaning. How can I help you today?"', 'pagina_inicial', 'pagina_inicial', 'Mensagem de boas-vindas do chat'),
+  ('ai_greeting', '"Hi! I''m Carol from Chesque Premium Cleaning. How can I help you today?"', 'pagina_inicial', 'pagina_inicial', 'Mensagem de boas-vindas do chat'),
   ('ai_tone', '"friendly"', 'pagina_inicial', 'pagina_inicial', 'Tom da IA: friendly, professional, casual'),
   ('chat_enabled', 'true', 'pagina_inicial', 'pagina_inicial', 'Habilitar chat widget'),
   ('chat_position', '"bottom-right"', 'pagina_inicial', 'pagina_inicial', 'Posição do chat widget'),
   
   -- SEO
-  ('seo_title', '"Caroline Premium Cleaning | Professional House Cleaning"', 'pagina_inicial', 'pagina_inicial', 'Meta title para SEO'),
+  ('seo_title', '"Chesque Premium Cleaning | Professional House Cleaning"', 'pagina_inicial', 'pagina_inicial', 'Meta title para SEO'),
   ('seo_description', '"Professional house cleaning services. Book your free estimate 24/7."', 'pagina_inicial', 'pagina_inicial', 'Meta description para SEO'),
   ('seo_og_image', '""', 'pagina_inicial', 'pagina_inicial', 'Imagem para Open Graph'),
   ('seo_keywords', '"house cleaning, cleaning service, professional cleaning"', 'pagina_inicial', 'pagina_inicial', 'Keywords para SEO'),

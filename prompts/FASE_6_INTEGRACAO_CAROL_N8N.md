@@ -1,5 +1,5 @@
 # FASE 6: INTEGRAÇÃO CAROL (IA) + N8N
-## Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+## Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -760,7 +760,7 @@ export async function POST(request: NextRequest) {
 async function sendWhatsAppMessage(phone: string, message: string) {
   const evolutionUrl = process.env.EVOLUTION_API_URL
   const evolutionKey = process.env.EVOLUTION_API_KEY
-  const instance = process.env.EVOLUTION_INSTANCE || 'caroline'
+  const instance = process.env.EVOLUTION_INSTANCE || 'Chesque'
 
   if (!evolutionUrl || !evolutionKey) {
     console.warn('Evolution API not configured')
@@ -1063,9 +1063,9 @@ async function queryBusinessInfo(supabase: any) {
   const settings = data?.settings || {}
 
   return {
-    name: settings.business_name || 'Caroline Premium Cleaning',
+    name: settings.business_name || 'Chesque Premium Cleaning',
     phone: settings.business_phone || '(305) 555-0123',
-    email: settings.business_email || 'hello@carolinecleaning.com',
+    email: settings.business_email || 'hello@Chesquecleaning.com',
     hours: {
       start: settings.operating_start || '08:00',
       end: settings.operating_end || '18:00',
@@ -1703,7 +1703,7 @@ We'll make sure your home is sparkling AND safe for your companions! 💕`
     return `You can reach us at:
 
 📞 **(305) 555-0123**
-📧 hello@carolinecleaning.com
+📧 hello@Chesquecleaning.com
 
 Our office hours are Monday-Saturday, 8am-6pm.
 
@@ -1869,7 +1869,7 @@ N8N_TRIGGER_WEBHOOK_URL=https://your-n8n-instance.com/webhook/carol-trigger
 # Evolution API (WhatsApp)
 EVOLUTION_API_URL=https://your-evolution-api.com
 EVOLUTION_API_KEY=your-evolution-api-key
-EVOLUTION_INSTANCE=caroline
+EVOLUTION_INSTANCE=Chesque
 
 # OpenAI (para IA no n8n)
 OPENAI_API_KEY=sk-your-openai-key
@@ -1917,7 +1917,7 @@ OPENAI_API_KEY=sk-your-openai-key
         "messages": [
           {
             "role": "system",
-            "content": "You are Carol, a friendly assistant for Caroline Premium Cleaning..."
+            "content": "You are Carol, a friendly assistant for Chesque Premium Cleaning..."
           },
           {
             "role": "user",
@@ -1956,7 +1956,7 @@ OPENAI_API_KEY=sk-your-openai-key
 ### 8.2 System Prompt para a Carol
 
 ```markdown
-You are Carol, a friendly and professional AI assistant for Caroline Premium Cleaning, a premium house cleaning service in Miami, Florida.
+You are Carol, a friendly and professional AI assistant for Chesque Premium Cleaning, a premium house cleaning service in Miami, Florida.
 
 ## Your Personality
 - Warm, friendly, and professional

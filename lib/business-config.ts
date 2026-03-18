@@ -163,12 +163,12 @@ export interface BusinessSettings {
 }
 
 export const DEFAULT_SETTINGS: BusinessSettings = {
-    business_name: 'Carolina Premium Cleaning',
+    business_name: 'Chesque Premium Cleaning',
     business_phone: '(551) 389-7394',
     business_phone_display: '(551) 389-7394',
-    business_email: 'hello@carolinecleaning.com',
+    business_email: 'hello@chesquecleaning.com',
     business_address: '123 Ocean Drive, Miami, FL 33139',
-    business_website: 'www.carolinecleaning.com',
+    business_website: 'www.chesquecleaning.com',
     business_logo: '',
     business_description: 'Serving Fort Mill, SC, Charlotte, NC, and nearby cities with premium cleaning services.',
     social_facebook: '',
@@ -193,7 +193,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     chat_bot_name: 'Carol',
     ai_name: 'Carol',
     ai_avatar: '',
-    ai_greeting: "Hi! I'm Carol from Carolina Premium Cleaning. How can I help you today?",
+    ai_greeting: "Hi! I'm Carol from Chesque Premium Cleaning. How can I help you today?",
     chat_position: 'bottom-right',
 
     faq_title: 'Frequently Asked Questions',
@@ -262,7 +262,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
         'Freedom to pause or cancel anytime',
     ],
     about_divider_subtitle: '— The Person Behind the Service —',
-    about_bio_p1: "Thayna founded Carolina Premium Cleaning with one mission: to bring the same care and attention to your home that she gives to her own. Originally from Brazil, she built this business on trust, dedication, and a passion for making people's lives easier.",
+    about_bio_p1: "Thayna founded Chesque Premium Cleaning with one mission: to bring the same care and attention to your home that she gives to her own. Originally from Brazil, she built this business on trust, dedication, and a passion for making people's lives easier.",
     about_bio_p2: "With over 2 years of hands-on experience serving homes across New York and New Jersey, she personally ensures that every team member delivers the same high standard in every visit.",
     about_bio_p3: "As a mother and homeowner herself, Thayna understands how important it is to come home to a clean, welcoming space — and that's the experience she's committed to creating for every client, every time.",
     about_founder_name: 'Thayna Chesque',
@@ -337,7 +337,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     pricing_cta_text: 'Schedule Visit Now',
     pricing_cta_subtext: 'Want an exact quote? Chat with Carol — most quotes ready in under 5 minutes.',
 
-    seo_title: 'Carolina Premium Cleaning | Professional House Cleaning',
+    seo_title: 'Chesque Premium Cleaning | Professional House Cleaning',
     seo_description: 'Professional house cleaning services. Book your free estimate 24/7.',
     seo_keywords: 'house cleaning, cleaning service, professional cleaning',
     seo_og_image: '',
@@ -392,6 +392,84 @@ const KEY_MAP: Record<string, string> = {
     operating_end: 'horario_fim',
     chat_bot_name: 'ai_name',
     ai_name: 'ai_name',
+};
+
+// Mapping of keys to their respective groups/categories
+const CONFIG_METADATA: Record<string, { grupo: string; categoria: string }> = {
+    // Empresa
+    business_name: { grupo: 'empresa', categoria: 'empresa' },
+    business_phone: { grupo: 'empresa', categoria: 'empresa' },
+    business_phone_display: { grupo: 'empresa', categoria: 'empresa' },
+    business_email: { grupo: 'empresa', categoria: 'empresa' },
+    business_address: { grupo: 'empresa', categoria: 'empresa' },
+    business_website: { grupo: 'empresa', categoria: 'empresa' },
+    business_logo: { grupo: 'empresa', categoria: 'empresa' },
+    business_description: { grupo: 'empresa', categoria: 'empresa' },
+    social_facebook: { grupo: 'empresa', categoria: 'empresa' },
+    social_instagram: { grupo: 'empresa', categoria: 'empresa' },
+    social_twitter: { grupo: 'empresa', categoria: 'empresa' },
+    social_google: { grupo: 'empresa', categoria: 'empresa' },
+
+    // Página Inicial
+    hero_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    hero_title_1: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    hero_title_2: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    hero_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    hero_cta_text: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    hero_cta_secondary: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    hero_image: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    badges_enabled: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    badges_rating: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    badges_reviews_count: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    badges_years_experience: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    badges_google_reviews_url: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    ai_name: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    ai_avatar: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    ai_greeting: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    chat_enabled: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    chat_position: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    seo_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    seo_description: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    seo_keywords: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    seo_og_image: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    announcement_enabled: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    announcement_text: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    announcement_bg_color: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    pricing_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    pricing_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    pricing_format: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    pricing_cta_text: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    pricing_cta_subtext: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    
+    // About Us (part of landing but related to founder/company)
+    about_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_image: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_intro_p1: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_intro_p2: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_note: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_quote: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_highlights: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_divider_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_bio_p1: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_bio_p2: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_bio_p3: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_founder_name: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    about_founder_role: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+
+    // Sistema
+    operating_start: { grupo: 'sistema', categoria: 'horarios' },
+    operating_end: { grupo: 'sistema', categoria: 'horarios' },
+    operating_days: { grupo: 'sistema', categoria: 'horarios' },
+    booking_min_notice_hours: { grupo: 'sistema', categoria: 'agendamento' },
+    booking_max_advance_days: { grupo: 'sistema', categoria: 'agendamento' },
+    booking_default_duration: { grupo: 'sistema', categoria: 'agendamento' },
+    booking_buffer_minutes: { grupo: 'sistema', categoria: 'agendamento' },
+    notification_reminder_24h: { grupo: 'sistema', categoria: 'notificacoes' },
+    notification_reminder_2h: { grupo: 'sistema', categoria: 'notificacoes' },
+    notification_new_booking: { grupo: 'sistema', categoria: 'notificacoes' },
+    notification_cancellation: { grupo: 'sistema', categoria: 'notificacoes' },
+    notification_channel_sms: { grupo: 'sistema', categoria: 'notificacoes' },
+    notification_channel_email: { grupo: 'sistema', categoria: 'notificacoes' },
 };
 
 const REVERSE_KEY_MAP: Record<string, string> = Object.entries(KEY_MAP).reduce((acc, [k, v]) => ({ ...acc, [v]: k }), {});
@@ -463,23 +541,39 @@ export async function getBusinessSettingsByGrupo(grupo: string): Promise<Partial
     }
 }
 
-export async function saveBusinessSettings(settings: Partial<BusinessSettings>, grupo?: string) {
+export async function saveBusinessSettings(settings: Partial<BusinessSettings>, grupoInput?: string) {
     const supabase = createClient();
 
     // Use a Map to ensure unique keys (last value wins)
     const configMap = new Map<string, any>();
 
     Object.entries(settings).forEach(([key, value]) => {
+        // Only save if the key is defined in DEFAULT_SETTINGS to avoid saving junk
+        if (!(key in DEFAULT_SETTINGS)) return;
+
+        const meta = CONFIG_METADATA[key];
         const dbKey = KEY_MAP[key] || key;
+        
+        // If a specific group was requested, only save keys that belong to that group
+        // If no group was requested, use the key's defined group or fallback to 'geral'
+        if (grupoInput && meta && meta.grupo !== grupoInput) {
+            // This key belongs to a different group, skip it to avoid collisions
+            return;
+        }
+
+        const targetGrupo = grupoInput || (meta ? meta.grupo : 'geral');
+        const targetCategoria = meta ? meta.categoria : (grupoInput || 'geral');
+
         configMap.set(dbKey, {
             chave: dbKey,
             valor: value, // Supabase JSONB handles it
-            categoria: grupo || 'geral',
-            ...(grupo ? { grupo } : {})
+            categoria: targetCategoria,
+            grupo: targetGrupo
         });
     });
 
     const rows = Array.from(configMap.values());
+    if (rows.length === 0) return;
 
     const { error } = await supabase
         .from('configuracoes')

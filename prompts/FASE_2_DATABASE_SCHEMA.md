@@ -1,5 +1,5 @@
 # FASE 2: DATABASE & SCHEMA
-## Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+## Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -33,7 +33,7 @@
 
 ### 1.1 Resumo do Projeto
 
-**Caroline Premium Cleaning** é uma plataforma de atendimento e gestão para serviços de limpeza residencial/comercial nos EUA (Miami/Florida).
+**Chesque Premium Cleaning** é uma plataforma de atendimento e gestão para serviços de limpeza residencial/comercial nos EUA (Miami/Florida).
 
 **Componentes principais:**
 - **Carol** - Secretária virtual IA (atendimento 24/7)
@@ -1968,9 +1968,9 @@ CREATE POLICY "Authenticated users can upload public assets"
 
 INSERT INTO public.configuracoes (chave, valor, descricao, categoria) VALUES
   -- Dados da empresa
-  ('empresa_nome', '"Caroline Premium Cleaning"', 'Nome da empresa', 'geral'),
+  ('empresa_nome', '"Chesque Premium Cleaning"', 'Nome da empresa', 'geral'),
   ('empresa_telefone', '"(551) 389-7394"', 'Telefone principal', 'geral'),
-  ('empresa_email', '"hello@carolinecleaning.com"', 'Email principal', 'geral'),
+  ('empresa_email', '"hello@Chesquecleaning.com"', 'Email principal', 'geral'),
   ('empresa_endereco', '"500 Main St, Miami, FL 33139"', 'Endereço base', 'geral'),
   
   -- Horários
@@ -1992,7 +1992,7 @@ INSERT INTO public.configuracoes (chave, valor, descricao, categoria) VALUES
   ('fee_no_show', '50', 'Taxa de no-show', 'precos'),
   
   -- Integrações
-  ('google_review_url', '"https://g.page/r/caroline-cleaning/review"', 'Link para deixar review no Google', 'integracao'),
+  ('google_review_url', '"https://g.page/r/Chesque-cleaning/review"', 'Link para deixar review no Google', 'integracao'),
   
   -- Notificações
   ('sms_lembrete_24h', 'true', 'Enviar lembrete SMS 24h antes', 'notificacoes'),
@@ -2331,7 +2331,7 @@ ON CONFLICT (bedrooms, bathrooms) DO NOTHING;
 **IMPORTANTE:** Execute isso no Supabase Dashboard > Authentication > Users > Add User
 
 ```
-Email: admin@carolinecleaning.com
+Email: admin@Chesquecleaning.com
 Password: [definir senha segura]
 ```
 
@@ -2343,7 +2343,7 @@ Ou via SQL (requer service_role):
 
 -- Criar usuário admin via Supabase Auth
 -- Dashboard > Authentication > Users > Add User
--- Email: admin@carolinecleaning.com
+-- Email: admin@Chesquecleaning.com
 -- Password: [escolher senha forte]
 ```
 
@@ -2538,7 +2538,7 @@ Para facilitar, aqui está o script completo em ordem de execução:
 
 ```sql
 -- ============================================
--- CAROLINE PREMIUM CLEANING
+-- Chesque PREMIUM CLEANING
 -- SCHEMA COMPLETO - MIGRAÇÃO
 -- Execute este script no SQL Editor do Supabase
 -- ============================================

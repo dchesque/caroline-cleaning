@@ -1,5 +1,5 @@
 # FASE 4: PAINEL ADMIN - CORE
-## Caroline Premium Cleaning - Plataforma de Atendimento e Gestão
+## Chesque Premium Cleaning - Plataforma de Atendimento e Gestão
 
 **Versão:** 1.0  
 **Data:** Dezembro 2024  
@@ -11,7 +11,7 @@
 
 ## 📋 RESUMO EXECUTIVO
 
-Este documento contém instruções completas para implementar o **núcleo do painel administrativo** do Caroline Premium Cleaning.
+Este documento contém instruções completas para implementar o **núcleo do painel administrativo** do Chesque Premium Cleaning.
 
 ### Escopo da Fase 4:
 - ✅ Sistema de autenticação (Login/Logout)
@@ -115,7 +115,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
-            <span className="font-heading text-h2 text-brandy-rose-600">Caroline</span>
+            <span className="font-heading text-h2 text-brandy-rose-600">Chesque</span>
           </div>
           <CardTitle className="text-h3">Welcome back</CardTitle>
           <CardDescription>Sign in to access your admin dashboard</CardDescription>
@@ -133,7 +133,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@carolinecleaning.com"
+                placeholder="admin@Chesquecleaning.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -315,7 +315,7 @@ export function Sidebar() {
     <div className="flex flex-col h-full">
       <div className="flex items-center h-16 px-6 border-b border-pampas">
         <Link href="/admin" className="flex items-center gap-2">
-          <span className="font-heading text-h4 text-brandy-rose-600">Caroline</span>
+          <span className="font-heading text-h4 text-brandy-rose-600">Chesque</span>
           <span className="font-heading text-h4 text-foreground">Admin</span>
         </Link>
       </div>

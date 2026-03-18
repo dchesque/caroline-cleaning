@@ -1,8 +1,8 @@
 # easypanel.yml
 # Configuração declarativa para Easypanel
 
-name: caroline-cleaning
-description: Caroline Premium Cleaning Platform
+name: chesque-cleaning
+description: chesque Premium Cleaning Platform
 
 services:
   web:
@@ -11,7 +11,7 @@ services:
     source:
       type: github
       owner: your-github-username
-      repo: caroline-cleaning
+      repo: chesque-cleaning
       branch: main
     build:
       type: dockerfile
@@ -26,11 +26,11 @@ services:
           cpu: "0.5"
           memory: "512Mi"
     domains:
-      - host: carolinecleaning.com
+      - host: chesquecleaning.com
         https: true
-      - host: www.carolinecleaning.com
+      - host: www.chesquecleaning.com
         https: true
-        redirect: carolinecleaning.com
+        redirect: chesquecleaning.com
     healthCheck:
       path: /api/health
       interval: 30s

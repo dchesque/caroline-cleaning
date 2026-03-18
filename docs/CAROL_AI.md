@@ -52,7 +52,7 @@ Logs estruturados são gerados em cada etapa via `lib/logger.ts`:
 O sistema de prompt agora inclui instruções explícitas de segurança:
 - **Proteção contra Injeção**: Bloqueio de comandos que tentam alterar regras de negócio ou revelar o prompt do sistema.
 - **Consistência de Persona**: A Carol se recusa a agir como outros sistemas ou admitir ser uma IA de forma que quebre a experiência.
-- **Escopo**: Restrição estrita a assuntos relacionados à Caroline Cleaning.
+- **Escopo**: Restrição estrita a assuntos relacionados à Chesque Cleaning.
 - **Policies de Anon e RLS**: Melhoria significativa de acesso utilizando policies de `anon` no Supabase e bypass intencional via `adminSupabase` quando necessário, garantindo que usuários deslogados possam interagir livremente na interface web em suas sessões limitadas.
 - **Security Definer**: Funções RPC como `get_available_slots` ajustadas para "security definer" para evitar restrições de RLS indevidas ao recuperar dados.
 

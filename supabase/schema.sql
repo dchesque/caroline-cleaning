@@ -1,5 +1,5 @@
 /* ============================================
-   CAROLINE PREMIUM CLEANING
+   Chesque PREMIUM CLEANING
    SCHEMA COMPLETO - FASE 2 (ATUALIZADO)
    ============================================ */
 
@@ -711,9 +711,9 @@ CREATE POLICY "Authenticated users can upload public assets" ON storage.objects 
 /* 9. SEEDS */
 
 INSERT INTO public.configuracoes (chave, valor, descricao, categoria) VALUES
-  ('empresa_nome', '"Caroline Premium Cleaning"', 'Nome da empresa', 'geral'),
+  ('empresa_nome', '"Chesque Premium Cleaning"', 'Nome da empresa', 'geral'),
   ('empresa_telefone', '"(551) 389-7394"', 'Telefone principal', 'geral'),
-  ('empresa_email', '"hello@carolinecleaning.com"', 'Email principal', 'geral'),
+  ('empresa_email', '"hello@Chesquecleaning.com"', 'Email principal', 'geral'),
   ('horario_inicio', '"08:00"', 'Hora de início', 'horarios'),
   ('horario_fim', '"18:00"', 'Hora de fim', 'horarios'),
   ('buffer_deslocamento', '60', 'Buffer minutos', 'horarios')

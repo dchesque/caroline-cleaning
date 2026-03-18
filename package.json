@@ -1,6 +1,6 @@
 {
-  "name": "caroline-cleaning",
-  "version": "3.3.6",
+  "name": "chesque-cleaning",
+  "version": "3.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

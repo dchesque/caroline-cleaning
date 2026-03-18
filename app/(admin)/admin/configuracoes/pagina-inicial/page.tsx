@@ -57,8 +57,19 @@ export default function PaginaInicialConfigPage() {
     useEffect(() => {
         const loadConfig = async () => {
             setIsLoading(true)
-            const data = await getBusinessSettingsByGrupo('pagina_inicial')
-            setConfig((prev: any) => ({ ...prev, ...data }))
+            // Fetch both 'pagina_inicial' and 'empresa' groups because 
+            // the about section and some global settings might be in 'empresa'
+            const [lpData, empresaData] = await Promise.all([
+                getBusinessSettingsByGrupo('pagina_inicial'),
+                getBusinessSettingsByGrupo('empresa')
+            ])
+            
+            // Merge in order of priority: Default < Empresa < Pagina Inicial
+            setConfig((prev: any) => ({ 
+                ...prev, 
+                ...empresaData, 
+                ...lpData 
+            }))
             setIsLoading(false)
         }
         loadConfig()

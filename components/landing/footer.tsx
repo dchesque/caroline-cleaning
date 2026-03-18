@@ -33,7 +33,7 @@ export async function Footer() {
                     <div className="col-span-1 md:col-span-1">
                         <Link href="/" className="inline-block mb-6">
                             <span className="font-heading text-2xl text-white">
-                                {config.business_name || 'Carolina'}
+                                {config.business_name || 'Chesque'}
                             </span>
                             <br />
                             <span className="font-heading text-2xl text-brandy-rose-400">
@@ -109,7 +109,7 @@ export async function Footer() {
                             </li>
                             <li className="flex gap-3">
                                 <Mail className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <span>{config.business_email || 'contact@carolinecleaning.com'}</span>
+                                <span>{config.business_email || 'contact@chesquecleaning.com'}</span>
                             </li>
                             <li className="flex gap-3">
                                 <MapPin className="w-5 h-5 text-brandy-rose-500 shrink-0" />
@@ -120,7 +120,7 @@ export async function Footer() {
                 </div>
 
                 <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-brandy-rose-200/60">
-                    <p>© {new Date().getFullYear()} {config.business_name || 'Carolina Premium Cleaning'}. All rights reserved.</p>
+                    <p>© {new Date().getFullYear()} {config.business_name || 'Chesque Premium Cleaning'}. All rights reserved.</p>
                     <div className="flex gap-6">
                         <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
                         <Link href="/terms" className="hover:text-white">Terms of Service</Link>
