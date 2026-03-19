@@ -1,6 +1,6 @@
 # Dockerfile
 # ============================================
-# CAROLINE PREMIUM CLEANING - PRODUCTION BUILD
+# CHESQUE PREMIUM CLEANING - PRODUCTION BUILD
 # ============================================
 
 # ============================================

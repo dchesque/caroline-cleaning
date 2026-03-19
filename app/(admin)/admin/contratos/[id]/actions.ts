@@ -19,10 +19,10 @@ export async function requestContractSignature(contractId: string) {
             return { error: 'Contrato não encontrado' }
         }
 
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://carolinecleaning.com'
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://chesquecleaning.com'
         const linkAssinatura = `${appUrl}/contrato/${contractId}/assinar`
 
-        const mensagem = `Olá ${contract.clientes.nome}! Seu contrato/termo de serviço com a Caroline Premium Cleaning está pronto.
+        const mensagem = `Olá ${contract.clientes.nome}! Seu contrato/termo de serviço com a Chesque Premium Cleaning está pronto.
 Por favor, acesse o link para revisar e assinar digitalmente:
 ${linkAssinatura}`
 

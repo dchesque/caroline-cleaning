@@ -50,9 +50,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        has: [{ type: "host", value: "www.carolinecleaning.com" }],
-        destination: "https://carolinecleaning.com/:path*",
-        permanent: true,
+        has: [{ type: "host", value: "www.chesquecleaning.com" }],        destination: "https://chesquecleaning.com/:path*",        permanent: true,
       },
     ];
   },

@@ -91,7 +91,7 @@ Phone: ${selectedCliente?.telefone || '___________________________'}
 Email: ${selectedCliente?.email || '___________________________'}
 
 1. Agreement Overview
-This document outlines the terms and conditions for residential cleaning services provided by Caroline Premium Cleaning ("Company").
+This document outlines the terms and conditions for residential cleaning services provided by Chesque Premium Cleaning ("Company").
 By scheduling, booking, or authorizing cleaning services, the client ("Client") agrees to these Terms of Service.
 
 2. Services Provided

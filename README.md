@@ -101,15 +101,15 @@ docker run -p 3000:3000 chesque-cleaning
 
 A documentação detalhada do projeto encontra-se na pasta `docs/`:
 
--   [PRD (Visão do Produto)](docs/PRD_Caroline_Premium_Cleaning_v5.md)
--   [Rotas e Telas](docs/ROTAS_TELAS_Caroline.md)
--   [Schema do Banco de Dados](docs/SCHEMA_SUPABASE_Caroline.md)
--   [Design System](docs/DESIGN_SYSTEM_Caroline.md)
+-   [PRD (Visão do Produto)](docs/PRD_Chesque_Premium_Cleaning_v5.md)
+-   [Rotas e Telas](docs/ROTAS_TELAS_Chesque.md)
+-   [Schema do Banco de Dados](docs/SCHEMA_SUPABASE_Chesque.md)
+-   [Design System](docs/DESIGN_SYSTEM_Chesque.md)
 
 ## 🤝 Colaboração
 
 Instruções para desenvolvimento:
-1.  Siga o **Design System** definido em `docs/DESIGN_SYSTEM_Caroline.md`.
+1.  Siga o **Design System** definido em `docs/DESIGN_SYSTEM_Chesque.md`.
 2.  Mantenha a estrutura de pastas do **App Router**.
 3.  Use **Server Components** por padrão, adicione `'use client'` apenas quando necessário.
 4.  Commits devem seguir o padrão [Conventional Commits](https://www.conventionalcommits.org/).

@@ -1,3 +1,10 @@
+# Changelog - v3.4.1 (2026-03-18)
+
+## [3.4.1] - 2026-03-18
+### Fixed
+- **Rebranding Residual**: Limpeza total de referências à marca "Caroline" em arquivos de infraestrutura (`.env`, `Dockerfile`, `next.config.ts`), documentação (`README.md`, `roadmap.md`) e componentes de contratos.
+- **Geografia Preservada**: Garantia de que referências aos estados "North Carolina" e "South Carolina" em documentos legais não foram alteradas.
+
 # Changelog - v3.4.0 (2026-03-18)
 
 ## [3.4.0] - 2026-03-18

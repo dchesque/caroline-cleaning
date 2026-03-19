@@ -1,4 +1,4 @@
-# Carolinas Premium - Roadmap de Desenvolvimento
+# Chesque Premium - Roadmap & Status
 
 Este documento detalha o estado atual do módulo Admin e as funcionalidades planejadas para as próximas versões.
 
