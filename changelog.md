@@ -1,3 +1,9 @@
+# Changelog - v3.5.1 (2026-03-18)
+
+## [3.5.1] - 2026-03-18
+### Fixed
+- **Redundância Visual (Hero)**: Corrigida a duplicação do termo "Premium Cleaning" no cabeçalho da página inicial, ajustando fallbacks e valores padrão para uma leitura mais fluida.
+
 # Changelog - v3.5.0 (2026-03-18)
 
 ## [3.5.0] - 2026-03-18
