@@ -196,8 +196,11 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terÃ§a-fe
             if (sessionContext.cliente_telefone) sessionContextStr += `- Telefone: ${sessionContext.cliente_telefone}\n`
             if (sessionContext.servico_selecionado) sessionContextStr += `- ServiÃ§o escolhido: ${sessionContext.servico_selecionado}\n`
             if (sessionContext.data_selecionada) sessionContextStr += `- Data escolhida: ${sessionContext.data_selecionada}\n`
-            if (sessionContext.horario_selecionado) sessionContextStr += `- HorÃ¡rio escolhido: ${sessionContext.horario_selecionado}\n`
-            sessionContextStr += `\nUSE o cliente_id acima ao chamar create_booking! NÃƒO peÃ§a o telefone novamente!\n`
+            if (sessionContext.horario_selecionado) sessionContextStr += `- Horário escolhido: ${sessionContext.horario_selecionado}\n`
+            if (sessionContext.agendamento_confirmado) {
+                sessionContextStr += `- STATUS DO AGENDAMENTO: ✅ O agendamento para ${sessionContext.horario_selecionado} JÁ FOI CRIADO COM SUCESSO (ID: ${sessionContext.agendamento_id}). Não use a ferramenta 'create_booking' novamente para este horário! Apenas continue a conversa ou se despeça.\n`
+            }
+            sessionContextStr += `\nUSE o cliente_id acima ao chamar ferramentas. NÃƒO peça o telefone novamente!\n`
         }
 
         const config = await this.getSystemConfig()

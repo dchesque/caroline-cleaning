@@ -1,3 +1,9 @@
+# Changelog - v3.5.18 (2026-03-19)
+
+## [3.5.18] - 2026-03-19
+### Fixed
+- **Carol AI (Prevenção de Alucinação de Tools)**: Adicionada injeção de contexto na memória da IA (`agendamento_confirmado`) informando-a ativamente sobre agendamentos já confirmados no banco de dados na sessão atual. Isso impede que a IA alucine tentando usar a ferramenta `create_booking` novamente em turnos subsequentes devido à ausência de histórico de execução de ferramentas no banco de dados do Supabase.
+
 # Changelog - v3.5.17 (2026-03-19)
 
 ## [3.5.17] - 2026-03-19
