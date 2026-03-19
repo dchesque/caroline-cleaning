@@ -118,6 +118,11 @@ export interface BusinessSettings {
     booking_default_duration: number;
     booking_buffer_minutes: number;
 
+    // Sistema - Precificação Recorrente
+    desconto_weekly: number;
+    desconto_biweekly: number;
+    desconto_monthly: number;
+
     // Sistema - Notificações
     notification_reminder_24h: boolean;
     notification_reminder_2h: boolean;
@@ -353,7 +358,11 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     booking_min_notice_hours: 24,
     booking_max_advance_days: 60,
     booking_default_duration: 180,
-    booking_buffer_minutes: 30,
+    booking_buffer_minutes: 60,
+
+    desconto_weekly: 20,
+    desconto_biweekly: 15,
+    desconto_monthly: 10,
 
     notification_reminder_24h: true,
     notification_reminder_2h: true,
@@ -392,6 +401,7 @@ const KEY_MAP: Record<string, string> = {
     operating_end: 'horario_fim',
     chat_bot_name: 'ai_name',
     ai_name: 'ai_name',
+    booking_buffer_minutes: 'buffer_deslocamento',
 };
 
 // Mapping of keys to their respective groups/categories
@@ -435,11 +445,48 @@ const CONFIG_METADATA: Record<string, { grupo: string; categoria: string }> = {
     announcement_enabled: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
     announcement_text: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
     announcement_bg_color: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    
+    // Services
+    services_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    services_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    services_cta_text: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    
+    // Pricing
     pricing_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
     pricing_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
     pricing_format: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
     pricing_cta_text: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
     pricing_cta_subtext: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+
+    // FAQ
+    faq_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    faq_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    faq_items: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+
+    // How It Works
+    how_it_works_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    how_it_works_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    how_it_works_cta: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+
+    // What's Included
+    whats_included_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    whats_included_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    whats_included_standard: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    whats_included_optional: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+
+    // Testimonials
+    testimonials_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    testimonials_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    testimonials_items: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+
+    // CTA Section
+    cta_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    cta_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    cta_button_text: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+
+    // Contact Form
+    contact_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    contact_subtitle: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
     
     // About Us (part of landing but related to founder/company)
     about_title: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
@@ -470,6 +517,31 @@ const CONFIG_METADATA: Record<string, { grupo: string; categoria: string }> = {
     notification_cancellation: { grupo: 'sistema', categoria: 'notificacoes' },
     notification_channel_sms: { grupo: 'sistema', categoria: 'notificacoes' },
     notification_channel_email: { grupo: 'sistema', categoria: 'notificacoes' },
+
+    // Descontos
+    desconto_weekly: { grupo: 'sistema', categoria: 'precificacao' },
+    desconto_biweekly: { grupo: 'sistema', categoria: 'precificacao' },
+    desconto_monthly: { grupo: 'sistema', categoria: 'precificacao' },
+
+    // Tracking (Mapped to empresa for now as they are global)
+    tracking_meta_enabled: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_meta_pixel_id: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_meta_access_token: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_meta_capi_enabled: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_meta_test_event_code: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_google_ads_enabled: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_google_ads_id: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_google_ads_label: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_ga4_enabled: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_ga4_measurement_id: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_gtm_enabled: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_gtm_id: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_tiktok_enabled: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_tiktok_pixel_id: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_utmfy_enabled: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_utmfy_pixel_id: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_custom_head_scripts: { grupo: 'empresa', categoria: 'tracking' },
+    tracking_custom_body_scripts: { grupo: 'empresa', categoria: 'tracking' },
 };
 
 const REVERSE_KEY_MAP: Record<string, string> = Object.entries(KEY_MAP).reduce((acc, [k, v]) => ({ ...acc, [v]: k }), {});
@@ -554,10 +626,14 @@ export async function saveBusinessSettings(settings: Partial<BusinessSettings>, 
         const meta = CONFIG_METADATA[key];
         const dbKey = KEY_MAP[key] || key;
         
+        // IMPORTANT: If a key is not in metadata, we skip it if a specific group is requested
+        // to avoid hijacking the key into the current group.
+        if (!meta && grupoInput) {
+            return;
+        }
+
         // If a specific group was requested, only save keys that belong to that group
-        // If no group was requested, use the key's defined group or fallback to 'geral'
         if (grupoInput && meta && meta.grupo !== grupoInput) {
-            // This key belongs to a different group, skip it to avoid collisions
             return;
         }
 

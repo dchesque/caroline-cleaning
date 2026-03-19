@@ -310,25 +310,42 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
 
     const cleanServiceType = cleanValue(service_type) || 'regular'
 
-    // Verificar disponibilidade
+    // Verificar disponibilidade considerando a duração
+    const [hours, minutes] = time.split(':').map(Number)
+    const startMinutes = hours * 60 + minutes
+    const endMinutes = startMinutes + duration
+    
+    const startTimeStr = time
+    const endTimeStr = new Date(0, 0, 0, hours, minutes + duration).toTimeString().slice(0, 5)
+
     const { data: conflicts } = await supabase
         .from('agendamentos')
-        .select('id, horario_inicio')
+        .select('id, horario_inicio, duracao_minutos, horario_fim_estimado')
         .eq('data', date)
         .not('status', 'in', '("cancelado","reagendado")')
 
-    const hasConflict = conflicts?.some((apt: any) => apt.horario_inicio === time)
+    const hasConflict = conflicts?.some((apt: any) => {
+        const aptStartStr = apt.horario_inicio
+        const aptEndStr = apt.horario_fim_estimado || 
+                         new Date(0, 0, 0, ...aptStartStr.split(':').map(Number)).getTime() + (apt.duracao_minutos * 60000)
+        
+        // Verificação de sobreposição: (StartA < EndB) AND (EndA > StartB)
+        const aptStartArr = aptStartStr.split(':').map(Number)
+        const aptStartMin = aptStartArr[0] * 60 + aptStartArr[1]
+        const aptEndMin = aptStartMin + (apt.duracao_minutos || 180)
+
+        return (startMinutes < aptEndMin) && (endMinutes > aptStartMin)
+    })
 
     if (hasConflict) {
         return {
             status: 'conflict',
-            message: 'This time slot is already booked',
+            message: 'This time slot is already booked or overlaps with another appointment',
             suggested_times: await getSuggestedTimes(supabase, date, conflicts)
         }
     }
 
-    // Calcular horário de término
-    const [hours, minutes] = time.split(':').map(Number)
+    // Calcular horário de término (reusando hours e minutes)
     const endDate = new Date()
     endDate.setHours(hours, minutes + duration)
     const endTime = endDate.toTimeString().slice(0, 5)
@@ -428,28 +445,45 @@ async function actionCancelAppointment(supabase: any, params: any) {
 
 // Enviar orçamento
 async function actionSendQuote(supabase: any, sessionId: string, params: any) {
-    const { client_id, service_type, estimated_price, details } = params
+    const { client_id, service_type, estimated_price, details, bedrooms, bathrooms } = params
 
+    // ✅ Tentar usar a função do banco para precificação precisa se bedrooms/bathrooms presentes
+    let finalPrice = estimated_price
+    if (bedrooms && bathrooms) {
+        const { data: priceData } = await supabase.rpc('calculate_service_price', {
+            p_bedrooms: parseInt(bedrooms),
+            p_bathrooms: parseFloat(bathrooms),
+            p_tipo_servico: service_type || 'regular'
+        })
+        if (priceData && priceData.length > 0) {
+            finalPrice = priceData[0].preco_sugerido
+        }
+    }
+
+    // Nota: A tabela 'orcamentos' deve existir no schema (não vi no schema.sql mas Carol usa)
     const { data, error } = await supabase
         .from('orcamentos')
         .insert({
             cliente_id: client_id,
             session_id: sessionId,
             tipo_servico: cleanValue(service_type),
-            valor_estimado: estimated_price,
+            valor_estimado: finalPrice,
             detalhes: details,
             status: 'enviado',
         })
         .select()
         .single()
 
-    if (error) return { status: 'error', message: error.message }
+    if (error) {
+        console.error('[Send Quote] Error:', error)
+        return { status: 'error', message: error.message }
+    }
 
     return {
         status: 'sent',
         quote_id: data.id,
-        amount: estimated_price,
-        message: `Quote sent for ${service_type}: $${estimated_price}`
+        amount: finalPrice,
+        message: `Quote sent for ${service_type}: $${finalPrice}`
     }
 }
 

@@ -1,3 +1,28 @@
+# Changelog - v3.5.0 (2026-03-18)
+
+## [3.5.0] - 2026-03-18
+### Added
+- **Automação de Recorrência**: Implementado endpoint de cron e lógica no banco de dados para geração automática de agendamentos futuros a partir de planos recorrentes ativos.
+- **Controles de Precificação**: Adicionados campos de Desconto (Weekly, Bi-weekly, Monthly) e Buffer de Deslocamento no painel administrativo.
+- **RPC Integration**: Integração completa da Carol AI com as funções nativas do banco de dados para cálculos de preço e disponibilidade.
+
+### Changed
+- **Carol AI 2.0**: Refatoração profunda do motor de consultas para usar o schema de banco de dados atualizado (`servicos_tipos`) e evitar falhas de orçamentos.
+- **Rebranding Final**: Remoção total e definitiva de qualquer referência residual à marca antiga ("Carolina/Caroline"), consolidando a identidade **Chesque Premium Cleaning**.
+
+### Fixed
+- **Estabilidade Admin**: Correção crítica no mapeamento de grupos de configuração que impedia o salvamento correto de dados na aba de Empresa e Home.
+- **Prevenção de Overbooking**: Nova lógica de detecção de conflitos que considera a duração estimada do serviço, impedindo sobreposições na agenda.
+
+# Changelog - v3.4.2 (2026-03-18)
+
+## [3.4.2] - 2026-03-18
+### Fixed
+- **Persistência Admin**: Corrigido bug onde configurações eram "resetadas" ao salvar abas diferentes no Admin.
+- **Mapeamento de Metadados**: Mapeamento completo de todas as chaves de configuração para garantir que pertençam aos grupos corretos (`empresa`, `pagina_inicial`).
+- **Segurança de Salvamento**: Implementada filtragem rigorosa no `saveBusinessSettings` para evitar que chaves de um grupo sejam sobrescritas acidentalmente por outro.
+- **Migração de Dados**: Realinhamento de 39 chaves no Supabase para consistência com o novo mapeamento de código.
+
 # Changelog - v3.4.1 (2026-03-18)
 
 ## [3.4.1] - 2026-03-18

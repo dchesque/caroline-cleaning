@@ -153,34 +153,24 @@ async function queryAvailableSlots(supabase: any, params: any) {
 
         const dateStr = currentDate.toISOString().split('T')[0]
 
-        // Buscar agendamentos do dia
-        const { data: booked } = await supabase
-            .from('agendamentos')
-            .select('horario_inicio, horario_fim_estimado')
-            .eq('data', dateStr)
-            .not('status', 'in', '("cancelado","reagendado")')
+        // ✅ USAR RPC get_available_slots para precisão total
+        const { data, error } = await supabase.rpc('get_available_slots', {
+            p_data: dateStr,
+            p_duracao_minutos: duration
+        })
 
-        // Horários disponíveis (8h às 17h)
-        const availableHours = []
-        for (let hour = 8; hour <= 17; hour++) {
-            const timeStr = `${hour.toString().padStart(2, '0')}:00`
+        if (!error && data) {
+            const availableTimes = data
+                .filter((s: any) => s.disponivel)
+                .map((s: any) => s.slot_inicio.substring(0, 5))
 
-            // Verificar se o horário está livre
-            const isBooked = booked?.some((apt: any) => {
-                return apt.horario_inicio <= timeStr && apt.horario_fim_estimado > timeStr
-            })
-
-            if (!isBooked) {
-                availableHours.push(timeStr)
+            if (availableTimes.length > 0) {
+                slots.push({
+                    date: dateStr,
+                    day_of_week: currentDate.toLocaleDateString('en-US', { weekday: 'long' }),
+                    available_times: availableTimes
+                })
             }
-        }
-
-        if (availableHours.length > 0) {
-            slots.push({
-                date: dateStr,
-                day_of_week: currentDate.toLocaleDateString('en-US', { weekday: 'long' }),
-                available_times: availableHours
-            })
         }
     }
 
@@ -195,28 +185,35 @@ async function queryAvailableSlots(supabase: any, params: any) {
 async function queryServicePricing(supabase: any, params: any) {
     const { service_type } = params
 
+    // ✅ Corrigido nome da tabela para servicos_tipos
     let query = supabase
-        .from('tipos_servico')
-        .select('nome, descricao, preco_base, duracao_padrao')
+        .from('servicos_tipos')
+        .select('nome, descricao, multiplicador_preco, duracao_base_minutos')
         .eq('ativo', true)
         .order('ordem')
 
     if (service_type) {
-        query = query.eq('nome', service_type)
+        query = query.ilike('nome', `%${service_type}%`)
     }
 
     const { data } = await query
 
+    // Buscar configurações de preços base para dar uma estimativa real
+    const { data: basePrices } = await supabase.from('precos_base').select('*')
+
     // Formatar para a IA
     return {
-        services: data?.map((s: any) => ({
-            name: s.nome,
-            description: s.descricao,
-            base_price: s.preco_base,
-            duration_minutes: s.duracao_padrao,
-            price_range: `$${s.preco_base} - $${Math.round(s.preco_base * 1.5)}`
-        })) || [],
-        note: 'Prices may vary based on home size and specific requirements'
+        services: data?.map((s: any) => {
+            const baseMin = basePrices?.[0]?.preco_minimo || 120
+            const multiplier = parseFloat(s.multiplicador_preco || 1)
+            return {
+                name: s.nome,
+                description: s.descricao,
+                estimated_price_range: `$${Math.round(baseMin * multiplier)} - $${Math.round(baseMin * multiplier * 1.5)}`,
+                base_duration_minutes: s.duracao_base_minutos
+            }
+        }) || [],
+        note: 'Final price depends on number of bedrooms/bathrooms and home condition.'
     }
 }
 
@@ -226,7 +223,7 @@ async function queryServiceAreas(supabase: any, params: any) {
 
     const { data: areas } = await supabase
         .from('areas_atendidas')
-        .select('nome, tipo, zip_codes, taxa_adicional')
+        .select('nome, cidade, estado, zip_codes, taxa_deslocamento')
         .eq('ativo', true)
 
     // Se passou ZIP code, verificar se é atendido
@@ -237,7 +234,7 @@ async function queryServiceAreas(supabase: any, params: any) {
         for (const area of areas) {
             if (area.zip_codes?.includes(zip_code)) {
                 isServiced = true
-                additionalFee = area.taxa_adicional || 0
+                additionalFee = area.taxa_deslocamento || 0
                 break
             }
         }
@@ -246,8 +243,9 @@ async function queryServiceAreas(supabase: any, params: any) {
     return {
         areas: areas?.map((a: any) => ({
             name: a.nome,
-            type: a.tipo,
-            additional_fee: a.taxa_adicional
+            city: a.cidade,
+            state: a.estado,
+            additional_fee: a.taxa_deslocamento
         })) || [],
         zip_code_check: zip_code ? {
             zip_code,
@@ -259,26 +257,26 @@ async function queryServiceAreas(supabase: any, params: any) {
 
 // Buscar informações do negócio
 async function queryBusinessInfo(supabase: any) {
+    // ✅ Corrigido para buscar da estrutura chave/valor
+    const keys = ['business_name', 'business_phone', 'business_email', 'horario_inicio', 'horario_fim']
     const { data } = await supabase
         .from('configuracoes')
-        .select('settings')
-        .eq('id', 1)
-        .single()
+        .select('chave, valor')
+        .in('chave', keys)
 
-    const settings = data?.settings || {}
+    const settings: Record<string, any> = {}
+    data?.forEach((item: any) => {
+        settings[item.chave] = item.valor
+    })
 
     return {
         name: settings.business_name || 'Chesque Premium Cleaning',
         phone: settings.business_phone || '(551) 389-7394',
         email: settings.business_email || 'hello@chesquecleaning.com',
         hours: {
-            start: settings.operating_start || '08:00',
-            end: settings.operating_end || '18:00',
-            days: settings.operating_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-        },
-        booking_rules: {
-            min_notice_hours: settings.min_booking_notice || 24,
-            max_advance_days: settings.max_booking_advance || 30
+            start: settings.horario_inicio || '08:00',
+            end: settings.horario_fim || '18:00',
+            days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
         }
     }
 }

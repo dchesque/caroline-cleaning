@@ -220,7 +220,7 @@ export default function SistemaConfigPage() {
                                 <p className="text-[10px] text-gray-400">{settingsT.system.fields.bookingDefaultDurationHelp}</p>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-gray-700">{settingsT.system.fields.bookingBuffer}</Label>
+                                <Label className="text-gray-700">Buffer Inter-services</Label>
                                 <div className="flex items-center gap-2">
                                     <Input
                                         type="number"
@@ -231,7 +231,56 @@ export default function SistemaConfigPage() {
                                     />
                                     <span className="text-xs text-muted-foreground font-medium">min</span>
                                 </div>
-                                <p className="text-[10px] text-gray-400">{settingsT.system.fields.bookingBufferHelp}</p>
+                                <p className="text-[10px] text-gray-400">Tempo de deslocamento entre serviços na agenda</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Descontos Recorrentes */}
+                <Card className="shadow-sm border-gray-100 bg-white lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg text-gray-900">
+                            <DollarSign className="w-5 h-5 text-brandy-rose-500" />
+                            Descontos para Planos Recorrentes
+                        </CardTitle>
+                        <CardDescription className="text-gray-500">Defina os descontos automáticos aplicados no checkout para serviços recorrentes.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                            <Label className="text-gray-700">Weekly (Semanal)</Label>
+                            <div className="relative">
+                                <Input
+                                    type="number"
+                                    value={config.desconto_weekly}
+                                    onChange={(e) => setConfig({ ...config, desconto_weekly: parseInt(e.target.value) })}
+                                    className="pr-8"
+                                />
+                                <span className="absolute right-3 top-2.5 text-sm text-gray-400">%</span>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-gray-700">Bi-Weekly (Quinzenal)</Label>
+                            <div className="relative">
+                                <Input
+                                    type="number"
+                                    value={config.desconto_biweekly}
+                                    onChange={(e) => setConfig({ ...config, desconto_biweekly: parseInt(e.target.value) })}
+                                    className="pr-8"
+                                />
+                                <span className="absolute right-3 top-2.5 text-sm text-gray-400">%</span>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-gray-700">Monthly (Mensal)</Label>
+                            <div className="relative">
+                                <Input
+                                    type="number"
+                                    value={config.desconto_monthly}
+                                    onChange={(e) => setConfig({ ...config, desconto_monthly: parseInt(e.target.value) })}
+                                    className="pr-8"
+                                />
+                                <span className="absolute right-3 top-2.5 text-sm text-gray-400">%</span>
                             </div>
                         </div>
                     </CardContent>

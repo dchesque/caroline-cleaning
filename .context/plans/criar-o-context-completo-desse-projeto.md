@@ -25,11 +25,11 @@ generated: 2026-01-12
 ### Key Components
 
 **Key Interfaces:**
-- `WebhookResponse` — C:\Workspace\carolinas-premium\types\webhook.ts:22
-- `WebhookOptions` — C:\Workspace\carolinas-premium\types\webhook.ts:29
-- `ChatMessagePayload` — C:\Workspace\carolinas-premium\types\webhook.ts:39
-- `LeadCreatedPayload` — C:\Workspace\carolinas-premium\types\webhook.ts:57
-- `LeadUpdatedPayload` — C:\Workspace\carolinas-premium\types\webhook.ts:74
+- `WebhookResponse` — C:\Workspace\chesque-cleaning\types\webhook.ts:22
+- `WebhookOptions` — C:\Workspace\chesque-cleaning\types\webhook.ts:29
+- `ChatMessagePayload` — C:\Workspace\chesque-cleaning\types\webhook.ts:39
+- `LeadCreatedPayload` — C:\Workspace\chesque-cleaning\types\webhook.ts:57
+- `LeadUpdatedPayload` — C:\Workspace\chesque-cleaning\types\webhook.ts:74
 ## Agent Lineup
 | Agent | Role in this plan | Playbook | First responsibility focus |
 | --- | --- | --- | --- |
