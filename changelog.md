@@ -1,3 +1,9 @@
+# Changelog - v3.5.20 (2026-03-19)
+
+## [3.5.20] - 2026-03-19
+### Added
+- **Carol AI (Checklist de Confirmação)**: Adicionada regra rigorosa no Sistema de Prompt para que a IA sempre envie um checklist resumido amigável (Nome, Telefone, Endereço e Horário) solicitando a conferência do cliente assim que um agendamento for concluído no banco de dados.
+
 # Changelog - v3.5.19 (2026-03-19)
 
 ## [3.5.19] - 2026-03-19
