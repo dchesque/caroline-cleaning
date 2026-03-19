@@ -1,3 +1,9 @@
+# Changelog - v3.5.2 (2026-03-18)
+
+## [3.5.2] - 2026-03-18
+### Fixed
+- **Headline Sincronizada (Hero)**: Reestruturação completa dos títulos padrão e fallbacks para garantir que a marca e o slogan sejam exibidos sem redundâncias ("Chesque Premium Cleaning" + "Expert Home & Office Care").
+
 # Changelog - v3.5.1 (2026-03-18)
 
 ## [3.5.1] - 2026-03-18
