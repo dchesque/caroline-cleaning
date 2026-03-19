@@ -1,3 +1,9 @@
+# Changelog - v3.5.3 (2026-03-18)
+
+## [3.5.3] - 2026-03-18
+### Fixed
+- **Estilo de Marca (Hero)**: Ajuste fino na hierarquia visual do cabeçalho. "Chesque" em destaque na primeira linha e "Premium Cleaning" na segunda linha com a cor da marca (nude), removendo repetições.
+
 # Changelog - v3.5.2 (2026-03-18)
 
 ## [3.5.2] - 2026-03-18

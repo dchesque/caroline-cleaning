@@ -182,8 +182,8 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     social_google: '',
 
     hero_title: 'Chesque Premium Cleaning - Home & Office Services',
-    hero_title_1: 'Chesque Premium Cleaning',
-    hero_title_2: 'Expert Home & Office Care',
+    hero_title_1: 'Chesque',
+    hero_title_2: 'Premium Cleaning',
     hero_subtitle: 'Expert residential and commercial cleaning in Fort Mill, Charlotte, and surrounding areas. Reliable, thorough, and scheduled in minutes.',
     hero_cta_text: 'Schedule a Visit',
     hero_image: '',
