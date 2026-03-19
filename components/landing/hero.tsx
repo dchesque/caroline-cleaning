@@ -56,7 +56,7 @@ export function Hero() {
                     {/* Microcopy com alternativa SMS */}
                     <div className="flex flex-col items-center gap-4 mb-12 animate-in fade-in duration-1000 delay-400">
                         <p className="text-sm text-muted-foreground">
-                            Talk to {settings.ai_name} and schedule a visit — usually within 5 minutes. Or, if you prefer,{' '}
+                            Talk to {settings.ai_name} and schedule a visit, usually within 5 minutes. Or, if you prefer,{' '}
                             <a
                                 href={`sms:${settings.business_phone}`}
                                 className="text-brandy-rose-600 hover:underline font-medium"

@@ -55,7 +55,7 @@ INSERT INTO public.configuracoes (chave, valor, categoria, descricao) VALUES
   ('social_instagram', '""', 'geral', 'Link do Instagram'),
   ('social_twitter', '""', 'geral', 'Link do Twitter'),
   ('business_logo', '""', 'geral', 'URL do logo da empresa'),
-  ('announcement_text', '"Serving Charlotte, NC & Fort Mill, SC — plus nearby cities. • Chat with Carol 24/7"', 'geral', 'Texto da barra de anúncio'),
+  ('announcement_text', '"Serving Charlotte, NC & Fort Mill, SC, plus nearby cities. • Chat with Carol 24/7"', 'geral', 'Texto da barra de anúncio'),
   ('business_description', '"Serving Charlotte, NC, Fort Mill, SC, and nearby cities with premium cleaning services tailored to your lifestyle."', 'geral', 'Descrição no rodapé'),
   ('chat_bot_name', '"Carol"', 'geral', 'Nome do chatbot'),
   ('hero_title_1', '"Premium Cleaning for Homes &"', 'geral', 'Título linha 1'),

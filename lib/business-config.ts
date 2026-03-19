@@ -218,7 +218,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
         },
         {
             question: "What's your cancellation policy?",
-            answer: "You can reschedule or cancel with 48-hour notice — no fees, no hassle. We understand plans change.",
+            answer: "You can reschedule or cancel with 48-hour notice, no fees, no hassle. We understand plans change.",
         },
         {
             question: "Do I need to sign a contract?",
@@ -259,17 +259,17 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     about_intro_p1: 'Every cleaning follows the highest quality standards with close attention to detail.',
     about_intro_p2: 'If anything does not meet your expectations, we will make it right at no extra cost.',
     about_note: 'We proudly serve Fort Mill, SC & Charlotte, NC with a local focus and personalized service. Once you become a client, we keep your preferences on file to ensure consistency at every visit.',
-    about_quote: 'Our goal is simple: your home should feel fresh, clean, and taken care of — every single time.',
+    about_quote: 'Our goal is simple: your home should feel fresh, clean, and taken care of, every single time.',
     about_highlights: [
         'Experienced professionals',
         'Proven cleaning process',
         'Commitment to excellence',
         'Freedom to pause or cancel anytime',
     ],
-    about_divider_subtitle: '— The Person Behind the Service —',
+    about_divider_subtitle: 'The Person Behind the Service',
     about_bio_p1: "Thayna founded Chesque Premium Cleaning with one mission: to bring the same care and attention to your home that she gives to her own. Originally from Brazil, she built this business on trust, dedication, and a passion for making people's lives easier.",
     about_bio_p2: "With over 2 years of hands-on experience serving homes across New York and New Jersey, she personally ensures that every team member delivers the same high standard in every visit.",
-    about_bio_p3: "As a mother and homeowner herself, Thayna understands how important it is to come home to a clean, welcoming space — and that's the experience she's committed to creating for every client, every time.",
+    about_bio_p3: "As a mother and homeowner herself, Thayna understands how important it is to come home to a clean, welcoming space, and that's the experience she's committed to creating for every client, every time.",
     about_founder_name: 'Thayna Chesque',
     about_founder_role: 'Founder & Owner',
 
@@ -315,7 +315,7 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
         {
             name: 'Client Feedback',
             role: 'Verified Review',
-            content: "Everything was handled by message — fast, simple, and very convenient.",
+            content: "Everything was handled by message, fast, simple, and very convenient.",
             rating: 5,
         },
         {
@@ -333,14 +333,14 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
 
     // Contact Form Defaults
     contact_title: 'Prefer a Callback?',
-    contact_subtitle: 'Leave your info and we\'ll reach out to you — no chat required.',
+    contact_subtitle: 'Leave your info and we\'ll reach out to you, no chat required.',
 
     // Pricing Section Defaults
     pricing_title: 'Transparent Pricing',
     pricing_subtitle: 'Honest pricing with no hidden fees. Final quote depends on home size and specific needs.',
     pricing_format: 'starting_at' as const,
     pricing_cta_text: 'Schedule Visit Now',
-    pricing_cta_subtext: 'Want an exact quote? Chat with Carol — most quotes ready in under 5 minutes.',
+    pricing_cta_subtext: 'Want an exact quote? Chat with Carol, most quotes ready in under 5 minutes.',
 
     seo_title: 'Chesque Premium Cleaning | Professional House Cleaning',
     seo_description: 'Professional house cleaning services. Book your free estimate 24/7.',

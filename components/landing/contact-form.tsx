@@ -86,7 +86,7 @@ export function ContactForm() {
                             {settings.contact_title || 'Prefer a Callback?'}
                         </h2>
                         <p className="text-muted-foreground">
-                            {settings.contact_subtitle || "Leave your info and we'll reach out to you — no chat required."}
+                            {settings.contact_subtitle || "Leave your info and we'll reach out to you, no chat required."}
                         </p>
                     </div>
 

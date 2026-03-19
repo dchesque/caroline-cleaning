@@ -1,4 +1,13 @@
+# Changelog - v3.5.10 (2026-03-19)
+
+## [3.5.10] - 2026-03-19
+### Changed
+- **Linguagem Natural**: Substituição global de travessões (—) por vírgulas em todos os textos da plataforma e banco de dados para uma comunicação mais fluida e menos formal.
+- **Carol AI**: Atualização do prompt do sistema com instrução explícita para evitar o uso de travessões em respostas geradas por IA.
+- **Configuração**: Refatoração de `DEFAULT_SETTINGS` e migrações SQL para alinhar com o novo padrão de pontuação.
+
 # Changelog - v3.5.9 (2026-03-19)
+
 
 ## [3.5.9] - 2026-03-19
 ### Fixed

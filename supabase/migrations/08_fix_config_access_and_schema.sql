@@ -26,5 +26,5 @@ INSERT INTO public.configuracoes (chave, valor, categoria, grupo, descricao) VAL
   ('pricing_subtitle', '"Honest pricing with no hidden fees. Final quote depends on home size and specific needs."', 'pagina_inicial', 'pagina_inicial', 'Subtítulo da seção de preços'),
   ('pricing_format', '"range"', 'pagina_inicial', 'pagina_inicial', 'Formato: range ou starting_at'),
   ('pricing_cta_text', '"Schedule Visit Now"', 'pagina_inicial', 'pagina_inicial', 'Texto do botão de preços'),
-  ('pricing_cta_subtext', '"Want an exact quote? Chat with Carol — most quotes ready in under 5 minutes."', 'pagina_inicial', 'pagina_inicial', 'Subtexto do CTA de preços')
+  ('pricing_cta_subtext', '"Want an exact quote? Chat with Carol, most quotes ready in under 5 minutes."', 'pagina_inicial', 'pagina_inicial', 'Subtexto do CTA de preços')
 ON CONFLICT (chave) DO NOTHING;

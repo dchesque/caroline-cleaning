@@ -82,7 +82,7 @@ export default function NovoContratoPage() {
             return parts.join(', ') || '___________________________';
         };
 
-        const defaultBody = `🧼 CLEANING SERVICES – TERMS OF SERVICE & SERVICE AGREEMENT
+        const defaultBody = `🧼 CLEANING SERVICES - TERMS OF SERVICE & SERVICE AGREEMENT
 
 CLIENT INFORMATION
 Name: ${selectedCliente?.nome || '___________________________'}

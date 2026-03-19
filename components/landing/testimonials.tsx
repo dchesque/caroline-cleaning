@@ -18,7 +18,7 @@ export function Testimonials() {
         {
             name: 'Client Feedback',
             role: 'Verified Review',
-            content: "Everything was handled by message — fast, simple, and very convenient.",
+            content: "Everything was handled by message, fast, simple, and very convenient.",
             rating: 5,
         },
         {

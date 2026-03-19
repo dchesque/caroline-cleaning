@@ -25,11 +25,11 @@ export function MeetCarol() {
 
                     <div className="w-full md:w-1/2 text-center md:text-left">
                         <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-6">
-                            Meet Carol — Our Virtual Scheduling Assistant
+                            Meet Carol, Our Virtual Scheduling Assistant
                         </h2>
                         <p className="text-lg text-muted-foreground mb-8 text-balance">
                             Carol helps you get a fast quote, pick the right service, and
-                            schedule in minutes — all by text. No phone calls, no waiting.
+                            schedule in minutes, all by text. No phone calls, no waiting.
                             Most clients get their quote in under 5 minutes.
                         </p>
                         <Button

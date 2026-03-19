@@ -159,7 +159,7 @@ export function Pricing() {
                 {/* CTA */}
                 <div className="text-center">
                     <p className="text-muted-foreground mb-4">
-                        {settings.pricing_cta_subtext || 'Want an exact quote? Chat with Carol — most quotes ready in under 5 minutes.'}
+                        {settings.pricing_cta_subtext || 'Want an exact quote? Chat with Carol, most quotes ready in under 5 minutes.'}
                     </p>
                     <Button
                         size="lg"
