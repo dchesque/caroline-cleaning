@@ -1,3 +1,24 @@
+# Changelog - v3.5.9 (2026-03-19)
+
+## [3.5.9] - 2026-03-19
+### Fixed
+- **Restauração de Emergência**: Reversão total da seção Hero para o estado original da imagem 1239 ("Premium Cleaning for Homes & Office").
+- **Identidade Preservada**: Restabelecido o nome oficial "Chesque Premium Cleaning" em cabeçalhos e metadados, removendo abreviações indevidas.
+
+# Changelog - v3.5.8 (2026-03-19)
+
+## [3.5.8] - 2026-03-19
+### Fixed
+- **Slogan do Hero**: Atualizado para a versão completa: "Premium Cleaning for Homes & Offices" na segunda linha.
+- **Correção de Cor**: Restaurado o padrão escuro para a primeira linha ("Chesque") visando melhor legibilidade.
+
+# Changelog - v3.5.7 (2026-03-19)
+
+## [3.5.7] - 2026-03-19
+### Fixed
+- **Limpeza de Branding**: Chaves órfãs e redundantes removidas do Supabase.
+- **Restauração de Conteúdo**: Subtítulo original recuperado no Hero e cor preta restaurada para melhor visibilidade.
+
 # Changelog - v3.5.3 (2026-03-18)
 
 ## [3.5.3] - 2026-03-18
