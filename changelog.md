@@ -1,3 +1,24 @@
+# Changelog - v3.5.13 (2026-03-19)
+
+## [3.5.13] - 2026-03-19
+### Fixed
+- **Build**: Adicionadas dependências `dotenv` e `@types/dotenv` para corrigir erro de tipo no script `update_brand_db.ts` durante o deploy no Easypanel.
+
+# Changelog - v3.5.12 (2026-03-19)
+
+## [3.5.12] - 2026-03-19
+### Fixed
+- **Admin**: Corrigido um erro de "check constraint (configuracoes_categoria_check)" ao salvar as configurações da empresa/página inicial. O mapeamento interno das categorias agora respeita estritamente os valores permitidos no banco de dados (`geral`, `integracao`, `precos`, etc).
+- **Infraestrutura**: Corrigido o nome do pacote do servidor MCP do Supabase para `@supabase/mcp-server-supabase` em `.antigravity/mcp.json`.
+- **Verificação**: Validada a conexão com o banco de dados e listagem de 35 tabelas/views via API REST utilizando as mesmas credenciais do MCP.
+
+# Changelog - v3.5.11 (2026-03-19)
+
+## [3.5.11] - 2026-03-19
+### Added
+- **Infraestrutura**: Configuração do servidor MCP do Supabase em `.antigravity/mcp.json` utilizando o modo de comando (`npx @supabase/mcp-server`).
+- **Segurança**: Integração da `SUPABASE_SERVICE_ROLE_KEY` e `SUPABASE_URL` no ambiente do MCP para permitir que agentes executem queries e acessem recursos do banco de dados com permissões adequadas.
+
 # Changelog - v3.5.10 (2026-03-19)
 
 ## [3.5.10] - 2026-03-19

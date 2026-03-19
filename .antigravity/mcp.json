@@ -1,7 +1,15 @@
 {
     "mcpServers": {
         "supabase": {
-            "url": "https://mcp.supabase.com/mcp?project_ref=gkgogtmtlktsabkjvfom&read_only=true"
+            "command": "npx",
+            "args": [
+                "-y",
+                "@supabase/mcp-server-supabase"
+            ],
+            "env": {
+                "SUPABASE_URL": "https://gkgogtmtlktsabkjvfom.supabase.co",
+                "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZ29ndG10bGt0c2Fia2p2Zm9tIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NTUwNTkxNiwiZXhwIjoyMDgxMDgxOTE2fQ.q3bfsxl4zkT7BOxAWSefaIO4-JZ8xFb09A4yOELun5Q"
+            }
         }
     }
 }

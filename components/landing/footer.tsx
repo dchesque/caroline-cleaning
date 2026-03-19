@@ -12,7 +12,7 @@ async function getFooterData() {
 
     const { data: areas } = await supabase
         .from('areas_atendidas')
-        .select('nome, cidade')
+        .select('nome, cidade, estado')
         .eq('ativo', true)
         .order('nome')
 
@@ -30,14 +30,10 @@ export async function Footer() {
             <div className="container">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
                     {/* Brand */}
-                    <div className="col-span-1 md:col-span-1">
+                    <div className="col-span-1">
                         <Link href="/" className="inline-block mb-6">
                             <span className="font-heading text-2xl text-white">
                                 {config.business_name || 'Chesque'}
-                            </span>
-                            <br />
-                            <span className="font-heading text-2xl text-brandy-rose-400">
-                                {config.business_subtitle || 'Premium Cleaning'}
                             </span>
                         </Link>
                         <p className="text-sm text-brandy-rose-200/80 mb-6">
@@ -72,23 +68,20 @@ export async function Footer() {
                         </ul>
                     </div>
 
-                    {/* Service Areas (Updated to be dynamic) */}
+                    {/* Service Areas */}
                     <div className="col-span-1">
                         <h3 className="text-white font-semibold mb-6">Service Areas</h3>
-                        <ul className="space-y-4 text-sm">
+                        <p className="text-sm text-brandy-rose-200/80 leading-relaxed">
                             {areas.length > 0 ? (
-                                areas.slice(0, 5).map((area, idx) => (
-                                    <li key={idx}>{area.nome}, {area.cidade}</li>
-                                ))
+                                areas.map(area => {
+                                    const areaName = area.nome;
+                                    const suffix = area.nome !== area.cidade ? `, ${area.cidade}` : (area.estado ? `, ${area.estado}` : '');
+                                    return `${areaName}${suffix}`;
+                                }).join(' • ')
                             ) : (
-                                <>
-                                    <li>Fort Mill, SC</li>
-                                    <li>Charlotte, NC</li>
-                                    <li>Matthews, NC</li>
-                                    <li>Pineville, NC</li>
-                                </>
+                                'Fort Mill, SC • Charlotte, NC • Matthews, NC • Pineville, NC'
                             )}
-                        </ul>
+                        </p>
                     </div>
 
                     {/* Contact */}
@@ -109,7 +102,7 @@ export async function Footer() {
                             </li>
                             <li className="flex gap-3">
                                 <Mail className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <span>{config.business_email || 'contact@chesquecleaning.com'}</span>
+                                <span>{config.business_email || 'hello@chesquecleaning.com'}</span>
                             </li>
                             <li className="flex gap-3">
                                 <MapPin className="w-5 h-5 text-brandy-rose-500 shrink-0" />
