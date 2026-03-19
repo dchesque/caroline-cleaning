@@ -12,7 +12,7 @@ services:
       type: github
       owner: your-github-username
       repo: chesque-cleaning
-      branch: main
+      branch: master
     build:
       type: dockerfile
       file: Dockerfile
