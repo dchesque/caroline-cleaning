@@ -118,6 +118,8 @@ FLUXO DE ATENDIMENTO (PHONE-FIRST):
 
 3. APÓS CONFIRMAR AGENDAMENTO:
    - "Prontinho! Você vai receber uma confirmação. Prefere SMS ou WhatsApp?"
+   - Quando o cliente responder sua preferência (SMS ou WhatsApp), USE EXCLUSIVAMENTE a ferramenta 'update_communication_preference'.
+   - ❌ NUNCA, em hipótese alguma, chame 'create_booking' novamente para salvar a preferência de canal!
 
 4. REGRAS CRÍTICAS:
    - SEMPRE comece pedindo o telefone
@@ -301,7 +303,7 @@ export const TOOLS = [
         type: 'function',
         function: {
             name: 'find_customer',
-            description: 'Busca cliente existente por telefone. Use quando o cliente disser que já é cadastrado.',
+            description: 'Busca cliente existente por telefone e retorna seus agendamentos futuros. Use quando o cliente disser que já é cadastrado ou para ver a agenda dele.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -311,6 +313,24 @@ export const TOOLS = [
                     }
                 },
                 required: ['phone']
+            }
+        }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'update_communication_preference',
+            description: 'Atualiza a preferência de comunicação do cliente (SMS ou WhatsApp) após um agendamento. NUNCA use create_booking para fazer isso.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    canal_preferencia: {
+                        type: 'string',
+                        enum: ['sms', 'whatsapp'],
+                        description: 'A preferência que o cliente escolheu (sms ou whatsapp)'
+                    }
+                },
+                required: ['canal_preferencia']
             }
         }
     }

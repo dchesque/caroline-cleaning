@@ -73,3 +73,7 @@ export interface CreateBookingParams {
 export interface CheckZipCoverageParams {
     zip_code: string
 }
+
+export interface UpdatePreferenceParams {
+    canal_preferencia: 'sms' | 'whatsapp'
+}

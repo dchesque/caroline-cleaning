@@ -1,3 +1,13 @@
+# Changelog - v3.5.17 (2026-03-19)
+
+## [3.5.17] - 2026-03-19
+### Fixed
+- **Carol AI (Duplicidade de Agendamento)**: Correção do loop onde a IA tentava usar a ferramenta `create_booking` logo após já ter criado um agendamento com sucesso, apenas para salvar a preferência de notificação (SMS/WhatsApp). Foi criada a nova ferramenta `update_communication_preference` garantindo que o slot não seja reportado como ocupado indevidamente.
+- **Carol AI (Agendamentos Existentes)**: Atualizada a inteligência de identificação de cliente (`find_customer`) para que, ao buscar pelo telefone, a IA também acesse e leia os até 5 próximos agendamentos confirmados do cliente. Evita sobreposições e alerta o cliente caso tente marcar algo no mesmo horário ou dia de uma visita já programada.
+
+### Added
+- **Ferramenta de IA (`update_communication_preference`)**: Nova action nativa da IA para atualizar a preferência de canal de notificação sem conflitar com `create_booking`.
+
 # Changelog - v3.5.16 (2026-03-19)
 
 ## [3.5.16] - 2026-03-19

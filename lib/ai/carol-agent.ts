@@ -10,6 +10,7 @@ import type {
     CreateLeadParams,
     CreateBookingParams,
     CheckZipCoverageParams,
+    UpdatePreferenceParams,
     ToolCall
 } from '@/types/carol'
 
@@ -364,7 +365,7 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terÃ§a-fe
 
                 case 'find_customer':
                     result = await this.findCustomer(params)
-                    // IMPORTANTE: Salvar dados do cliente no contexto para nÃ£o esquecer!
+                    // IMPORTANTE: Salvar dados do cliente no contexto para não esquecer!
                     if (result.found && result.cliente_id) {
                         await this.updateSessionContext(sessionId, {
                             cliente_id: result.cliente_id,
@@ -373,6 +374,9 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terÃ§a-fe
                         })
                     }
                     return result
+
+                case 'update_communication_preference':
+                    return await this.updateCommunicationPreference(params, sessionId)
 
                 default:
                     return { error: `Tool ${name} not implemented` }
@@ -604,9 +608,16 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terÃ§a-fe
     private async findCustomer(params: { phone: string }) {
         const supabase = await createClient()
 
+        // Get today's date in New York timezone as an ISO string (YYYY-MM-DD)
+        const nowInNyStr = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })
+        const todayStr = new Date(nowInNyStr).toISOString().split('T')[0]
+
         const { data, error } = await supabase
             .from('clientes')
-            .select('id, nome, telefone, endereco_completo, email, status')
+            .select(`
+                id, nome, telefone, endereco_completo, email, status,
+                agendamentos (id, data, horario_inicio, horario_fim_estimado, status, tipo)
+            `)
             .eq('telefone', params.phone)
             .single()
 
@@ -615,6 +626,15 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terÃ§a-fe
                 found: false,
                 message: 'Cliente nÃ£o encontrado com este telefone.'
             }
+        }
+
+        // Filter and map agendamentos to show upcoming ones
+        let agendamentos_futuros: any[] = []
+        if (data.agendamentos && Array.isArray(data.agendamentos)) {
+            agendamentos_futuros = data.agendamentos
+                .filter(a => a.status !== 'cancelado' && a.data >= todayStr)
+                .sort((a, b) => a.data.localeCompare(b.data) || a.horario_inicio.localeCompare(b.horario_inicio))
+                .slice(0, 5) // Limit to next 5 upcoming
         }
 
         // IMPORTANTE: Retornar cliente_id em destaque para a IA usar corretamente
@@ -627,9 +647,55 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terÃ§a-fe
                 phone: data.telefone,
                 email: data.email,
                 address: data.endereco_completo,
-                status: data.status
+                status: data.status,
+                agendamentos_futuros: agendamentos_futuros.length > 0 ? agendamentos_futuros : 'Nenhum agendamento futuro encontrado.'
             },
-            instrucao: `IMPORTANTE: Para agendar, use cliente_id="${data.id}" no create_booking.`
+            instrucao: `IMPORTANTE: Para agendar um novo horário, use cliente_id="${data.id}" no create_booking. Atenção aos agendamentos futuros para evitar sobreposição no mesmo dia.`
+        }
+    }
+
+    private async updateCommunicationPreference(params: UpdatePreferenceParams, sessionId: string) {
+        this.trace('updateCommunicationPreference called', { preference: params.canal_preferencia, sessionId })
+
+        // Usar admin client para bypass de RLS em operações de escrita
+        const supabase = createAdminClient()
+
+        // Buscar a memória da sessão para saber o agendamento atual
+        const { data: sessionData } = await supabase
+            .from('chat_sessions')
+            .select('contexto')
+            .eq('id', sessionId)
+            .single()
+
+        const sessionContext = sessionData?.contexto || {}
+
+        if (sessionContext.agendamento_id) {
+            const { error: agendamentoError } = await supabase
+                .from('agendamentos')
+                .update({ canal_preferencia: params.canal_preferencia })
+                .eq('id', sessionContext.agendamento_id)
+
+            if (agendamentoError) {
+                this.trace('Error updating agendamento preference', { error: agendamentoError }, 'error')
+            }
+        }
+
+        if (sessionContext.cliente_id) {
+            const { error: clienteError } = await supabase
+                .from('clientes')
+                .update({ canal_preferencia: params.canal_preferencia })
+                .eq('id', sessionContext.cliente_id)
+
+            if (clienteError) {
+                this.trace('Error updating cliente preference', { error: clienteError }, 'error')
+            }
+        }
+
+        this.trace('Communication preference updated successfully', { preference: params.canal_preferencia })
+
+        return {
+            success: true,
+            message: `Preferência de comunicação atualizada para ${params.canal_preferencia} com sucesso!`
         }
     }
 }
