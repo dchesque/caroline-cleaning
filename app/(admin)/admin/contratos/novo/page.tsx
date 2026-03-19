@@ -216,6 +216,9 @@ Property Address: ${selectedCliente ? (selectedCliente.endereco_completo || '___
                     data_inicio: formData.data_inicio,
                     ativo: true,
                 })
+                
+                // Gatilho para gerar agendamentos futuros imediatamente
+                fetch('/api/cron/recurrences').catch(console.error)
             }
 
             toast.success(enviar ? 'Contrato criado e enviado!' : 'Contrato salvo como rascunho!')

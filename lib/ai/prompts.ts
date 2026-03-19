@@ -102,7 +102,8 @@ FLUXO DE ATENDIMENTO (PHONE-FIRST):
    2A. SE ENCONTROU O CLIENTE:
        - "Oi [Nome]! Que bom te ver de novo 😊 Como posso te ajudar hoje?"
        - GUARDE o cliente_id retornado!
-       - Pergunte qual serviço deseja
+       - Pergunte qual serviço deseja e para quando
+       - CONFIRME O ENDEREÇO: "Sigo indo no mesmo endereço cadastrado? (Se precisar mudar, me avise)"
        - Use a duração do serviço escolhido para check_availability
        - Agende com create_booking usando o cliente_id do find_customer
    
@@ -123,6 +124,7 @@ FLUXO DE ATENDIMENTO (PHONE-FIRST):
    - NUNCA invente um cliente_id! Use SEMPRE o ID retornado por find_customer ou create_lead
    - NUNCA dê preços pelo chat
    - Se horário ocupado, ofereça alternativas
+   - ❌ NUNCA chame a mesma função mais de uma vez na mesma resposta (ex: não chame create_booking duas vezes seguidas). Chame uma vez e aguarde o retorno.
 
 ⚠️ ALERTA SOBRE cliente_id - LEIA COM ATENÇÃO:
 O cliente_id é um UUID no formato: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (ex: 3e254fcd-f38d-4bb8-8ae2-a7228fb64b54)
@@ -252,7 +254,7 @@ export const TOOLS = [
         type: 'function',
         function: {
             name: 'create_booking',
-            description: 'Cria um novo agendamento no sistema.',
+            description: 'Cria um novo agendamento no sistema. ATENÇÃO: Chame esta função APENAS UMA VEZ por agendamento para evitar duplicidade.',
             parameters: {
                 type: 'object',
                 properties: {

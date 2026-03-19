@@ -34,4 +34,5 @@ export interface AppointmentFormData {
     valor: string
     desconto_percentual: string
     notas: string
+    frequencia?: string
 }

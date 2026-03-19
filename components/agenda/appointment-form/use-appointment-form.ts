@@ -44,7 +44,8 @@ export function useAppointmentForm({
         status: 'agendado',
         valor: '',
         desconto_percentual: '0',
-        notas: ''
+        notas: '',
+        frequencia: 'one_time'
     })
 
     const supabase = useMemo(() => createClient(), [])
@@ -91,7 +92,8 @@ export function useAppointmentForm({
                             status: app.status,
                             valor: app.valor?.toString() || '',
                             desconto_percentual: app.desconto_percentual?.toString() || '0',
-                            notas: app.notas || ''
+                            notas: app.notas || '',
+                            frequencia: 'one_time' // Em edição, não mudamos a recorrência aqui para não quebrar a série toda, a menos que especificado
                         })
                         setSelectedClient(app.cliente)
 
@@ -122,7 +124,8 @@ export function useAppointmentForm({
                     status: 'agendado',
                     valor: '',
                     desconto_percentual: '0',
-                    notas: ''
+                    notas: '',
+                    frequencia: 'one_time'
                 })
 
                 setAddonsSelecionados([])
@@ -296,11 +299,51 @@ export function useAppointmentForm({
                 if (error) throw error
                 toast.success(agendaT.success?.updated)
             } else {
-                const { error } = await supabase
+                const { data: newApp, error } = await supabase
                     .from('agendamentos')
                     .insert([payload])
+                    .select()
+                    .single()
 
                 if (error) throw error
+
+                // Se houver frequência, cria a recorrência e engatilha o cron
+                if (formData.frequencia && formData.frequencia !== 'one_time') {
+                    // Descobre o dia preferido baseado na data inicial
+                    const dateObj = new Date(`${formData.data}T12:00:00.000Z`)
+                    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+                    const diaPreferido = dayNames[dateObj.getUTCDay()]
+
+                    const { data: recurrence, error: recError } = await supabase
+                        .from('recorrencias')
+                        .insert([{
+                            cliente_id: selectedClient.id,
+                            frequencia: formData.frequencia,
+                            dia_preferido: diaPreferido,
+                            horario: formData.horario_inicio,
+                            tipo_servico: formData.tipo,
+                            valor: calculatedValues.valorBase || null,
+                            data_inicio: formData.data,
+                            ultimo_agendamento: formData.data, // Já geramos o de hoje acima
+                            ativo: true
+                        }])
+                        .select()
+                        .single()
+
+                    if (recError) throw recError
+
+                    // Associa a recorrência ao agendamento base
+                    if (newApp && recurrence) {
+                        await supabase
+                            .from('agendamentos')
+                            .update({ recorrencia_id: recurrence.id, e_recorrente: true })
+                            .eq('id', newApp.id)
+                    }
+
+                    // Gatilho do cron
+                    fetch('/api/cron/recurrences').catch(console.error)
+                }
+
                 toast.success(agendaT.success?.created)
             }
 

@@ -148,8 +148,14 @@ export class CarolAgent {
         }
 
         // 3. Preparar mensagens para o LLM com data atual e contexto de dias
-        const today = new Date()
+        const nowInNyStr = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })
+        const today = new Date(nowInNyStr)
         const weekdays = ['domingo', 'segunda-feira', 'terÃ§a-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sÃ¡bado']
+
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const nyIsoDate = `${yyyy}-${mm}-${dd}`;
 
         // Gerar os prÃ³ximos 7 dias com dia da semana
         const nextDays = []
@@ -158,7 +164,7 @@ export class CarolAgent {
             date.setDate(date.getDate() + i)
             const dayName = weekdays[date.getDay()]
             const formatted = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            const isoDate = date.toISOString().split('T')[0]
+            const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             nextDays.push(`${dayName} = ${formatted} (${isoDate})`)
         }
 
@@ -168,7 +174,7 @@ export class CarolAgent {
         const firstAvailableSlot = minHour >= 17 ? 'NÃƒO DISPONÃVEL HOJE (apÃ³s fechamento)' : `${String(minHour + (minTimeToday.getMinutes() > 0 ? 1 : 0)).padStart(2, '0')}:00`
 
         const dateContext = `
-DATA E HORA ATUAL: ${today.toISOString().split('T')[0]} ${today.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (${weekdays[today.getDay()]})
+DATA E HORA ATUAL: ${nyIsoDate} ${today.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} (${weekdays[today.getDay()]})
 
 PRIMEIRO HORÃRIO DISPONÃVEL PARA HOJE: ${firstAvailableSlot}
 NUNCA ofereÃ§a horÃ¡rios antes deste para o dia de hoje!
@@ -403,8 +409,9 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terÃ§a-fe
         })
 
         // Filtrar apenas slots disponÃ­veis (disponivel = true)
-        const now = new Date()
-        const todayStr = now.toISOString().split('T')[0]
+        const nowInNyStr = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+        const now = new Date(nowInNyStr);
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         let availableSlots = (data || []).filter((s: { disponivel: boolean }) => s.disponivel)
 
         // Se for hoje, filtrar slots passados (+3h)

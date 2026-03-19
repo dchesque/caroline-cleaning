@@ -327,6 +327,9 @@ export function EditClientModal({ open, onOpenChange, clientId, onSuccess }: Edi
                         .insert([recurrenceData])
                     if (recurrenceError) throw recurrenceError
                 }
+                
+                // Gatilho para gerar agendamentos futuros imediatamente
+                fetch('/api/cron/recurrences').catch(console.error)
             }
 
             toast.success('Cliente atualizado com sucesso!')

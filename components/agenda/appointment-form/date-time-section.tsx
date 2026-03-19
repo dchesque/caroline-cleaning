@@ -15,7 +15,7 @@ export function DateTimeSection({ formData, onChange }: DateTimeSectionProps) {
     const agendaT = t('agenda')
 
     return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
                 <Label>{agendaT.form?.date} *</Label>
                 <Input
@@ -39,6 +39,24 @@ export function DateTimeSection({ formData, onChange }: DateTimeSectionProps) {
                         {HORARIOS.map(h => (
                             <SelectItem key={h} value={h}>{h}</SelectItem>
                         ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            
+            <div className="space-y-2">
+                <Label>Frequência *</Label>
+                <Select
+                    value={formData.frequencia || 'one_time'}
+                    onValueChange={v => onChange({ frequencia: v })}
+                >
+                    <SelectTrigger className="bg-white border-gray-200 shadow-sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="one_time">Avulso</SelectItem>
+                        <SelectItem value="weekly">Semanal</SelectItem>
+                        <SelectItem value="biweekly">Quinzenal</SelectItem>
+                        <SelectItem value="monthly">Mensal</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

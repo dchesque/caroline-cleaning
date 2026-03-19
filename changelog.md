@@ -1,3 +1,25 @@
+# Changelog - v3.5.16 (2026-03-19)
+
+## [3.5.16] - 2026-03-19
+### Added
+- **Agenda / Calendário**: Adicionado campo de "Frequência" (Semanal, Quinzenal, Mensal, Avulso) no modal "Novo Agendamento" da tela de Agenda. Agora é possível criar planos recorrentes diretos pelo calendário sem precisar navegar até a página do Cliente ou Contratos. Ao salvar, as recorrências futuras são populadas imediatamente no calendário.
+
+# Changelog - v3.5.15 (2026-03-19)
+
+## [3.5.15] - 2026-03-19
+### Fixed
+- **Recorrências (Agendamentos)**: Refatoração integral da lógica do cron `/api/cron/recurrences` para respeitar os intervalos exatos das frequências (Quinzenal saltando 14 dias, Mensal saltando 28 dias). Antes o sistema replicava qualquer recorrência como se fosse semanal.
+- **UX da Agenda**: Agendamentos futuros agora são gerados e exibidos *imediatamente* na agenda após a criação ou edição de um plano recorrente ou contrato, sem precisar aguardar a execução automatizada da madrugada.
+- **Segurança da API**: Endpoint do cron agora permite gatilhos manuais via sessões administrativas já autenticadas, mitigando o retorno 401 para instâncias geradas no frontend.
+
+# Changelog - v3.5.14 (2026-03-19)
+
+## [3.5.14] - 2026-03-19
+### Fixed
+- **Carol AI (Agendamentos)**: Correção do cálculo de fuso horário que impedia agendamentos no período da tarde ao interpretar o horário UTC como horário local.
+- **Carol AI (Endereço)**: Inclusão de passo de confirmação de endereço no fluxo de clientes existentes para evitar deslocamentos errados.
+- **Carol AI (Prevenção de Conflitos)**: Implementação de travas no prompt do sistema para evitar chamadas duplicadas da ferramenta `create_booking` na mesma interação (Double Booking).
+
 # Changelog - v3.5.13 (2026-03-19)
 
 ## [3.5.13] - 2026-03-19
