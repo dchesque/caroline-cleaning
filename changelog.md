@@ -1,3 +1,9 @@
+# Changelog - v3.5.19 (2026-03-19)
+
+## [3.5.19] - 2026-03-19
+### Fixed
+- **Carol AI (Consulta de Área Atendida - CEPs)**: Resolvido um problema silencioso onde a IA rejeitava áreas cobertas de Fort Mill ou Charlotte porque o banco de dados falhava internamente no método `ANY(zip_codes)` durante o PL/pgSQL do Postgres. A validação de proximidade pelo chat bot migrou para um método determinístico em Node.js usando `select().contains()` pelo Supabase, garantindo que nenhum ZIP Code mapeado previamente fique de fora do escopo.
+
 # Changelog - v3.5.18 (2026-03-19)
 
 ## [3.5.18] - 2026-03-19

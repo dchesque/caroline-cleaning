@@ -586,25 +586,32 @@ Ao confirmar agendamento, SEMPRE informe: dia da semana + data (ex: "terÃ§a-fe
         this.trace('checkZipCoverage called', { zipCode: params.zip_code })
 
         const supabase = await createClient()
-        const { data, error } = await supabase.rpc('check_zip_code_coverage', {
-            p_zip_code: params.zip_code
-        })
+        
+        // Use direct table query instead of buggy RPC
+        const { data, error } = await supabase
+            .from('areas_atendidas')
+            .select('id, nome, taxa_deslocamento')
+            .eq('ativo', true)
+            .contains('zip_codes', [params.zip_code])
+            .limit(1)
 
         if (error) {
-            this.trace('checkZipCoverage RPC error', { error }, 'error')
+            this.trace('checkZipCoverage query error', { error }, 'error')
             throw error
         }
 
-        const result = data && data[0] ? data[0] : { atendido: false }
-        this.trace('checkZipCoverage result', { zipCode: params.zip_code, covered: result.atendido, areaName: result.area_nome })
+        const isCovered = data && data.length > 0
+        const areaName = isCovered ? data[0].nome : null
+
+        this.trace('checkZipCoverage result', { zipCode: params.zip_code, covered: isCovered, areaName })
 
         return {
             success: true,
-            covered: result.atendido,
-            area_name: result.area_nome || null,
-            message: result.atendido
-                ? `Ã“timo! Atendemos a regiÃ£o de ${result.area_nome || 'sua Ã¡rea'}!`
-                : `Desculpe, nÃ£o atendemos o CEP ${params.zip_code} no momento.`
+            covered: isCovered,
+            area_name: areaName,
+            message: isCovered
+                ? `Ótimo! Atendemos a região de ${areaName}!`
+                : `Desculpe, não atendemos o CEP ${params.zip_code} no momento.`
         }
     }
 
