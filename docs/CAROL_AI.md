@@ -54,6 +54,7 @@ O sistema de prompt agora inclui instruções explícitas de segurança:
 - **Consistência de Persona**: A Carol se recusa a agir como outros sistemas ou admitir ser uma IA de forma que quebre a experiência.
 - **Escopo**: Restrição estrita a assuntos relacionados à Chesque Cleaning.
 - **Policies de Anon e RLS**: Melhoria significativa de acesso utilizando policies de `anon` no Supabase e bypass intencional via `adminSupabase` quando necessário, garantindo que usuários deslogados possam interagir livremente na interface web em suas sessões limitadas.
+- **Diretrizes de Estilo (Nativo)**: A Carol foi instruída a evitar o uso de travessões (—), preferindo vírgulas ou pontos para uma comunicação mais natural e direta (v3.5.10).
 - **Security Definer**: Funções RPC como `get_available_slots` ajustadas para "security definer" para evitar restrições de RLS indevidas ao recuperar dados.
 
 ---
