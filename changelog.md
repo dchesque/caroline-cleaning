@@ -1,3 +1,10 @@
+# Changelog - v3.5.24 (2026-03-19)
+
+## [3.5.24] - 2026-03-19
+### Fixed
+- **AI Agent (Phone Confirmation):** Carol now always repeats the client's phone number back to them for confirmation before proceeding. The phone is the sole reliable contact link.
+- **AI Agent (Date Parsing):** "Next [weekday]" (e.g., "next Friday") is now always interpreted as the following calendar week. Confirmed dates are now shown in (mm/dd) format alongside the weekday name.
+
 # Changelog - v3.5.23 (2026-03-19)
 
 ## [3.5.23] - 2026-03-19
