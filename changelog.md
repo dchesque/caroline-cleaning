@@ -1,3 +1,27 @@
+# Changelog - v3.5.23 (2026-03-19)
+
+## [3.5.23] - 2026-03-19
+### Changed
+- **AI Agent (Legal/Insurance Policy):** Completely banned the AI from using the words "seguro" or "insurance" and from promising direct monetary reimbursement due to strict US regulations. The AI now defers any damage accidents to the manager (Thayna) for personal evaluation.
+
+# Changelog - v3.5.22 (2026-03-19)
+
+## [3.5.22] - 2026-03-19
+### Changed
+- **AI Agent (Company Policies Updated):**
+  - Updated damaged item policy: clients have 24h to report, and Chesque Cleaning pays upon professional evaluation.
+  - Allowed AI to inform that cleaning products can be fully provided upon special agreement.
+  - Specified staff identity: Thayna does visits, and Thayna + 1 or 2 helpers perform cleanings.
+
+# Changelog - v3.5.21 (2026-03-19)
+
+## [3.5.21] - 2026-03-19
+### Changed
+- **AI Agent:** Refined system prompt to reflect strict company policies:
+  - Ensured AI never mentions the company being "fully insured" and relies on background checks for trust.
+  - Clarified that the company provides equipment (vacuums, buckets, mops) but the client provides specific cleaning products.
+  - Instructed AI to inquire specifically about allergy causes when mentioned and capture them in booking notes.
+
 # Changelog - v3.5.20 (2026-03-19)
 
 ## [3.5.20] - 2026-03-19
