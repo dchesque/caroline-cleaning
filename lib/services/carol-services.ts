@@ -231,8 +231,13 @@ function getTodayStr(): string {
 // ═══════════════════════════════════════════
 
 export class CarolServices {
+    private _supabase: ReturnType<typeof createAdminClient> | null = null
+
     private get supabase() {
-        return createAdminClient()
+        if (!this._supabase) {
+            this._supabase = createAdminClient()
+        }
+        return this._supabase
     }
 
     // ═══════════════════════════════════════

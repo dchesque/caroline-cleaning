@@ -8,7 +8,15 @@ import { extractZipFromAddress, getDurationForService } from '../validators'
  */
 export const handleNewCustomerName: StateHandler = async (message, context, _services, llm) => {
   const extracted = await llm.extract('name', message)
-  const name = extracted?.name ?? extracted?.value ?? message.trim()
+  const name = extracted?.name ?? extracted?.value ?? null
+
+  if (!name || name.length < 2) {
+    return {
+      nextState: 'NEW_CUSTOMER_NAME',
+      response: await llm.generate('ask_name', {}, context.language || 'en'),
+      contextUpdates: { retry_count: (context.retry_count || 0) + 1 },
+    }
+  }
 
   return {
     nextState: 'EXPLAIN_FIRST_VISIT',
@@ -41,7 +49,15 @@ export const handleExplainFirstVisit: StateHandler = async (_message, context, _
  */
 export const handleNewCustomerAddress: StateHandler = async (message, context, _services, llm) => {
   const extracted = await llm.extract('address', message)
-  const address = extracted?.address ?? extracted?.value ?? message.trim()
+  const address = extracted?.address ?? extracted?.value ?? null
+
+  if (!address || address.length < 5) {
+    return {
+      nextState: 'NEW_CUSTOMER_ADDRESS',
+      response: await llm.generate('ask_address_again', {}, context.language || 'en'),
+    }
+  }
+
   let zip = extracted?.zip ?? extracted?.zip_code ?? null
 
   if (!zip) {
@@ -136,6 +152,13 @@ export const handleCreateLead: StateHandler = async (_message, context, services
     address: context.cliente_endereco,
     zip_code: context.cliente_zip,
   })
+
+  if (result.status === 'error') {
+    return {
+      nextState: 'DETECT_INTENT',
+      response: await llm.generate('booking_error', {}, context.language || 'en'),
+    }
+  }
 
   const clientId = result.client_id
 

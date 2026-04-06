@@ -63,8 +63,8 @@ export const handleSavePetInfo: StateHandler = async (message, context, services
     }
   }
 
-  const extracted = await llm.extract('preference', message, { type: 'pet_info' })
-  const petDetails = extracted?.value ?? extracted?.pets ?? message.trim()
+  const extracted = await llm.extract('pet_info', message)
+  const petDetails = extracted?.pets ?? extracted?.details ?? message.trim()
 
   // Update customer record if we have a client_id
   if (context.cliente_id) {
@@ -108,8 +108,8 @@ export const handleSaveAllergyInfo: StateHandler = async (message, context, serv
     }
   }
 
-  const extracted = await llm.extract('preference', message, { type: 'allergy_info' })
-  const allergyDetails = extracted?.value ?? extracted?.allergies ?? message.trim()
+  const extracted = await llm.extract('allergy_info', message)
+  const allergyDetails = extracted?.allergies ?? extracted?.details ?? message.trim()
 
   // Update customer record if we have a client_id
   if (context.cliente_id) {

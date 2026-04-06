@@ -277,18 +277,19 @@ export const handleCollectTime: StateHandler = async (message, context, _service
 export const handleCreateBooking: StateHandler = async (_message, context, services, llm) => {
   const lang = context.language
 
-  if (!context.cliente_id) {
+  if (!context.selected_date || !context.selected_time || !context.cliente_id) {
     return {
-      nextState: 'COLLECT_PHONE',
-      response: 'I need to identify you first. Could you share your phone number?',
+      nextState: 'ASK_DATE',
+      response: await llm.generate('booking_error', {}, context.language || 'en'),
+      contextUpdates: { last_error: 'Missing required booking fields' },
     }
   }
 
   const result = await services.createAppointment({
     client_id: context.cliente_id,
     service_type: context.service_type ?? 'regular',
-    date: context.selected_date!,
-    time: context.selected_time!,
+    date: context.selected_date,
+    time: context.selected_time,
     duration: context.duration_minutes ?? getDurationForService(context.service_type ?? 'regular'),
   })
 
@@ -367,8 +368,12 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
 
   if (intent === 'yes') {
     // Confirm the appointment
-    if (context.booking_id) {
-      await services.confirmAppointment(context.booking_id)
+    try {
+      if (context.booking_id) {
+        await services.confirmAppointment(context.booking_id)
+      }
+    } catch {
+      // Non-critical - booking already created, confirmation is secondary
     }
 
     // Ask for communication preference

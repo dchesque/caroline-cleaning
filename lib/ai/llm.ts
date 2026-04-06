@@ -16,6 +16,8 @@ export type ExtractionType =
   | 'appointment_selection'
   | 'callback_time'
   | 'client_update'
+  | 'pet_info'
+  | 'allergy_info'
 
 // ═══ EXTRACTION PROMPTS ═══
 
@@ -72,6 +74,12 @@ function getExtractionPrompt(type: ExtractionType, extraContext?: any): string {
 
     case 'client_update':
       return `${base} Extract fields the user wants to update. Possible fields: name, phone, address, email. Return {"updates": {"field": "new_value"}} with only the fields mentioned. Return {"updates": {}} if none found.`
+
+    case 'pet_info':
+      return `${base} Extract pet information from the message. Return {"pets": "description of pets", "details": "any special notes"} or {"pets": null} if no pet info found.`
+
+    case 'allergy_info':
+      return `${base} Extract allergy or sensitivity information from the message. Return {"allergies": "description of allergies", "details": "any special notes"} or {"allergies": null} if no allergy info found.`
 
     default:
       return base

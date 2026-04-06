@@ -11,7 +11,16 @@ export const handleCollectPhone: StateHandler = async (message, context, service
   const lang = context.language
 
   const extracted = await llm.extract('phone', message)
-  const raw = extracted?.phone ?? extracted?.value ?? message
+  const raw = extracted?.phone ?? extracted?.value ?? null
+
+  if (!raw) {
+    return {
+      nextState: 'COLLECT_PHONE',
+      response: await llm.generate('ask_phone', {}, context.language || 'en'),
+      contextUpdates: { retry_count: (context.retry_count || 0) + 1 },
+    }
+  }
+
   const normalized = normalizePhone(String(raw))
 
   if (!normalized) {

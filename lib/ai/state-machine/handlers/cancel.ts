@@ -17,7 +17,15 @@ export const handleShowAppointments: StateHandler = async (_message, context, se
     }
   }
 
-  const history = await services.getClientHistory(context.cliente_id)
+  let history
+  try {
+    history = await services.getClientHistory(context.cliente_id)
+  } catch {
+    return {
+      nextState: 'DETECT_INTENT',
+      response: await llm.generate('booking_error', {}, lang),
+    }
+  }
 
   // Filter to future appointments that are not cancelled/completed
   const now = new Date().toISOString().slice(0, 10)
@@ -149,6 +157,13 @@ export const handleSelectAppointment: StateHandler = async (message, context, _s
 export const handleConfirmCancelResponse: StateHandler = async (message, context, services, llm) => {
   const lang = context.language
 
+  if (!context.target_appointment_id) {
+    return {
+      nextState: 'SHOW_APPOINTMENTS',
+      response: await llm.generate('invalid_selection', {}, lang),
+    }
+  }
+
   if (!message) {
     // Silent entry — show the confirmation prompt
     const appointment = (context.appointments ?? []).find(
@@ -206,7 +221,19 @@ export const handleCancelAppointment: StateHandler = async (_message, context, s
     }
   }
 
-  const result = await services.cancelAppointment(appointmentId)
+  let result
+  try {
+    result = await services.cancelAppointment(appointmentId)
+  } catch {
+    const response = await llm.generate('cancel_error', {}, lang)
+    return {
+      nextState: 'DETECT_INTENT',
+      response,
+      contextUpdates: {
+        target_appointment_id: null,
+      },
+    }
+  }
 
   if (result.status === 'cancelled') {
     const response = await llm.generate('cancel_success', {

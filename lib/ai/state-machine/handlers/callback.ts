@@ -33,12 +33,27 @@ export const handleScheduleCallback: StateHandler = async (message, context, ser
     }
   }
 
-  const result = await services.scheduleCallback({
-    client_id: context.cliente_id,
-    phone: context.cliente_telefone,
-    preferred_time: preferredTime,
-    notes: `Callback requested via chat. Language: ${lang}`,
-  })
+  let result
+  try {
+    result = await services.scheduleCallback({
+      client_id: context.cliente_id,
+      phone: context.cliente_telefone,
+      preferred_time: preferredTime,
+      notes: `Callback requested via chat. Language: ${lang}`,
+    })
+
+    if (result.status === 'error') {
+      return {
+        nextState: 'DETECT_INTENT',
+        response: await llm.generate('callback_error', { name: context.cliente_nome }, lang),
+      }
+    }
+  } catch {
+    return {
+      nextState: 'DETECT_INTENT',
+      response: await llm.generate('callback_error', { name: context.cliente_nome }, lang),
+    }
+  }
 
   if (result.status === 'scheduled') {
     const response = await llm.generate('callback_scheduled', {
