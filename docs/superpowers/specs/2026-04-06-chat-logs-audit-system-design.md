@@ -69,8 +69,8 @@ CREATE POLICY "Admins can manage chat_logs" ON chat_logs
   FOR ALL TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM user_roles
-      WHERE user_id = auth.uid()
+      SELECT 1 FROM user_profiles
+      WHERE id = auth.uid()
       AND role = 'admin'
     )
   );
@@ -196,6 +196,7 @@ export interface SessionSummary {
   last_message_at: string
   final_state: string
   has_errors: boolean
+  total_response_time_ms: number
 }
 
 export interface LogEntry {
@@ -277,6 +278,14 @@ export class ChatLogger {
 | Export | CSV/JSON da conversa selecionada |
 | Response time | Destaque para lentidão (>3s) |
 
+### Session Status Logic
+
+| Status | Visual | Determinação |
+|--------|--------|--------------|
+| Success | 🟢 Verde | `final_state` = DONE e `has_errors` = false |
+| In Progress | 🟡 Amarelo | `final_state` ≠ DONE |
+| With Errors | 🔴 Vermelho | `has_errors` = true (independente do estado) |
+
 ### Files
 
 ```
@@ -290,8 +299,9 @@ app/(admin)/admin/chat-logs/
     └── ContextViewer.tsx
 
 app/api/admin/chat-logs/
-├── route.ts              # GET lista de sessões
-└── [sessionId]/route.ts  # GET detalhes
+├── route.ts                    # GET lista de sessões
+├── [sessionId]/route.ts        # GET detalhes
+└── [sessionId]/export/route.ts # GET export (CSV/JSON)
 ```
 
 ### API Endpoints
