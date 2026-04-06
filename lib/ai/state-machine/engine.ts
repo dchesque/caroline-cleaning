@@ -3,8 +3,16 @@
 
 import { CarolState, SessionContext, HandlerResult, StateHandler } from './types'
 import { CarolServices } from '@/lib/services/carol-services'
-import { CarolLLM } from '../llm'
+import { CarolLLM, LLMCallRecord } from '../llm'
 import { logger } from '@/lib/logger'
+
+interface ProcessingMetrics {
+  llmCalls: LLMCallRecord[]
+  handlersExecuted: { handler: string; duration_ms: number }[]
+  extractedData: Record<string, any>
+  contextSnapshot: Record<string, any>
+  errors: { type: 'warning' | 'error'; message: string; state?: string }[]
+}
 
 /** Maximum number of silent (auto) transitions before forcing a stop. */
 const MAX_AUTO_TRANSITIONS = 5
@@ -45,7 +53,16 @@ export class CarolStateMachine {
   async process(
     message: string,
     sessionId: string,
-  ): Promise<{ response: string; state: CarolState }> {
+  ): Promise<{ response: string; state: CarolState; state_before: CarolState; metrics: ProcessingMetrics; cliente_id?: string }> {
+    // Initialize metrics
+    const metrics: ProcessingMetrics = {
+      llmCalls: [],
+      handlersExecuted: [],
+      extractedData: {},
+      contextSnapshot: {},
+      errors: [],
+    }
+
     // 1. Load context
     let context = await this.services.getSession(sessionId)
 
@@ -55,14 +72,33 @@ export class CarolStateMachine {
     }
 
     let currentState = context.state as CarolState
+    const stateBefore: CarolState = currentState
 
     // 2. Execute handler for the current state
     const handler = this.handlers.get(currentState)
     if (!handler) {
       logger.error('No handler registered for state', { state: currentState, sessionId })
+      metrics.errors.push({
+        type: 'error',
+        message: 'No handler registered for state',
+        state: currentState,
+      })
+      metrics.contextSnapshot = {
+        cliente_id: context.cliente_id,
+        cliente_nome: context.cliente_nome,
+        cliente_telefone: context.cliente_telefone,
+        service_type: context.service_type,
+        selected_date: context.selected_date,
+        selected_time: context.selected_time,
+        state: context.state,
+        language: context.language,
+      }
       return {
         response: "I'm sorry, something went wrong on my end. Could you try again?",
         state: currentState,
+        state_before: stateBefore,
+        metrics,
+        cliente_id: context.cliente_id || undefined,
       }
     }
 
@@ -73,18 +109,52 @@ export class CarolStateMachine {
     })
 
     let result: HandlerResult
+    const handlerStartTime = Date.now()
     try {
       result = await handler(message, context, this.services, this.llm)
+      metrics.handlersExecuted.push({
+        handler: `${currentState}Handler`,
+        duration_ms: Date.now() - handlerStartTime,
+      })
     } catch (err) {
+      const durationMs = Date.now() - handlerStartTime
+      metrics.handlersExecuted.push({
+        handler: `${currentState}Handler`,
+        duration_ms: durationMs,
+      })
+      const errorMessage = err instanceof Error ? err.message : String(err)
       logger.error('Handler threw an error', {
         state: currentState,
         sessionId,
-        error: err instanceof Error ? err.message : String(err),
+        error: errorMessage,
       })
+      metrics.errors.push({
+        type: 'error',
+        message: errorMessage,
+        state: currentState,
+      })
+      metrics.contextSnapshot = {
+        cliente_id: context.cliente_id,
+        cliente_nome: context.cliente_nome,
+        cliente_telefone: context.cliente_telefone,
+        service_type: context.service_type,
+        selected_date: context.selected_date,
+        selected_time: context.selected_time,
+        state: context.state,
+        language: context.language,
+      }
       return {
         response: "I'm sorry, I ran into an unexpected issue. Could you say that again?",
         state: currentState,
+        state_before: stateBefore,
+        metrics,
+        cliente_id: context.cliente_id || undefined,
       }
+    }
+
+    // Track extracted data from contextUpdates
+    if (result.contextUpdates) {
+      metrics.extractedData = { ...metrics.extractedData, ...result.contextUpdates }
     }
 
     // 3. Apply context updates & transition
@@ -108,6 +178,11 @@ export class CarolStateMachine {
           state: nextState,
           sessionId,
         })
+        metrics.errors.push({
+          type: 'error',
+          message: 'No handler for silent-transition target state',
+          state: nextState,
+        })
         break
       }
 
@@ -118,13 +193,33 @@ export class CarolStateMachine {
         iteration: autoTransitions,
       })
 
+      const silentHandlerStartTime = Date.now()
       try {
         result = await nextHandler('', context, this.services, this.llm)
+        metrics.handlersExecuted.push({
+          handler: `${nextState}Handler`,
+          duration_ms: Date.now() - silentHandlerStartTime,
+        })
+        // Track extracted data from silent transition contextUpdates
+        if (result.contextUpdates) {
+          metrics.extractedData = { ...metrics.extractedData, ...result.contextUpdates }
+        }
       } catch (err) {
+        const durationMs = Date.now() - silentHandlerStartTime
+        metrics.handlersExecuted.push({
+          handler: `${nextState}Handler`,
+          duration_ms: durationMs,
+        })
+        const errorMessage = err instanceof Error ? err.message : String(err)
         logger.error('Silent handler threw an error', {
           state: nextState,
           sessionId,
-          error: err instanceof Error ? err.message : String(err),
+          error: errorMessage,
+        })
+        metrics.errors.push({
+          type: 'error',
+          message: errorMessage,
+          state: nextState,
         })
         break
       }
@@ -141,18 +236,40 @@ export class CarolStateMachine {
         sessionId,
         lastState: context.state,
       })
+      metrics.errors.push({
+        type: 'warning',
+        message: 'Max auto-transitions reached, breaking chain',
+        state: context.state as CarolState,
+      })
     }
 
     const finalResponse = responses.join('\n\n')
     const finalState = context.state as CarolState
 
+    // Capture final context snapshot
+    metrics.contextSnapshot = {
+      cliente_id: context.cliente_id,
+      cliente_nome: context.cliente_nome,
+      cliente_telefone: context.cliente_telefone,
+      service_type: context.service_type,
+      selected_date: context.selected_date,
+      selected_time: context.selected_time,
+      state: context.state,
+      language: context.language,
+    }
+
     // 5. Persist context
     try {
       await this.services.updateSession(sessionId, context)
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
       logger.error('Failed to persist session context', {
         sessionId,
-        error: err instanceof Error ? err.message : String(err),
+        error: errorMessage,
+      })
+      metrics.errors.push({
+        type: 'warning',
+        message: `Failed to persist session context: ${errorMessage}`,
       })
     }
 
@@ -169,9 +286,14 @@ export class CarolStateMachine {
         }),
       ])
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err)
       logger.error('Failed to persist messages', {
         sessionId,
-        error: err instanceof Error ? err.message : String(err),
+        error: errorMessage,
+      })
+      metrics.errors.push({
+        type: 'warning',
+        message: `Failed to persist messages: ${errorMessage}`,
       })
     }
 
@@ -183,7 +305,13 @@ export class CarolStateMachine {
       responseLength: finalResponse.length,
     })
 
-    return { response: finalResponse, state: finalState }
+    return {
+      response: finalResponse,
+      state: finalState,
+      state_before: stateBefore,
+      metrics,
+      cliente_id: context.cliente_id || undefined,
+    }
   }
 
   // ─────────────────────────────────────────
