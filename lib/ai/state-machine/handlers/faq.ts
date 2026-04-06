@@ -11,12 +11,8 @@ export const handleFaqResponse: StateHandler = async (_message, context, service
   const businessInfo = await services.getBusinessInfo()
 
   const response = await llm.generateFaq(question, {
-    business_name: businessInfo.name,
-    phone: businessInfo.phone,
-    email: businessInfo.email,
-    hours: businessInfo.hours,
-    customer_name: context.cliente_nome,
-    language: context.language,
+    businessInfo,
+    sessionContext: context,
   })
 
   const followUp = context.language === 'pt'

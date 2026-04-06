@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         logger.info('Chat Request Completed', {
             sessionId: currentSessionId,
             durationMs: duration,
-            toolCallsExecuted: response.tool_calls_executed
+            state: response.state
         })
 
         return NextResponse.json({

@@ -285,7 +285,7 @@ export class CarolServices {
                 notes: data.notas,
                 preferred_channel: data.canal_preferencia
             },
-            upcoming_appointments: (appointments || []).map(a => ({
+            upcoming_appointments: (appointments || []).map((a: any) => ({
                 id: a.id,
                 date: a.data,
                 time: a.horario_inicio?.substring(0, 5) || '',
@@ -317,7 +317,7 @@ export class CarolServices {
 
         return {
             client_id: clientId,
-            appointments: (appointments || []).map(a => ({
+            appointments: (appointments || []).map((a: any) => ({
                 id: a.id,
                 service_type: a.tipo,
                 date: a.data,
@@ -445,7 +445,7 @@ export class CarolServices {
         const { data: basePrices } = await this.supabase.from('precos_base').select('*')
 
         return {
-            services: (services || []).map(s => {
+            services: (services || []).map((s: any) => {
                 const baseMin = basePrices?.[0]?.preco_minimo || 120
                 const multiplier = parseFloat(s.multiplicador_preco || '1')
                 return {
@@ -497,18 +497,18 @@ export class CarolServices {
             .eq('disponivel_agendamento_online', true)
             .order('ordem', { ascending: true })
 
-        const settingsMap = new Map(settings?.map(s => [s.chave, s.valor]) || [])
+        const settingsMap = new Map(settings?.map((s: any) => [s.chave, s.valor]) || [])
 
         return {
-            services: (services || []).map(s => ({
+            services: (services || []).map((s: any) => ({
                 code: s.codigo,
                 name: s.nome,
                 duration_minutes: s.duracao_base_minutos,
                 price_multiplier: parseFloat(s.multiplicador_preco || '1')
             })),
-            operating_start: settingsMap.get('operating_start') || '08:00',
-            operating_end: settingsMap.get('operating_end') || '17:00',
-            default_duration: parseInt(settingsMap.get('booking_default_duration') || '60', 10)
+            operating_start: (settingsMap.get('operating_start') as string) || '08:00',
+            operating_end: (settingsMap.get('operating_end') as string) || '17:00',
+            default_duration: parseInt((settingsMap.get('booking_default_duration') as string) || '60', 10)
         }
     }
 
@@ -680,7 +680,7 @@ export class CarolServices {
         if (hasConflict) {
             // Sugerir horários alternativos
             const allTimes = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00']
-            const bookedTimes = conflicts?.map(c => c.horario_inicio?.substring(0, 5)) || []
+            const bookedTimes = conflicts?.map((c: any) => c.horario_inicio?.substring(0, 5)) || []
             const suggested = allTimes.filter(t => !bookedTimes.includes(t)).slice(0, 3)
 
             return {

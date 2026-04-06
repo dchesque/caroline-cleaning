@@ -23,6 +23,7 @@ export interface ToolCall {
 export interface ChatResponse {
     message: string
     session_id: string
+    state?: string
     tool_calls_executed: number
     timestamp: string
 }
