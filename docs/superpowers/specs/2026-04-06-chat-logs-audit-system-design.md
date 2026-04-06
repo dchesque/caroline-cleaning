@@ -18,8 +18,11 @@ Sistema de logs de auditoria para todas as conversas da Carol AI, com visualiza�
 ## Non-Goals
 
 - Analytics avançados (métricas, dashboards)
-- Export para serviços externos
+- Export automático para serviços externos (S3, GCS, etc.)
 - Real-time monitoring
+- Integração com ferramentas de observabilidade (DataDog, Sentry, etc.)
+
+> **Nota:** Export manual (CSV/JSON) de conversas individuais está no escopo.
 
 ## Architecture
 
@@ -29,7 +32,7 @@ Sistema de logs de auditoria para todas as conversas da Carol AI, com visualiza�
 CREATE TABLE chat_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id TEXT NOT NULL,
-  cliente_id UUID REFERENCES clientes(id),
+  cliente_id UUID REFERENCES clientes(id) ON DELETE SET NULL,
 
   -- Direção da mensagem
   direction TEXT NOT NULL CHECK (direction IN ('user', 'assistant')),
@@ -56,9 +59,21 @@ CREATE TABLE chat_logs (
 CREATE INDEX idx_chat_logs_session ON chat_logs(session_id);
 CREATE INDEX idx_chat_logs_cliente ON chat_logs(cliente_id);
 CREATE INDEX idx_chat_logs_created ON chat_logs(created_at DESC);
+CREATE INDEX idx_chat_logs_session_created ON chat_logs(session_id, created_at);
 
 -- RLS habilitado (admin apenas)
 ALTER TABLE chat_logs ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policy: Apenas admins podem acessar
+CREATE POLICY "Admins can manage chat_logs" ON chat_logs
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_id = auth.uid()
+      AND role = 'admin'
+    )
+  );
 ```
 
 ### JSONB Structures
@@ -121,6 +136,100 @@ ChatLogger.logInteraction() → Supabase
 | API routes | `app/api/admin/chat-logs/` | Endpoints para admin |
 | Admin UI | `app/(admin)/admin/chat-logs/` | Visualização |
 | Cron cleanup | `app/api/cron/cleanup-logs/route.ts` | Delete logs > 30 dias |
+
+### ChatLogger Service Interface
+
+```typescript
+// lib/services/chat-logger.ts
+
+export interface LLMCallRecord {
+  type: 'extract' | 'classify' | 'generate' | 'faq'
+  model: string
+  prompt_preview: string  // Primeiros 100 chars
+  tokens_used?: number
+  duration_ms: number
+}
+
+export interface HandlerRecord {
+  handler: string
+  duration_ms: number
+}
+
+export interface ErrorRecord {
+  type: 'warning' | 'error'
+  message: string
+  state?: string
+}
+
+export interface LogInteractionParams {
+  sessionId: string
+  clienteId?: string
+  direction: 'user' | 'assistant'
+  messageContent: string
+  stateBefore?: string
+  stateAfter?: string
+  llmCalls: LLMCallRecord[]
+  handlersExecuted: HandlerRecord[]
+  extractedData: Record<string, any>
+  contextSnapshot: Record<string, any>
+  errors: ErrorRecord[]
+  responseTimeMs: number
+}
+
+export interface LogQueryBuilder {
+  filterBySession(sessionId: string): this
+  filterByCliente(clienteId: string): this
+  filterByDate(from: Date, to: Date): this
+  filterByState(state: string): this
+  filterWithErrors(): this
+  paginate(page: number, pageSize: number): this
+  getSessions(): Promise<SessionSummary[]>
+  getDetails(sessionId: string): Promise<LogEntry[]>
+}
+
+export interface SessionSummary {
+  session_id: string
+  cliente_id?: string
+  cliente_nome?: string
+  message_count: number
+  first_message_at: string
+  last_message_at: string
+  final_state: string
+  has_errors: boolean
+}
+
+export interface LogEntry {
+  id: string
+  session_id: string
+  cliente_id?: string
+  direction: 'user' | 'assistant'
+  message_content: string
+  state_before?: string
+  state_after?: string
+  llm_calls: LLMCallRecord[]
+  handlers_executed: HandlerRecord[]
+  extracted_data: Record<string, any>
+  context_snapshot: Record<string, any>
+  errors: ErrorRecord[]
+  response_time_ms: number
+  created_at: string
+}
+
+export class ChatLogger {
+  constructor()
+
+  /**
+   * Log a chat interaction. Fire-and-forget - errors are logged but don't throw.
+   * Uses Supabase admin client for reliable writes.
+   */
+  logInteraction(params: LogInteractionParams): Promise<void>
+
+  /**
+   * Query builder for fetching logs (admin UI)
+   */
+  query(): LogQueryBuilder
+}
+```
 
 ## Admin UI
 
@@ -185,23 +294,126 @@ app/api/admin/chat-logs/
 └── [sessionId]/route.ts  # GET detalhes
 ```
 
+### API Endpoints
+
+**GET /api/admin/chat-logs** - Lista sessões
+
+Query params:
+- `from` (ISO date) - Data inicial
+- `to` (ISO date) - Data final
+- `cliente_id` (UUID) - Filtrar por cliente
+- `state` (string) - Filtrar por estado final
+- `has_errors` (boolean) - Apenas com erros
+- `page` (number, default: 1)
+- `page_size` (number, default: 20, max: 100)
+
+Response:
+```json
+{
+  "sessions": [
+    {
+      "session_id": "abc123",
+      "cliente_id": "uuid",
+      "cliente_nome": "João Silva",
+      "message_count": 5,
+      "first_message_at": "2026-04-06T14:32:00Z",
+      "last_message_at": "2026-04-06T14:35:00Z",
+      "final_state": "DONE",
+      "has_errors": false,
+      "total_response_time_ms": 3500
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total_count": 156,
+    "total_pages": 8
+  }
+}
+```
+
+**GET /api/admin/chat-logs/[sessionId]** - Detalhes da sessão
+
+Response:
+```json
+{
+  "session": {
+    "session_id": "abc123",
+    "cliente_id": "uuid",
+    "cliente_nome": "João Silva",
+    "final_state": "DONE"
+  },
+  "messages": [
+    {
+      "id": "uuid",
+      "direction": "user",
+      "message_content": "Olá, quero agendar...",
+      "state_before": null,
+      "state_after": "GREETING",
+      "llm_calls": [],
+      "handlers_executed": [{"handler": "greetingHandler", "duration_ms": 12}],
+      "extracted_data": {},
+      "errors": [],
+      "response_time_ms": 15,
+      "created_at": "2026-04-06T14:32:00Z"
+    }
+  ]
+}
+```
+
+**GET /api/admin/chat-logs/[sessionId]/export** - Exportar conversa
+
+Query params:
+- `format` (string): "csv" | "json" (default: "json")
+
+Response: Download do arquivo
+
 ## Retention Policy
 
 **30 dias** - Cleanup via cron job diário.
 
 ```typescript
 // app/api/cron/cleanup-logs/route.ts
+import { createAdminClient } from '@/lib/supabase/server'
+import { env } from '@/lib/env'
+
 export async function GET(req: Request) {
-  const { count } = await supabase
+  // Autenticação via header Authorization (Easypanel cron)
+  const authHeader = req.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET
+
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
     .from('chat_logs')
     .delete()
     .lt('created_at', `now() - interval '30 days'`)
+    .select('id')
 
-  return Response.json({ deleted: count })
+  if (error) {
+    console.error('Cleanup error:', error)
+    return Response.json({ error: error.message }, { status: 500 })
+  }
+
+  return Response.json({
+    deleted: data?.length || 0,
+    timestamp: new Date().toISOString()
+  })
 }
 ```
 
 **Cron schedule:** `0 3 * * *` (03:00 daily)
+
+**Easypanel config:**
+```
+curl -H "Authorization: Bearer $CRON_SECRET" https://chesquecleaning.com/api/cron/cleanup-logs
+```
+
+**Env var required:** `CRON_SECRET` (random string, set in Easypanel)
 
 ## Dependencies
 
