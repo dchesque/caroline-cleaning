@@ -43,6 +43,9 @@
     "**/__tests__/**",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "scripts/**"
+    "scripts/**",
+    "audit_db_groups.ts",
+    "test_settings_resolution.ts",
+    "update_brand_db.ts"
   ]
 }

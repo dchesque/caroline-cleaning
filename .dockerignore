@@ -47,6 +47,19 @@ docker-compose*
 README.md
 docs
 
+# Test files
+jest.setup.ts
+jest.config.ts
+**/__tests__/**
+**/*.test.ts
+**/*.spec.ts
+
+# Scripts (not needed in production)
+scripts/
+audit_db_groups.ts
+test_settings_resolution.ts
+update_brand_db.ts
+
 # Misc
 *.log
 *.md
