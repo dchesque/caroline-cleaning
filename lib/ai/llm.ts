@@ -417,50 +417,18 @@ export class CarolLLM {
     message: string,
     extraContext?: any
   ): Promise<{ data: any; metrics: LLMCallRecord }> {
-    const systemPrompt = getExtractionPrompt(type, extraContext)
     const startTime = Date.now()
+    const systemPrompt = getExtractionPrompt(type, extraContext)
 
-    try {
-      const response = await openrouter.chat.completions.create({
+    const data = await this.extract(type, message, extraContext)
+
+    return {
+      data,
+      metrics: {
+        type: 'extract',
         model: this.model,
-        temperature: 0.1,
-        max_tokens: 200,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message },
-        ],
-      })
-
-      const content = response.choices[0]?.message?.content || '{}'
-      const duration = Date.now() - startTime
-
-      let data: any
-      try {
-        data = JSON.parse(content)
-      } catch {
-        data = { _error: true }
-      }
-
-      return {
-        data,
-        metrics: {
-          type: 'extract',
-          model: this.model,
-          prompt_preview: systemPrompt.substring(0, 100),
-          tokens_used: response.usage?.total_tokens,
-          duration_ms: duration,
-        }
-      }
-    } catch (error) {
-      return {
-        data: {},
-        metrics: {
-          type: 'extract',
-          model: this.model,
-          prompt_preview: systemPrompt.substring(0, 100),
-          duration_ms: Date.now() - startTime,
-        }
+        prompt_preview: systemPrompt.substring(0, 100),
+        duration_ms: Date.now() - startTime,
       }
     }
   }
@@ -586,43 +554,19 @@ export class CarolLLM {
     data: Record<string, any>,
     language: 'pt' | 'en'
   ): Promise<{ response: string; metrics: LLMCallRecord }> {
+    const startTime = Date.now()
     const templateFn = RESPONSE_TEMPLATES[template]
     const instruction = templateFn ? templateFn(data, language) : ''
-    const persona = carolPersona(language)
-    const startTime = Date.now()
 
-    try {
-      const response = await openrouter.chat.completions.create({
+    const response = await this.generate(template, data, language)
+
+    return {
+      response,
+      metrics: {
+        type: 'generate',
         model: this.model,
-        temperature: 0.6,
-        max_tokens: 300,
-        messages: [
-          { role: 'system', content: `${persona}\n\nInstruction: ${instruction}` },
-          { role: 'user', content: 'Generate the message following the instruction above.' },
-        ],
-      })
-
-      return {
-        response: (response.choices[0]?.message?.content || '').trim(),
-        metrics: {
-          type: 'generate',
-          model: this.model,
-          prompt_preview: instruction.substring(0, 100),
-          tokens_used: response.usage?.total_tokens,
-          duration_ms: Date.now() - startTime,
-        }
-      }
-    } catch {
-      return {
-        response: language === 'pt'
-          ? 'Desculpe, tive um problema técnico. Pode tentar novamente?'
-          : "I'm sorry, I had a technical issue. Could you try again?",
-        metrics: {
-          type: 'generate',
-          model: this.model,
-          prompt_preview: instruction.substring(0, 100),
-          duration_ms: Date.now() - startTime,
-        }
+        prompt_preview: instruction.substring(0, 100),
+        duration_ms: Date.now() - startTime,
       }
     }
   }
