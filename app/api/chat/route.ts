@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { CarolAgent } from '@/lib/ai/carol-agent'
 import { logger } from '@/lib/logger'
 import { nanoid } from 'nanoid'
-import type { ChatResponse } from '@/types/carol'
+import type { ChatResponse } from '@/lib/ai/carol-agent'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         logger.info('Chat Request Completed', {
             sessionId: currentSessionId,
             durationMs: duration,
-            toolCallsExecuted: response.tool_calls_executed
+            state: response.state
         })
 
         return NextResponse.json({
