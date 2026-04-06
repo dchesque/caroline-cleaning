@@ -14,7 +14,6 @@ export interface ChatResponse {
     message: string
     session_id: string
     state: string
-    tool_calls_executed: number
     timestamp: string
 }
 
@@ -37,7 +36,6 @@ export class CarolAgent {
             message: result.response,
             session_id: sessionId,
             state: result.state,
-            tool_calls_executed: 0, // State machine doesn't use LLM tools
             timestamp: new Date().toISOString()
         }
     }

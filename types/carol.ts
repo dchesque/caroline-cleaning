@@ -11,7 +11,6 @@ export interface ChatMessage {
 export interface ChatResponse {
     message: string
     session_id: string
-    state?: string
-    tool_calls_executed: number
+    state: string
     timestamp: string
 }
