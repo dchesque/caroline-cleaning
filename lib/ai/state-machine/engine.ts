@@ -6,7 +6,7 @@ import { CarolServices } from '@/lib/services/carol-services'
 import { CarolLLM, LLMCallRecord } from '../llm'
 import { logger } from '@/lib/logger'
 
-interface ProcessingMetrics {
+export interface ProcessingMetrics {
   llmCalls: LLMCallRecord[]
   handlersExecuted: { handler: string; duration_ms: number }[]
   extractedData: Record<string, any>
