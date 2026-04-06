@@ -119,7 +119,7 @@ In Supabase dashboard → Table Editor, confirm `chat_logs` table exists with co
 - [ ] **Step 4: Commit**
 
 ```bash
-git add supabase/migrations/15_chat_logs.sql
+git add supabase/migrations/18_chat_logs.sql
 git commit -m "feat(db): add chat_logs table for audit system"
 ```
 
@@ -658,6 +658,7 @@ async process(
 ): Promise<{
   response: string
   state: CarolState
+  state_before: CarolState
   metrics: ProcessingMetrics
   cliente_id?: string
 }> {
@@ -801,6 +802,7 @@ async process(
   return {
     response: finalResponse,
     state: finalState,
+    state_before: stateBefore,
     metrics,
     cliente_id: context.cliente_id || undefined,
   }
@@ -812,153 +814,6 @@ async process(
 ```bash
 git add lib/ai/state-machine/engine.ts
 git commit -m "feat(engine): add metrics collection to process method"
-```
-
----
-
-## Task 4: Engine Logging Hooks
-
-**Files:**
-- Modify: `lib/ai/state-machine/engine.ts`
-
-- [ ] **Step 1: Add logging context to process method**
-
-Add import at top:
-
-```typescript
-import { LLMCallMetrics } from '../llm'
-```
-
-Add after the class definition, before `process`:
-
-```typescript
-// Collected metrics during processing
-interface ProcessingMetrics {
-  llmCalls: LLMCallMetrics[]
-  handlersExecuted: { handler: string; duration_ms: number }[]
-  extractedData: Record<string, any>
-  errors: { type: 'warning' | 'error'; message: string; state?: string }[]
-}
-```
-
-- [ ] **Step 2: Modify process method to collect metrics**
-
-Replace the `process` method to collect and return metrics. Key changes:
-- Initialize `ProcessingMetrics` at start
-- Track handler execution time
-- Track state transitions
-- Return metrics alongside response
-
-The full modified method should collect:
-- `llmCalls`: From LLM calls that return metrics
-- `handlersExecuted`: Handler name + duration
-- `extractedData`: Context updates
-- `errors`: Any errors encountered
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add lib/ai/state-machine/engine.ts
-git commit -m "feat(engine): add metrics collection for logging"
-```
-
----
-
-## Task 6: CarolAgent Integration
-
-**Files:**
-- Modify: `lib/ai/carol-agent.ts`
-
-- [ ] **Step 1: Update chat method to pass through metrics**
-
-Replace the `chat` method (around line 30-41):
-
-```typescript
-async chat(message: string, sessionId: string): Promise<ChatResponse> {
-    logger.info('CarolAgent.chat', { sessionId, messageLength: message.length })
-
-    const result = await this.machine.process(message, sessionId)
-
-    return {
-        message: result.response,
-        session_id: sessionId,
-        state: result.state,
-        state_before: result.state_before,
-        cliente_id: result.cliente_id,
-        timestamp: new Date().toISOString(),
-        metrics: result.metrics,
-    }
-}
-```
-
-- [ ] **Step 2: Commit**
-
-```bash
-git add lib/ai/carol-agent.ts
-git commit -m "feat(carol-agent): pass through metrics from engine"
-```
-
----
-
-## Task 7: API Route Integration
-
-**Files:**
-- Modify: `app/api/chat/route.ts`
-
-- [ ] **Step 1: Import ChatLogger**
-
-Add import:
-
-```typescript
-import { chatLogger } from '@/lib/services/chat-logger'
-```
-
-- [ ] **Step 2: Log user message**
-
-After receiving message, before processing:
-
-```typescript
-// Log user message
-await chatLogger.logInteraction({
-  sessionId: currentSessionId,
-  direction: 'user',
-  messageContent: message,
-  responseTimeMs: 0,
-  llmCalls: [],
-  handlersExecuted: [],
-  extractedData: {},
-  contextSnapshot: {},
-  errors: [],
-})
-```
-
-- [ ] **Step 3: Log assistant response**
-
-After getting response from Carol:
-
-```typescript
-// Log assistant response with metrics
-await chatLogger.logInteraction({
-  sessionId: currentSessionId,
-  clienteId: response.cliente_id,
-  direction: 'assistant',
-  messageContent: response.message,
-  stateBefore: response.state_before,
-  stateAfter: response.state,
-  llmCalls: response.metrics?.llmCalls || [],
-  handlersExecuted: response.metrics?.handlersExecuted || [],
-  extractedData: response.metrics?.extractedData || {},
-  contextSnapshot: response.metrics?.contextSnapshot || {},
-  errors: response.metrics?.errors || [],
-  responseTimeMs: duration,
-})
-```
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add app/api/chat/route.ts
-git commit -m "feat(chat-api): integrate ChatLogger for audit logging"
 ```
 
 ---
