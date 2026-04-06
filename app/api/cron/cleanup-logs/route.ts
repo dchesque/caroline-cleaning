@@ -1,13 +1,24 @@
 // app/api/cron/cleanup-logs/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { timingSafeEqual } from 'crypto'
 
 export async function GET(req: NextRequest) {
-  // Auth check
-  const authHeader = req.headers.get('authorization')
+  // Auth check with timing-safe comparison
+  const authHeader = req.headers.get('authorization') || ''
   const cronSecret = process.env.CRON_SECRET
 
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret) {
+    console.error('CRON_SECRET not configured')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Timing-safe comparison
+  const expectedAuth = `Bearer ${cronSecret}`
+  if (
+    authHeader.length !== expectedAuth.length ||
+    !timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedAuth))
+  ) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
