@@ -1,6 +1,7 @@
 // lib/ai/llm.ts
 import { openrouter } from './openrouter'
 import { env } from '@/lib/env'
+import { logger } from '@/lib/logger'
 
 // ═══ TYPES ═══
 
@@ -419,7 +420,7 @@ export class CarolLLM {
         ],
       })
     } catch (error) {
-      console.error(`[CarolLLM] extract(${type}) API error:`, error instanceof Error ? error.message : String(error))
+      logger.error(`[CarolLLM] extract(${type}) API error:`, error instanceof Error ? error.message : String(error))
       return { data: {} }
     }
 
@@ -438,7 +439,7 @@ export class CarolLLM {
       if (parsed._error) return { data: {}, usage }
       return { data: parsed, usage }
     } catch (error) {
-      console.error(`[CarolLLM] JSON parse error in extract(${type}):`, { content, error: error instanceof Error ? error.message : String(error) })
+      logger.error(`[CarolLLM] JSON parse error in extract(${type}):`, { content, error: error instanceof Error ? error.message : String(error) })
       return { data: {}, usage }
     }
   }
@@ -498,7 +499,7 @@ export class CarolLLM {
 
       const result = (response.choices[0]?.message?.content || '').trim()
       if (!result) {
-        console.warn('[CarolLLM] classifyIntent: empty LLM response')
+        logger.warn('[CarolLLM] classifyIntent: empty LLM response')
         return 'unknown'
       }
 
@@ -514,14 +515,14 @@ export class CarolLLM {
         return pattern.test(normalized);
       })
       if (fuzzyMatch) {
-        console.warn(`[CarolLLM] classifyIntent: fuzzy matched "${result}" to "${fuzzyMatch}"`)
+        logger.warn(`[CarolLLM] classifyIntent: fuzzy matched "${result}" to "${fuzzyMatch}"`)
         return fuzzyMatch
       }
 
-      console.warn(`[CarolLLM] classifyIntent: LLM returned "${result}" not in [${options.join(', ')}]`)
+      logger.warn(`[CarolLLM] classifyIntent: LLM returned "${result}" not in [${options.join(', ')}]`)
       return 'unknown'
     } catch (error) {
-      console.error('[CarolLLM] classifyIntent error:', error instanceof Error ? error.message : String(error))
+      logger.error('[CarolLLM] classifyIntent error:', error instanceof Error ? error.message : String(error))
       return 'unknown'
     }
   }
@@ -573,7 +574,7 @@ export class CarolLLM {
   ): Promise<{ text: string; usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number } }> {
     const templateFn = RESPONSE_TEMPLATES[template]
     if (!templateFn) {
-      console.error(`[CarolLLM] Unknown response template: ${template}`)
+      logger.error(`[CarolLLM] Unknown response template: ${template}`)
       const fallback = language === 'pt'
         ? 'Desculpe, houve um problema. Pode repetir?'
         : "I'm sorry, something went wrong. Could you say that again?"
@@ -608,7 +609,7 @@ export class CarolLLM {
       const text = (response.choices[0]?.message?.content || '').trim()
       return { text, usage }
     } catch (error) {
-      console.error(`[CarolLLM] generate(${template}) API error:`, error instanceof Error ? error.message : String(error))
+      logger.error(`[CarolLLM] generate(${template}) API error:`, error instanceof Error ? error.message : String(error))
       const fallback = language === 'pt'
         ? 'Desculpe, tive um problema técnico. Pode tentar novamente?'
         : "I'm sorry, I had a technical issue. Could you try again?"
@@ -675,7 +676,7 @@ Answer the customer's question using ONLY the knowledge base above. If the quest
 
       return (response.choices[0]?.message?.content || '').trim()
     } catch (error) {
-      console.error('[CarolLLM] generateFaq API error:', error instanceof Error ? error.message : String(error))
+      logger.error('[CarolLLM] generateFaq API error:', error instanceof Error ? error.message : String(error))
       return lang === 'pt'
         ? 'Desculpe, não consigo responder agora. Pode entrar em contato conosco diretamente?'
         : "I'm sorry, I can't answer right now. Could you contact us directly?"

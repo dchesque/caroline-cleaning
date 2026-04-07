@@ -1,4 +1,5 @@
 import twilio from 'twilio';
+import { logger } from '@/lib/logger';
 
 /**
  * Cliente Twilio configurado com variáveis de ambiente
@@ -14,7 +15,7 @@ const client = accountSid && authToken ? twilio(accountSid, authToken) : null;
  */
 export async function sendSMS(to: string, body: string, useWhatsApp: boolean = false) {
     if (!client || !fromPhone) {
-        console.warn('[TWILIO] Credenciais não configuradas. Mensagem não enviada:', { to, body });
+        logger.warn('[TWILIO] Credenciais não configuradas. Mensagem não enviada:', { to, body });
         return { success: false, error: 'Twilio not configured' };
     }
 
@@ -28,7 +29,7 @@ export async function sendSMS(to: string, body: string, useWhatsApp: boolean = f
 
         return { success: true, messageSid: message.sid };
     } catch (error) {
-        console.error('[TWILIO] Erro ao enviar mensagem:', error);
+        logger.error('[TWILIO] Erro ao enviar mensagem:', error);
         return { success: false, error: error instanceof Error ? error.message : 'SMS send failed' };
     }
 }

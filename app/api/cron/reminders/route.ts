@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { notify, notifyOwner } from '@/lib/notifications';
 import { timingSafeEqual } from 'crypto';
+import { logger } from '@/lib/logger';
 
 /**
  * Endpoint de Cron para disparar lembretes 1h antes do agendamento
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
         const cronSecret = process.env.CRON_SECRET;
 
         if (!cronSecret) {
-            console.error('CRON_SECRET not configured');
+            logger.error('CRON_SECRET not configured');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         const timeStartStr = startWindow.toTimeString().split(' ')[0];
         const timeEndStr = endWindow.toTimeString().split(' ')[0];
 
-        console.log(`[CRON] Buscando agendamentos para ${today} entre ${timeStartStr} e ${timeEndStr}`);
+        logger.info(`[CRON] Buscando agendamentos para ${today} entre ${timeStartStr} e ${timeEndStr}`);
 
         // 2. Buscar agendamentos na janela de tempo
         const { data: appointments, error } = await supabase
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, stats });
 
     } catch (err) {
-        console.error('[cron/reminders] Fatal error:', err);
+        logger.error('[cron/reminders] Fatal error:', err);
         return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
     }
 }
