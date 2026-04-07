@@ -1,12 +1,20 @@
 // app/api/admin/chat-logs/[sessionId]/export/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { chatLogger } from '@/lib/services/chat-logger'
+import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { sessionId } = await params
     const { searchParams } = new URL(req.url)
     const format = (searchParams.get('format') || 'json') as 'json' | 'csv'
@@ -21,7 +29,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Error exporting session:', error)
+    logger.error('Error exporting session', { error: error instanceof Error ? error.message : String(error) })
     return NextResponse.json({ error: 'Failed to export session' }, { status: 500 })
   }
 }

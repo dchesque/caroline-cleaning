@@ -14,10 +14,21 @@ export const handleCollectPhone: StateHandler = async (message, context, service
   const raw = extracted?.phone ?? extracted?.value ?? null
 
   if (!raw) {
+    const retries = (context.retry_count || 0) + 1
+
+    if (retries >= 3) {
+      const response = await llm.generate('max_retries_phone', {}, lang)
+      return {
+        nextState: 'DONE',
+        response,
+        contextUpdates: { retry_count: retries },
+      }
+    }
+
     return {
       nextState: 'COLLECT_PHONE',
-      response: await llm.generate('ask_phone', {}, context.language || 'en'),
-      contextUpdates: { retry_count: (context.retry_count || 0) + 1 },
+      response: await llm.generate('ask_phone', {}, lang),
+      contextUpdates: { retry_count: retries },
     }
   }
 

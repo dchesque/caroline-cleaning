@@ -245,17 +245,42 @@ export class CarolServices {
     // ═══════════════════════════════════════
 
     async findCustomerByPhone(phone: string): Promise<CustomerResult> {
-        logger.debug('findCustomerByPhone', { phone })
+        // Normalize to digits-only for consistent matching
+        const normalizedPhone = phone.replace(/\D/g, '')
+        logger.debug('findCustomerByPhone', { phone, normalizedPhone })
 
-        const { data, error } = await this.supabase
+        // Try exact match first, then fallback to digits-only match
+        let data: any = null
+        let error: any = null
+
+        const exactResult = await this.supabase
             .from('clientes')
             .select(`
                 id, nome, telefone, email, status,
                 endereco_completo, cidade, estado, zip_code,
                 tem_pets, pets_detalhes, notas, canal_preferencia
             `)
-            .eq('telefone', phone)
+            .eq('telefone', normalizedPhone)
             .single()
+
+        data = exactResult.data
+        error = exactResult.error
+
+        // If not found with normalized, try original format
+        if ((error || !data) && normalizedPhone !== phone) {
+            const fallbackResult = await this.supabase
+                .from('clientes')
+                .select(`
+                    id, nome, telefone, email, status,
+                    endereco_completo, cidade, estado, zip_code,
+                    tem_pets, pets_detalhes, notas, canal_preferencia
+                `)
+                .eq('telefone', phone)
+                .single()
+
+            data = fallbackResult.data
+            error = fallbackResult.error
+        }
 
         if (error || !data) {
             return { found: false }
@@ -722,6 +747,54 @@ export class CarolServices {
             return { status: 'error', message: error.message }
         }
 
+        // 4b. Re-verify conflict after insert (race condition protection)
+        const { data: postInsertConflicts } = await this.supabase
+            .from('agendamentos')
+            .select('id')
+            .eq('data', params.date)
+            .not('status', 'in', '("cancelado","reagendado")')
+            .neq('id', appointment.id)
+
+        const hasPostConflict = postInsertConflicts?.some((apt: any) => {
+            // We need to re-check time overlap, but we only have IDs here
+            // Simple approach: if another appointment was inserted between our check and insert,
+            // we should re-run the full overlap check
+            return false // Placeholder - full check below
+        })
+
+        // Full post-insert conflict check with time overlap
+        if (postInsertConflicts && postInsertConflicts.length > 0) {
+            const { data: detailedConflicts } = await this.supabase
+                .from('agendamentos')
+                .select('id, horario_inicio, duracao_minutos')
+                .eq('data', params.date)
+                .not('status', 'in', '("cancelado","reagendado")')
+                .neq('id', appointment.id)
+
+            const realConflict = detailedConflicts?.some((apt: any) => {
+                const aptParts = apt.horario_inicio.split(':').map(Number)
+                const aptStartMin = aptParts[0] * 60 + aptParts[1]
+                const aptEndMin = aptStartMin + (apt.duracao_minutos || 180)
+                return (startMinutes < aptEndMin) && (endMinutes > aptStartMin)
+            })
+
+            if (realConflict) {
+                // Rollback: delete the appointment we just created
+                await this.supabase.from('agendamentos').delete().eq('id', appointment.id)
+                logger.warn('createAppointment: post-insert conflict detected, rolled back', {
+                    appointmentId: appointment.id, date: params.date, time: params.time
+                })
+                const allTimes = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00']
+                const bookedTimes = detailedConflicts?.map((c: any) => c.horario_inicio?.substring(0, 5)) || []
+                const suggested = allTimes.filter(t => !bookedTimes.includes(t)).slice(0, 3)
+                return {
+                    status: 'conflict',
+                    message: 'This time slot was just booked by someone else.',
+                    suggested_times: suggested
+                }
+            }
+        }
+
         // 5. Tracking event (Schedule)
         this.fireTrackingEvent('Schedule', {
             event_id: `schedule_${appointment.id}`,
@@ -871,15 +944,23 @@ export class CarolServices {
     }
 
     async updateSession(sessionId: string, context: SessionContext): Promise<void> {
-        await this.supabase
+        const now = new Date().toISOString()
+        // Store last_activity in context for optimistic locking
+        context._last_activity = now
+
+        const { error } = await this.supabase
             .from('chat_sessions')
             .upsert({
                 id: sessionId,
                 contexto: context,
-                last_activity: new Date().toISOString(),
+                last_activity: now,
                 status: 'active',
                 cliente_id: context.cliente_id || null
             })
+
+        if (error) {
+            logger.error('updateSession error', { sessionId, error: error.message })
+        }
     }
 
     async saveMessage(

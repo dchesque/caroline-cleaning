@@ -11,7 +11,12 @@ export const handleGuardrail: StateHandler = async (_message, context, _services
     name: context.cliente_nome,
   }, context.language)
 
-  const returnState = (context.previousState as CarolState) ?? 'DETECT_INTENT'
+  let returnState = (context.previousState as CarolState) ?? 'DETECT_INTENT'
+
+  // Avoid ping-pong between GUARDRAIL and DETECT_INTENT
+  if (returnState === 'DETECT_INTENT') {
+    returnState = 'DONE'
+  }
 
   return {
     nextState: returnState,
@@ -53,14 +58,23 @@ export const handleUpdateClientInfo: StateHandler = async (message, context, ser
   if (extracted?.state) updates.estado = extracted.state
 
   if (Object.keys(updates).length === 0) {
-    // Could not figure out what to update — ask for clarification
+    const retries = (context.retry_count || 0) + 1
+
+    if (retries >= 3) {
+      return {
+        nextState: 'DETECT_INTENT',
+        response: await llm.generate('ask_intent', { name: context.cliente_nome }, lang),
+        contextUpdates: { update_request: null, retry_count: 0, intent_retry_count: 0 },
+      }
+    }
+
     const response = await llm.generate('ask_update_details', {
       name: context.cliente_nome,
     }, lang)
     return {
       nextState: 'UPDATE_CLIENT_INFO',
       response,
-      contextUpdates: { update_request: null },
+      contextUpdates: { update_request: null, retry_count: retries },
     }
   }
 

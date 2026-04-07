@@ -74,6 +74,31 @@ export class CarolStateMachine {
     let currentState = context.state as CarolState
     const stateBefore: CarolState = currentState
 
+    // Global loop protection: track consecutive same-state interactions
+    const sameStateCount = (context._same_state_count as number) || 0
+    if (currentState === (context._last_processed_state as CarolState)) {
+      context._same_state_count = sameStateCount + 1
+    } else {
+      context._same_state_count = 0
+    }
+    context._last_processed_state = currentState
+
+    if ((context._same_state_count as number) >= 10) {
+      logger.error('Global loop protection triggered', {
+        sessionId,
+        state: currentState,
+        consecutiveCount: context._same_state_count,
+      })
+      metrics.errors.push({
+        type: 'error',
+        message: `Global loop protection: state ${currentState} repeated ${context._same_state_count} times`,
+        state: currentState,
+      })
+      context._same_state_count = 0
+      context.state = 'DONE'
+      currentState = 'DONE' as CarolState
+    }
+
     // 2. Execute handler for the current state
     const handler = this.handlers.get(currentState)
     if (!handler) {

@@ -3,6 +3,8 @@
 import type { StateHandler } from '../types'
 import { isFutureDate, isSunday, getDurationForService } from '../validators'
 
+const MAX_COLLECTION_RETRIES = 5
+
 /**
  * CONFIRM_ADDRESS: Show the customer's current address and ask if it's still correct.
  */
@@ -40,12 +42,25 @@ export const handleAskServiceType: StateHandler = async (message, context, _serv
   const serviceType = extracted?.service_type ?? extracted?.value ?? null
 
   if (!serviceType) {
-    const response = await llm.generate('ask_service_type', {
-      name: context.cliente_nome,
-    }, lang)
+    const retries = (context.retry_count || 0) + 1
+
+    if (retries >= MAX_COLLECTION_RETRIES) {
+      const response = await llm.generate('ask_service_type', { name: context.cliente_nome }, lang)
+      const escalation = lang === 'pt'
+        ? '\n\nEstou com dificuldade em entender. Quer que alguem ligue para voce?'
+        : "\n\nI'm having trouble understanding. Would you like someone to call you back?"
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response: response + escalation,
+        contextUpdates: { retry_count: 0 },
+      }
+    }
+
+    const response = await llm.generate('ask_service_type', { name: context.cliente_nome }, lang)
     return {
       nextState: 'ASK_SERVICE_TYPE',
       response,
+      contextUpdates: { retry_count: retries },
     }
   }
 
@@ -98,28 +113,39 @@ export const handleCollectDate: StateHandler = async (message, context, _service
   const extracted = await llm.extract('date', message)
   const dateStr = extracted?.date ?? extracted?.value ?? null
 
+  const dateRetries = (context.retry_count || 0) + 1
+
   if (!dateStr) {
-    const response = await llm.generate('invalid_date', {}, lang)
-    return {
-      nextState: 'COLLECT_DATE',
-      response,
+    if (dateRetries >= MAX_COLLECTION_RETRIES) {
+      const escalation = lang === 'pt'
+        ? 'Estou com dificuldade em entender a data. Quer que alguem ligue para voce?'
+        : "I'm having trouble understanding the date. Would you like someone to call you back?"
+      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
     }
+    const response = await llm.generate('invalid_date', {}, lang)
+    return { nextState: 'COLLECT_DATE', response, contextUpdates: { retry_count: dateRetries } }
   }
 
   if (!isFutureDate(dateStr)) {
-    const response = await llm.generate('date_in_past', {}, lang)
-    return {
-      nextState: 'COLLECT_DATE',
-      response,
+    if (dateRetries >= MAX_COLLECTION_RETRIES) {
+      const escalation = lang === 'pt'
+        ? 'Estou com dificuldade em entender a data. Quer que alguem ligue para voce?'
+        : "I'm having trouble understanding the date. Would you like someone to call you back?"
+      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
     }
+    const response = await llm.generate('date_in_past', {}, lang)
+    return { nextState: 'COLLECT_DATE', response, contextUpdates: { retry_count: dateRetries } }
   }
 
   if (isSunday(dateStr)) {
-    const response = await llm.generate('date_is_sunday', {}, lang)
-    return {
-      nextState: 'COLLECT_DATE',
-      response,
+    if (dateRetries >= MAX_COLLECTION_RETRIES) {
+      const escalation = lang === 'pt'
+        ? 'Estou com dificuldade em entender a data. Quer que alguem ligue para voce?'
+        : "I'm having trouble understanding the date. Would you like someone to call you back?"
+      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
     }
+    const response = await llm.generate('date_is_sunday', {}, lang)
+    return { nextState: 'COLLECT_DATE', response, contextUpdates: { retry_count: dateRetries } }
   }
 
   return {
@@ -231,14 +257,18 @@ export const handleCollectTime: StateHandler = async (message, context, _service
   const timeStr = extracted?.time ?? extracted?.value ?? null
 
   if (!timeStr) {
+    const timeRetries = (context.retry_count || 0) + 1
     const timeList = slots.map(s => s.time).join(', ')
-    const response = await llm.generate('invalid_time', {
-      available_times: timeList,
-    }, lang)
-    return {
-      nextState: 'COLLECT_TIME',
-      response,
+
+    if (timeRetries >= MAX_COLLECTION_RETRIES) {
+      const escalation = lang === 'pt'
+        ? 'Estou com dificuldade em entender o horario. Quer que alguem ligue para voce?'
+        : "I'm having trouble understanding the time. Would you like someone to call you back?"
+      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
     }
+
+    const response = await llm.generate('invalid_time', { available_times: timeList }, lang)
+    return { nextState: 'COLLECT_TIME', response, contextUpdates: { retry_count: timeRetries } }
   }
 
   // Normalize to HH:MM for comparison
@@ -249,7 +279,16 @@ export const handleCollectTime: StateHandler = async (message, context, _service
   const isAvailable = slots.some(s => s.time === normalizedTime)
 
   if (!isAvailable) {
+    const unavailRetries = (context.retry_count || 0) + 1
     const timeList = slots.map(s => s.time).join(', ')
+
+    if (unavailRetries >= MAX_COLLECTION_RETRIES) {
+      const escalation = lang === 'pt'
+        ? 'Estou com dificuldade em encontrar o horario. Quer que alguem ligue para voce?'
+        : "I'm having trouble finding the right time. Would you like someone to call you back?"
+      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
+    }
+
     const response = await llm.generate('time_not_available', {
       time: normalizedTime,
       available_times: timeList,
@@ -257,6 +296,7 @@ export const handleCollectTime: StateHandler = async (message, context, _service
     return {
       nextState: 'COLLECT_TIME',
       response,
+      contextUpdates: { retry_count: unavailRetries },
     }
   }
 
@@ -357,10 +397,18 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
   const lang = context.language
 
   if (!message) {
-    // Just shown the summary, waiting for response
+    // Silent entry — regenerate summary so user sees the confirmation prompt
+    const response = await llm.generate('confirm_summary', {
+      name: context.cliente_nome,
+      phone: context.cliente_telefone,
+      address: context.cliente_endereco,
+      date: context.selected_date,
+      time: context.selected_time,
+      service: context.service_type,
+    }, lang)
     return {
       nextState: 'CONFIRM_SUMMARY',
-      response: '',
+      response,
     }
   }
 
@@ -405,6 +453,7 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
         booking_confirmed: false,
         selected_date: null,
         selected_time: null,
+        available_slots: null,
       },
     }
   }
@@ -426,6 +475,7 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
       booking_confirmed: false,
       selected_date: null,
       selected_time: null,
+      available_slots: null,
     },
   }
 }
@@ -440,10 +490,26 @@ export const handleCollectPreference: StateHandler = async (message, context, _s
   const normalized = normalizePreference(preference)
 
   if (!normalized) {
+    const retries = (context.retry_count || 0) + 1
+
+    if (retries >= MAX_COLLECTION_RETRIES) {
+      // Default to SMS and inform user
+      const lang = context.language || 'en'
+      const notice = lang === 'pt'
+        ? 'Vou enviar a confirmacao por SMS, tudo bem? 😊'
+        : "I'll send the confirmation via SMS, okay? 😊"
+      return {
+        nextState: 'UPDATE_PREFERENCE',
+        response: notice,
+        contextUpdates: { canal_preferencia: 'sms', retry_count: 0 },
+      }
+    }
+
     const response = await llm.generate('ask_preference_again', {}, context.language)
     return {
       nextState: 'COLLECT_PREFERENCE',
       response,
+      contextUpdates: { retry_count: retries },
     }
   }
 

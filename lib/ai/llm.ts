@@ -162,21 +162,17 @@ const RESPONSE_TEMPLATES: Record<string, (data: any, lang: 'pt' | 'en') => strin
     : 'Inform that the date is in the past. Ask for a future date. Max 2 sentences.',
 
   'ask_time': (data, lang) => {
-    const slotList = (data.slots || [])
-      .map((s: any, i: number) => `${i + 1}. ${s.time}${s.end_time ? ' - ' + s.end_time : ''}`)
-      .join('\n')
+    const timeList = data.available_times || (data.slots || []).map((s: any) => s.time).join(', ')
     return lang === 'pt'
-      ? `Mostre os horários disponíveis para ${data.date}:\n${slotList}\nPergunte qual preferem. Max 3 frases.`
-      : `Show available time slots for ${data.date}:\n${slotList}\nAsk which one they prefer. Max 3 sentences.`
+      ? `Mostre os horários disponíveis para ${data.date}: ${timeList}. Pergunte qual preferem. Max 3 frases.`
+      : `Show available time slots for ${data.date}: ${timeList}. Ask which one they prefer. Max 3 sentences.`
   },
 
   'invalid_time': (data, lang) => {
-    const slotList = (data.slots || [])
-      .map((s: any) => s.time)
-      .join(', ')
+    const timeList = data.available_times || (data.slots || []).map((s: any) => s.time).join(', ')
     return lang === 'pt'
-      ? `Horário não reconhecido. Horários disponíveis: ${slotList}. Peça para escolher um. Max 2 frases.`
-      : `Time not recognized. Available times: ${slotList}. Ask to choose one. Max 2 sentences.`
+      ? `Horário não reconhecido. Horários disponíveis: ${timeList}. Peça para escolher um. Max 2 frases.`
+      : `Time not recognized. Available times: ${timeList}. Ask to choose one. Max 2 sentences.`
   },
 
   'time_not_available': (_data, lang) => lang === 'pt'
@@ -403,10 +399,13 @@ export class CarolLLM {
 
     const content = response.choices[0]?.message?.content || '{}'
     try {
-      return JSON.parse(content)
+      const parsed = JSON.parse(content)
+      // Detect empty or error responses and return null-safe defaults
+      if (parsed._error) return {}
+      return parsed
     } catch (error) {
       console.error(`[CarolLLM] JSON parse error in extract(${type}):`, { content, error: error instanceof Error ? error.message : String(error) })
-      return { _error: true }
+      return {}
     }
   }
 
@@ -465,14 +464,21 @@ export class CarolLLM {
         return 'unknown'
       }
 
-      const match = options.find(
-        (opt) => opt.toLowerCase() === result.toLowerCase()
-      )
-      if (!match) {
-        console.warn(`[CarolLLM] classifyIntent: LLM returned "${result}" not in [${options.join(', ')}]`)
-        return 'unknown'
+      const normalized = result.toLowerCase()
+
+      // Exact match first
+      const exactMatch = options.find((opt) => opt.toLowerCase() === normalized)
+      if (exactMatch) return exactMatch
+
+      // Fuzzy match: check if any option is contained within the response
+      const fuzzyMatch = options.find((opt) => normalized.includes(opt.toLowerCase()))
+      if (fuzzyMatch) {
+        console.warn(`[CarolLLM] classifyIntent: fuzzy matched "${result}" to "${fuzzyMatch}"`)
+        return fuzzyMatch
       }
-      return match
+
+      console.warn(`[CarolLLM] classifyIntent: LLM returned "${result}" not in [${options.join(', ')}]`)
+      return 'unknown'
     } catch (error) {
       console.error('[CarolLLM] classifyIntent error:', error instanceof Error ? error.message : String(error))
       return 'unknown'

@@ -1,9 +1,17 @@
 // app/api/admin/chat-logs/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { chatLogger } from '@/lib/services/chat-logger'
+import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(req.url)
     const params = {
       from: searchParams.get('from') || undefined,
@@ -18,7 +26,7 @@ export async function GET(req: NextRequest) {
     const result = await chatLogger.getSessions(params)
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Error fetching chat logs:', error)
+    logger.error('Error fetching chat logs', { error: error instanceof Error ? error.message : String(error) })
     return NextResponse.json({ error: 'Failed to fetch chat logs' }, { status: 500 })
   }
 }
