@@ -6,7 +6,7 @@
 import { CarolStateMachine } from './state-machine/engine'
 import { registerAllHandlers } from './state-machine/handlers/index'
 import { CarolServices } from '@/lib/services/carol-services'
-import { CarolLLM } from './llm'
+import { CarolLLM, LLMCallRecord } from './llm'
 import { logger } from '@/lib/logger'
 import { env } from '@/lib/env'
 
@@ -15,6 +15,15 @@ export interface ChatResponse {
     session_id: string
     state: string
     timestamp: string
+    cliente_id?: string
+    state_before?: string
+    metrics?: {
+        llmCalls: LLMCallRecord[]
+        handlersExecuted: { handler: string; duration_ms: number }[]
+        extractedData: Record<string, any>
+        contextSnapshot: Record<string, any>
+        errors: { type: 'warning' | 'error'; message: string; state?: string }[]
+    }
 }
 
 export class CarolAgent {
@@ -36,7 +45,10 @@ export class CarolAgent {
             message: result.response,
             session_id: sessionId,
             state: result.state,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            cliente_id: result.cliente_id,
+            state_before: result.state_before,
+            metrics: result.metrics,
         }
     }
 }
