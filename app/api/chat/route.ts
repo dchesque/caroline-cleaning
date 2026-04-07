@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CarolAgent } from '@/lib/ai/carol-agent'
 import { logger } from '@/lib/logger'
+import { chatLogger } from '@/lib/services/chat-logger'
 import { nanoid } from 'nanoid'
 import type { ChatResponse } from '@/lib/ai/carol-agent'
 
@@ -41,6 +42,38 @@ export async function POST(req: NextRequest) {
         const response: ChatResponse = await carol.chat(message, currentSessionId)
 
         const duration = Date.now() - startTime
+
+        // Log the user interaction (fire-and-forget)
+        chatLogger.logInteraction({
+            sessionId: currentSessionId,
+            clienteId: response.cliente_id,
+            direction: 'user',
+            messageContent: message,
+            stateBefore: response.state_before,
+            stateAfter: response.state,
+            llmCalls: response.metrics?.llmCalls || [],
+            handlersExecuted: response.metrics?.handlersExecuted || [],
+            extractedData: response.metrics?.extractedData || {},
+            contextSnapshot: response.metrics?.contextSnapshot || {},
+            errors: response.metrics?.errors || [],
+            responseTimeMs: duration,
+        }).catch(() => {}) // Silently ignore logging errors
+
+        // Log the assistant response (fire-and-forget)
+        chatLogger.logInteraction({
+            sessionId: currentSessionId,
+            clienteId: response.cliente_id,
+            direction: 'assistant',
+            messageContent: response.message,
+            stateBefore: response.state_before,
+            stateAfter: response.state,
+            llmCalls: [],
+            handlersExecuted: [],
+            extractedData: {},
+            contextSnapshot: {},
+            errors: [],
+            responseTimeMs: 0,
+        }).catch(() => {}) // Silently ignore logging errors
 
         logger.info('Chat Request Completed', {
             sessionId: currentSessionId,
