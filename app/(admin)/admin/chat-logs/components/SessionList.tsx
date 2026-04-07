@@ -34,6 +34,7 @@ export function SessionList({ sessions, selectedId, onSelect, locale }: Props) {
         <button
           key={session.session_id}
           onClick={() => onSelect(session.session_id)}
+          aria-pressed={selectedId === session.session_id}
           className={`w-full text-left p-3 rounded-lg border border-l-4 ${getStatusColor(session)} ${
             selectedId === session.session_id ? 'bg-muted' : 'hover:bg-muted/50'
           } transition-colors`}

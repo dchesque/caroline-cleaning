@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -13,11 +13,11 @@ import { SessionSummary } from '@/lib/services/chat-logger'
 
 export default function ChatLogsPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const locale = 'pt-BR'
 
   const [sessions, setSessions] = useState<SessionSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [pagination, setPagination] = useState({ page: 1, total_pages: 0, total_count: 0 })
 
@@ -27,26 +27,36 @@ export default function ChatLogsPage() {
 
   const fetchSessions = async (page = 1) => {
     setIsLoading(true)
-    const from = new Date()
-    from.setDate(from.getDate() - parseInt(dateRange))
+    setError(null)
 
-    const params = new URLSearchParams({
-      page: String(page),
-      page_size: '20',
-      from: from.toISOString(),
-      has_errors: String(hasErrors),
-    })
+    try {
+      const from = new Date()
+      from.setDate(from.getDate() - parseInt(dateRange))
 
-    const res = await fetch(`/api/admin/chat-logs?${params}`)
-    const data = await res.json()
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: '20',
+        from: from.toISOString(),
+        has_errors: String(hasErrors),
+      })
 
-    setSessions(data.sessions || [])
-    setPagination({
-      page: data.pagination?.page || 1,
-      total_pages: data.pagination?.total_pages || 0,
-      total_count: data.pagination?.total_count || 0,
-    })
-    setIsLoading(false)
+      const res = await fetch(`/api/admin/chat-logs?${params}`)
+      if (!res.ok) throw new Error('Failed to fetch')
+
+      const data = await res.json()
+
+      setSessions(data.sessions || [])
+      setPagination({
+        page: data.pagination?.page || 1,
+        total_pages: data.pagination?.total_pages || 0,
+        total_count: data.pagination?.total_count || 0,
+      })
+    } catch (err) {
+      setError('Erro ao carregar sessoes')
+      console.error('Failed to fetch sessions:', err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -109,7 +119,11 @@ export default function ChatLogsPage() {
       {/* Sessions List */}
       <Card>
         <CardContent className="pt-4">
-          {isLoading ? (
+          {error ? (
+            <div className="text-center py-8 text-red-500">
+              {error}
+            </div>
+          ) : isLoading ? (
             <div className="text-center py-8 text-muted-foreground">
               Carregando...
             </div>
