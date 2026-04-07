@@ -8,15 +8,42 @@ const MAX_COLLECTION_RETRIES = 5
 /**
  * CONFIRM_ADDRESS: Show the customer's current address and ask if it's still correct.
  */
-export const handleConfirmAddress: StateHandler = async (_message, context, _services, llm) => {
-  const response = await llm.generate('confirm_address', {
-    address: context.cliente_endereco,
+export const handleConfirmAddress: StateHandler = async (message, context, _services, llm) => {
+  const lang = context.language
+
+  // First visit (silent entry): show address and ask for confirmation
+  if (!message) {
+    const response = await llm.generate('confirm_address', {
+      address: context.cliente_endereco,
+      name: context.cliente_nome,
+    }, lang)
+
+    return {
+      nextState: 'CONFIRM_ADDRESS',
+      response,
+    }
+  }
+
+  // User responded: classify yes/no
+  const intent = await llm.classifyIntent(message, ['yes', 'no'])
+
+  if (intent === 'yes') {
+    return {
+      nextState: 'ASK_SERVICE_TYPE',
+      response: '',
+      silent: true,
+    }
+  }
+
+  // User said no — go back to collect a new address
+  const response = await llm.generate('ask_address', {
     name: context.cliente_nome,
-  }, context.language)
+  }, lang)
 
   return {
-    nextState: 'ASK_SERVICE_TYPE',
+    nextState: 'NEW_CUSTOMER_ADDRESS',
     response,
+    contextUpdates: { cliente_endereco: null },
   }
 }
 
