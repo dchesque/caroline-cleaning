@@ -212,6 +212,10 @@ export interface SessionContext {
 // HELPERS
 // ═══════════════════════════════════════════
 
+function escapeLikePattern(value: string): string {
+    return value.replace(/[%_\\]/g, '\\$&');
+}
+
 function cleanValue(val: any): string | null {
     if (val === null || val === undefined) return null
     const cleaned = String(val).trim()
@@ -471,7 +475,7 @@ export class CarolServices {
             .order('ordem')
 
         if (serviceType) {
-            query = query.ilike('nome', `%${serviceType}%`)
+            query = query.ilike('nome', `%${escapeLikePattern(serviceType)}%`)
         }
 
         const { data: services } = await query

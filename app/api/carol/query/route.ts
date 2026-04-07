@@ -3,6 +3,10 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { timingSafeEqual } from 'crypto'
 import { logger } from '@/lib/logger'
 
+function escapeLikePattern(value: string): string {
+    return value.replace(/[%_\\]/g, '\\$&');
+}
+
 type QueryType =
     | 'client_info'
     | 'client_history'
@@ -212,7 +216,7 @@ async function queryServicePricing(supabase: any, params: any) {
         .order('ordem')
 
     if (service_type) {
-        query = query.ilike('nome', `%${service_type}%`)
+        query = query.ilike('nome', `%${escapeLikePattern(service_type)}%`)
     }
 
     const { data } = await query
