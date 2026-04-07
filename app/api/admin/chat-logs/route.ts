@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       state: searchParams.get('state') || undefined,
       has_errors: searchParams.get('has_errors') === 'true',
       page: parseInt(searchParams.get('page') || '1'),
-      page_size: parseInt(searchParams.get('page_size') || '20'),
+      page_size: Math.max(1, Math.min(parseInt(searchParams.get('page_size') || '20') || 20, 100)),
     }
 
     const result = await chatLogger.getSessions(params)

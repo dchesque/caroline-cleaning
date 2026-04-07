@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { timingSafeEqual } from 'crypto'
 import { logger } from '@/lib/logger'
+
+function escapeLikePattern(value: string): string {
+    return value.replace(/[%_\\]/g, '\\$&');
+}
 
 type QueryType =
     | 'client_info'
@@ -36,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     try {
         const { type, params }: QueryPayload = await request.json()
-        const supabase = await createClient()
+        const supabase = createAdminClient()
 
         let result: any = null
 
@@ -212,7 +216,7 @@ async function queryServicePricing(supabase: any, params: any) {
         .order('ordem')
 
     if (service_type) {
-        query = query.ilike('nome', `%${service_type}%`)
+        query = query.ilike('nome', `%${escapeLikePattern(service_type)}%`)
     }
 
     const { data } = await query

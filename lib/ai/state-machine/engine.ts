@@ -15,7 +15,19 @@ export interface ProcessingMetrics {
 }
 
 /** Maximum number of silent (auto) transitions before forcing a stop. */
-const MAX_AUTO_TRANSITIONS = 5
+const MAX_AUTO_TRANSITIONS = 10
+
+/** Maximum time (ms) a single handler is allowed to run before being aborted. */
+const HANDLER_TIMEOUT_MS = 30_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Handler timeout: ${label} exceeded ${ms}ms`)), ms)
+    ),
+  ])
+}
 
 /** All valid CarolState values for runtime validation. */
 const VALID_STATES: ReadonlySet<string> = new Set<CarolState>([
@@ -165,7 +177,11 @@ export class CarolStateMachine {
     let result: HandlerResult
     const handlerStartTime = Date.now()
     try {
-      result = await handler(message, context, this.services, this.llm)
+      result = await withTimeout(
+        handler(message, context, this.services, this.llm),
+        HANDLER_TIMEOUT_MS,
+        currentState
+      )
       metrics.handlersExecuted.push({
         handler: `${currentState}Handler`,
         duration_ms: Date.now() - handlerStartTime,
@@ -196,6 +212,11 @@ export class CarolStateMachine {
         selected_time: context.selected_time,
         state: context.state,
         language: context.language,
+      }
+      try {
+        await this.services.updateSession(sessionId, { ...context, state: currentState });
+      } catch (persistError) {
+        logger.error('[engine] Failed to persist context after handler error', { error: persistError instanceof Error ? persistError.message : String(persistError) });
       }
       return {
         response: "I'm sorry, I ran into an unexpected issue. Could you say that again?",
@@ -249,7 +270,11 @@ export class CarolStateMachine {
 
       const silentHandlerStartTime = Date.now()
       try {
-        result = await nextHandler('', context, this.services, this.llm)
+        result = await withTimeout(
+          nextHandler('', context, this.services, this.llm),
+          HANDLER_TIMEOUT_MS,
+          nextState
+        )
         metrics.handlersExecuted.push({
           handler: `${nextState}Handler`,
           duration_ms: Date.now() - silentHandlerStartTime,

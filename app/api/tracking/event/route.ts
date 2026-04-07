@@ -35,6 +35,10 @@ interface EventPayload {
     action_source?: string;
 }
 
+function hashIp(ip: string): string {
+  return hashData(ip).substring(0, 16);
+}
+
 export async function POST(request: NextRequest) {
     // Auth: accept internal bearer token OR valid user session
     const authHeader = request.headers.get('authorization') || '';
@@ -179,7 +183,11 @@ export async function POST(request: NextRequest) {
                 metaSent = response.ok;
 
                 if (!response.ok) {
-                    logger.error('Meta CAPI Error', { response: metaResponse });
+                    logger.error('Meta CAPI Error', {
+                        status: response.status,
+                        errorType: metaResponse?.error?.type,
+                        errorMessage: metaResponse?.error?.message,
+                    });
                 }
 
             } catch (metaError) {
@@ -195,7 +203,7 @@ export async function POST(request: NextRequest) {
                 event_id,
                 user_email_hash: user_data?.email ? hashData(user_data.email) : null,
                 user_phone_hash: user_data?.phone ? hashData(normalizePhone(user_data.phone)) : null,
-                ip_address: clientIp,
+                ip_address: hashIp(clientIp),
                 user_agent: userAgent,
                 fbc: user_data?.fbc || null,
                 fbp: user_data?.fbp || null,
@@ -213,7 +221,6 @@ export async function POST(request: NextRequest) {
             success: true,
             event_id,
             meta_sent: metaSent,
-            meta_response: metaResponse,
         });
 
     } catch (error) {

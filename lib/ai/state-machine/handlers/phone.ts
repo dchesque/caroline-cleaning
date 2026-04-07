@@ -3,9 +3,11 @@
 import type { StateHandler } from '../types'
 import { normalizePhone, formatPhone } from '../validators'
 
+const MAX_COLLECTION_RETRIES = 5
+
 /**
  * COLLECT_PHONE: Extract and validate a US phone number from the message.
- * Max 3 retries before offering a callback instead.
+ * Max retries before offering a callback instead.
  */
 export const handleCollectPhone: StateHandler = async (message, context, services, llm) => {
   const lang = context.language
@@ -16,10 +18,10 @@ export const handleCollectPhone: StateHandler = async (message, context, service
   if (!raw) {
     const retries = (context.retry_count || 0) + 1
 
-    if (retries >= 3) {
+    if (retries >= MAX_COLLECTION_RETRIES) {
       const response = await llm.generate('max_retries_phone', {}, lang)
       return {
-        nextState: 'DONE',
+        nextState: 'ASK_CALLBACK_TIME',
         response,
         contextUpdates: { retry_count: retries },
       }
@@ -37,16 +39,16 @@ export const handleCollectPhone: StateHandler = async (message, context, service
   if (!normalized) {
     const retries = (context.retry_count ?? 0) + 1
 
-    if (retries >= 3) {
+    if (retries >= MAX_COLLECTION_RETRIES) {
       const response = await llm.generate('max_retries_phone', {}, lang)
       return {
-        nextState: 'DONE',
+        nextState: 'ASK_CALLBACK_TIME',
         response,
         contextUpdates: { retry_count: retries },
       }
     }
 
-    const response = await llm.generate('invalid_phone', { attempts_left: 3 - retries }, lang)
+    const response = await llm.generate('invalid_phone', { attempts_left: MAX_COLLECTION_RETRIES - retries }, lang)
     return {
       nextState: 'COLLECT_PHONE',
       response,
@@ -124,10 +126,13 @@ export const handleConfirmPhone: StateHandler = async (message, context, service
 export const handleLookupCustomer: StateHandler = async (_message, context, services, llm) => {
   const phone = context.cliente_telefone
   if (!phone) {
+    // Guard: shouldn't reach here without a phone — restart collection
+    const lang = context.language || 'en'
     return {
       nextState: 'COLLECT_PHONE',
-      response: '',
-      silent: true,
+      response: lang === 'pt'
+        ? 'Preciso do seu telefone para continuar. Qual é o seu número?'
+        : "I need your phone number to continue. What's your number?",
     }
   }
 

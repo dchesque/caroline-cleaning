@@ -203,14 +203,27 @@ export interface SessionContext {
     last_error: string | null
     pets_info: string | null
     allergy_info: string | null
+    // Intent routing
+    intent_flow: 'cancel' | 'reschedule' | null
+    intent_retry_count: number
+    faq_question: string | null
+    update_request: string | null
+    // Internal counters (prefixed _ to distinguish from user-facing fields)
+    _callback_retries: number
+    _guardrail_retries: number
     _same_state_count?: number
     _last_processed_state?: CarolState
+    _last_activity?: string
     [key: string]: any
 }
 
 // ═══════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════
+
+function escapeLikePattern(value: string): string {
+    return value.replace(/[%_\\]/g, '\\$&');
+}
 
 function cleanValue(val: any): string | null {
     if (val === null || val === undefined) return null
@@ -416,25 +429,31 @@ export class CarolServices {
 
         const start = new Date(startDate + 'T12:00:00')
 
-        for (let i = 0; i < days; i++) {
+        const dayPromises = Array.from({ length: days }, (_, i) => {
             const current = new Date(start)
             current.setDate(current.getDate() + i)
 
             // Pular domingos
-            if (current.getDay() === 0) continue
+            if (current.getDay() === 0) return Promise.resolve(null)
 
             const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`
-            const slotsResult = await this.getAvailableSlots(dateStr, durationMinutes)
+            const dayOfWeek = current.getDay()
+            return this.getAvailableSlots(dateStr, durationMinutes)
+                .then(slotsResult => ({ dateStr, dayOfWeek, slots: slotsResult.slots }))
+                .catch(() => ({ dateStr, dayOfWeek, slots: [] as SlotInfo[] }))
+        })
 
-            if (slotsResult.slots.length > 0) {
-                result.days.push({
-                    date: dateStr,
-                    day_name: weekdaysPt[current.getDay()],
-                    day_name_en: weekdaysEn[current.getDay()],
-                    slots: slotsResult.slots
-                })
-                result.total_available += slotsResult.slots.length
-            }
+        const results = await Promise.all(dayPromises)
+
+        for (const entry of results) {
+            if (!entry || entry.slots.length === 0) continue
+            result.days.push({
+                date: entry.dateStr,
+                day_name: weekdaysPt[entry.dayOfWeek],
+                day_name_en: weekdaysEn[entry.dayOfWeek],
+                slots: entry.slots
+            })
+            result.total_available += entry.slots.length
         }
 
         return result
@@ -471,7 +490,7 @@ export class CarolServices {
             .order('ordem')
 
         if (serviceType) {
-            query = query.ilike('nome', `%${serviceType}%`)
+            query = query.ilike('nome', `%${escapeLikePattern(serviceType)}%`)
         }
 
         const { data: services } = await query
@@ -942,7 +961,13 @@ export class CarolServices {
             retry_count: 0,
             last_error: null,
             pets_info: null,
-            allergy_info: null
+            allergy_info: null,
+            intent_flow: null,
+            intent_retry_count: 0,
+            faq_question: null,
+            update_request: null,
+            _callback_retries: 0,
+            _guardrail_retries: 0,
         }
     }
 

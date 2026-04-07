@@ -1,6 +1,7 @@
 // app/api/config/public/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 
 /**
  * Public-safe configuration keys. Only these are returned to unauthenticated callers.
@@ -87,7 +88,7 @@ export async function GET() {
             pricing: pricing || [],
         })
     } catch (error) {
-        console.error('Error fetching public config:', error)
+        logger.error('[config/public] Error fetching public config', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }

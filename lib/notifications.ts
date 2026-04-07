@@ -1,4 +1,5 @@
 import { sendSMS } from './twilio';
+import { logger } from '@/lib/logger';
 
 export type NotificationType =
     | 'appointment_created'
@@ -61,13 +62,13 @@ export async function notify(
     const templateFn = TEMPLATES[type];
 
     if (!templateFn) {
-        console.error(`[NOTIFICATION] Template não encontrado: ${type}`);
+        logger.error(`[NOTIFICATION] Template não encontrado: ${type}`);
         return { success: false, error: 'Template not found' };
     }
 
     const message = templateFn(data);
 
-    console.log(`[NOTIFICATION] Enviando ${type} para ${recipient} via ${channel}`);
+    logger.info(`[NOTIFICATION] Enviando ${type} para ${recipient} via ${channel}`);
 
     const result = await sendSMS(recipient, message, channel === 'whatsapp');
 
@@ -84,7 +85,7 @@ export async function notify(
 export async function notifyOwner(type: NotificationType, data: NotificationData) {
     const ownerPhone = process.env.OWNER_PHONE_NUMBER;
     if (!ownerPhone) {
-        console.warn('[NOTIFICATION] OWNER_PHONE_NUMBER não configurado.');
+        logger.warn('[NOTIFICATION] OWNER_PHONE_NUMBER não configurado.');
         return { success: false, error: 'Owner phone not configured' };
     }
 

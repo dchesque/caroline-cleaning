@@ -1,6 +1,7 @@
 // lib/ai/state-machine/handlers/faq.ts
 
 import type { StateHandler } from '../types'
+import { logger } from '@/lib/logger'
 
 /**
  * FAQ_RESPONSE: Answer a FAQ using llm.generateFaq() with business info.
@@ -68,10 +69,20 @@ export const handleSavePetInfo: StateHandler = async (message, context, services
 
   // Update customer record if we have a client_id
   if (context.cliente_id) {
-    await services.updateLead(context.cliente_id, {
-      tem_pets: 'true',
-      pets_detalhes: petDetails,
-    })
+    try {
+      await services.updateLead(context.cliente_id, {
+        tem_pets: 'true',
+        pets_detalhes: petDetails,
+      })
+    } catch (err) {
+      logger.error('[faq] Failed to save pet info', { error: err instanceof Error ? err.message : String(err) });
+      return {
+        nextState: 'DETECT_INTENT',
+        response: lang === 'pt'
+          ? 'Houve um problema ao salvar a informação. Por favor, tente novamente mais tarde.'
+          : 'There was an issue saving the information. Please try again later.',
+      };
+    }
   }
 
   const response = await llm.generate('pet_info_saved', {
@@ -116,9 +127,19 @@ export const handleSaveAllergyInfo: StateHandler = async (message, context, serv
 
   // Update customer record if we have a client_id
   if (context.cliente_id) {
-    await services.updateLead(context.cliente_id, {
-      notas: `Allergies: ${allergyDetails}`,
-    })
+    try {
+      await services.updateLead(context.cliente_id, {
+        notas: `Allergies: ${allergyDetails}`,
+      })
+    } catch (err) {
+      logger.error('[faq] Failed to save allergy info', { error: err instanceof Error ? err.message : String(err) });
+      return {
+        nextState: 'DETECT_INTENT',
+        response: lang === 'pt'
+          ? 'Houve um problema ao salvar a informação. Por favor, tente novamente mais tarde.'
+          : 'There was an issue saving the information. Please try again later.',
+      };
+    }
   }
 
   const response = await llm.generate('allergy_info_saved', {

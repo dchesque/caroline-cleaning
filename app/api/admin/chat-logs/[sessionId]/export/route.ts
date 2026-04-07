@@ -28,7 +28,11 @@ export async function GET(
 
     const { sessionId } = await params
     const { searchParams } = new URL(req.url)
-    const format = (searchParams.get('format') || 'json') as 'json' | 'csv'
+    const formatParam = searchParams.get('format') || 'json';
+    if (formatParam !== 'json' && formatParam !== 'csv') {
+      return NextResponse.json({ error: 'Invalid format. Use json or csv.' }, { status: 400 });
+    }
+    const format = formatParam as 'json' | 'csv'
 
     const content = await chatLogger.exportSession(sessionId, format)
     const filename = `chat-${sessionId}.${format}`

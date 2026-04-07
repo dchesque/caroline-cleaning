@@ -23,14 +23,25 @@ export function hashData(data: string): string {
  * Normaliza telefone para formato E.164
  */
 export function normalizePhone(phone: string): string {
-    if (!phone) return '';
-    // Remove tudo exceto números
-    const digits = phone.replace(/\D/g, '');
-    // Adiciona código do país se não tiver
-    if (digits.length === 10) {
-        return `1${digits}`; // Assume USA
-    }
+  const digits = phone.replace(/\D/g, '');
+
+  // Already has US country code (1 + 10 digits)
+  if (digits.length === 11 && digits.startsWith('1')) {
     return digits;
+  }
+
+  // Standard US number (10 digits: area code + number)
+  if (digits.length === 10) {
+    return `1${digits}`;
+  }
+
+  // International format or already complete
+  if (digits.length > 11) {
+    return digits;
+  }
+
+  // Fallback: return as-is (too short or ambiguous)
+  return digits;
 }
 
 /**

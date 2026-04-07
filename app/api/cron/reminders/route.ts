@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { notify, notifyOwner } from '@/lib/notifications';
 import { timingSafeEqual } from 'crypto';
+import { logger } from '@/lib/logger';
 
 /**
  * Endpoint de Cron para disparar lembretes 1h antes do agendamento
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
         const cronSecret = process.env.CRON_SECRET;
 
         if (!cronSecret) {
-            console.error('CRON_SECRET not configured');
+            logger.error('CRON_SECRET not configured');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const supabase = await createClient();
+        const supabase = createAdminClient();
 
         // 1. Calcular janela de tempo (daqui a 50min até 75min)
         const now = new Date();
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         const timeStartStr = startWindow.toTimeString().split(' ')[0];
         const timeEndStr = endWindow.toTimeString().split(' ')[0];
 
-        console.log(`[CRON] Buscando agendamentos para ${today} entre ${timeStartStr} e ${timeEndStr}`);
+        logger.info(`[CRON] Buscando agendamentos para ${today} entre ${timeStartStr} e ${timeEndStr}`);
 
         // 2. Buscar agendamentos na janela de tempo
         const { data: appointments, error } = await supabase
@@ -62,13 +63,16 @@ export async function GET(request: NextRequest) {
 
         const stats = { sent_to_owner: 0, sent_to_client: 0, skipped: 0 };
 
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
         for (const appt of appointments) {
             // 3. Verificar se já notificamos este agendamento (evitar duplicidade)
             const { data: existing } = await supabase
                 .from('notificacoes')
                 .select('id')
                 .eq('template', 'owner_reminder')
-                .contains('dados', { appointment_id: appt.id })
+                .gte('criado_em', twentyFourHoursAgo)
+                .filter('dados->>appointment_id', 'eq', String(appt.id))
                 .maybeSingle();
 
             if (existing) {
@@ -77,45 +81,76 @@ export async function GET(request: NextRequest) {
             }
 
             // 4. Notificar Proprietário (WhatsApp)
-            const ownerResult = await notifyOwner('owner_reminder', {
-                name: appt.clientes?.nome,
-                service: appt.tipo,
-                time: appt.horario_inicio.substring(0, 5),
-                appointment_id: appt.id // Para controle de duplicidade
-            });
+            try {
+                const ownerResult = await notifyOwner('owner_reminder', {
+                    name: appt.clientes?.nome,
+                    service: appt.tipo,
+                    time: appt.horario_inicio.substring(0, 5),
+                    appointment_id: appt.id
+                });
 
-            if (ownerResult.success) {
-                stats.sent_to_owner++;
+                if (ownerResult.success) {
+                    stats.sent_to_owner++;
 
-                // Salvar histórico da notificação
-                await supabase.from('notificacoes').insert({
-                    canal: 'whatsapp',
-                    destinatario: process.env.OWNER_PHONE_NUMBER,
-                    template: 'owner_reminder',
-                    dados: {
-                        appointment_id: appt.id,
-                        sid: (ownerResult as any).messageSid,
-                        channel: (ownerResult as any).channel
-                    },
-                    status: 'sent',
-                    enviado_em: new Date().toISOString()
+                    try {
+                        await supabase.from('notificacoes').insert({
+                            canal: 'whatsapp',
+                            destinatario: process.env.OWNER_PHONE_NUMBER,
+                            template: 'owner_reminder',
+                            dados: {
+                                appointment_id: appt.id,
+                                sid: (ownerResult as any).messageSid,
+                                channel: (ownerResult as any).channel
+                            },
+                            status: 'sent',
+                            enviado_em: new Date().toISOString()
+                        });
+                    } catch (insertError) {
+                        logger.error('[cron/reminders] Failed to persist owner notification record', {
+                            appointmentId: appt.id,
+                            error: insertError instanceof Error ? insertError.message : String(insertError),
+                        });
+                    }
+                }
+            } catch (sendError) {
+                logger.error('[cron/reminders] Owner notification send failed', {
+                    appointmentId: appt.id,
+                    error: sendError instanceof Error ? sendError.message : String(sendError),
                 });
             }
 
-            // 5. Notificar Cliente (SMS) - Opcional, conforme solicitado anteriormente
+            // 5. Notificar Cliente (SMS)
             if (appt.clientes?.telefone) {
-                const clientResult = await notify(appt.clientes.telefone, 'visit_reminder', {
-                    name: appt.clientes.nome,
-                    time: appt.horario_inicio.substring(0, 5)
-                });
-                if (clientResult.success) stats.sent_to_client++;
+                // Check client dedup too
+                const { data: existingClient } = await supabase
+                    .from('notificacoes')
+                    .select('id')
+                    .eq('template', 'client_reminder')
+                    .gte('criado_em', twentyFourHoursAgo)
+                    .filter('dados->>appointment_id', 'eq', String(appt.id))
+                    .maybeSingle();
+
+                if (!existingClient) {
+                    try {
+                        const clientResult = await notify(appt.clientes.telefone, 'visit_reminder', {
+                            name: appt.clientes.nome,
+                            time: appt.horario_inicio.substring(0, 5)
+                        });
+                        if (clientResult.success) stats.sent_to_client++;
+                    } catch (clientSendError) {
+                        logger.error('[cron/reminders] Client notification send failed', {
+                            appointmentId: appt.id,
+                            error: clientSendError instanceof Error ? clientSendError.message : String(clientSendError),
+                        });
+                    }
+                }
             }
         }
 
         return NextResponse.json({ success: true, stats });
 
     } catch (err) {
-        console.error('[CRON] Erro ao processar lembretes:', err);
-        return NextResponse.json({ success: false, error: String(err) }, { status: 500 });
+        logger.error('[cron/reminders] Fatal error:', { error: err instanceof Error ? err.message : String(err) });
+        return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
     }
 }

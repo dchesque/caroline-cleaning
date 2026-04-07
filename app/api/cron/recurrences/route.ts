@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { timingSafeEqual } from 'crypto';
+import { logger } from '@/lib/logger';
 
 /**
  * Endpoint de Cron para gerar agendamentos futuros a partir de recorrências.
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
         const cronSecret = process.env.CRON_SECRET;
 
         if (!cronSecret) {
-            console.error('CRON_SECRET not configured');
+            logger.error('CRON_SECRET not configured');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const supabase = await createClient();
+        const supabase = createAdminClient();
 
         // 1. Buscar todas as recorrências ativas
         const { data: recurrences, error: recError } = await supabase
@@ -108,7 +109,7 @@ export async function GET(request: NextRequest) {
                         });
 
                     if (insError) {
-                        console.error(`[CRON REC] Error for ${dateStr}:`, insError);
+                        logger.error(`[CRON REC] Error for ${dateStr}:`, insError);
                         stats.errors++;
                     } else {
                         stats.created++;
@@ -132,7 +133,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, stats });
 
     } catch (err) {
-        console.error('[CRON REC] Global Error:', err);
-        return NextResponse.json({ success: false, error: String(err) }, { status: 500 });
+        logger.error('[cron/recurrences] Fatal error:', { error: err instanceof Error ? err.message : String(err) });
+        return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
     }
 }

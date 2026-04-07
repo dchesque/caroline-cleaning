@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { timingSafeEqual } from 'crypto'
+import { logger } from '@/lib/logger'
 
 interface NotificationPayload {
     channel: 'whatsapp' | 'email' | 'sms'
@@ -47,6 +48,11 @@ export async function POST(request: NextRequest) {
 
         const { channel, recipient, template, data } = payload
 
+        const validChannels = ['sms', 'whatsapp', 'email'] as const;
+        if (channel && !validChannels.includes(channel)) {
+            return NextResponse.json({ error: 'Invalid channel' }, { status: 400 });
+        }
+
         // 1. Registrar notificação e obter ID
         const { data: notification, error } = await supabase
             .from('notificacoes')
@@ -61,17 +67,19 @@ export async function POST(request: NextRequest) {
             .single()
 
         if (error) {
-            console.error('Error creating notification:', error)
+            logger.error('[notifications/send] Error creating notification', { error: error.message })
             return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 })
         }
 
         // 2. Disparar envio (Integração com Twilio real)
         const { notify } = await import('@/lib/notifications')
 
+        const smsChannel = (channel === 'whatsapp' ? 'whatsapp' : 'sms') as 'sms' | 'whatsapp'
         const result = await notify(
             recipient,
             template as any,
-            data
+            data,
+            smsChannel
         ) as any // Cast temporário para simplificar acesso aos campos do resultado
 
         if (result.success) {
@@ -102,15 +110,20 @@ export async function POST(request: NextRequest) {
                 })
                 .eq('id', notification.id)
 
+            logger.error('[notifications/send] Notification send failed', {
+                notificationId: notification.id,
+                error: result.error?.toString(),
+            })
+
             return NextResponse.json({
                 success: false,
                 notification_id: notification.id,
-                error: result.error
+                error: 'Failed to send notification'
             }, { status: 500 })
         }
 
     } catch (error) {
-        console.error('[Notification API] Error:', error)
+        logger.error('[notifications/send] Error', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

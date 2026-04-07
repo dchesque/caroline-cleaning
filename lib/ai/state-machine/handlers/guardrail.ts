@@ -79,6 +79,22 @@ export function routeByIntent(
         contextUpdates: { previousState: context.state, intent_retry_count: 0 },
       }
 
+    case 'pet_info':
+      return {
+        nextState: 'SAVE_PET_INFO',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_retry_count: 0 },
+      }
+
+    case 'allergy_info':
+      return {
+        nextState: 'SAVE_ALLERGY_INFO',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_retry_count: 0 },
+      }
+
     case 'off_topic':
       return {
         nextState: 'GUARDRAIL',
@@ -105,7 +121,19 @@ export const handleGuardrail: StateHandler = async (_message, context, _services
 
   // Prevent self-loop and ping-pong
   if (returnState === 'GUARDRAIL' || returnState === 'DETECT_INTENT') {
-    returnState = 'DONE'
+    const guardrailRetries = (context._guardrail_retries || 0) + 1
+    if (guardrailRetries >= 3) {
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response,
+        contextUpdates: { _guardrail_retries: 0 },
+      }
+    }
+    return {
+      nextState: 'DETECT_INTENT',
+      response,
+      contextUpdates: { _guardrail_retries: guardrailRetries },
+    }
   }
 
   return {
@@ -216,6 +244,8 @@ export const handleDone: StateHandler = async (message, context, _services, llm)
     'callback',
     'update_info',
     'price_inquiry',
+    'pet_info',
+    'allergy_info',
     'greeting',
     'off_topic',
     'unknown',

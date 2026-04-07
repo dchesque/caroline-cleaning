@@ -1,6 +1,7 @@
 // lib/ai/llm.ts
 import { openrouter } from './openrouter'
 import { env } from '@/lib/env'
+import { logger } from '@/lib/logger'
 
 // ═══ TYPES ═══
 
@@ -74,7 +75,7 @@ function getExtractionPrompt(type: ExtractionType, extraContext?: any): string {
 
     case 'appointment_selection': {
       const appointments = extraContext?.appointments
-        ? JSON.stringify(extraContext.appointments)
+        ? JSON.stringify(extraContext.appointments).substring(0, 2000)
         : '[]'
       return `${base} The user is selecting an appointment from this list: ${appointments}. Identify which one by ID or list index (1-based). Return {"appointment_id": "id_here", "index": 1} or {"appointment_id": null, "index": null} if unclear.`
     }
@@ -377,6 +378,28 @@ function sanitizeInput(input: string, maxLength = 2000): string {
     .slice(0, maxLength)
 }
 
+/**
+ * Sanitize data values before interpolation into prompt templates.
+ * Prevents prompt injection by stripping newlines, control characters,
+ * and common injection delimiters from user-provided data.
+ */
+function sanitizePromptData(data: Record<string, any>): Record<string, any> {
+  const sanitized: Record<string, any> = {}
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof value === 'string') {
+      sanitized[key] = value
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // control chars
+        .replace(/[\r\n]+/g, ' ')                             // newlines → space
+        .replace(/[<>{}[\]]/g, '')                             // brackets/braces
+        .trim()
+        .substring(0, 500)                                     // max field length
+    } else {
+      sanitized[key] = value
+    }
+  }
+  return sanitized
+}
+
 // ═══ LLM CLASS ═══
 
 export class CarolLLM {
@@ -419,7 +442,7 @@ export class CarolLLM {
         ],
       })
     } catch (error) {
-      console.error(`[CarolLLM] extract(${type}) API error:`, error instanceof Error ? error.message : String(error))
+      logger.error(`[CarolLLM] extract(${type}) API error:`, { error: error instanceof Error ? error.message : String(error) })
       return { data: {} }
     }
 
@@ -438,7 +461,7 @@ export class CarolLLM {
       if (parsed._error) return { data: {}, usage }
       return { data: parsed, usage }
     } catch (error) {
-      console.error(`[CarolLLM] JSON parse error in extract(${type}):`, { content, error: error instanceof Error ? error.message : String(error) })
+      logger.error(`[CarolLLM] JSON parse error in extract(${type}):`, { content, error: error instanceof Error ? error.message : String(error) })
       return { data: {}, usage }
     }
   }
@@ -498,7 +521,7 @@ export class CarolLLM {
 
       const result = (response.choices[0]?.message?.content || '').trim()
       if (!result) {
-        console.warn('[CarolLLM] classifyIntent: empty LLM response')
+        logger.warn('[CarolLLM] classifyIntent: empty LLM response')
         return 'unknown'
       }
 
@@ -508,17 +531,20 @@ export class CarolLLM {
       const exactMatch = options.find((opt) => opt.toLowerCase() === normalized)
       if (exactMatch) return exactMatch
 
-      // Fuzzy match: check if any option is contained within the response
-      const fuzzyMatch = options.find((opt) => normalized.includes(opt.toLowerCase()))
+      // Fuzzy match: check if any option is contained within the response (word-boundary)
+      const fuzzyMatch = options.find((opt) => {
+        const pattern = new RegExp(`\\b${opt.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+        return pattern.test(normalized);
+      })
       if (fuzzyMatch) {
-        console.warn(`[CarolLLM] classifyIntent: fuzzy matched "${result}" to "${fuzzyMatch}"`)
+        logger.warn(`[CarolLLM] classifyIntent: fuzzy matched "${result}" to "${fuzzyMatch}"`)
         return fuzzyMatch
       }
 
-      console.warn(`[CarolLLM] classifyIntent: LLM returned "${result}" not in [${options.join(', ')}]`)
+      logger.warn(`[CarolLLM] classifyIntent: LLM returned "${result}" not in [${options.join(', ')}]`)
       return 'unknown'
     } catch (error) {
-      console.error('[CarolLLM] classifyIntent error:', error instanceof Error ? error.message : String(error))
+      logger.error('[CarolLLM] classifyIntent error:', { error: error instanceof Error ? error.message : String(error) })
       return 'unknown'
     }
   }
@@ -570,14 +596,15 @@ export class CarolLLM {
   ): Promise<{ text: string; usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number } }> {
     const templateFn = RESPONSE_TEMPLATES[template]
     if (!templateFn) {
-      console.error(`[CarolLLM] Unknown response template: ${template}`)
+      logger.error(`[CarolLLM] Unknown response template: ${template}`)
       const fallback = language === 'pt'
         ? 'Desculpe, houve um problema. Pode repetir?'
         : "I'm sorry, something went wrong. Could you say that again?"
       return { text: fallback }
     }
 
-    const instruction = templateFn(data, language)
+    const safeData = sanitizePromptData(data)
+    const instruction = templateFn(safeData, language)
     const persona = carolPersona(language)
 
     try {
@@ -605,7 +632,7 @@ export class CarolLLM {
       const text = (response.choices[0]?.message?.content || '').trim()
       return { text, usage }
     } catch (error) {
-      console.error(`[CarolLLM] generate(${template}) API error:`, error instanceof Error ? error.message : String(error))
+      logger.error(`[CarolLLM] generate(${template}) API error:`, { error: error instanceof Error ? error.message : String(error) })
       const fallback = language === 'pt'
         ? 'Desculpe, tive um problema técnico. Pode tentar novamente?'
         : "I'm sorry, I had a technical issue. Could you try again?"
@@ -621,8 +648,6 @@ export class CarolLLM {
     language: 'pt' | 'en'
   ): Promise<{ response: string; metrics: LLMCallRecord }> {
     const startTime = Date.now()
-    const templateFn = RESPONSE_TEMPLATES[template]
-    const instruction = templateFn ? templateFn(data, language) : ''
 
     const { text, usage } = await this._generateRaw(template, data, language)
 
@@ -631,7 +656,7 @@ export class CarolLLM {
       metrics: {
         type: 'generate',
         model: this.model,
-        prompt_preview: instruction.substring(0, 100),
+        prompt_preview: text.substring(0, 100),
         tokens_used: usage?.total_tokens,
         prompt_tokens: usage?.prompt_tokens,
         completion_tokens: usage?.completion_tokens,
@@ -651,7 +676,7 @@ export class CarolLLM {
     const persona = carolPersona(lang)
 
     const extraContext = context.sessionContext
-      ? `\nSession context: ${JSON.stringify(context.sessionContext)}`
+      ? `\nSession context: ${JSON.stringify(context.sessionContext).substring(0, 2000)}`
       : ''
 
     const systemPrompt = `${persona}
@@ -674,7 +699,7 @@ Answer the customer's question using ONLY the knowledge base above. If the quest
 
       return (response.choices[0]?.message?.content || '').trim()
     } catch (error) {
-      console.error('[CarolLLM] generateFaq API error:', error instanceof Error ? error.message : String(error))
+      logger.error('[CarolLLM] generateFaq API error:', { error: error instanceof Error ? error.message : String(error) })
       return lang === 'pt'
         ? 'Desculpe, não consigo responder agora. Pode entrar em contato conosco diretamente?'
         : "I'm sorry, I can't answer right now. Could you contact us directly?"

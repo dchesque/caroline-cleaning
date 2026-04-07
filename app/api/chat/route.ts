@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger'
 import { chatLogger } from '@/lib/services/chat-logger'
 import { createAdminClient } from '@/lib/supabase/server'
 import { nanoid } from 'nanoid'
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
 import type { ChatResponse } from '@/lib/ai/carol-agent'
 
 export const dynamic = 'force-dynamic'
@@ -43,6 +44,14 @@ async function checkSessionMessageLimit(sessionId: string): Promise<boolean> {
 }
 
 export async function POST(req: NextRequest) {
+    const ip = getClientIp(req);
+    if (!checkRateLimit(ip, RATE_LIMITS.chat)) {
+        return NextResponse.json(
+            { error: 'Too many requests. Please try again later.' },
+            { status: 429 }
+        );
+    }
+
     try {
         const body = await req.json()
         const { message, sessionId } = body
@@ -85,7 +94,14 @@ export async function POST(req: NextRequest) {
 
         // Issue 16: Use singleton agent instead of creating per request
         const carol = getAgent()
-        const response: ChatResponse = await carol.chat(message, currentSessionId)
+        const CHAT_TIMEOUT = 60_000; // 60 seconds
+
+        const response: ChatResponse = await Promise.race([
+          carol.chat(message, currentSessionId),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Chat processing timeout')), CHAT_TIMEOUT)
+          ),
+        ]);
 
         const duration = Date.now() - startTime
 
@@ -138,6 +154,13 @@ export async function POST(req: NextRequest) {
             error: error instanceof Error ? error.message : error,
             timestamp: new Date().toISOString()
         })
+
+        if (error instanceof Error && error.message === 'Chat processing timeout') {
+            return NextResponse.json(
+                { error: 'Request took too long. Please try again.' },
+                { status: 504 }
+            )
+        }
 
         return NextResponse.json(
             { error: 'Ocorreu um erro ao processar sua mensagem. Tente novamente.' },

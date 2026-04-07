@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 export async function PUT(request: NextRequest) {
     try {
@@ -11,6 +12,10 @@ export async function PUT(request: NextRequest) {
         }
 
         const { currentPassword, newPassword } = await request.json()
+
+        if (!currentPassword || typeof currentPassword !== 'string') {
+            return NextResponse.json({ error: 'Current password is required' }, { status: 400 })
+        }
 
         // Validar nova senha
         if (!newPassword || newPassword.length < 8) {
@@ -43,7 +48,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ success: true })
 
     } catch (error) {
-        console.error('Error changing password:', error)
+        logger.error('[profile/password] Error changing password', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Error changing password' }, { status: 500 })
     }
 }

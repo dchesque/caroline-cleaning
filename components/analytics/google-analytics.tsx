@@ -4,8 +4,11 @@ import Script from 'next/script'
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 
+// Validate GA4 measurement ID format
+const isValidGaId = GA_ID && /^G-[A-Z0-9]+$/.test(GA_ID);
+
 export function GoogleAnalytics() {
-    if (!GA_ID) return null
+    if (!isValidGaId) return null
 
     return (
         <>

@@ -8,15 +8,42 @@ const MAX_COLLECTION_RETRIES = 5
 /**
  * CONFIRM_ADDRESS: Show the customer's current address and ask if it's still correct.
  */
-export const handleConfirmAddress: StateHandler = async (_message, context, _services, llm) => {
-  const response = await llm.generate('confirm_address', {
-    address: context.cliente_endereco,
+export const handleConfirmAddress: StateHandler = async (message, context, _services, llm) => {
+  const lang = context.language
+
+  // First visit (silent entry): show address and ask for confirmation
+  if (!message) {
+    const response = await llm.generate('confirm_address', {
+      address: context.cliente_endereco,
+      name: context.cliente_nome,
+    }, lang)
+
+    return {
+      nextState: 'CONFIRM_ADDRESS',
+      response,
+    }
+  }
+
+  // User responded: classify yes/no
+  const intent = await llm.classifyIntent(message, ['yes', 'no'])
+
+  if (intent === 'yes') {
+    return {
+      nextState: 'ASK_SERVICE_TYPE',
+      response: '',
+      silent: true,
+    }
+  }
+
+  // User said no — go back to collect a new address
+  const response = await llm.generate('ask_address', {
     name: context.cliente_nome,
-  }, context.language)
+  }, lang)
 
   return {
-    nextState: 'ASK_SERVICE_TYPE',
+    nextState: 'NEW_CUSTOMER_ADDRESS',
     response,
+    contextUpdates: { cliente_endereco: null },
   }
 }
 
@@ -172,7 +199,15 @@ export const handleCheckAvailability: StateHandler = async (_message, context, s
     }
   }
 
-  const result = await services.getAvailableSlots(date, duration)
+  let result
+  try {
+    result = await services.getAvailableSlots(date, duration)
+  } catch {
+    return {
+      nextState: 'COLLECT_DATE',
+      response: "I had trouble checking availability. Let's try a different date — what day works for you?",
+    }
+  }
 
   if (result.slots.length > 0) {
     return {
@@ -202,7 +237,13 @@ export const handleNoSlots: StateHandler = async (_message, context, services, l
   const date = context.selected_date ?? new Date().toISOString().slice(0, 10)
   const duration = context.duration_minutes ?? getDurationForService(context.service_type ?? 'regular')
 
-  const result = await services.getAvailableSlotsMultiDay(date, 7, duration)
+  let result
+  try {
+    result = await services.getAvailableSlotsMultiDay(date, 7, duration)
+  } catch {
+    const response = await llm.generate('no_slots_at_all', { name: context.cliente_nome }, lang)
+    return { nextState: 'COLLECT_DATE', response }
+  }
 
   if (result.total_available === 0) {
     const response = await llm.generate('no_slots_at_all', {
@@ -536,9 +577,13 @@ export const handleCollectPreference: StateHandler = async (message, context, _s
  */
 export const handleUpdatePreference: StateHandler = async (_message, context, services, llm) => {
   if (context.cliente_id && context.canal_preferencia) {
-    await services.updateLead(context.cliente_id, {
-      canal_preferencia: context.canal_preferencia,
-    })
+    try {
+      await services.updateLead(context.cliente_id, {
+        canal_preferencia: context.canal_preferencia,
+      })
+    } catch {
+      // Non-critical — preference not saved, but booking is confirmed
+    }
   }
 
   const response = await llm.generate('done_booking', {

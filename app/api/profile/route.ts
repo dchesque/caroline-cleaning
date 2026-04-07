@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 // GET - Buscar perfil do usuário logado
 export async function GET(request: NextRequest) {
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
         })
 
     } catch (error) {
-        console.error('Error fetching profile:', error)
+        logger.error('[profile] Error fetching profile', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Error fetching profile' }, { status: 500 })
     }
 }
@@ -83,7 +84,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json(data)
 
     } catch (error) {
-        console.error('Error updating profile:', error)
+        logger.error('[profile] Error updating profile', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Error updating profile' }, { status: 500 })
     }
 }

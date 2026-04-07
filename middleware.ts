@@ -1,31 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
 
 // Forçar Node.js runtime (Supabase SSR não é compatível com Edge Runtime)
 export const runtime = 'nodejs'
-
-// NOTE: This in-memory rate limiter is best-effort in serverless environments.
-// The Map resets on every cold start, so it won't persist across instances.
-// For stricter enforcement, use an external store (e.g., Redis/Upstash).
-// This still provides protection within a single instance's lifetime.
-const rateLimitMap = new Map<string, { count: number; timestamp: number }>()
-
-function rateLimit(ip: string, limit: number = 100, windowMs: number = 60000): boolean {
-    const now = Date.now()
-    const record = rateLimitMap.get(ip)
-
-    if (!record || now - record.timestamp > windowMs) {
-        rateLimitMap.set(ip, { count: 1, timestamp: now })
-        return true
-    }
-
-    if (record.count >= limit) {
-        return false
-    }
-
-    record.count++
-    return true
-}
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
@@ -43,10 +21,14 @@ export async function middleware(request: NextRequest) {
 
     // 2. Rate limiting for APIs
     if (pathname.startsWith('/api/')) {
-        const ip = (request as any).ip || request.headers.get('x-forwarded-for') || 'unknown'
-        const limit = pathname === '/api/chat' ? 30 : 100
+        const ip = getClientIp(request)
+        const config = pathname === '/api/chat'
+            ? RATE_LIMITS.chat
+            : pathname === '/api/slots'
+                ? RATE_LIMITS.slots
+                : RATE_LIMITS.api
 
-        if (!rateLimit(ip, limit)) {
+        if (!checkRateLimit(ip, config)) {
             return NextResponse.json(
                 { error: 'Too many requests' },
                 { status: 429 }
