@@ -29,6 +29,6 @@ export async function sendSMS(to: string, body: string, useWhatsApp: boolean = f
         return { success: true, messageSid: message.sid };
     } catch (error) {
         console.error('[TWILIO] Erro ao enviar mensagem:', error);
-        return { success: false, error };
+        return { success: false, error: error instanceof Error ? error.message : 'SMS send failed' };
     }
 }
