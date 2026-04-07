@@ -6,6 +6,19 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const SENSITIVE_KEY_PATTERNS = [
+  'access_token',
+  'secret',
+  'api_key',
+  'service_role',
+  'private',
+];
+
+function isSensitiveKey(key: string): boolean {
+  const lower = key.toLowerCase();
+  return SENSITIVE_KEY_PATTERNS.some(pattern => lower.includes(pattern));
+}
+
 export async function GET() {
     try {
         const supabase = await createClient();
@@ -18,9 +31,13 @@ export async function GET() {
 
         if (error) throw error;
 
+        const safeData = (data || []).filter(
+            (item: { chave: string }) => !isSensitiveKey(item.chave)
+        );
+
         return NextResponse.json({
             success: true,
-            data: data || []
+            data: safeData
         }, {
             headers: {
                 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
