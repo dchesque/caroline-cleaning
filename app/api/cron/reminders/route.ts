@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { notify, notifyOwner } from '@/lib/notifications';
 import { timingSafeEqual } from 'crypto';
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const supabase = await createClient();
+        const supabase = createAdminClient();
 
         // 1. Calcular janela de tempo (daqui a 50min até 75min)
         const now = new Date();
