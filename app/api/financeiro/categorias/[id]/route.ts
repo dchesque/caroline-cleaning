@@ -15,6 +15,17 @@ export async function PATCH(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        // Auth: require admin role
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (!profile || profile.role !== 'admin') {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
         const body = await request.json()
         const { id } = await params // Await params in newer Next.js
 
@@ -57,6 +68,17 @@ export async function DELETE(
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        // Auth: require admin role
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (!profile || profile.role !== 'admin') {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
         const { id } = await params
