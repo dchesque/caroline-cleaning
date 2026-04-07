@@ -79,8 +79,11 @@ export const handleSavePetInfo: StateHandler = async (message, context, services
     pets: petDetails,
   }, lang)
 
-  // Return to the previous state
-  const returnState = (context.previousState as any) ?? 'DETECT_INTENT'
+  // Return to the previous state, with fallback and self-loop prevention
+  let returnState = context.previousState ?? 'DETECT_INTENT'
+  if (returnState === 'SAVE_PET_INFO') {
+    returnState = 'DETECT_INTENT'
+  }
 
   return {
     nextState: returnState,
@@ -123,8 +126,11 @@ export const handleSaveAllergyInfo: StateHandler = async (message, context, serv
     allergies: allergyDetails,
   }, lang)
 
-  // Return to the previous state
-  const returnState = (context.previousState as any) ?? 'DETECT_INTENT'
+  // Return to the previous state, with fallback and self-loop prevention
+  let returnState = context.previousState ?? 'DETECT_INTENT'
+  if (returnState === 'SAVE_ALLERGY_INFO') {
+    returnState = 'DETECT_INTENT'
+  }
 
   return {
     nextState: returnState,

@@ -25,10 +25,13 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient()
 
   // Delete logs older than 30 days
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - 30)
+
   const { data, error } = await supabase
     .from('chat_logs')
     .delete()
-    .lt('created_at', `now() - interval '30 days'`)
+    .lt('created_at', cutoff.toISOString())
     .select('id')
 
   if (error) {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 
 export async function PATCH(
     request: Request,
@@ -7,12 +8,32 @@ export async function PATCH(
 ) {
     try {
         const supabase = await createClient()
+
+        // Auth: require authenticated user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const body = await request.json()
         const { id } = await params // Await params in newer Next.js
 
+        // Field allow-list to prevent mass assignment
+        const allowedFields = ['nome', 'tipo', 'descricao', 'ativo', 'cor', 'icone'] as const
+        const sanitizedBody: Record<string, any> = {}
+        for (const field of allowedFields) {
+            if (field in body) {
+                sanitizedBody[field] = body[field]
+            }
+        }
+
+        if (Object.keys(sanitizedBody).length === 0) {
+            return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+        }
+
         const { data, error } = await supabase
             .from('financeiro_categorias')
-            .update(body)
+            .update(sanitizedBody)
             .eq('id', id)
             .select()
 
@@ -20,8 +41,8 @@ export async function PATCH(
 
         return NextResponse.json(data[0])
     } catch (error: any) {
-        console.error('Error updating category:', error)
-        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+        logger.error('Error updating category', { error: error.message })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
@@ -31,6 +52,13 @@ export async function DELETE(
 ) {
     try {
         const supabase = await createClient()
+
+        // Auth: require authenticated user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const { id } = await params
 
         // Soft delete: apenas desativar
@@ -43,7 +71,7 @@ export async function DELETE(
 
         return NextResponse.json({ success: true })
     } catch (error: any) {
-        console.error('Error deleting category:', error)
-        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+        logger.error('Error deleting category', { error: error.message })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

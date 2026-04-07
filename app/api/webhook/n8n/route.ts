@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
+import { timingSafeEqual } from 'crypto'
+import { logger } from '@/lib/logger'
 
 // ============================================
 // TIPOS DE EVENTOS RECEBIDOS DO N8N
@@ -24,15 +26,23 @@ interface IncomingWebhookPayload {
 
 async function verifyAuth(request: NextRequest): Promise<boolean> {
     const headersList = await headers()
-    const secret = headersList.get('x-webhook-secret')
+    const secret = headersList.get('x-webhook-secret') || ''
     const expectedSecret = process.env.N8N_WEBHOOK_SECRET
 
     if (!expectedSecret) {
-        console.warn('[Webhook N8N] N8N_WEBHOOK_SECRET não configurado')
-        return process.env.NODE_ENV === 'development'
+        logger.error('[Webhook N8N] N8N_WEBHOOK_SECRET not configured')
+        return false
     }
 
-    return secret === expectedSecret
+    // Timing-safe comparison to prevent timing attacks
+    if (
+        secret.length !== expectedSecret.length ||
+        !timingSafeEqual(Buffer.from(secret), Buffer.from(expectedSecret))
+    ) {
+        return false
+    }
+
+    return true
 }
 
 // ============================================
@@ -49,7 +59,7 @@ export async function POST(request: NextRequest) {
         const payload: IncomingWebhookPayload = await request.json()
         const supabase = await createClient()
 
-        console.log(`[Webhook N8N] Evento recebido: ${payload.event}`)
+        logger.info(`[Webhook N8N] Evento recebido: ${payload.event}`)
 
         // Rotear para handler apropriado
         switch (payload.event) {
@@ -66,12 +76,12 @@ export async function POST(request: NextRequest) {
                 return await handleAppointmentUpdate(supabase, payload.data)
 
             default:
-                console.warn(`[Webhook N8N] Evento desconhecido: ${payload.event}`)
+                logger.warn(`[Webhook N8N] Evento desconhecido: ${payload.event}`)
                 return NextResponse.json({ error: 'Unknown event' }, { status: 400 })
         }
 
     } catch (error) {
-        console.error('[Webhook N8N] Erro:', error)
+        logger.error('[Webhook N8N] Erro', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
@@ -106,7 +116,7 @@ async function handleChatResponse(supabase: any, data: any) {
         .single()
 
     if (error) {
-        console.error('[Webhook N8N] Erro ao salvar mensagem:', error)
+        logger.error('[Webhook N8N] Erro ao salvar mensagem', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Failed to save message' }, { status: 500 })
     }
 
@@ -132,10 +142,13 @@ async function handleDashboardNotification(supabase: any, data: any) {
 
     // Salvar notificação (se você tiver uma tabela de notificações)
     // Por enquanto, apenas loga
-    console.log(`[Notification] ${type}: ${title} - ${message}`)
+    logger.info(`[Notification] ${type}: ${title} - ${message}`)
 
     return NextResponse.json({ success: true })
 }
+
+const ALLOWED_CLIENT_FIELDS = ['nome', 'email', 'telefone', 'endereco', 'notas']
+const ALLOWED_APPOINTMENT_FIELDS = ['status', 'data_hora', 'notas', 'servico_id']
 
 async function handleClientUpdate(supabase: any, data: any) {
     const { client_id, updates } = data
@@ -147,13 +160,28 @@ async function handleClientUpdate(supabase: any, data: any) {
         )
     }
 
+    // Only allow known fields to be updated
+    const sanitizedUpdates: Record<string, any> = {}
+    for (const key of Object.keys(updates)) {
+        if (ALLOWED_CLIENT_FIELDS.includes(key)) {
+            sanitizedUpdates[key] = updates[key]
+        }
+    }
+
+    if (Object.keys(sanitizedUpdates).length === 0) {
+        return NextResponse.json(
+            { error: 'No valid fields to update' },
+            { status: 400 }
+        )
+    }
+
     const { error } = await supabase
         .from('clientes')
-        .update(updates)
+        .update(sanitizedUpdates)
         .eq('id', client_id)
 
     if (error) {
-        console.error('[Webhook N8N] Erro ao atualizar cliente:', error)
+        logger.error('[Webhook N8N] Erro ao atualizar cliente', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Failed to update client' }, { status: 500 })
     }
 
@@ -170,13 +198,28 @@ async function handleAppointmentUpdate(supabase: any, data: any) {
         )
     }
 
+    // Only allow known fields to be updated
+    const sanitizedUpdates: Record<string, any> = {}
+    for (const key of Object.keys(updates)) {
+        if (ALLOWED_APPOINTMENT_FIELDS.includes(key)) {
+            sanitizedUpdates[key] = updates[key]
+        }
+    }
+
+    if (Object.keys(sanitizedUpdates).length === 0) {
+        return NextResponse.json(
+            { error: 'No valid fields to update' },
+            { status: 400 }
+        )
+    }
+
     const { error } = await supabase
         .from('agendamentos')
-        .update(updates)
+        .update(sanitizedUpdates)
         .eq('id', appointment_id)
 
     if (error) {
-        console.error('[Webhook N8N] Erro ao atualizar agendamento:', error)
+        logger.error('[Webhook N8N] Erro ao atualizar agendamento', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Failed to update appointment' }, { status: 500 })
     }
 

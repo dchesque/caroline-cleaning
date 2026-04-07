@@ -12,6 +12,7 @@ export const getOpenRouter = () => {
         _openrouter = new OpenAI({
             apiKey: env.openRouterKey,
             baseURL: 'https://openrouter.ai/api/v1',
+            timeout: 30000, // 30 second timeout
             defaultHeaders: {
                 'HTTP-Referer': env.appUrl,
                 'X-Title': 'Chesque Premium Cleaning'
@@ -28,8 +29,3 @@ export const openrouter = new Proxy({} as OpenAI, {
     }
 })
 
-export const MODELS = {
-    CLAUDE_SONNET: 'anthropic/claude-3.5-sonnet',
-    GPT4_TURBO: 'openai/gpt-4-turbo',
-    LLAMA_70B: 'meta-llama/llama-3.1-70b-instruct'
-}

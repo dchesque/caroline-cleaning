@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: Request) {
     try {
         const supabase = await createClient()
+
+        // Auth: require authenticated user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const { searchParams } = new URL(request.url)
         const tipo = searchParams.get('tipo') // 'receita' ou 'custo'
 
@@ -23,14 +31,21 @@ export async function GET(request: Request) {
 
         return NextResponse.json(data)
     } catch (error: any) {
-        console.error('Error fetching categories:', error)
-        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+        logger.error('Error fetching categories', { error: error.message })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
 
 export async function POST(request: Request) {
     try {
         const supabase = await createClient()
+
+        // Auth: require authenticated user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         const body = await request.json()
 
         if (!body.nome || !body.tipo) {
@@ -54,7 +69,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json(data[0])
     } catch (error: any) {
-        console.error('Error creating category:', error)
-        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+        logger.error('Error creating category', { error: error.message })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

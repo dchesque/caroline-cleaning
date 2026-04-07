@@ -5,6 +5,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import { env } from '@/lib/env'
+import type { CarolState } from '@/lib/ai/state-machine/types'
 
 // ═══════════════════════════════════════════
 // TYPES
@@ -178,8 +179,8 @@ export interface CallbackResult {
 }
 
 export interface SessionContext {
-    state: string
-    previousState: string | null
+    state: CarolState
+    previousState: CarolState | null
     language: 'pt' | 'en'
     cliente_id: string | null
     cliente_nome: string | null
@@ -202,6 +203,8 @@ export interface SessionContext {
     last_error: string | null
     pets_info: string | null
     allergy_info: string | null
+    _same_state_count?: number
+    _last_processed_state?: CarolState
     [key: string]: any
 }
 
@@ -1001,7 +1004,10 @@ export class CarolServices {
         const siteUrl = env.appUrl
         fetch(`${siteUrl}/api/tracking/event`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+            },
             body: JSON.stringify({
                 event_name: eventName,
                 ...payload

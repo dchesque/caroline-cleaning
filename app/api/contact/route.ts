@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
     try {
@@ -51,7 +52,10 @@ export async function POST(request: NextRequest) {
         try {
             await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/tracking/event`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+                },
                 body: JSON.stringify({
                     event_name: 'Lead',
                     event_id: `lead_form_${data.id}`,
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
                 }),
             });
         } catch (trackingError) {
-            console.error('Tracking error:', trackingError);
+            logger.error('Tracking error', { error: trackingError instanceof Error ? trackingError.message : String(trackingError) });
             // Não falhar a request principal por erro de tracking
         }
 
@@ -80,7 +84,7 @@ export async function POST(request: NextRequest) {
         })
 
     } catch (error) {
-        console.error('Error saving contact:', error)
+        logger.error('Error saving contact', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json(
             { success: false, error: 'Erro ao enviar contato. Tente novamente.' },
             { status: 500 }

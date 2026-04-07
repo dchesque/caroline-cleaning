@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { timingSafeEqual } from 'crypto'
 
 interface NotificationPayload {
     channel: 'whatsapp' | 'email' | 'sms'
@@ -8,10 +9,41 @@ interface NotificationPayload {
     data: Record<string, any>
 }
 
+function verifyInternalToken(authHeader: string): boolean {
+    const internalSecret = process.env.CRON_SECRET
+    if (!internalSecret) return false
+    const expectedAuth = `Bearer ${internalSecret}`
+    if (authHeader.length !== expectedAuth.length) return false
+    return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedAuth))
+}
+
 export async function POST(request: NextRequest) {
+    // Auth: accept internal bearer token OR admin session
+    const authHeader = request.headers.get('authorization') || ''
+    const hasValidToken = verifyInternalToken(authHeader)
+
+    const supabase = await createClient()
+
+    if (!hasValidToken) {
+        // Fall back to session-based admin auth
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (!profile || profile.role !== 'admin') {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+    }
+
     try {
         const payload: NotificationPayload = await request.json()
-        const supabase = await createClient()
 
         const { channel, recipient, template, data } = payload
 

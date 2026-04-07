@@ -96,6 +96,26 @@ export function SessionDetail({ sessionId, session, messages }: Props) {
                     <LlmCallsPanel calls={msg.llm_calls} />
                   )}
 
+                  {/* Extracted Data */}
+                  {msg.extracted_data && Object.keys(msg.extracted_data).length > 0 && (
+                    <ContextViewer data={msg.extracted_data} title="Dados Extraidos" />
+                  )}
+
+                  {/* Handlers Executed */}
+                  {msg.handlers_executed && msg.handlers_executed.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {msg.handlers_executed.map((h, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-mono"
+                        >
+                          {h.handler}
+                          <span className="ml-1 text-purple-400">{h.duration_ms}ms</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Context */}
                   {msg.context_snapshot && Object.keys(msg.context_snapshot).length > 0 && (
                     <ContextViewer data={msg.context_snapshot} title="Contexto" />

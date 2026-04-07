@@ -33,7 +33,11 @@ class Logger {
             )
         } else {
             // JSON em produção (para agregadores de log)
-            console.log(JSON.stringify(entry))
+            try {
+                console.log(JSON.stringify(entry))
+            } catch {
+                console.error(message, '[context serialization failed]')
+            }
         }
     }
 

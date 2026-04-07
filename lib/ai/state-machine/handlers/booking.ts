@@ -437,8 +437,12 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
 
   if (intent === 'correction') {
     // Cancel the created appointment and let them re-book
-    if (context.booking_id) {
-      await services.cancelAppointment(context.booking_id, 'User requested correction before confirmation')
+    try {
+      if (context.booking_id) {
+        await services.cancelAppointment(context.booking_id, 'User requested correction before confirmation')
+      }
+    } catch {
+      // Non-critical - proceed with correction flow regardless
     }
 
     const response = await llm.generate('booking_correction', {
@@ -459,8 +463,12 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
   }
 
   // intent === 'no'
-  if (context.booking_id) {
-    await services.cancelAppointment(context.booking_id, 'User declined booking')
+  try {
+    if (context.booking_id) {
+      await services.cancelAppointment(context.booking_id, 'User declined booking')
+    }
+  } catch {
+    // Non-critical - proceed with cancellation flow regardless
   }
 
   const response = await llm.generate('booking_cancelled_by_user', {

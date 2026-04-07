@@ -9,6 +9,8 @@ export interface LLMCallRecord {
   model: string
   prompt_preview: string
   tokens_used?: number
+  prompt_tokens?: number
+  completion_tokens?: number
   duration_ms: number
 }
 
@@ -362,6 +364,19 @@ Style: SHORT messages (max 3-4 sentences). Use 1-2 emojis max per message. Never
 Language: ${language === 'pt' ? 'Respond in Brazilian Portuguese' : 'Respond in English'}.`
 }
 
+// ═══ INPUT SANITIZATION ═══
+
+/**
+ * Sanitize user input before sending to LLM.
+ * Strips control characters (except newlines), trims whitespace, and enforces max length.
+ */
+function sanitizeInput(input: string, maxLength = 2000): string {
+  return input
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .trim()
+    .slice(0, maxLength)
+}
+
 // ═══ LLM CLASS ═══
 
 export class CarolLLM {
@@ -378,6 +393,17 @@ export class CarolLLM {
     message: string,
     extraContext?: any
   ): Promise<any> {
+    const { data } = await this._extractRaw(type, message, extraContext)
+    return data
+  }
+
+  /** Internal: returns parsed data + raw usage from the API response */
+  private async _extractRaw(
+    type: ExtractionType,
+    message: string,
+    extraContext?: any
+  ): Promise<{ data: any; usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number } }> {
+    const sanitizedMessage = sanitizeInput(message)
     const systemPrompt = getExtractionPrompt(type, extraContext)
 
     let response
@@ -389,23 +415,31 @@ export class CarolLLM {
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: message },
+          { role: 'user', content: sanitizedMessage },
         ],
       })
     } catch (error) {
       console.error(`[CarolLLM] extract(${type}) API error:`, error instanceof Error ? error.message : String(error))
-      return {}
+      return { data: {} }
     }
+
+    const usage = response.usage
+      ? {
+          total_tokens: response.usage.total_tokens ?? undefined,
+          prompt_tokens: response.usage.prompt_tokens ?? undefined,
+          completion_tokens: response.usage.completion_tokens ?? undefined,
+        }
+      : undefined
 
     const content = response.choices[0]?.message?.content || '{}'
     try {
       const parsed = JSON.parse(content)
       // Detect empty or error responses and return null-safe defaults
-      if (parsed._error) return {}
-      return parsed
+      if (parsed._error) return { data: {}, usage }
+      return { data: parsed, usage }
     } catch (error) {
       console.error(`[CarolLLM] JSON parse error in extract(${type}):`, { content, error: error instanceof Error ? error.message : String(error) })
-      return {}
+      return { data: {}, usage }
     }
   }
 
@@ -419,7 +453,7 @@ export class CarolLLM {
     const startTime = Date.now()
     const systemPrompt = getExtractionPrompt(type, extraContext)
 
-    const data = await this.extract(type, message, extraContext)
+    const { data, usage } = await this._extractRaw(type, message, extraContext)
 
     return {
       data,
@@ -427,6 +461,9 @@ export class CarolLLM {
         type: 'extract',
         model: this.model,
         prompt_preview: systemPrompt.substring(0, 100),
+        tokens_used: usage?.total_tokens,
+        prompt_tokens: usage?.prompt_tokens,
+        completion_tokens: usage?.completion_tokens,
         duration_ms: Date.now() - startTime,
       }
     }
@@ -445,6 +482,7 @@ export class CarolLLM {
       return 'unknown'
     }
 
+    const sanitizedMessage = sanitizeInput(message)
     const systemPrompt = `Classify the user message into ONE of these categories: ${options.join(', ')}. Return ONLY the category name, nothing else.`
 
     try {
@@ -454,7 +492,7 @@ export class CarolLLM {
         max_tokens: 50,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: message },
+          { role: 'user', content: sanitizedMessage },
         ],
       })
 
@@ -488,6 +526,7 @@ export class CarolLLM {
   // ═══ LANGUAGE DETECTION ═══
 
   async detectLanguage(message: string): Promise<'pt' | 'en'> {
+    const sanitizedMessage = sanitizeInput(message)
     try {
       const response = await openrouter.chat.completions.create({
         model: this.model,
@@ -499,7 +538,7 @@ export class CarolLLM {
             content:
               'Detect the language of the user message. Return ONLY "pt" for Portuguese or "en" for English. If unclear, return "en".',
           },
-          { role: 'user', content: message },
+          { role: 'user', content: sanitizedMessage },
         ],
       })
 
@@ -519,12 +558,23 @@ export class CarolLLM {
     data: Record<string, any>,
     language: 'pt' | 'en'
   ): Promise<string> {
+    const { text } = await this._generateRaw(template, data, language)
+    return text
+  }
+
+  /** Internal: returns generated text + raw usage from the API response */
+  private async _generateRaw(
+    template: string,
+    data: Record<string, any>,
+    language: 'pt' | 'en'
+  ): Promise<{ text: string; usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number } }> {
     const templateFn = RESPONSE_TEMPLATES[template]
     if (!templateFn) {
       console.error(`[CarolLLM] Unknown response template: ${template}`)
-      return language === 'pt'
+      const fallback = language === 'pt'
         ? 'Desculpe, houve um problema. Pode repetir?'
         : "I'm sorry, something went wrong. Could you say that again?"
+      return { text: fallback }
     }
 
     const instruction = templateFn(data, language)
@@ -544,12 +594,22 @@ export class CarolLLM {
         ],
       })
 
-      return (response.choices[0]?.message?.content || '').trim()
+      const usage = response.usage
+        ? {
+            total_tokens: response.usage.total_tokens ?? undefined,
+            prompt_tokens: response.usage.prompt_tokens ?? undefined,
+            completion_tokens: response.usage.completion_tokens ?? undefined,
+          }
+        : undefined
+
+      const text = (response.choices[0]?.message?.content || '').trim()
+      return { text, usage }
     } catch (error) {
       console.error(`[CarolLLM] generate(${template}) API error:`, error instanceof Error ? error.message : String(error))
-      return language === 'pt'
+      const fallback = language === 'pt'
         ? 'Desculpe, tive um problema técnico. Pode tentar novamente?'
         : "I'm sorry, I had a technical issue. Could you try again?"
+      return { text: fallback }
     }
   }
 
@@ -564,14 +624,17 @@ export class CarolLLM {
     const templateFn = RESPONSE_TEMPLATES[template]
     const instruction = templateFn ? templateFn(data, language) : ''
 
-    const response = await this.generate(template, data, language)
+    const { text, usage } = await this._generateRaw(template, data, language)
 
     return {
-      response,
+      response: text,
       metrics: {
         type: 'generate',
         model: this.model,
         prompt_preview: instruction.substring(0, 100),
+        tokens_used: usage?.total_tokens,
+        prompt_tokens: usage?.prompt_tokens,
+        completion_tokens: usage?.completion_tokens,
         duration_ms: Date.now() - startTime,
       }
     }
@@ -583,7 +646,8 @@ export class CarolLLM {
     question: string,
     context: { businessInfo?: any; pricing?: any; sessionContext?: any }
   ): Promise<string> {
-    const lang = await this.detectLanguage(question)
+    const sanitizedQuestion = sanitizeInput(question)
+    const lang = await this.detectLanguage(sanitizedQuestion)
     const persona = carolPersona(lang)
 
     const extraContext = context.sessionContext
@@ -604,7 +668,7 @@ Answer the customer's question using ONLY the knowledge base above. If the quest
         max_tokens: 500,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: question },
+          { role: 'user', content: sanitizedQuestion },
         ],
       })
 
@@ -618,5 +682,3 @@ Answer the customer's question using ONLY the knowledge base above. If the quest
   }
 }
 
-// Default singleton
-export const carol = new CarolLLM()

@@ -4,6 +4,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 // Forçar Node.js runtime (Supabase SSR não é compatível com Edge Runtime)
 export const runtime = 'nodejs'
 
+// NOTE: This in-memory rate limiter is best-effort in serverless environments.
+// The Map resets on every cold start, so it won't persist across instances.
+// For stricter enforcement, use an external store (e.g., Redis/Upstash).
+// This still provides protection within a single instance's lifetime.
 const rateLimitMap = new Map<string, { count: number; timestamp: number }>()
 
 function rateLimit(ip: string, limit: number = 100, windowMs: number = 60000): boolean {

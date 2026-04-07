@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { hashData, normalizePhone } from '@/lib/tracking/utils';
+import { timingSafeEqual } from 'crypto';
+import { logger } from '@/lib/logger';
 
 interface EventPayload {
     event_name: string;
@@ -34,6 +36,32 @@ interface EventPayload {
 }
 
 export async function POST(request: NextRequest) {
+    // Auth: accept internal bearer token OR valid user session
+    const authHeader = request.headers.get('authorization') || '';
+    const internalSecret = process.env.CRON_SECRET;
+    let isAuthorized = false;
+
+    // Check internal bearer token (server-to-server calls)
+    if (internalSecret && authHeader.length > 0) {
+        const expectedAuth = `Bearer ${internalSecret}`;
+        if (
+            authHeader.length === expectedAuth.length &&
+            timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedAuth))
+        ) {
+            isAuthorized = true;
+        }
+    }
+
+    // Fall back to session auth (client-side calls from tracking-provider)
+    if (!isAuthorized) {
+        const supabaseAuth = await createClient();
+        const { data: { user } } = await supabaseAuth.auth.getUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+        isAuthorized = true;
+    }
+
     try {
         const body: EventPayload = await request.json();
         const { event_name, event_id, user_data, custom_data } = body;
@@ -137,6 +165,8 @@ export async function POST(request: NextRequest) {
                 };
 
                 // Enviar para Meta
+                // NOTE: Meta's Conversions API requires the access_token as a URL parameter;
+                // it does not support Authorization header authentication.
                 const metaUrl = `https://graph.facebook.com/v18.0/${pixelId}/events?access_token=${accessToken}`;
 
                 const response = await fetch(metaUrl, {
@@ -149,11 +179,11 @@ export async function POST(request: NextRequest) {
                 metaSent = response.ok;
 
                 if (!response.ok) {
-                    console.error('Meta CAPI Error:', metaResponse);
+                    logger.error('Meta CAPI Error', { response: metaResponse });
                 }
 
             } catch (metaError) {
-                console.error('Meta CAPI Exception:', metaError);
+                logger.error('Meta CAPI Exception', { error: metaError instanceof Error ? metaError.message : metaError });
             }
         }
 
@@ -176,7 +206,7 @@ export async function POST(request: NextRequest) {
             });
 
         if (dbError) {
-            console.error('Error saving tracking event:', dbError);
+            logger.error('Error saving tracking event', { error: dbError.message });
         }
 
         return NextResponse.json({
@@ -187,7 +217,7 @@ export async function POST(request: NextRequest) {
         });
 
     } catch (error) {
-        console.error('Error processing tracking event:', error);
+        logger.error('Error processing tracking event', { error: error instanceof Error ? error.message : error });
         return NextResponse.json(
             { error: 'Failed to process tracking event' },
             { status: 500 }

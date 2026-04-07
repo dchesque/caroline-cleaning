@@ -17,6 +17,34 @@ export interface ProcessingMetrics {
 /** Maximum number of silent (auto) transitions before forcing a stop. */
 const MAX_AUTO_TRANSITIONS = 5
 
+/** All valid CarolState values for runtime validation. */
+const VALID_STATES: ReadonlySet<string> = new Set<CarolState>([
+  'GREETING', 'COLLECT_PHONE', 'CONFIRM_PHONE', 'LOOKUP_CUSTOMER',
+  'NEW_CUSTOMER_NAME', 'EXPLAIN_FIRST_VISIT', 'NEW_CUSTOMER_ADDRESS',
+  'CHECK_ZIP', 'ZIP_NOT_COVERED', 'CREATE_LEAD',
+  'RETURNING_CUSTOMER', 'DETECT_INTENT',
+  'CONFIRM_ADDRESS', 'ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE',
+  'CHECK_AVAILABILITY', 'NO_SLOTS', 'COLLECT_TIME', 'CREATE_BOOKING',
+  'CONFIRM_SUMMARY', 'COLLECT_PREFERENCE', 'UPDATE_PREFERENCE',
+  'SHOW_APPOINTMENTS', 'SELECT_APPOINTMENT', 'CONFIRM_CANCEL', 'CANCEL_APPOINTMENT',
+  'CONFIRM_RESCHEDULE',
+  'FAQ_RESPONSE', 'ASK_CALLBACK_TIME', 'SCHEDULE_CALLBACK',
+  'UPDATE_CLIENT_INFO', 'SAVE_PET_INFO', 'SAVE_ALLERGY_INFO',
+  'DEFLECT_PRICE', 'GUARDRAIL', 'DONE',
+])
+
+/** Validate that a state value is a valid CarolState. Falls back to GREETING with a warning. */
+function validateState(state: string | undefined | null, sessionId: string): CarolState {
+  if (state && VALID_STATES.has(state)) {
+    return state as CarolState
+  }
+  logger.warn('Invalid state value detected, defaulting to GREETING', {
+    sessionId,
+    invalidState: state,
+  })
+  return 'GREETING'
+}
+
 export class CarolStateMachine {
   private handlers: Map<CarolState, StateHandler>
   private services: CarolServices
@@ -71,19 +99,20 @@ export class CarolStateMachine {
       context = this.initializeContext()
     }
 
-    let currentState = context.state as CarolState
+    let currentState = validateState(context.state, sessionId)
+    context.state = currentState
     const stateBefore: CarolState = currentState
 
     // Global loop protection: track consecutive same-state interactions
-    const sameStateCount = (context._same_state_count as number) || 0
-    if (currentState === (context._last_processed_state as CarolState)) {
+    const sameStateCount = context._same_state_count || 0
+    if (currentState === context._last_processed_state) {
       context._same_state_count = sameStateCount + 1
     } else {
       context._same_state_count = 0
     }
     context._last_processed_state = currentState
 
-    if ((context._same_state_count as number) >= 10) {
+    if ((context._same_state_count ?? 0) >= 10) {
       logger.error('Global loop protection triggered', {
         sessionId,
         state: currentState,
@@ -96,7 +125,7 @@ export class CarolStateMachine {
       })
       context._same_state_count = 0
       context.state = 'DONE'
-      currentState = 'DONE' as CarolState
+      currentState = 'DONE'
     }
 
     // 2. Execute handler for the current state
@@ -264,12 +293,12 @@ export class CarolStateMachine {
       metrics.errors.push({
         type: 'warning',
         message: 'Max auto-transitions reached, breaking chain',
-        state: context.state as CarolState,
+        state: context.state,
       })
     }
 
     const finalResponse = responses.join('\n\n')
-    const finalState = context.state as CarolState
+    const finalState = context.state
 
     // Capture final context snapshot
     metrics.contextSnapshot = {
@@ -354,9 +383,9 @@ export class CarolStateMachine {
     const previousState = context.state
     const nextState = result.nextState
 
-    // Merge any context updates from the handler
+    // Merge any context updates from the handler (spread to avoid mutating the original)
     if (result.contextUpdates) {
-      Object.assign(context, result.contextUpdates)
+      context = { ...context, ...result.contextUpdates }
     }
 
     // Track previous state

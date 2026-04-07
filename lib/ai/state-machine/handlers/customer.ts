@@ -2,6 +2,9 @@
 
 import type { StateHandler } from '../types'
 import { extractZipFromAddress, getDurationForService } from '../validators'
+import { routeByIntent } from './guardrail'
+
+const MAX_COLLECTION_RETRIES = 5
 
 /**
  * NEW_CUSTOMER_NAME: Extract the customer's name from their message.
@@ -11,10 +14,24 @@ export const handleNewCustomerName: StateHandler = async (message, context, _ser
   const name = extracted?.name ?? extracted?.value ?? null
 
   if (!name || name.length < 2) {
+    const retries = (context.retry_count || 0) + 1
+
+    if (retries >= MAX_COLLECTION_RETRIES) {
+      const lang = context.language || 'en'
+      const escalation = lang === 'pt'
+        ? 'Estou com dificuldade em capturar seu nome. Quer que alguem ligue para voce?'
+        : "I'm having trouble capturing your name. Would you like someone to call you back?"
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response: escalation,
+        contextUpdates: { retry_count: 0 },
+      }
+    }
+
     return {
       nextState: 'NEW_CUSTOMER_NAME',
       response: await llm.generate('ask_name', {}, context.language || 'en'),
-      contextUpdates: { retry_count: (context.retry_count || 0) + 1 },
+      contextUpdates: { retry_count: retries },
     }
   }
 
@@ -234,106 +251,32 @@ export const handleDetectIntent: StateHandler = async (message, context, _servic
   const lang = context.language
   const intentRetries = (context.intent_retry_count as number) || 0
 
-  switch (intent) {
-    case 'schedule': {
-      // Returning customers with an address on file go to CONFIRM_ADDRESS
-      if (context.is_returning && context.cliente_endereco) {
-        return {
-          nextState: 'CONFIRM_ADDRESS',
-          response: '',
-          silent: true,
-          contextUpdates: { previousState: 'DETECT_INTENT', intent_retry_count: 0 },
-        }
-      }
-      // New customers (or those without address) go straight to ASK_DATE
-      return {
-        nextState: 'ASK_DATE',
-        response: '',
-        silent: true,
-        contextUpdates: { previousState: 'DETECT_INTENT', intent_retry_count: 0 },
-      }
+  // Use shared routing helper for known intents
+  const routed = routeByIntent(intent, context, message)
+  if (routed) {
+    return routed
+  }
+
+  // greeting / unknown / unrecognized — ask again or escalate
+  const retries = intentRetries + 1
+
+  if (retries >= 3) {
+    // Escalate to callback after 3 failed classifications
+    const response = await llm.generate('ask_intent', { name: context.cliente_nome }, lang)
+    const escalation = lang === 'pt'
+      ? '\n\nParece que estou com dificuldade em entender. Quer que alguem ligue para voce?'
+      : "\n\nI'm having trouble understanding. Would you like someone to call you back?"
+    return {
+      nextState: 'ASK_CALLBACK_TIME',
+      response: response + escalation,
+      contextUpdates: { intent_retry_count: 0 },
     }
+  }
 
-    case 'cancel':
-      return {
-        nextState: 'SHOW_APPOINTMENTS',
-        response: '',
-        silent: true,
-        contextUpdates: { previousState: 'DETECT_INTENT', intent_flow: 'cancel', intent_retry_count: 0 },
-      }
-
-    case 'reschedule':
-      return {
-        nextState: 'SHOW_APPOINTMENTS',
-        response: '',
-        silent: true,
-        contextUpdates: { previousState: 'DETECT_INTENT', intent_flow: 'reschedule', intent_retry_count: 0 },
-      }
-
-    case 'faq':
-      return {
-        nextState: 'FAQ_RESPONSE',
-        response: '',
-        silent: true,
-        contextUpdates: { previousState: 'DETECT_INTENT', faq_question: message, intent_retry_count: 0 },
-      }
-
-    case 'callback':
-      return {
-        nextState: 'ASK_CALLBACK_TIME',
-        response: '',
-        silent: true,
-        contextUpdates: { previousState: 'DETECT_INTENT', intent_retry_count: 0 },
-      }
-
-    case 'update_info':
-      return {
-        nextState: 'UPDATE_CLIENT_INFO',
-        response: '',
-        silent: true,
-        contextUpdates: { previousState: 'DETECT_INTENT', update_request: message, intent_retry_count: 0 },
-      }
-
-    case 'price_inquiry':
-      return {
-        nextState: 'DEFLECT_PRICE',
-        response: '',
-        silent: true,
-        contextUpdates: { previousState: 'DETECT_INTENT', intent_retry_count: 0 },
-      }
-
-    case 'off_topic':
-      return {
-        nextState: 'GUARDRAIL',
-        response: '',
-        silent: true,
-        contextUpdates: { previousState: 'DETECT_INTENT', intent_retry_count: 0 },
-      }
-
-    case 'greeting':
-    case 'unknown':
-    default: {
-      const retries = intentRetries + 1
-
-      if (retries >= 3) {
-        // Escalate to callback after 3 failed classifications
-        const response = await llm.generate('ask_intent', { name: context.cliente_nome }, lang)
-        const escalation = lang === 'pt'
-          ? '\n\nParece que estou com dificuldade em entender. Quer que alguem ligue para voce?'
-          : "\n\nI'm having trouble understanding. Would you like someone to call you back?"
-        return {
-          nextState: 'ASK_CALLBACK_TIME',
-          response: response + escalation,
-          contextUpdates: { intent_retry_count: 0 },
-        }
-      }
-
-      const response = await llm.generate('ask_intent', { name: context.cliente_nome }, lang)
-      return {
-        nextState: 'DETECT_INTENT',
-        response,
-        contextUpdates: { intent_retry_count: retries },
-      }
-    }
+  const response = await llm.generate('ask_intent', { name: context.cliente_nome }, lang)
+  return {
+    nextState: 'DETECT_INTENT',
+    response,
+    contextUpdates: { intent_retry_count: retries },
   }
 }

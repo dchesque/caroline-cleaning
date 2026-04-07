@@ -1,6 +1,96 @@
 // lib/ai/state-machine/handlers/guardrail.ts
 
-import type { StateHandler, CarolState } from '../types'
+import type { StateHandler, CarolState, HandlerResult } from '../types'
+import type { SessionContext } from '@/lib/services/carol-services'
+
+/**
+ * Route to the appropriate state based on a classified intent.
+ * Shared by handleDetectIntent (in customer.ts) and handleDone.
+ * Returns null if the intent is not a routable action (e.g. greeting/unknown).
+ */
+export function routeByIntent(
+  intent: string,
+  context: SessionContext,
+  message: string,
+): HandlerResult | null {
+  switch (intent) {
+    case 'schedule': {
+      if (context.is_returning && context.cliente_endereco) {
+        return {
+          nextState: 'CONFIRM_ADDRESS',
+          response: '',
+          silent: true,
+          contextUpdates: { previousState: context.state, intent_retry_count: 0 },
+        }
+      }
+      return {
+        nextState: 'ASK_DATE',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_retry_count: 0 },
+      }
+    }
+
+    case 'cancel':
+      return {
+        nextState: 'SHOW_APPOINTMENTS',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_flow: 'cancel', intent_retry_count: 0 },
+      }
+
+    case 'reschedule':
+      return {
+        nextState: 'SHOW_APPOINTMENTS',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_flow: 'reschedule', intent_retry_count: 0 },
+      }
+
+    case 'faq':
+      return {
+        nextState: 'FAQ_RESPONSE',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, faq_question: message, intent_retry_count: 0 },
+      }
+
+    case 'callback':
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_retry_count: 0 },
+      }
+
+    case 'update_info':
+      return {
+        nextState: 'UPDATE_CLIENT_INFO',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, update_request: message, intent_retry_count: 0 },
+      }
+
+    case 'price_inquiry':
+      return {
+        nextState: 'DEFLECT_PRICE',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_retry_count: 0 },
+      }
+
+    case 'off_topic':
+      return {
+        nextState: 'GUARDRAIL',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_retry_count: 0 },
+      }
+
+    default:
+      return null
+  }
+}
 
 /**
  * GUARDRAIL: The user said something off-topic. Politely redirect back to cleaning services.
@@ -11,10 +101,10 @@ export const handleGuardrail: StateHandler = async (_message, context, _services
     name: context.cliente_nome,
   }, context.language)
 
-  let returnState = (context.previousState as CarolState) ?? 'DETECT_INTENT'
+  let returnState = context.previousState ?? 'DETECT_INTENT'
 
-  // Avoid ping-pong between GUARDRAIL and DETECT_INTENT
-  if (returnState === 'DETECT_INTENT') {
+  // Prevent self-loop and ping-pong
+  if (returnState === 'GUARDRAIL' || returnState === 'DETECT_INTENT') {
     returnState = 'DONE'
   }
 
@@ -131,41 +221,10 @@ export const handleDone: StateHandler = async (message, context, _services, llm)
     'unknown',
   ])
 
-  // Route based on intent (mirroring DETECT_INTENT logic, because silent
-  // transitions pass an empty message so DETECT_INTENT couldn't re-classify)
-  switch (intent) {
-    case 'schedule': {
-      if (context.is_returning && context.cliente_endereco) {
-        return { nextState: 'CONFIRM_ADDRESS', response: '', silent: true }
-      }
-      return { nextState: 'ASK_DATE', response: '', silent: true }
-    }
-    case 'cancel':
-      return {
-        nextState: 'SHOW_APPOINTMENTS', response: '', silent: true,
-        contextUpdates: { intent_flow: 'cancel' },
-      }
-    case 'reschedule':
-      return {
-        nextState: 'SHOW_APPOINTMENTS', response: '', silent: true,
-        contextUpdates: { intent_flow: 'reschedule' },
-      }
-    case 'faq':
-      return {
-        nextState: 'FAQ_RESPONSE', response: '', silent: true,
-        contextUpdates: { faq_question: message },
-      }
-    case 'callback':
-      return { nextState: 'ASK_CALLBACK_TIME', response: '', silent: true }
-    case 'update_info':
-      return {
-        nextState: 'UPDATE_CLIENT_INFO', response: '', silent: true,
-        contextUpdates: { update_request: message },
-      }
-    case 'price_inquiry':
-      return { nextState: 'DEFLECT_PRICE', response: '', silent: true }
-    default:
-      break
+  // Route using shared helper (avoids duplicating DETECT_INTENT logic)
+  const routed = routeByIntent(intent, context, message)
+  if (routed) {
+    return routed
   }
 
   // Just a farewell or off-topic

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { notify, notifyOwner } from '@/lib/notifications';
+import { timingSafeEqual } from 'crypto';
 
 /**
  * Endpoint de Cron para disparar lembretes 1h antes do agendamento
@@ -8,12 +9,21 @@ import { notify, notifyOwner } from '@/lib/notifications';
  */
 export async function GET(request: NextRequest) {
     try {
-        // Verificar autorização do Cron
-        const authHeader = request.headers.get('authorization');
+        // Auth check with timing-safe comparison
+        const authHeader = request.headers.get('authorization') || '';
         const cronSecret = process.env.CRON_SECRET;
 
-        if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-            console.warn('[CRON] Tentativa de acesso não autorizada');
+        if (!cronSecret) {
+            console.error('CRON_SECRET not configured');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Timing-safe comparison
+        const expectedAuth = `Bearer ${cronSecret}`;
+        if (
+            authHeader.length !== expectedAuth.length ||
+            !timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedAuth))
+        ) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

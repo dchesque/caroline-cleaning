@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { timingSafeEqual } from 'crypto'
+import { logger } from '@/lib/logger'
 
 type QueryType =
     | 'client_info'
@@ -15,6 +17,23 @@ interface QueryPayload {
 }
 
 export async function POST(request: NextRequest) {
+    // Auth: internal-only bearer token
+    const authHeader = request.headers.get('authorization') || ''
+    const internalSecret = process.env.CRON_SECRET
+
+    if (!internalSecret) {
+        logger.error('CRON_SECRET not configured')
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const expectedAuth = `Bearer ${internalSecret}`
+    if (
+        authHeader.length !== expectedAuth.length ||
+        !timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedAuth))
+    ) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     try {
         const { type, params }: QueryPayload = await request.json()
         const supabase = await createClient()
@@ -57,7 +76,7 @@ export async function POST(request: NextRequest) {
         })
 
     } catch (error) {
-        console.error('[Carol Query] Error:', error)
+        logger.error('[Carol Query] Error', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

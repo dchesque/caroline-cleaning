@@ -1,16 +1,26 @@
+/**
+ * Chat Logger Service
+ *
+ * PRIVACY NOTE: This service stores chat interaction data including:
+ * - User messages (may contain PII: names, addresses, phone numbers)
+ * - Extracted data (structured PII from conversations)
+ * - Context snapshots (session state including collected user data)
+ *
+ * Data retention: 30 days (enforced by cron/cleanup-logs)
+ * Access: Admin-only via /api/admin/chat-logs endpoints
+ *
+ * TODO: Consider implementing PII masking for stored messages
+ */
+
 // lib/services/chat-logger.ts
 import { createAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
+import type { LLMCallRecord } from '@/lib/ai/llm'
+
+// Re-export so existing consumers that import from chat-logger still work
+export type { LLMCallRecord }
 
 // ═══ TYPES ═══
-
-export interface LLMCallRecord {
-  type: 'extract' | 'classify' | 'generate' | 'faq'
-  model: string
-  prompt_preview: string
-  tokens_used?: number
-  duration_ms: number
-}
 
 export interface HandlerRecord {
   handler: string
@@ -75,6 +85,23 @@ export interface LogQueryParams {
   has_errors?: boolean
   page?: number
   page_size?: number
+}
+
+// ═══ HELPERS ═══
+
+/**
+ * Escape a value for safe CSV output.
+ * - Doubles internal quotes
+ * - Prefixes formula-injection triggers (=, +, -, @, tab, CR) with a single quote
+ * - Wraps in double quotes
+ */
+function escapeCSV(val: string): string {
+  let escaped = val.replace(/"/g, '""')
+  // Prevent formula injection in Excel
+  if (/^[=+\-@\t\r]/.test(escaped)) {
+    escaped = "'" + escaped
+  }
+  return `"${escaped}"`
 }
 
 // ═══ SERVICE ═══
@@ -146,17 +173,22 @@ class ChatLoggerService {
       query = query.not('errors', 'eq', '[]')
     }
 
-    // Get all matching logs (we'll aggregate in code for simplicity)
-    const { data: logs, count, error } = await query
+    // TODO: Move to DB-level aggregation (Supabase RPC or view) when row counts grow.
+    // Current approach fetches up to 5000 rows and aggregates in JS, which won't scale
+    // beyond a few hundred sessions.
+    const { data: logs, count: totalLogCount, error } = await query
       .order('created_at', { ascending: false })
-      .limit(1000) // Reasonable limit for aggregation
+      .limit(5000)
 
     if (error) {
-      logger.error('ChatLogger.getSessions error', { error })
+      logger.error('ChatLogger.getSessions error', { error, totalLogCount })
       return { sessions: [], pagination: { page, page_size: pageSize, total_count: 0, total_pages: 0 } }
     }
 
-    // Aggregate by session
+    // Aggregate by session.
+    // IMPORTANT: Query sorts DESC, so the FIRST row encountered per session_id
+    // is the MOST RECENT message. We set last_message_at from that first row
+    // and keep updating first_message_at as we encounter older rows.
     const sessionMap = new Map<string, {
       cliente_id?: string
       message_count: number
@@ -171,11 +203,12 @@ class ChatLoggerService {
       const existing = sessionMap.get(log.session_id)
       if (existing) {
         existing.message_count++
-        existing.last_message_at = log.created_at
-        existing.final_state = log.state_after || existing.final_state
+        // Each subsequent row is older (DESC order), so it becomes the earliest
+        existing.first_message_at = log.created_at
         existing.has_errors = existing.has_errors || (log.errors && log.errors.length > 0)
         existing.total_response_time_ms += log.response_time_ms || 0
       } else {
+        // First row for this session = most recent message (DESC order)
         sessionMap.set(log.session_id, {
           cliente_id: log.cliente_id,
           message_count: 1,
@@ -287,15 +320,15 @@ class ChatLoggerService {
       return JSON.stringify({ session, messages }, null, 2)
     }
 
-    // CSV format
+    // CSV format — all string fields are escaped to prevent formula injection
     const headers = ['timestamp', 'direction', 'message', 'state_before', 'state_after', 'response_time_ms']
     const rows = messages.map(m => [
-      m.created_at,
-      m.direction,
-      `"${m.message_content.replace(/"/g, '""')}"`,
-      m.state_before || '',
-      m.state_after || '',
-      m.response_time_ms || 0,
+      escapeCSV(m.created_at),
+      escapeCSV(m.direction),
+      escapeCSV(m.message_content),
+      escapeCSV(m.state_before || ''),
+      escapeCSV(m.state_after || ''),
+      String(m.response_time_ms || 0),
     ])
 
     return [headers.join(','), ...rows.map(r => r.join(','))].join('\n')

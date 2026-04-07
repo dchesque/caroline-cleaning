@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { timingSafeEqual } from 'crypto'
+import { logger } from '@/lib/logger'
 
 type ActionType =
     | 'create_lead'
@@ -17,6 +19,23 @@ interface ActionPayload {
 }
 
 export async function POST(request: NextRequest) {
+    // Auth: internal-only bearer token
+    const authHeader = request.headers.get('authorization') || ''
+    const internalSecret = process.env.CRON_SECRET
+
+    if (!internalSecret) {
+        logger.error('CRON_SECRET not configured')
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const expectedAuth = `Bearer ${internalSecret}`
+    if (
+        authHeader.length !== expectedAuth.length ||
+        !timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedAuth))
+    ) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     try {
         const payload: ActionPayload = await request.json()
 
@@ -83,7 +102,7 @@ export async function POST(request: NextRequest) {
         })
 
     } catch (error) {
-        console.error('[Carol Actions] Error:', error)
+        logger.error('[Carol Actions] Error', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
@@ -140,7 +159,7 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
         .single()
 
     if (error) {
-        console.error('[Create Lead] Error:', error)
+        logger.error('[Create Lead] Error', { error: error instanceof Error ? error.message : String(error) })
         return { status: 'error', message: error.message, details: error }
     }
 
@@ -148,7 +167,10 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
     try {
         await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/tracking/event`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+            },
             body: JSON.stringify({
                 event_name: 'Lead',
                 event_id: `lead_chat_${data.id}`,
@@ -165,7 +187,7 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
             }),
         });
     } catch (e) {
-        console.error('Tracking error:', e);
+        logger.error('Tracking error', { error: e instanceof Error ? e.message : String(e) });
     }
 
     return {
@@ -243,7 +265,7 @@ async function actionUpdateLead(supabase: any, params: any) {
         .eq('id', clientId)
 
     if (error) {
-        console.error('[Update Lead] Error:', error)
+        logger.error('[Update Lead] Error', { error: error instanceof Error ? error.message : String(error) })
         return { status: 'error', message: error.message, details: error }
     }
 
@@ -368,7 +390,7 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
         .single()
 
     if (error) {
-        console.error('[Create Appointment] Error:', error)
+        logger.error('[Create Appointment] Error', { error: error instanceof Error ? error.message : String(error) })
         return { status: 'error', message: error.message }
     }
 
@@ -376,7 +398,10 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
     try {
         await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/tracking/event`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.CRON_SECRET}`,
+            },
             body: JSON.stringify({
                 event_name: 'Schedule',
                 event_id: `schedule_${appointment.id}`,
@@ -390,7 +415,7 @@ async function actionCreateAppointment(supabase: any, sessionId: string, params:
             }),
         });
     } catch (e) {
-        console.error('Tracking error:', e);
+        logger.error('Tracking error', { error: e instanceof Error ? e.message : String(e) });
     }
 
     return {
@@ -475,7 +500,7 @@ async function actionSendQuote(supabase: any, sessionId: string, params: any) {
         .single()
 
     if (error) {
-        console.error('[Send Quote] Error:', error)
+        logger.error('[Send Quote] Error', { error: error instanceof Error ? error.message : String(error) })
         return { status: 'error', message: error.message }
     }
 
