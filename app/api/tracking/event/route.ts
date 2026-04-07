@@ -183,7 +183,11 @@ export async function POST(request: NextRequest) {
                 metaSent = response.ok;
 
                 if (!response.ok) {
-                    logger.error('Meta CAPI Error', { response: metaResponse });
+                    logger.error('Meta CAPI Error', {
+                        status: response.status,
+                        errorType: metaResponse?.error?.type,
+                        errorMessage: metaResponse?.error?.message,
+                    });
                 }
 
             } catch (metaError) {

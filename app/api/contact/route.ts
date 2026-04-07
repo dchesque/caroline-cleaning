@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
+import { hashData } from '@/lib/tracking/utils'
 
 export async function POST(request: NextRequest) {
     try {
@@ -32,10 +33,10 @@ export async function POST(request: NextRequest) {
 
         const supabase = await createClient()
 
-        // Capturar informações adicionais
+        // Capturar informações adicionais (hash IP for privacy)
         const userAgent = request.headers.get('user-agent') || null
-        const forwardedFor = request.headers.get('x-forwarded-for')
-        const ipAddress = forwardedFor?.split(',')[0] || null
+        const rawIp = request.headers.get('x-forwarded-for')?.split(',')[0] || null
+        const ipAddress = rawIp ? hashData(rawIp).substring(0, 16) : null
 
         const { data, error } = await supabase
             .from('contact_leads')

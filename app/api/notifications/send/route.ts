@@ -110,10 +110,15 @@ export async function POST(request: NextRequest) {
                 })
                 .eq('id', notification.id)
 
+            logger.error('[notifications/send] Notification send failed', {
+                notificationId: notification.id,
+                error: result.error?.toString(),
+            })
+
             return NextResponse.json({
                 success: false,
                 notification_id: notification.id,
-                error: result.error
+                error: 'Failed to send notification'
             }, { status: 500 })
         }
 
