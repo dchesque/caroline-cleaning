@@ -1,6 +1,7 @@
 'use server'
 
 import { webhookService } from '@/lib/services/webhookService'
+import { logger } from '@/lib/logger'
 import type { WebhookEventType, WebhookPayload, WebhookResponse } from '@/types/webhook'
 
 /**
@@ -13,7 +14,7 @@ export async function sendWebhookAction<T extends WebhookPayload>(
     try {
         return await webhookService.send(event, payload)
     } catch (error) {
-        console.error(`[Action] Erro ao enviar webhook ${event}:`, error)
+        logger.error(`[Action] Erro ao enviar webhook ${event}`, { error: error instanceof Error ? error.message : String(error) })
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Erro ao processar requisição',

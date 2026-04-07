@@ -42,7 +42,7 @@ function verifyAuth(request: NextRequest): boolean {
         const requestTime = new Date(timestamp).getTime()
         const now = Date.now()
         if (isNaN(requestTime) || Math.abs(now - requestTime) > 5 * 60 * 1000) {
-            console.warn('[webhook/n8n] Request rejected: timestamp outside window')
+            logger.warn('[webhook/n8n] Request rejected: timestamp outside window')
             return false
         }
     }

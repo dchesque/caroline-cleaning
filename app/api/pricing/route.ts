@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
     try {
@@ -15,7 +16,7 @@ export async function GET() {
 
         return NextResponse.json({ success: true, data })
     } catch (error) {
-        console.error('Error fetching pricing:', error)
+        logger.error('[pricing] Error fetching pricing', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json(
             { success: false, error: 'Failed to fetch pricing' },
             { status: 500 }

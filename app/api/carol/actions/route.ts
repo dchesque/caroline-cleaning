@@ -239,8 +239,8 @@ async function actionSendQuote(supabase: any, sessionId: string, params: any) {
         .single()
 
     if (error) {
-        logger.error('[Send Quote] Error', { error: error instanceof Error ? error.message : String(error) })
-        return { status: 'error', message: error.message }
+        logger.error('[Send Quote] Error', { error: error.message })
+        return { status: 'error', message: 'Failed to create quote' }
     }
 
     return {

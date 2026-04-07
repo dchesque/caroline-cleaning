@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { timingSafeEqual } from 'crypto'
+import { logger } from '@/lib/logger'
 
 interface NotificationPayload {
     channel: 'whatsapp' | 'email' | 'sms'
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
             .single()
 
         if (error) {
-            console.error('Error creating notification:', error)
+            logger.error('[notifications/send] Error creating notification', { error: error.message })
             return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 })
         }
 
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
         }
 
     } catch (error) {
-        console.error('[Notification API] Error:', error)
+        logger.error('[notifications/send] Error', { error: error instanceof Error ? error.message : String(error) })
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

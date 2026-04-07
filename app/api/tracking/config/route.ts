@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -45,7 +46,7 @@ export async function GET() {
         });
 
     } catch (error) {
-        console.error('Error fetching tracking config:', error);
+        logger.error('[tracking/config] Error fetching tracking config', { error: error instanceof Error ? error.message : String(error) });
         return NextResponse.json(
             { success: false, error: 'Failed to fetch tracking config' },
             { status: 500 }

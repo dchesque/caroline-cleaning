@@ -14,7 +14,7 @@ export async function GET() {
         // If error is PGRST116 (no rows), it's still a successful connection
         if (error && error.code !== 'PGRST116') {
             return NextResponse.json(
-                { ready: false, reason: 'Database not ready', error: error.message },
+                { ready: false, reason: 'Database not ready' },
                 { status: 503 }
             )
         }
