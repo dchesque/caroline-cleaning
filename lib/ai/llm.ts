@@ -624,8 +624,6 @@ export class CarolLLM {
     language: 'pt' | 'en'
   ): Promise<{ response: string; metrics: LLMCallRecord }> {
     const startTime = Date.now()
-    const templateFn = RESPONSE_TEMPLATES[template]
-    const instruction = templateFn ? templateFn(data, language) : ''
 
     const { text, usage } = await this._generateRaw(template, data, language)
 
@@ -634,7 +632,7 @@ export class CarolLLM {
       metrics: {
         type: 'generate',
         model: this.model,
-        prompt_preview: instruction.substring(0, 100),
+        prompt_preview: text.substring(0, 100),
         tokens_used: usage?.total_tokens,
         prompt_tokens: usage?.prompt_tokens,
         completion_tokens: usage?.completion_tokens,
