@@ -74,7 +74,7 @@ export async function middleware(request: NextRequest) {
 
     // IMPORTANT: getUser() is expensive (50-100ms + Roundtrip). 
     // Only call it if we are on a protected route or login page.
-    const isProtectedRoute = pathname.startsWith('/admin')
+    const isProtectedRoute = pathname.startsWith('/admin') || pathname.startsWith('/api/admin')
     const isLoginPage = pathname === '/login'
 
     if (isProtectedRoute || isLoginPage) {
