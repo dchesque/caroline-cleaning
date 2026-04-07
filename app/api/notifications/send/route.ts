@@ -73,11 +73,12 @@ export async function POST(request: NextRequest) {
         // 2. Disparar envio (Integração com Twilio real)
         const { notify } = await import('@/lib/notifications')
 
+        const smsChannel = (channel === 'whatsapp' ? 'whatsapp' : 'sms') as 'sms' | 'whatsapp'
         const result = await notify(
             recipient,
             template as any,
             data,
-            channel
+            smsChannel
         ) as any // Cast temporário para simplificar acesso aos campos do resultado
 
         if (result.success) {

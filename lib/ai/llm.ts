@@ -420,7 +420,7 @@ export class CarolLLM {
         ],
       })
     } catch (error) {
-      logger.error(`[CarolLLM] extract(${type}) API error:`, error instanceof Error ? error.message : String(error))
+      logger.error(`[CarolLLM] extract(${type}) API error:`, { error: error instanceof Error ? error.message : String(error) })
       return { data: {} }
     }
 
@@ -522,7 +522,7 @@ export class CarolLLM {
       logger.warn(`[CarolLLM] classifyIntent: LLM returned "${result}" not in [${options.join(', ')}]`)
       return 'unknown'
     } catch (error) {
-      logger.error('[CarolLLM] classifyIntent error:', error instanceof Error ? error.message : String(error))
+      logger.error('[CarolLLM] classifyIntent error:', { error: error instanceof Error ? error.message : String(error) })
       return 'unknown'
     }
   }
@@ -609,7 +609,7 @@ export class CarolLLM {
       const text = (response.choices[0]?.message?.content || '').trim()
       return { text, usage }
     } catch (error) {
-      logger.error(`[CarolLLM] generate(${template}) API error:`, error instanceof Error ? error.message : String(error))
+      logger.error(`[CarolLLM] generate(${template}) API error:`, { error: error instanceof Error ? error.message : String(error) })
       const fallback = language === 'pt'
         ? 'Desculpe, tive um problema técnico. Pode tentar novamente?'
         : "I'm sorry, I had a technical issue. Could you try again?"
@@ -676,7 +676,7 @@ Answer the customer's question using ONLY the knowledge base above. If the quest
 
       return (response.choices[0]?.message?.content || '').trim()
     } catch (error) {
-      logger.error('[CarolLLM] generateFaq API error:', error instanceof Error ? error.message : String(error))
+      logger.error('[CarolLLM] generateFaq API error:', { error: error instanceof Error ? error.message : String(error) })
       return lang === 'pt'
         ? 'Desculpe, não consigo responder agora. Pode entrar em contato conosco diretamente?'
         : "I'm sorry, I can't answer right now. Could you contact us directly?"

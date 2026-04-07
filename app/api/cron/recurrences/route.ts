@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, stats });
 
     } catch (err) {
-        logger.error('[cron/recurrences] Fatal error:', err);
+        logger.error('[cron/recurrences] Fatal error:', { error: err instanceof Error ? err.message : String(err) });
         return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
     }
 }

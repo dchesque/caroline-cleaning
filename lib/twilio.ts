@@ -29,7 +29,7 @@ export async function sendSMS(to: string, body: string, useWhatsApp: boolean = f
 
         return { success: true, messageSid: message.sid };
     } catch (error) {
-        logger.error('[TWILIO] Erro ao enviar mensagem:', error);
+        logger.error('[TWILIO] Erro ao enviar mensagem:', { error: error instanceof Error ? error.message : String(error) });
         return { success: false, error: error instanceof Error ? error.message : 'SMS send failed' };
     }
 }

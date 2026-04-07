@@ -431,7 +431,7 @@ export class CarolServices {
             const dayOfWeek = current.getDay()
             return this.getAvailableSlots(dateStr, durationMinutes)
                 .then(slotsResult => ({ dateStr, dayOfWeek, slots: slotsResult.slots }))
-                .catch(() => ({ dateStr, dayOfWeek, slots: [] as typeof slotsResult.slots }))
+                .catch(() => ({ dateStr, dayOfWeek, slots: [] as SlotInfo[] }))
         })
 
         const results = await Promise.all(dayPromises)
