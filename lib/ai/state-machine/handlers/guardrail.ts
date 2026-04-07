@@ -105,7 +105,19 @@ export const handleGuardrail: StateHandler = async (_message, context, _services
 
   // Prevent self-loop and ping-pong
   if (returnState === 'GUARDRAIL' || returnState === 'DETECT_INTENT') {
-    returnState = 'DONE'
+    const guardrailRetries = (context._guardrail_retries || 0) + 1
+    if (guardrailRetries >= 3) {
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response,
+        contextUpdates: { _guardrail_retries: 0 },
+      }
+    }
+    return {
+      nextState: 'DETECT_INTENT',
+      response,
+      contextUpdates: { _guardrail_retries: guardrailRetries },
+    }
   }
 
   return {
