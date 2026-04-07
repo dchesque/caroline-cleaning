@@ -75,7 +75,7 @@ function getExtractionPrompt(type: ExtractionType, extraContext?: any): string {
 
     case 'appointment_selection': {
       const appointments = extraContext?.appointments
-        ? JSON.stringify(extraContext.appointments)
+        ? JSON.stringify(extraContext.appointments).substring(0, 2000)
         : '[]'
       return `${base} The user is selecting an appointment from this list: ${appointments}. Identify which one by ID or list index (1-based). Return {"appointment_id": "id_here", "index": 1} or {"appointment_id": null, "index": null} if unclear.`
     }
@@ -378,6 +378,28 @@ function sanitizeInput(input: string, maxLength = 2000): string {
     .slice(0, maxLength)
 }
 
+/**
+ * Sanitize data values before interpolation into prompt templates.
+ * Prevents prompt injection by stripping newlines, control characters,
+ * and common injection delimiters from user-provided data.
+ */
+function sanitizePromptData(data: Record<string, any>): Record<string, any> {
+  const sanitized: Record<string, any> = {}
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof value === 'string') {
+      sanitized[key] = value
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // control chars
+        .replace(/[\r\n]+/g, ' ')                             // newlines → space
+        .replace(/[<>{}[\]]/g, '')                             // brackets/braces
+        .trim()
+        .substring(0, 500)                                     // max field length
+    } else {
+      sanitized[key] = value
+    }
+  }
+  return sanitized
+}
+
 // ═══ LLM CLASS ═══
 
 export class CarolLLM {
@@ -581,7 +603,8 @@ export class CarolLLM {
       return { text: fallback }
     }
 
-    const instruction = templateFn(data, language)
+    const safeData = sanitizePromptData(data)
+    const instruction = templateFn(safeData, language)
     const persona = carolPersona(language)
 
     try {
@@ -653,7 +676,7 @@ export class CarolLLM {
     const persona = carolPersona(lang)
 
     const extraContext = context.sessionContext
-      ? `\nSession context: ${JSON.stringify(context.sessionContext)}`
+      ? `\nSession context: ${JSON.stringify(context.sessionContext).substring(0, 2000)}`
       : ''
 
     const systemPrompt = `${persona}

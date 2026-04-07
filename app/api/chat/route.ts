@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger'
 import { chatLogger } from '@/lib/services/chat-logger'
 import { createAdminClient } from '@/lib/supabase/server'
 import { nanoid } from 'nanoid'
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
 import type { ChatResponse } from '@/lib/ai/carol-agent'
 
 export const dynamic = 'force-dynamic'
@@ -15,29 +16,6 @@ function getAgent(): CarolAgent {
         agentInstance = new CarolAgent()
     }
     return agentInstance
-}
-
-// Issue 17: IP-based rate limit — first layer of defense against session farming.
-// Limits each IP to 20 requests per minute regardless of session ID.
-const chatRateLimitMap = new Map<string, { count: number; timestamp: number }>();
-const CHAT_RATE_LIMIT = 20; // requests per minute per IP
-const CHAT_RATE_WINDOW = 60_000; // 1 minute
-
-function checkChatRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = chatRateLimitMap.get(ip);
-
-  if (!entry || now - entry.timestamp > CHAT_RATE_WINDOW) {
-    chatRateLimitMap.set(ip, { count: 1, timestamp: now });
-    return true;
-  }
-
-  if (entry.count >= CHAT_RATE_LIMIT) {
-    return false;
-  }
-
-  entry.count++;
-  return true;
 }
 
 // Issue 14: Per-session rate limit — second layer of defense using Supabase.
@@ -66,8 +44,8 @@ async function checkSessionMessageLimit(sessionId: string): Promise<boolean> {
 }
 
 export async function POST(req: NextRequest) {
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-    if (!checkChatRateLimit(ip)) {
+    const ip = getClientIp(req);
+    if (!checkRateLimit(ip, RATE_LIMITS.chat)) {
         return NextResponse.json(
             { error: 'Too many requests. Please try again later.' },
             { status: 429 }

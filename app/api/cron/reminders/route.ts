@@ -63,13 +63,16 @@ export async function GET(request: NextRequest) {
 
         const stats = { sent_to_owner: 0, sent_to_client: 0, skipped: 0 };
 
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
         for (const appt of appointments) {
             // 3. Verificar se já notificamos este agendamento (evitar duplicidade)
             const { data: existing } = await supabase
                 .from('notificacoes')
                 .select('id')
                 .eq('template', 'owner_reminder')
-                .contains('dados', { appointment_id: appt.id })
+                .gte('criado_em', twentyFourHoursAgo)
+                .filter('dados->>appointment_id', 'eq', String(appt.id))
                 .maybeSingle();
 
             if (existing) {
@@ -78,38 +81,69 @@ export async function GET(request: NextRequest) {
             }
 
             // 4. Notificar Proprietário (WhatsApp)
-            const ownerResult = await notifyOwner('owner_reminder', {
-                name: appt.clientes?.nome,
-                service: appt.tipo,
-                time: appt.horario_inicio.substring(0, 5),
-                appointment_id: appt.id // Para controle de duplicidade
-            });
+            try {
+                const ownerResult = await notifyOwner('owner_reminder', {
+                    name: appt.clientes?.nome,
+                    service: appt.tipo,
+                    time: appt.horario_inicio.substring(0, 5),
+                    appointment_id: appt.id
+                });
 
-            if (ownerResult.success) {
-                stats.sent_to_owner++;
+                if (ownerResult.success) {
+                    stats.sent_to_owner++;
 
-                // Salvar histórico da notificação
-                await supabase.from('notificacoes').insert({
-                    canal: 'whatsapp',
-                    destinatario: process.env.OWNER_PHONE_NUMBER,
-                    template: 'owner_reminder',
-                    dados: {
-                        appointment_id: appt.id,
-                        sid: (ownerResult as any).messageSid,
-                        channel: (ownerResult as any).channel
-                    },
-                    status: 'sent',
-                    enviado_em: new Date().toISOString()
+                    try {
+                        await supabase.from('notificacoes').insert({
+                            canal: 'whatsapp',
+                            destinatario: process.env.OWNER_PHONE_NUMBER,
+                            template: 'owner_reminder',
+                            dados: {
+                                appointment_id: appt.id,
+                                sid: (ownerResult as any).messageSid,
+                                channel: (ownerResult as any).channel
+                            },
+                            status: 'sent',
+                            enviado_em: new Date().toISOString()
+                        });
+                    } catch (insertError) {
+                        logger.error('[cron/reminders] Failed to persist owner notification record', {
+                            appointmentId: appt.id,
+                            error: insertError instanceof Error ? insertError.message : String(insertError),
+                        });
+                    }
+                }
+            } catch (sendError) {
+                logger.error('[cron/reminders] Owner notification send failed', {
+                    appointmentId: appt.id,
+                    error: sendError instanceof Error ? sendError.message : String(sendError),
                 });
             }
 
-            // 5. Notificar Cliente (SMS) - Opcional, conforme solicitado anteriormente
+            // 5. Notificar Cliente (SMS)
             if (appt.clientes?.telefone) {
-                const clientResult = await notify(appt.clientes.telefone, 'visit_reminder', {
-                    name: appt.clientes.nome,
-                    time: appt.horario_inicio.substring(0, 5)
-                });
-                if (clientResult.success) stats.sent_to_client++;
+                // Check client dedup too
+                const { data: existingClient } = await supabase
+                    .from('notificacoes')
+                    .select('id')
+                    .eq('template', 'client_reminder')
+                    .gte('criado_em', twentyFourHoursAgo)
+                    .filter('dados->>appointment_id', 'eq', String(appt.id))
+                    .maybeSingle();
+
+                if (!existingClient) {
+                    try {
+                        const clientResult = await notify(appt.clientes.telefone, 'visit_reminder', {
+                            name: appt.clientes.nome,
+                            time: appt.horario_inicio.substring(0, 5)
+                        });
+                        if (clientResult.success) stats.sent_to_client++;
+                    } catch (clientSendError) {
+                        logger.error('[cron/reminders] Client notification send failed', {
+                            appointmentId: appt.id,
+                            error: clientSendError instanceof Error ? clientSendError.message : String(clientSendError),
+                        });
+                    }
+                }
             }
         }
 

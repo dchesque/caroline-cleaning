@@ -1,8 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse, NextRequest } from 'next/server'
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
     try {
+        const ip = getClientIp(request)
+        if (!checkRateLimit(ip, RATE_LIMITS.slots)) {
+            return NextResponse.json(
+                { error: 'Too many requests. Please try again later.' },
+                { status: 429 }
+            )
+        }
+
         const supabase = await createClient()
 
         const { searchParams } = new URL(request.url)

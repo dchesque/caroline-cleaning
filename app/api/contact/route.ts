@@ -1,27 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
-
-const contactRateLimitMap = new Map<string, { count: number; timestamp: number }>();
-const CONTACT_RATE_LIMIT = 5; // max 5 submissions per 10 minutes per IP
-const CONTACT_RATE_WINDOW = 10 * 60_000;
-
-function checkContactRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = contactRateLimitMap.get(ip);
-  if (!entry || now - entry.timestamp > CONTACT_RATE_WINDOW) {
-    contactRateLimitMap.set(ip, { count: 1, timestamp: now });
-    return true;
-  }
-  if (entry.count >= CONTACT_RATE_LIMIT) return false;
-  entry.count++;
-  return true;
-}
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
     try {
-        const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-        if (!checkContactRateLimit(ip)) {
+        const ip = getClientIp(request);
+        if (!checkRateLimit(ip, RATE_LIMITS.contact)) {
             return NextResponse.json({ error: 'Too many submissions. Please try again later.' }, { status: 429 });
         }
 
