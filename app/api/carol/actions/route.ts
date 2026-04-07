@@ -160,7 +160,7 @@ async function actionCreateLead(supabase: any, sessionId: string, params: any) {
 
     if (error) {
         logger.error('[Create Lead] Error', { error: error instanceof Error ? error.message : String(error) })
-        return { status: 'error', message: error.message, details: error }
+        return { status: 'error', message: 'Internal error processing request' }
     }
 
     // Disparar evento de Lead
@@ -266,7 +266,7 @@ async function actionUpdateLead(supabase: any, params: any) {
 
     if (error) {
         logger.error('[Update Lead] Error', { error: error instanceof Error ? error.message : String(error) })
-        return { status: 'error', message: error.message, details: error }
+        return { status: 'error', message: 'Internal error processing request' }
     }
 
     return {
