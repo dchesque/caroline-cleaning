@@ -508,8 +508,11 @@ export class CarolLLM {
       const exactMatch = options.find((opt) => opt.toLowerCase() === normalized)
       if (exactMatch) return exactMatch
 
-      // Fuzzy match: check if any option is contained within the response
-      const fuzzyMatch = options.find((opt) => normalized.includes(opt.toLowerCase()))
+      // Fuzzy match: check if any option is contained within the response (word-boundary)
+      const fuzzyMatch = options.find((opt) => {
+        const pattern = new RegExp(`\\b${opt.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+        return pattern.test(normalized);
+      })
       if (fuzzyMatch) {
         console.warn(`[CarolLLM] classifyIntent: fuzzy matched "${result}" to "${fuzzyMatch}"`)
         return fuzzyMatch
