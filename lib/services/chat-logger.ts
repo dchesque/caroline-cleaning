@@ -238,7 +238,14 @@ class ChatLoggerService {
       .eq('session_id', sessionId)
       .order('created_at', { ascending: true })
 
-    if (error || !logs || logs.length === 0) {
+    if (error) {
+      logger.error('ChatLogger.getSessionDetails error', { error, sessionId })
+      return {
+        session: { session_id: sessionId, final_state: '' },
+        messages: [],
+      }
+    }
+    if (!logs || logs.length === 0) {
       return {
         session: { session_id: sessionId, final_state: '' },
         messages: [],
@@ -264,7 +271,7 @@ class ChatLoggerService {
         session_id: sessionId,
         cliente_id: clienteId,
         cliente_nome: clienteNome,
-        final_state,
+        final_state: finalState,
       },
       messages: logs as LogEntry[],
     }
