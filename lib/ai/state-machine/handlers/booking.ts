@@ -534,7 +534,7 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
  */
 export const handleCollectPreference: StateHandler = async (message, context, _services, llm) => {
   const extracted = await llm.extract('preference', message)
-  const preference = extracted?.preference ?? extracted?.value ?? null
+  const preference = extracted?.canal ?? extracted?.preference ?? extracted?.value ?? null
 
   const normalized = normalizePreference(preference)
 

@@ -152,8 +152,8 @@ async function handleDashboardNotification(supabase: any, data: any) {
     return NextResponse.json({ success: true })
 }
 
-const ALLOWED_CLIENT_FIELDS = ['nome', 'email', 'telefone', 'endereco', 'notas']
-const ALLOWED_APPOINTMENT_FIELDS = ['status', 'data_hora', 'notas', 'servico_id']
+const ALLOWED_CLIENT_FIELDS = ['nome', 'email', 'telefone', 'endereco_completo', 'notas']
+const ALLOWED_APPOINTMENT_FIELDS = ['status', 'data', 'horario_inicio', 'notas', 'tipo']
 
 async function handleClientUpdate(supabase: any, data: any) {
     const { client_id, updates } = data

@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
                 .from('notificacoes')
                 .select('id')
                 .eq('template', 'owner_reminder')
-                .gte('criado_em', twentyFourHoursAgo)
+                .gte('created_at', twentyFourHoursAgo)
                 .filter('dados->>appointment_id', 'eq', String(appt.id))
                 .maybeSingle();
 
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
                     .from('notificacoes')
                     .select('id')
                     .eq('template', 'client_reminder')
-                    .gte('criado_em', twentyFourHoursAgo)
+                    .gte('created_at', twentyFourHoursAgo)
                     .filter('dados->>appointment_id', 'eq', String(appt.id))
                     .maybeSingle();
 

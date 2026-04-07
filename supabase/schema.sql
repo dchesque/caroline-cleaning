@@ -1,6 +1,6 @@
 /* ============================================
    Chesque PREMIUM CLEANING
-   SCHEMA COMPLETO - FASE 2 (ATUALIZADO)
+   SCHEMA COMPLETO - FASE 3 (ATUALIZADO)
    ============================================ */
 
 /* 1. EXTENSÕES */
@@ -24,8 +24,9 @@ CREATE TABLE public.clientes (
   nome TEXT NOT NULL,
   telefone TEXT NOT NULL,
   email TEXT,
-  endereco_completo TEXT NOT NULL,
+  endereco_completo TEXT,  /* Pode ser NULL para leads iniciais. OBRIGATÓRIO antes de criar agendamentos. */
   endereco_linha2 TEXT,
+  cidade TEXT,
   estado TEXT DEFAULT 'NC',
   zip_code TEXT,
   latitude DECIMAL(10, 8),
@@ -56,6 +57,8 @@ CREATE TABLE public.clientes (
   data_cancelamento DATE,
   notas TEXT,
   notas_internas TEXT,
+  session_id_origem VARCHAR,
+  canal_preferencia TEXT DEFAULT 'sms',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -78,6 +81,9 @@ CREATE TABLE public.recorrencias (
   ativo BOOLEAN DEFAULT TRUE,
   motivo_pausa TEXT,
   data_pausa DATE,
+  dias_semana TEXT[] DEFAULT ARRAY['monday'],
+  servicos_por_dia JSONB DEFAULT '[]'::jsonb,
+  addons_selecionados TEXT[] DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -113,6 +119,8 @@ CREATE TABLE public.agendamentos (
   lembrete_24h_enviado BOOLEAN DEFAULT FALSE,
   lembrete_30min_enviado BOOLEAN DEFAULT FALSE,
   confirmacao_enviada BOOLEAN DEFAULT FALSE,
+  canal_preferencia TEXT DEFAULT 'sms',
+  origem TEXT DEFAULT 'admin' CHECK (origem IN ('admin', 'chat_carol', 'recurrence', 'api')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -178,6 +186,11 @@ CREATE TABLE public.mensagens_chat (
   tool_results JSONB DEFAULT '[]'::jsonb,
   ip_address TEXT,
   user_agent TEXT,
+  source VARCHAR DEFAULT 'website',
+  intent_detected VARCHAR,
+  intent_confidence DECIMAL(3, 2),
+  metadata JSONB DEFAULT '{}'::jsonb,
+  execution_logs TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -206,6 +219,7 @@ CREATE TABLE public.configuracoes (
   valor JSONB NOT NULL,
   descricao TEXT,
   categoria TEXT DEFAULT 'geral' CHECK (categoria IN ('geral', 'horarios', 'precos', 'notificacoes', 'integracao')),
+  grupo TEXT DEFAULT 'empresa',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -256,6 +270,207 @@ CREATE TABLE public.addons (
   ordem INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: equipe */
+CREATE TABLE public.equipe (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome TEXT NOT NULL,
+  telefone TEXT,
+  email TEXT,
+  cargo TEXT DEFAULT 'cleaner',
+  foto_url TEXT,
+  cor TEXT DEFAULT '#C48B7F',
+  ativo BOOLEAN DEFAULT TRUE,
+  data_admissao DATE DEFAULT CURRENT_DATE,
+  notas TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: agendamento_equipe */
+CREATE TABLE public.agendamento_equipe (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agendamento_id UUID NOT NULL REFERENCES public.agendamentos(id) ON DELETE CASCADE,
+  membro_id UUID NOT NULL REFERENCES public.equipe(id) ON DELETE CASCADE,
+  funcao TEXT DEFAULT 'cleaner',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: user_profiles */
+CREATE TABLE public.user_profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name TEXT,
+  phone TEXT,
+  role TEXT DEFAULT 'admin',
+  avatar_url TEXT,
+  language TEXT DEFAULT 'pt-BR',
+  theme TEXT DEFAULT 'light',
+  email_notifications BOOLEAN DEFAULT TRUE,
+  push_notifications BOOLEAN DEFAULT TRUE,
+  sms_notifications BOOLEAN DEFAULT FALSE,
+  notification_types JSONB DEFAULT '{"newLead": true, "lowRating": true, "newAppointment": true, "paymentReceived": true, "appointmentReminder": true}'::jsonb,
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: chat_sessions */
+CREATE TABLE public.chat_sessions (
+  id VARCHAR PRIMARY KEY,
+  cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
+  source VARCHAR DEFAULT 'website',
+  status VARCHAR DEFAULT 'active',
+  last_intent VARCHAR,
+  last_activity TIMESTAMPTZ DEFAULT NOW(),
+  contexto JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: chat_logs */
+CREATE TABLE public.chat_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id TEXT NOT NULL,
+  cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
+  direction TEXT NOT NULL,
+  message_content TEXT NOT NULL,
+  state_before TEXT,
+  state_after TEXT,
+  llm_calls JSONB DEFAULT '[]'::jsonb,
+  handlers_executed JSONB DEFAULT '[]'::jsonb,
+  extracted_data JSONB DEFAULT '{}'::jsonb,
+  context_snapshot JSONB DEFAULT '{}'::jsonb,
+  errors JSONB DEFAULT '[]'::jsonb,
+  response_time_ms INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: action_logs */
+CREATE TABLE public.action_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id VARCHAR,
+  action_type VARCHAR NOT NULL,
+  params JSONB,
+  result JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: callbacks */
+CREATE TABLE public.callbacks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
+  session_id VARCHAR,
+  telefone VARCHAR,
+  horario_preferido VARCHAR,
+  notas TEXT,
+  status VARCHAR DEFAULT 'pending',
+  atendido_por UUID,
+  atendido_em TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: orcamentos */
+CREATE TABLE public.orcamentos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
+  session_id VARCHAR,
+  tipo_servico VARCHAR,
+  valor_estimado DECIMAL(10, 2),
+  detalhes JSONB,
+  status VARCHAR DEFAULT 'enviado',
+  expires_at TIMESTAMPTZ DEFAULT NOW() + INTERVAL '7 days',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: notificacoes */
+CREATE TABLE public.notificacoes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  canal VARCHAR NOT NULL,
+  destinatario VARCHAR NOT NULL,
+  template VARCHAR,
+  dados JSONB,
+  status VARCHAR DEFAULT 'pending',
+  enviado_em TIMESTAMPTZ,
+  erro TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: contact_leads */
+CREATE TABLE public.contact_leads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome TEXT NOT NULL,
+  telefone TEXT NOT NULL,
+  cidade TEXT,
+  origem TEXT DEFAULT 'contact_form',
+  pagina_origem TEXT,
+  user_agent TEXT,
+  ip_address TEXT,
+  status TEXT DEFAULT 'novo',
+  notas TEXT,
+  cliente_id UUID REFERENCES public.clientes(id) ON DELETE SET NULL,
+  contacted_at TIMESTAMPTZ,
+  contacted_by UUID,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: tracking_events */
+CREATE TABLE public.tracking_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_name TEXT NOT NULL,
+  event_id TEXT,
+  user_email_hash TEXT,
+  user_phone_hash TEXT,
+  ip_address TEXT,
+  user_agent TEXT,
+  fbc TEXT,
+  fbp TEXT,
+  custom_data JSONB DEFAULT '{}'::jsonb,
+  page_url TEXT,
+  referrer TEXT,
+  sent_to_meta BOOLEAN DEFAULT FALSE,
+  sent_to_google BOOLEAN DEFAULT FALSE,
+  sent_to_tiktok BOOLEAN DEFAULT FALSE,
+  client_id UUID,
+  session_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: financeiro_categorias */
+CREATE TABLE public.financeiro_categorias (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome TEXT NOT NULL,
+  tipo TEXT NOT NULL,
+  descricao TEXT,
+  cor TEXT,
+  icone TEXT,
+  ativo BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: pricing_config */
+CREATE TABLE public.pricing_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  service_type TEXT NOT NULL,
+  service_name TEXT NOT NULL,
+  description TEXT,
+  price_min DECIMAL(10, 2) NOT NULL,
+  price_max DECIMAL(10, 2) NOT NULL,
+  price_unit TEXT DEFAULT 'per visit',
+  badge TEXT,
+  display_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+/* TABELA: sistema_heartbeat */
+CREATE TABLE public.sistema_heartbeat (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 /* TABELA: precos_base */
@@ -326,6 +541,25 @@ CREATE INDEX idx_areas_ativo ON public.areas_atendidas(ativo);
 CREATE INDEX idx_areas_zip_codes ON public.areas_atendidas USING GIN(zip_codes);
 CREATE INDEX idx_servicos_codigo ON public.servicos_tipos(codigo);
 CREATE INDEX idx_addons_codigo ON public.addons(codigo);
+
+/* Índices tabelas adicionais */
+CREATE INDEX idx_equipe_ativo ON public.equipe(ativo);
+CREATE INDEX idx_agendamento_equipe_agendamento ON public.agendamento_equipe(agendamento_id);
+CREATE INDEX idx_agendamento_equipe_membro ON public.agendamento_equipe(membro_id);
+CREATE INDEX idx_chat_sessions_status ON public.chat_sessions(status);
+CREATE INDEX idx_chat_sessions_cliente ON public.chat_sessions(cliente_id);
+CREATE INDEX idx_chat_logs_session ON public.chat_logs(session_id);
+CREATE INDEX idx_chat_logs_created ON public.chat_logs(created_at DESC);
+CREATE INDEX idx_action_logs_session ON public.action_logs(session_id);
+CREATE INDEX idx_callbacks_status ON public.callbacks(status);
+CREATE INDEX idx_orcamentos_cliente ON public.orcamentos(cliente_id);
+CREATE INDEX idx_notificacoes_status ON public.notificacoes(status);
+CREATE INDEX idx_notificacoes_created ON public.notificacoes(created_at DESC);
+CREATE INDEX idx_contact_leads_status ON public.contact_leads(status);
+CREATE INDEX idx_tracking_events_event ON public.tracking_events(event_name);
+CREATE INDEX idx_tracking_events_created ON public.tracking_events(created_at DESC);
+CREATE INDEX idx_financeiro_categorias_tipo ON public.financeiro_categorias(tipo);
+CREATE INDEX idx_pricing_config_active ON public.pricing_config(is_active);
 
 /* 5. FUNÇÕES DE NEGÓCIO */
 
@@ -555,6 +789,12 @@ CREATE TRIGGER set_updated_at_precos BEFORE UPDATE ON public.precos_base FOR EAC
 CREATE TRIGGER generate_contract_number_trigger BEFORE INSERT ON public.contratos FOR EACH ROW WHEN (NEW.numero IS NULL) EXECUTE FUNCTION public.generate_contract_number();
 CREATE TRIGGER update_cliente_status_trigger AFTER INSERT OR UPDATE OF status ON public.agendamentos FOR EACH ROW EXECUTE FUNCTION public.update_cliente_status();
 
+CREATE TRIGGER set_updated_at_equipe BEFORE UPDATE ON public.equipe FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_user_profiles BEFORE UPDATE ON public.user_profiles FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_contact_leads BEFORE UPDATE ON public.contact_leads FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_financeiro_categorias BEFORE UPDATE ON public.financeiro_categorias FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+CREATE TRIGGER set_updated_at_pricing_config BEFORE UPDATE ON public.pricing_config FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 /* 7. VIEWS */
 
 CREATE OR REPLACE VIEW public.v_agenda_hoje AS
@@ -635,8 +875,21 @@ ALTER TABLE public.areas_atendidas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.servicos_tipos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.addons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.precos_base ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.equipe ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agendamento_equipe ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.action_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.callbacks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orcamentos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notificacoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tracking_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.financeiro_categorias ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.pricing_config ENABLE ROW LEVEL SECURITY;
 
-/* Policies */
+/* Policies - tabelas core */
 CREATE POLICY "Authenticated users can do everything" ON public.clientes FOR ALL TO authenticated USING (true);
 CREATE POLICY "Authenticated users can do everything" ON public.agendamentos FOR ALL TO authenticated USING (true);
 CREATE POLICY "Authenticated users can do everything" ON public.recorrencias FOR ALL TO authenticated USING (true);
@@ -650,6 +903,29 @@ CREATE POLICY "Authenticated users can do everything" ON public.areas_atendidas 
 CREATE POLICY "Authenticated users can do everything" ON public.servicos_tipos FOR ALL TO authenticated USING (true);
 CREATE POLICY "Authenticated users can do everything" ON public.addons FOR ALL TO authenticated USING (true);
 CREATE POLICY "Authenticated users can do everything" ON public.precos_base FOR ALL TO authenticated USING (true);
+
+/* Policies - tabelas adicionais */
+CREATE POLICY "Authenticated users can do everything" ON public.equipe FOR ALL TO authenticated USING (true);
+CREATE POLICY "Authenticated users can do everything" ON public.agendamento_equipe FOR ALL TO authenticated USING (true);
+CREATE POLICY "Users manage own profile" ON public.user_profiles FOR ALL TO authenticated USING (auth.uid() = id);
+CREATE POLICY "Authenticated users can do everything" ON public.chat_sessions FOR ALL TO authenticated USING (true);
+CREATE POLICY "Anon can upsert chat sessions" ON public.chat_sessions FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Authenticated users can do everything" ON public.chat_logs FOR ALL TO authenticated USING (true);
+CREATE POLICY "Anon can insert chat logs" ON public.chat_logs FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Authenticated users can do everything" ON public.action_logs FOR ALL TO authenticated USING (true);
+CREATE POLICY "Anon can insert action logs" ON public.action_logs FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Authenticated users can do everything" ON public.callbacks FOR ALL TO authenticated USING (true);
+CREATE POLICY "Anon can insert callbacks" ON public.callbacks FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Authenticated users can do everything" ON public.orcamentos FOR ALL TO authenticated USING (true);
+CREATE POLICY "Anon can insert orcamentos" ON public.orcamentos FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Authenticated users can do everything" ON public.notificacoes FOR ALL TO authenticated USING (true);
+CREATE POLICY "Authenticated users can do everything" ON public.contact_leads FOR ALL TO authenticated USING (true);
+CREATE POLICY "Anon can insert contact leads" ON public.contact_leads FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Authenticated users can do everything" ON public.tracking_events FOR ALL TO authenticated USING (true);
+CREATE POLICY "Anon can insert tracking events" ON public.tracking_events FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Authenticated users can do everything" ON public.financeiro_categorias FOR ALL TO authenticated USING (true);
+CREATE POLICY "Authenticated users can do everything" ON public.pricing_config FOR ALL TO authenticated USING (true);
+CREATE POLICY "Public read pricing config" ON public.pricing_config FOR SELECT TO anon USING (is_active = true);
 
 /* Public Read Policies */
 CREATE POLICY "Public read areas" ON public.areas_atendidas FOR SELECT TO anon USING (ativo = true);

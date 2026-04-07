@@ -17,7 +17,7 @@ export async function PATCH(
 
         // Auth: require admin role
         const { data: profile } = await supabase
-            .from('profiles')
+            .from('user_profiles')
             .select('role')
             .eq('id', user.id)
             .single();
@@ -72,7 +72,7 @@ export async function DELETE(
 
         // Auth: require admin role
         const { data: profile } = await supabase
-            .from('profiles')
+            .from('user_profiles')
             .select('role')
             .eq('id', user.id)
             .single();

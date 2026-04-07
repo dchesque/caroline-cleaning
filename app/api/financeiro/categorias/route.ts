@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 
         // Auth: require admin role
         const { data: profile } = await supabase
-            .from('profiles')
+            .from('user_profiles')
             .select('role')
             .eq('id', user.id)
             .single();
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
         // Auth: require admin role
         const { data: profile } = await supabase
-            .from('profiles')
+            .from('user_profiles')
             .select('role')
             .eq('id', user.id)
             .single();

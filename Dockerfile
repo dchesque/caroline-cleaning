@@ -65,5 +65,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))" || exit 1
 
-# Usar ENTRYPOINT em vez de CMD (mais robusto contra overrides)
-ENTRYPOINT ["node", "server.js"]
+# server.js gerado pelo next build --output=standalone
+CMD ["node", "server.js"]
