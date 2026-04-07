@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { headers } from 'next/headers'
 import { timingSafeEqual } from 'crypto'
 import { logger } from '@/lib/logger'
 
@@ -24,22 +23,28 @@ interface IncomingWebhookPayload {
 // VERIFICAÇÃO DE AUTENTICAÇÃO
 // ============================================
 
-async function verifyAuth(request: NextRequest): Promise<boolean> {
-    const headersList = await headers()
-    const secret = headersList.get('x-webhook-secret') || ''
-    const expectedSecret = process.env.N8N_WEBHOOK_SECRET
+const webhookSecret = process.env.N8N_WEBHOOK_SECRET
 
-    if (!expectedSecret) {
-        logger.error('[Webhook N8N] N8N_WEBHOOK_SECRET not configured')
-        return false
-    }
+function verifyAuth(request: NextRequest): boolean {
+    const secret = request.headers.get('x-webhook-secret') || ''
+    const timestamp = request.headers.get('x-webhook-timestamp') || ''
 
-    // Timing-safe comparison to prevent timing attacks
-    if (
-        secret.length !== expectedSecret.length ||
-        !timingSafeEqual(Buffer.from(secret), Buffer.from(expectedSecret))
-    ) {
-        return false
+    if (!secret || !webhookSecret) return false
+
+    // Timing-safe secret comparison
+    const secretBuffer = Buffer.from(secret)
+    const expectedBuffer = Buffer.from(webhookSecret)
+    if (secretBuffer.length !== expectedBuffer.length) return false
+    if (!timingSafeEqual(secretBuffer, expectedBuffer)) return false
+
+    // Replay protection: reject requests older than 5 minutes
+    if (timestamp) {
+        const requestTime = new Date(timestamp).getTime()
+        const now = Date.now()
+        if (isNaN(requestTime) || Math.abs(now - requestTime) > 5 * 60 * 1000) {
+            console.warn('[webhook/n8n] Request rejected: timestamp outside window')
+            return false
+        }
     }
 
     return true
@@ -52,7 +57,7 @@ async function verifyAuth(request: NextRequest): Promise<boolean> {
 export async function POST(request: NextRequest) {
     try {
         // Verificar autenticação
-        if (!await verifyAuth(request)) {
+        if (!verifyAuth(request)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
