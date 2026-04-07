@@ -37,6 +37,7 @@ yarn-error.log*
 
 # mcp config (contains secrets)
 .mcp.json
+.antigravity/mcp.json
 
 # vercel
 .vercel
