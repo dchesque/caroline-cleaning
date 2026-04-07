@@ -47,6 +47,11 @@ export async function POST(request: NextRequest) {
 
         const { channel, recipient, template, data } = payload
 
+        const validChannels = ['sms', 'whatsapp', 'email'] as const;
+        if (channel && !validChannels.includes(channel)) {
+            return NextResponse.json({ error: 'Invalid channel' }, { status: 400 });
+        }
+
         // 1. Registrar notificação e obter ID
         const { data: notification, error } = await supabase
             .from('notificacoes')
@@ -71,7 +76,8 @@ export async function POST(request: NextRequest) {
         const result = await notify(
             recipient,
             template as any,
-            data
+            data,
+            channel
         ) as any // Cast temporário para simplificar acesso aos campos do resultado
 
         if (result.success) {
