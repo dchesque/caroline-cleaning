@@ -126,10 +126,13 @@ export const handleConfirmPhone: StateHandler = async (message, context, service
 export const handleLookupCustomer: StateHandler = async (_message, context, services, llm) => {
   const phone = context.cliente_telefone
   if (!phone) {
+    // Guard: shouldn't reach here without a phone — restart collection
+    const lang = context.language || 'en'
     return {
       nextState: 'COLLECT_PHONE',
-      response: '',
-      silent: true,
+      response: lang === 'pt'
+        ? 'Preciso do seu telefone para continuar. Qual é o seu número?'
+        : "I need your phone number to continue. What's your number?",
     }
   }
 

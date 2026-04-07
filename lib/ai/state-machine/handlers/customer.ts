@@ -136,7 +136,15 @@ export const handleCheckZip: StateHandler = async (_message, context, services, 
     }
   }
 
-  const result = await services.checkZipCoverage(zip)
+  let result
+  try {
+    result = await services.checkZipCoverage(zip)
+  } catch {
+    return {
+      nextState: 'NEW_CUSTOMER_ADDRESS',
+      response: "I had trouble checking your area. Could you confirm your address with ZIP code?",
+    }
+  }
 
   if (result.covered) {
     return {
@@ -160,13 +168,17 @@ export const handleCheckZip: StateHandler = async (_message, context, services, 
 export const handleZipNotCovered: StateHandler = async (_message, context, services, llm) => {
   // Create a waitlist lead even though not covered
   if (context.cliente_nome && context.cliente_telefone) {
-    await services.createLead({
-      name: context.cliente_nome,
-      phone: context.cliente_telefone,
-      address: context.cliente_endereco,
-      zip_code: context.cliente_zip,
-      notes: 'Waitlist - ZIP not covered',
-    })
+    try {
+      await services.createLead({
+        name: context.cliente_nome,
+        phone: context.cliente_telefone,
+        address: context.cliente_endereco,
+        zip_code: context.cliente_zip,
+        notes: 'Waitlist - ZIP not covered',
+      })
+    } catch {
+      // Non-critical — waitlist add failed, still inform user
+    }
   }
 
   const response = await llm.generate('zip_not_covered', {
@@ -184,13 +196,21 @@ export const handleZipNotCovered: StateHandler = async (_message, context, servi
  * CREATE_LEAD: Persist the new customer as a lead. Silent handler.
  */
 export const handleCreateLead: StateHandler = async (_message, context, services, llm) => {
-  const result = await services.createLead({
-    name: context.cliente_nome ?? 'New Lead',
-    phone: context.cliente_telefone ?? '',
-    email: context.cliente_email,
-    address: context.cliente_endereco,
-    zip_code: context.cliente_zip,
-  })
+  let result
+  try {
+    result = await services.createLead({
+      name: context.cliente_nome ?? 'New Lead',
+      phone: context.cliente_telefone ?? '',
+      email: context.cliente_email,
+      address: context.cliente_endereco,
+      zip_code: context.cliente_zip,
+    })
+  } catch {
+    return {
+      nextState: 'DETECT_INTENT',
+      response: await llm.generate('booking_error', {}, context.language || 'en'),
+    }
+  }
 
   if (result.status === 'error') {
     return {
@@ -243,6 +263,8 @@ export const handleDetectIntent: StateHandler = async (message, context, _servic
     'callback',
     'update_info',
     'price_inquiry',
+    'pet_info',
+    'allergy_info',
     'off_topic',
     'greeting',
     'unknown',

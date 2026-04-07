@@ -203,8 +203,17 @@ export interface SessionContext {
     last_error: string | null
     pets_info: string | null
     allergy_info: string | null
+    // Intent routing
+    intent_flow: 'cancel' | 'reschedule' | null
+    intent_retry_count: number
+    faq_question: string | null
+    update_request: string | null
+    // Internal counters (prefixed _ to distinguish from user-facing fields)
+    _callback_retries: number
+    _guardrail_retries: number
     _same_state_count?: number
     _last_processed_state?: CarolState
+    _last_activity?: string
     [key: string]: any
 }
 
@@ -952,7 +961,13 @@ export class CarolServices {
             retry_count: 0,
             last_error: null,
             pets_info: null,
-            allergy_info: null
+            allergy_info: null,
+            intent_flow: null,
+            intent_retry_count: 0,
+            faq_question: null,
+            update_request: null,
+            _callback_retries: 0,
+            _guardrail_retries: 0,
         }
     }
 

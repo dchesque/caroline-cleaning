@@ -79,6 +79,22 @@ export function routeByIntent(
         contextUpdates: { previousState: context.state, intent_retry_count: 0 },
       }
 
+    case 'pet_info':
+      return {
+        nextState: 'SAVE_PET_INFO',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_retry_count: 0 },
+      }
+
+    case 'allergy_info':
+      return {
+        nextState: 'SAVE_ALLERGY_INFO',
+        response: '',
+        silent: true,
+        contextUpdates: { previousState: context.state, intent_retry_count: 0 },
+      }
+
     case 'off_topic':
       return {
         nextState: 'GUARDRAIL',
@@ -228,6 +244,8 @@ export const handleDone: StateHandler = async (message, context, _services, llm)
     'callback',
     'update_info',
     'price_inquiry',
+    'pet_info',
+    'allergy_info',
     'greeting',
     'off_topic',
     'unknown',

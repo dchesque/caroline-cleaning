@@ -15,7 +15,7 @@ export interface ProcessingMetrics {
 }
 
 /** Maximum number of silent (auto) transitions before forcing a stop. */
-const MAX_AUTO_TRANSITIONS = 5
+const MAX_AUTO_TRANSITIONS = 10
 
 /** Maximum time (ms) a single handler is allowed to run before being aborted. */
 const HANDLER_TIMEOUT_MS = 30_000

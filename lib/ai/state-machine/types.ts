@@ -71,6 +71,8 @@ export type UserIntent =
   | 'callback'
   | 'update_info'
   | 'price_inquiry'
+  | 'pet_info'
+  | 'allergy_info'
   | 'greeting'
   | 'confirm_yes'
   | 'confirm_no'
