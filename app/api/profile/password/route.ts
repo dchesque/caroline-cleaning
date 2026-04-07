@@ -12,6 +12,10 @@ export async function PUT(request: NextRequest) {
 
         const { currentPassword, newPassword } = await request.json()
 
+        if (!currentPassword || typeof currentPassword !== 'string') {
+            return NextResponse.json({ error: 'Current password is required' }, { status: 400 })
+        }
+
         // Validar nova senha
         if (!newPassword || newPassword.length < 8) {
             return NextResponse.json(

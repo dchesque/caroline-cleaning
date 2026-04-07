@@ -9,6 +9,12 @@ export async function GET(request: NextRequest) {
         const date = searchParams.get('date')
         const durationParam = searchParams.get('duration')
         const duration = durationParam ? parseInt(durationParam, 10) : 180
+        if (isNaN(duration) || duration < 15 || duration > 480) {
+            return NextResponse.json(
+                { error: 'Invalid duration. Must be between 15 and 480 minutes.' },
+                { status: 400 }
+            )
+        }
 
         if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
             return NextResponse.json(
