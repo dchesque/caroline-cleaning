@@ -420,25 +420,31 @@ export class CarolServices {
 
         const start = new Date(startDate + 'T12:00:00')
 
-        for (let i = 0; i < days; i++) {
+        const dayPromises = Array.from({ length: days }, (_, i) => {
             const current = new Date(start)
             current.setDate(current.getDate() + i)
 
             // Pular domingos
-            if (current.getDay() === 0) continue
+            if (current.getDay() === 0) return Promise.resolve(null)
 
             const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`
-            const slotsResult = await this.getAvailableSlots(dateStr, durationMinutes)
+            const dayOfWeek = current.getDay()
+            return this.getAvailableSlots(dateStr, durationMinutes)
+                .then(slotsResult => ({ dateStr, dayOfWeek, slots: slotsResult.slots }))
+                .catch(() => ({ dateStr, dayOfWeek, slots: [] as typeof slotsResult.slots }))
+        })
 
-            if (slotsResult.slots.length > 0) {
-                result.days.push({
-                    date: dateStr,
-                    day_name: weekdaysPt[current.getDay()],
-                    day_name_en: weekdaysEn[current.getDay()],
-                    slots: slotsResult.slots
-                })
-                result.total_available += slotsResult.slots.length
-            }
+        const results = await Promise.all(dayPromises)
+
+        for (const entry of results) {
+            if (!entry || entry.slots.length === 0) continue
+            result.days.push({
+                date: entry.dateStr,
+                day_name: weekdaysPt[entry.dayOfWeek],
+                day_name_en: weekdaysEn[entry.dayOfWeek],
+                slots: entry.slots
+            })
+            result.total_available += entry.slots.length
         }
 
         return result
