@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, stats });
 
     } catch (err) {
-        console.error('[CRON] Erro ao processar lembretes:', err);
-        return NextResponse.json({ success: false, error: String(err) }, { status: 500 });
+        console.error('[cron/reminders] Fatal error:', err);
+        return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
     }
 }
