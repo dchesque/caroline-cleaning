@@ -213,7 +213,6 @@ export async function POST(request: NextRequest) {
             success: true,
             event_id,
             meta_sent: metaSent,
-            meta_response: metaResponse,
         });
 
     } catch (error) {
