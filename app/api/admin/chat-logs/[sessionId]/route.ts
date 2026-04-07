@@ -26,7 +26,10 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { sessionId } = await params
+    const sessionId = (await params).sessionId;
+    if (!sessionId || sessionId.length > 64 || !/^[a-zA-Z0-9_-]+$/.test(sessionId)) {
+      return NextResponse.json({ error: 'Invalid session ID' }, { status: 400 });
+    }
     const result = await chatLogger.getSessionDetails(sessionId)
     return NextResponse.json(result)
   } catch (error) {
