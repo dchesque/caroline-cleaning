@@ -197,6 +197,14 @@ export class CarolStateMachine {
         state: context.state,
         language: context.language,
       }
+      try {
+        await this.services.updateSession(sessionId, {
+          state: currentState,
+          context: { ...context },
+        });
+      } catch (persistError) {
+        console.error('[engine] Failed to persist context after handler error:', persistError);
+      }
       return {
         response: "I'm sorry, I ran into an unexpected issue. Could you say that again?",
         state: currentState,
