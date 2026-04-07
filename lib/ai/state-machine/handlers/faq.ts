@@ -1,6 +1,7 @@
 // lib/ai/state-machine/handlers/faq.ts
 
 import type { StateHandler } from '../types'
+import { logger } from '@/lib/logger'
 
 /**
  * FAQ_RESPONSE: Answer a FAQ using llm.generateFaq() with business info.
@@ -74,7 +75,7 @@ export const handleSavePetInfo: StateHandler = async (message, context, services
         pets_detalhes: petDetails,
       })
     } catch (err) {
-      console.error('[faq] Failed to save pet info:', err);
+      logger.error('[faq] Failed to save pet info', { error: err instanceof Error ? err.message : String(err) });
       return {
         nextState: 'DETECT_INTENT',
         response: lang === 'pt'
@@ -131,7 +132,7 @@ export const handleSaveAllergyInfo: StateHandler = async (message, context, serv
         notas: `Allergies: ${allergyDetails}`,
       })
     } catch (err) {
-      console.error('[faq] Failed to save allergy info:', err);
+      logger.error('[faq] Failed to save allergy info', { error: err instanceof Error ? err.message : String(err) });
       return {
         nextState: 'DETECT_INTENT',
         response: lang === 'pt'

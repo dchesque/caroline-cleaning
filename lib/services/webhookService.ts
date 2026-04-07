@@ -11,6 +11,7 @@ import type {
     WebhookOptions,
 } from '@/types/webhook'
 import { notify, notifyOwner } from '@/lib/notifications'
+import { logger } from '@/lib/logger'
 
 // ============================================
 // CONFIGURAÇÕES PADRÃO
@@ -46,7 +47,7 @@ class WebhookService {
         const notificationType = notificationMapping[event];
 
         if (notificationType) {
-            console.log(`[WebhookService] ⚡ Notificação nativa Twilio para ${event}`);
+            logger.info(`[WebhookService] Notificação nativa Twilio para ${event}`);
             const data = payload as any;
 
             // Gatilho para o Proprietário (WhatsApp)
@@ -84,7 +85,7 @@ class WebhookService {
                         return { success: true, data: { channel: 'twilio', sid: result.messageSid } };
                     }
                 } catch (e) {
-                    console.error(`[WebhookService] Erro Twilio para ${event}:`, e);
+                    logger.error(`[WebhookService] Erro Twilio para ${event}`, { error: e instanceof Error ? e.message : String(e) });
                 }
             }
         }

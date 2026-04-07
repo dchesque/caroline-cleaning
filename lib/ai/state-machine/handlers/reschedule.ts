@@ -1,6 +1,7 @@
 // lib/ai/state-machine/handlers/reschedule.ts
 
 import type { StateHandler } from '../types'
+import { logger } from '@/lib/logger'
 
 /**
  * CONFIRM_RESCHEDULE: Confirm that the user wants to reschedule the selected appointment.
@@ -38,7 +39,7 @@ export const handleConfirmReschedule: StateHandler = async (message, context, se
       try {
         await services.cancelAppointment(appointmentId, 'Rescheduled via chat')
       } catch (cancelError) {
-        console.error('[reschedule] Failed to cancel old appointment:', cancelError);
+        logger.error('[reschedule] Failed to cancel old appointment', { error: cancelError instanceof Error ? cancelError.message : String(cancelError) });
         return {
           nextState: 'DONE',
           response: lang === 'pt'
