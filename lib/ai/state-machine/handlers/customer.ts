@@ -42,17 +42,61 @@ export const handleNewCustomerName: StateHandler = async (message, context, _ser
 }
 
 /**
- * EXPLAIN_FIRST_VISIT: Tell the new customer about the free first visit / estimate.
- * Then ask for their address.
+ * EXPLAIN_FIRST_VISIT: Tell the customer about the free first visit / estimate.
+ * - New customer (is_returning=false): ask for address next.
+ * - Returning customer with no completed service (is_returning=true): ask for service preferences next.
  */
 export const handleExplainFirstVisit: StateHandler = async (_message, context, _services, llm) => {
+  if (context.is_returning) {
+    const response = await llm.generate('explain_first_visit_returning', {
+      name: context.cliente_nome,
+    })
+    return {
+      nextState: 'COLLECT_VISIT_PREFERENCES',
+      response,
+    }
+  }
+
   const response = await llm.generate('explain_first_visit', {
     name: context.cliente_nome,
   })
-
   return {
     nextState: 'NEW_CUSTOMER_ADDRESS',
     response,
+  }
+}
+
+/**
+ * COLLECT_VISIT_PREFERENCES: Collect service type and notes from returning customer
+ * who needs a first visit. Then route to ASK_DATE silently.
+ */
+export const handleCollectVisitPreferences: StateHandler = async (message, context, _services, llm) => {
+  const extracted = await llm.extract('visit_preferences', message)
+  const serviceType = extracted?.service_type ?? null
+  const notes = extracted?.extra_notes ?? null
+
+  // If we couldn't extract anything meaningful, ask again once
+  if (!serviceType && !notes) {
+    const retries = (context.retry_count || 0) + 1
+    if (retries < 3) {
+      return {
+        nextState: 'COLLECT_VISIT_PREFERENCES',
+        response: await llm.generate('ask_visit_preferences', { name: context.cliente_nome }),
+        contextUpdates: { retry_count: retries },
+      }
+    }
+  }
+
+  return {
+    nextState: 'ASK_DATE',
+    response: '',
+    silent: true,
+    contextUpdates: {
+      service_type: serviceType ?? 'visit',
+      duration_minutes: 60,
+      ...(notes ? { notas_visita: notes } : {}),
+      retry_count: 0,
+    },
   }
 }
 

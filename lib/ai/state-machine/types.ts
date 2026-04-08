@@ -21,6 +21,7 @@ export type CarolState =
   // New customer
   | 'NEW_CUSTOMER_NAME'
   | 'EXPLAIN_FIRST_VISIT'
+  | 'COLLECT_VISIT_PREFERENCES'
   | 'NEW_CUSTOMER_ADDRESS'
   | 'CHECK_ZIP'
   | 'ZIP_NOT_COVERED'
@@ -31,6 +32,7 @@ export type CarolState =
   // Booking flow
   | 'CONFIRM_ADDRESS'
   | 'ASK_SERVICE_TYPE'
+  | 'ASK_ADDONS'
   | 'ASK_DATE'
   | 'COLLECT_DATE'
   | 'CHECK_AVAILABILITY'

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -48,11 +48,10 @@ import {
     Trash2,
     Clock,
     DollarSign,
-    Palette,
     Package,
     CheckCircle,
     XCircle,
-    Loader2
+    Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrencyUSD, formatCurrencyInput, parseCurrency } from '@/lib/formatters'
@@ -154,7 +153,7 @@ export default function ServicosPage() {
 
         const [servicosRes, addonsRes] = await Promise.all([
             supabase.from('servicos_tipos').select('*').order('ordem'),
-            supabase.from('addons').select('*').order('ordem')
+            supabase.from('addons').select('*').order('ordem'),
         ])
 
         if (servicosRes.data) setServicos(servicosRes.data)
@@ -642,6 +641,7 @@ export default function ServicosPage() {
                         </CardContent>
                     </Card>
                 </TabsContent>
+
             </Tabs>
 
             {/* Modal Serviço */}
@@ -906,6 +906,7 @@ export default function ServicosPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
         </div>
     )
 }

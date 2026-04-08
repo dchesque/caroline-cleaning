@@ -29,6 +29,8 @@ export type ExtractionType =
   | 'client_update'
   | 'pet_info'
   | 'allergy_info'
+  | 'visit_preferences'
+  | 'addons_selection'
 
 // ═══ EXTRACTION PROMPTS ═══
 
@@ -92,6 +94,14 @@ function getExtractionPrompt(type: ExtractionType, extraContext?: any): string {
     case 'allergy_info':
       return `${base} Extract allergy or sensitivity information from the message. Return {"allergies": "description of allergies", "details": "any special notes"} or {"allergies": null} if no allergy info found.`
 
+    case 'visit_preferences':
+      return `${base} Extract the type of cleaning service mentioned and any extra preferences. Service types: "regular", "deep", "move_in_out", "post_construction", "office". Return {"service_type": "type_or_null", "extra_notes": "any additional preferences or null"}.`
+
+    case 'addons_selection': {
+      const list = extraContext?.addons_list ?? '[]'
+      return `${base} The user is responding to a list of add-on services: ${list}. Extract which add-ons they selected by "codigo" field. Return {"selected_codigos": ["codigo1"]} or {"selected_codigos": []} if they declined all add-ons.`
+    }
+
     default:
       return base
   }
@@ -117,6 +127,15 @@ const RESPONSE_TEMPLATES: Record<string, (data: any) => string> = {
 
   'explain_first_visit': (data) =>
     `Explain to ${data.name || 'the customer'} that the first visit is free for property evaluation. Ask for the full address with ZIP. Max 3 sentences.`,
+
+  'ask_addons': (data) =>
+    `Ask if the customer needs any additional services for their ${data.service_type ?? 'cleaning'} appointment. List the options clearly:\n${data.addons_list}\nLet them know they can add one or more, or skip. Max 4 sentences.`,
+
+  'explain_first_visit_returning': (data) =>
+    `You are speaking with ${data.name || 'the customer'}, who is registered but hasn't had a service yet. Warmly explain that since it's their first service, we do a complimentary assessment visit first to give the most accurate price quote. Ask what type of cleaning they are thinking about (regular, deep clean, move-in/out, etc.). Max 3 sentences.`,
+
+  'ask_visit_preferences': (data) =>
+    `Ask ${data.name || 'the customer'} what type of cleaning they need and if they have any specific preferences or add-ons in mind. Max 2 sentences.`,
 
   'ask_address_again': (_data) =>
     'Did not understand the address. Ask again with street, number, city and ZIP. Max 2 sentences.',

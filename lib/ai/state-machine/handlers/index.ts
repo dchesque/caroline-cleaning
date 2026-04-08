@@ -13,6 +13,7 @@ import { handleCollectPhone, handleConfirmPhone, handleLookupCustomer } from './
 import {
   handleNewCustomerName,
   handleExplainFirstVisit,
+  handleCollectVisitPreferences,
   handleNewCustomerAddress,
   handleCheckZip,
   handleZipNotCovered,
@@ -25,6 +26,7 @@ import {
 import {
   handleConfirmAddress,
   handleAskServiceType,
+  handleAskAddons,
   handleAskDate,
   handleCollectDate,
   handleCheckAvailability,
@@ -77,6 +79,7 @@ export function registerAllHandlers(engine: CarolStateMachine): void {
   // New customer
   engine.registerHandler('NEW_CUSTOMER_NAME', handleNewCustomerName)
   engine.registerHandler('EXPLAIN_FIRST_VISIT', handleExplainFirstVisit)
+  engine.registerHandler('COLLECT_VISIT_PREFERENCES', handleCollectVisitPreferences)
   engine.registerHandler('NEW_CUSTOMER_ADDRESS', handleNewCustomerAddress)
   engine.registerHandler('CHECK_ZIP', handleCheckZip)
   engine.registerHandler('ZIP_NOT_COVERED', handleZipNotCovered)
@@ -89,6 +92,7 @@ export function registerAllHandlers(engine: CarolStateMachine): void {
   // Booking flow
   engine.registerHandler('CONFIRM_ADDRESS', handleConfirmAddress)
   engine.registerHandler('ASK_SERVICE_TYPE', handleAskServiceType)
+  engine.registerHandler('ASK_ADDONS', handleAskAddons)
   engine.registerHandler('ASK_DATE', handleAskDate)
   engine.registerHandler('COLLECT_DATE', handleCollectDate)
   engine.registerHandler('CHECK_AVAILABILITY', handleCheckAvailability)

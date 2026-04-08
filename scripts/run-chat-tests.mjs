@@ -295,8 +295,9 @@ await run('D01: Date in past → rejected with friendly message', async (send) =
   await send(RETURNING_PHONE, 'CONFIRM_PHONE')
   await send('yes', ['RETURNING_CUSTOMER', 'DETECT_INTENT'])
   await send('I want to schedule', ['CONFIRM_ADDRESS', 'ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
-  await send('yes', ['ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])   // confirm address
-  await send('regular', ['ASK_DATE', 'COLLECT_DATE'])                    // service type
+  await send('yes', ['ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])    // confirm address
+  await send('regular', ['ASK_ADDONS', 'ASK_DATE', 'COLLECT_DATE'])       // service type → addons prompt
+  await send('no thanks', ['ASK_DATE', 'COLLECT_DATE'])                   // decline addons → date prompt
   await send('January 5, 2020', 'COLLECT_DATE', [
     'past', 'future', 'another date', 'valid', 'upcoming'
   ])
@@ -307,7 +308,8 @@ await run('D02: Sunday date → rejected, ask for different day', async (send) =
   await send('yes', ['RETURNING_CUSTOMER', 'DETECT_INTENT'])
   await send('schedule a cleaning', ['CONFIRM_ADDRESS', 'ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
   await send('yes', ['ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
-  await send('regular cleaning', ['ASK_DATE', 'COLLECT_DATE'])
+  await send('regular cleaning', ['ASK_ADDONS', 'ASK_DATE', 'COLLECT_DATE']) // → addons prompt
+  await send('no extras needed', ['ASK_DATE', 'COLLECT_DATE'])               // decline addons → date prompt
   const sun = nextSunday()
   await send(sun, 'COLLECT_DATE', ['sunday', 'different', 'another', 'weekday'])
 })
@@ -317,7 +319,7 @@ await run('D03: Valid date → proceeds to time collection or no-slots', async (
   await send('yes', ['RETURNING_CUSTOMER', 'DETECT_INTENT'])
   await send('book a cleaning', ['CONFIRM_ADDRESS', 'ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
   await send('yes', ['ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
-  await send('regular', ['ASK_DATE', 'COLLECT_DATE'])
+  await send('regular', ['ASK_ADDONS', 'ASK_DATE', 'COLLECT_DATE'])
   const future = nextWeekday(4)
   await send(future, ['COLLECT_TIME', 'NO_SLOTS', 'COLLECT_DATE'])
 })
@@ -327,7 +329,7 @@ await run('D04: Deep cleaning service type extraction', async (send) => {
   await send('yes', ['RETURNING_CUSTOMER', 'DETECT_INTENT'])
   await send('book a deep clean', ['CONFIRM_ADDRESS', 'ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
   await send('yes', ['ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
-  await send('deep cleaning please', ['ASK_DATE', 'COLLECT_DATE'])
+  await send('deep cleaning please', ['ASK_ADDONS', 'ASK_DATE', 'COLLECT_DATE'])
 })
 
 await run('D05: Move-in/out service type', async (send) => {
@@ -335,7 +337,7 @@ await run('D05: Move-in/out service type', async (send) => {
   await send('yes', ['RETURNING_CUSTOMER', 'DETECT_INTENT'])
   await send('need a move out clean', ['CONFIRM_ADDRESS', 'ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
   await send('yes', ['ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
-  await send('move out cleaning', ['ASK_DATE', 'COLLECT_DATE'])
+  await send('move out cleaning', ['ASK_ADDONS', 'ASK_DATE', 'COLLECT_DATE'])
 })
 
 await run('D06: Invalid service type → retry prompt', async (send) => {
@@ -344,7 +346,7 @@ await run('D06: Invalid service type → retry prompt', async (send) => {
   await send('book something please', ['CONFIRM_ADDRESS', 'ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
   await send('yes', ['ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
   await send('I want the super premium platinum deluxe wash', 'ASK_SERVICE_TYPE')  // no match
-  await send('regular', ['ASK_DATE', 'COLLECT_DATE'])  // then provide valid
+  await send('regular', ['ASK_ADDONS', 'ASK_DATE', 'COLLECT_DATE'])  // then provide valid
 })
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -711,7 +713,7 @@ await run('L05: Office cleaning service type', async (send) => {
     'CONFIRM_ADDRESS', 'ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'
   ])
   await send('yes', ['ASK_SERVICE_TYPE', 'ASK_DATE', 'COLLECT_DATE'])
-  await send('office cleaning', ['ASK_DATE', 'COLLECT_DATE'])
+  await send('office cleaning', ['ASK_ADDONS', 'ASK_DATE', 'COLLECT_DATE'])
 })
 
 await run('L06: Phone number in natural language sentence', async (send) => {

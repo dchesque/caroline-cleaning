@@ -82,6 +82,7 @@ export function isSunday(dateStr: string): boolean {
  */
 export function getDurationForService(serviceType: string): number {
   const durations: Record<string, number> = {
+    visit: 60,
     regular: 120,
     deep: 180,
     deep_cleaning: 180,

@@ -143,6 +143,27 @@ export const handleLookupCustomer: StateHandler = async (_message, context, serv
   const result = await services.findCustomerByPhone(phone)
 
   if (result.found && result.customer) {
+    // Returning customer who has never completed a service → first visit flow
+    if (!result.customer.has_completed_services) {
+      return {
+        nextState: 'EXPLAIN_FIRST_VISIT',
+        response: '',
+        silent: true,
+        contextUpdates: {
+          cliente_id: result.client_id ?? null,
+          cliente_nome: result.customer.name,
+          cliente_endereco: result.customer.address,
+          cliente_zip: result.customer.zip_code,
+          cliente_email: result.customer.email,
+          is_returning: true,
+          service_type: 'visit',
+          duration_minutes: 60,
+          canal_preferencia: (result.customer.preferred_channel as 'sms' | 'whatsapp') ?? null,
+          pets_info: result.customer.pets_details ?? null,
+        },
+      }
+    }
+
     return {
       nextState: 'RETURNING_CUSTOMER',
       response: '',

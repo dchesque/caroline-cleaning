@@ -28,6 +28,7 @@ export interface CustomerResult {
         pets_details: string | null
         notes: string | null
         preferred_channel: string | null
+        has_completed_services: boolean
     }
     upcoming_appointments?: Array<{
         id: string
@@ -135,6 +136,14 @@ export interface UpdateResult {
     message?: string
 }
 
+export interface AddonInfo {
+    codigo: string
+    nome: string
+    descricao: string | null
+    minutos_adicionais: number
+    preco: number
+}
+
 export interface CreateAppointmentParams {
     client_id: string
     service_type: string
@@ -142,6 +151,8 @@ export interface CreateAppointmentParams {
     time: string
     duration: number
     notes?: string | null
+    addons?: AddonInfo[]
+    equipe_id?: string | null
 }
 
 export interface AppointmentResult {
@@ -190,6 +201,7 @@ export interface SessionContext {
     cliente_email: string | null
     is_returning: boolean
     service_type: string | null
+    selected_addons: AddonInfo[] | null
     selected_date: string | null
     selected_time: string | null
     duration_minutes: number | null
@@ -274,7 +286,8 @@ export class CarolServices {
             .select(`
                 id, nome, telefone, email, status,
                 endereco_completo, cidade, estado, zip_code,
-                tem_pets, pets_detalhes, notas, canal_preferencia
+                tem_pets, pets_detalhes, notas, canal_preferencia,
+                data_primeiro_servico
             `)
             .eq('telefone', normalizedPhone)
             .single()
@@ -289,7 +302,8 @@ export class CarolServices {
                 .select(`
                     id, nome, telefone, email, status,
                     endereco_completo, cidade, estado, zip_code,
-                    tem_pets, pets_detalhes, notas, canal_preferencia
+                    tem_pets, pets_detalhes, notas, canal_preferencia,
+                    data_primeiro_servico
                 `)
                 .eq('telefone', phone)
                 .single()
@@ -329,7 +343,8 @@ export class CarolServices {
                 has_pets: data.tem_pets || false,
                 pets_details: data.pets_detalhes,
                 notes: data.notas,
-                preferred_channel: data.canal_preferencia
+                preferred_channel: data.canal_preferencia,
+                has_completed_services: !!data.data_primeiro_servico,
             },
             upcoming_appointments: (appointments || []).map((a: any) => ({
                 id: a.id,
@@ -377,13 +392,28 @@ export class CarolServices {
         }
     }
 
-    async getAvailableSlots(date: string, durationMinutes: number): Promise<SlotsResult> {
-        logger.debug('getAvailableSlots', { date, durationMinutes })
+    async getAddons(): Promise<AddonInfo[]> {
+        const { data } = await this.supabase
+            .from('addons')
+            .select('codigo, nome, descricao, minutos_adicionais, preco')
+            .eq('ativo', true)
+            .order('ordem')
+        return (data || []).map((a: any) => ({
+            codigo: a.codigo,
+            nome: a.nome,
+            descricao: a.descricao ?? null,
+            minutos_adicionais: a.minutos_adicionais ?? 0,
+            preco: a.preco,
+        }))
+    }
 
-        const { data, error } = await this.supabase.rpc('get_available_slots', {
-            p_data: date,
-            p_duracao_minutos: durationMinutes
-        })
+    async getAvailableSlots(date: string, durationMinutes: number, equipeId?: string | null): Promise<SlotsResult> {
+        logger.debug('getAvailableSlots', { date, durationMinutes, equipeId })
+
+        const rpcParams: any = { p_data: date, p_duracao_minutos: durationMinutes }
+        if (equipeId) rpcParams.p_equipe_id = equipeId
+
+        const { data, error } = await this.supabase.rpc('get_available_slots', rpcParams)
 
         if (error) {
             logger.error('getAvailableSlots RPC error', { error })
@@ -759,7 +789,9 @@ export class CarolServices {
                 duracao_minutos: params.duration,
                 status: 'agendado',
                 origem: 'chat_carol',
-                notas: cleanValue(params.notes)
+                notas: cleanValue(params.notes),
+                addons: params.addons && params.addons.length > 0 ? params.addons : [],
+                equipe_id: params.equipe_id ?? null,
             })
             .select()
             .single()
@@ -817,6 +849,39 @@ export class CarolServices {
             }
         }
 
+        // 4c. Criar bloco de deslocamento 1h antes se o horário estiver livre
+        const [apptH, apptM] = params.time.split(':').map(Number)
+        const deslocEndMin = apptH * 60 + apptM
+        const deslocStartMin = deslocEndMin - 60
+        if (deslocStartMin >= 0) {
+            const deslocStartStr = `${String(Math.floor(deslocStartMin / 60)).padStart(2, '0')}:${String(deslocStartMin % 60).padStart(2, '0')}`
+            // Check if that 1h slot is free (no appointment ends after deslocStartStr before params.time)
+            const { data: priorConflict } = await this.supabase
+                .from('agendamentos')
+                .select('id')
+                .eq('data', params.date)
+                .not('status', 'in', '("cancelado","reagendado")')
+                .neq('id', appointment.id)
+                .lt('horario_inicio', params.time)
+                .gt('horario_fim_estimado', deslocStartStr)
+                .limit(1)
+
+            if (!priorConflict || priorConflict.length === 0) {
+                await this.supabase.from('agendamentos').insert({
+                    cliente_id: params.client_id,
+                    tipo: 'deslocamento',
+                    data: params.date,
+                    horario_inicio: deslocStartStr,
+                    horario_fim_estimado: params.time,
+                    duracao_minutos: 60,
+                    status: 'agendado',
+                    origem: 'chat_carol',
+                    notas: `Deslocamento para atendimento ${appointment.id}`,
+                    equipe_id: params.equipe_id ?? null,
+                })
+            }
+        }
+
         // 5. Tracking event (Schedule)
         this.fireTrackingEvent('Schedule', {
             event_id: `schedule_${appointment.id}`,
@@ -869,6 +934,13 @@ export class CarolServices {
             logger.error('cancelAppointment error', { error })
             return { status: 'error', appointment_id: appointmentId, message: error.message }
         }
+
+        // Also cancel the linked deslocamento block (if one was created for this appointment)
+        await this.supabase
+            .from('agendamentos')
+            .update({ status: 'cancelado' })
+            .eq('tipo', 'deslocamento')
+            .like('notas', `%${appointmentId}%`)
 
         return {
             status: 'cancelled',
@@ -974,6 +1046,7 @@ export class CarolServices {
             update_request: null,
             _callback_retries: 0,
             _guardrail_retries: 0,
+            selected_addons: null,
         }
     }
 

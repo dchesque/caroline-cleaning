@@ -86,13 +86,65 @@ export const handleAskServiceType: StateHandler = async (message, context, _serv
 
   const duration = getDurationForService(serviceType)
 
+  // Visit appointments skip add-ons (it's an evaluation, not a full service)
+  const nextAfterService = serviceType === 'visit' ? 'ASK_DATE' : 'ASK_ADDONS'
+
   return {
-    nextState: 'ASK_DATE',
+    nextState: nextAfterService,
     response: '',
     silent: true,
     contextUpdates: {
       service_type: serviceType,
       duration_minutes: duration,
+      selected_addons: [],
+    },
+  }
+}
+
+/**
+ * ASK_ADDONS: Ask if the customer wants any additional services.
+ * Lists active add-ons from DB. Calculates total duration including add-on minutes.
+ */
+export const handleAskAddons: StateHandler = async (message, context, services, llm) => {
+  const addons = await services.getAddons()
+
+  // No add-ons configured — skip straight to ASK_DATE
+  if (!addons.length) {
+    return {
+      nextState: 'ASK_DATE',
+      response: '',
+      silent: true,
+      contextUpdates: { selected_addons: [] },
+    }
+  }
+
+  const addonsList = addons.map(a => `• ${a.nome}${a.descricao ? ` — ${a.descricao}` : ''}`).join('\n')
+
+  // Silent/empty entry — show add-ons menu
+  if (!message || !message.trim()) {
+    const response = await llm.generate('ask_addons', {
+      addons_list: addonsList,
+      service_type: context.service_type,
+    })
+    return { nextState: 'ASK_ADDONS', response }
+  }
+
+  // User responded — extract which add-ons they want
+  const addonsListJson = JSON.stringify(addons.map(a => ({ codigo: a.codigo, nome: a.nome })))
+  const extracted = await llm.extract('addons_selection', message, { addons_list: addonsListJson })
+  const selectedCodigos: string[] = extracted?.selected_codigos ?? []
+
+  const selectedAddons = addons.filter(a => selectedCodigos.includes(a.codigo))
+  const extraMinutes = selectedAddons.reduce((sum, a) => sum + a.minutos_adicionais, 0)
+  const baseMinutes = getDurationForService(context.service_type ?? 'regular')
+
+  return {
+    nextState: 'ASK_DATE',
+    response: '',
+    silent: true,
+    contextUpdates: {
+      selected_addons: selectedAddons,
+      duration_minutes: baseMinutes + extraMinutes,
     },
   }
 }
@@ -384,6 +436,7 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
     date: context.selected_date,
     time: context.selected_time,
     duration: context.duration_minutes ?? getDurationForService(context.service_type ?? 'regular'),
+    addons: context.selected_addons ?? [],
   })
 
   if (result.status === 'conflict') {
