@@ -332,7 +332,6 @@ export class CarolStateMachine {
       selected_date: context.selected_date,
       selected_time: context.selected_time,
       state: context.state,
-      language: context.language,
     }
 
     // 5. Persist context
@@ -414,8 +413,9 @@ export class CarolStateMachine {
     // Track previous state
     context.previousState = previousState
 
-    // Reset retry_count when moving to a genuinely new state
-    if (nextState !== previousState) {
+    // Reset retry_count when moving to a genuinely new state,
+    // UNLESS the handler explicitly set it in contextUpdates (e.g. GREETING counts itself as attempt 1).
+    if (nextState !== previousState && !Object.prototype.hasOwnProperty.call(result.contextUpdates ?? {}, 'retry_count')) {
       context.retry_count = 0
     }
 

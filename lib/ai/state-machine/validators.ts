@@ -2,6 +2,26 @@
 // Helper functions for validation and normalization
 
 /**
+ * Extract a US phone number from free text using regex.
+ * Handles formats: 7041234567, (704) 123-4567, 704-123-4567, +17041234567, etc.
+ * Returns the raw extracted string or null if no phone found.
+ */
+export function extractPhoneFromText(text: string): string | null {
+  if (!text) return null
+  // Match +1XXXXXXXXXX, 1XXXXXXXXXX, (XXX) XXX-XXXX, XXX-XXX-XXXX, XXXXXXXXXX
+  const patterns = [
+    /\+?1[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/,
+    /\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/,
+    /\b\d{10,11}\b/,
+  ]
+  for (const pattern of patterns) {
+    const match = text.match(pattern)
+    if (match) return match[0]
+  }
+  return null
+}
+
+/**
  * Normalize a phone input to a 10-digit US phone number.
  * Strips all non-digits, removes leading +1 or 1 if 11 digits.
  * Returns the 10-digit string or null if invalid.

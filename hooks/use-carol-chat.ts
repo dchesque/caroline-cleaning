@@ -22,12 +22,20 @@ export function useCarolChat(): UseCarolChatReturn {
     const [sessionId, setSessionId] = useState<string>('')
     const [error, setError] = useState<string | null>(null)
 
-    // Inicializar session_id - SEMPRE novo a cada pageload (não persiste)
+    // Inicializar session_id e greeting automático
     useEffect(() => {
-        // Gerar novo session_id a cada vez que o componente monta (refresh = novo chat)
         const newId = nanoid(16)
         setSessionId(newId)
-        // Não persistir no localStorage - cada refresh é uma nova sessão
+
+        // Auto-greeting: Carol se apresenta e pede o telefone imediatamente
+        const greeting: ChatMessage = {
+            id: nanoid(),
+            role: 'assistant',
+            content: "Hi there! I'm Carol from Chesque Premium Cleaning 😊 To get started, could you share your phone number with me?",
+            timestamp: new Date().toISOString(),
+            status: 'sent'
+        }
+        setMessages([greeting])
     }, [])
 
     // Salvar no localStorage para persistência visual durante a sessão atual

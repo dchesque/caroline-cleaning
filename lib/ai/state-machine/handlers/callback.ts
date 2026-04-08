@@ -28,9 +28,11 @@ export const handleScheduleCallback: StateHandler = async (message, context, ser
     : null
 
   if (!preferredTime) {
+    // Stay in SCHEDULE_CALLBACK so the user's next reply (the actual time) is processed here,
+    // not swallowed by ASK_CALLBACK_TIME which only generates a prompt.
     return {
-      nextState: 'ASK_CALLBACK_TIME',
-      response: "I couldn't understand the time. Can you provide it in HH:MM format? (e.g., 2:00 PM)",
+      nextState: 'SCHEDULE_CALLBACK',
+      response: "I couldn't understand the time. Can you provide it in a format like '2:00 PM' or '14:00'?",
       contextUpdates: { _callback_retries: (context._callback_retries || 0) + 1 },
     }
   }
