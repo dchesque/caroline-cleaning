@@ -99,8 +99,10 @@ export const handleAskServiceType: StateHandler = async (message, context, _serv
 
 /**
  * ASK_DATE: Prompt the user for a preferred date.
+ * If a message is already present (e.g. user answered inline after reschedule confirmation),
+ * process it immediately so the user never has to send the date twice.
  */
-export const handleAskDate: StateHandler = async (_message, context, _services, llm) => {
+export const handleAskDate: StateHandler = async (message, context, _services, llm) => {
   // If we don't have a service type yet, ask for it first
   if (!context.service_type) {
     const response = await llm.generate('ask_service_type', {
@@ -112,6 +114,24 @@ export const handleAskDate: StateHandler = async (_message, context, _services, 
     }
   }
 
+  // If the user already supplied a date in this message, try to extract and validate it
+  if (message && message.trim()) {
+    const extracted = await llm.extract('date', message)
+    const dateStr = extracted?.date ?? extracted?.value ?? null
+
+    if (dateStr && isFutureDate(dateStr) && !isSunday(dateStr)) {
+      // Valid date provided inline — skip the prompt and go straight to availability check
+      return {
+        nextState: 'CHECK_AVAILABILITY',
+        response: '',
+        silent: true,
+        contextUpdates: { selected_date: dateStr, retry_count: 0 },
+      }
+    }
+    // Date missing or invalid — fall through and ask for it
+  }
+
+  // No message (silent entry) or unparseable input — ask for date
   const response = await llm.generate('ask_date', {
     name: context.cliente_nome,
     service_type: context.service_type,

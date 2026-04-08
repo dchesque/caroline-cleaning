@@ -224,10 +224,10 @@ const RESPONSE_TEMPLATES: Record<string, (data: any) => string> = {
   },
 
   'confirm_cancel': (data) =>
-    `Confirm cancellation of the appointment on ${data.date} at ${data.time}. Ask for confirmation (yes/no). Max 2 sentences.`,
+    `Ask the user to confirm whether they want to cancel their appointment on ${data.date} at ${data.time}. Do NOT say it is already cancelled — just ask yes or no. Max 2 sentences.`,
 
   'confirm_reschedule': (data) =>
-    `Confirm rescheduling of the appointment on ${data.date} at ${data.time}. Ask for confirmation. Max 2 sentences.`,
+    `Ask the user to confirm whether they want to reschedule their appointment on ${data.date} at ${data.time}. Do NOT say it is already rescheduled — just ask yes or no. Max 2 sentences.`,
 
   'cancel_aborted': (_data) =>
     'Cancellation was aborted. Ask if you can help with anything else. Max 2 sentences.',
