@@ -7,10 +7,8 @@ import type { StateHandler } from '../types'
  * Silent entry — generates the list and waits for selection.
  */
 export const handleShowAppointments: StateHandler = async (_message, context, services, llm) => {
-  const lang = context.language
-
   if (!context.cliente_id) {
-    const response = await llm.generate('no_client_id', {}, lang)
+    const response = await llm.generate('no_client_id', {})
     return {
       nextState: 'COLLECT_PHONE',
       response,
@@ -23,39 +21,37 @@ export const handleShowAppointments: StateHandler = async (_message, context, se
   } catch {
     return {
       nextState: 'DETECT_INTENT',
-      response: await llm.generate('booking_error', {}, lang),
+      response: await llm.generate('booking_error', {}),
     }
   }
 
   // Filter to future appointments that are not cancelled/completed
   const now = new Date().toISOString().slice(0, 10)
   const futureAppointments = history.appointments.filter(
-    a => a.date >= now && !['cancelado', 'concluido', 'reagendado'].includes(a.status)
+    (a: any) => a.date >= now && !['cancelado', 'concluido', 'reagendado'].includes(a.status)
   )
 
   if (futureAppointments.length === 0) {
     const response = await llm.generate('no_upcoming_appointments', {
       name: context.cliente_nome,
-    }, lang)
+    })
     return {
       nextState: 'DETECT_INTENT',
       response,
     }
   }
 
-  // Build numbered list
-  const list = futureAppointments.map((a, i) => {
-    return `${i + 1}. ${a.date} at ${a.time} — ${a.service_type} (${a.status})`
+  // Build numbered list — hardcoded to prevent LLM hallucination of dates/types
+  const list = futureAppointments.map((a: any, i: number) => {
+    return `${i + 1}. ${a.date} at ${a.time} — ${a.service_type}`
   }).join('\n')
 
   const flowLabel = context.intent_flow === 'reschedule' ? 'reschedule' : 'cancel'
 
-  const response = await llm.generate('show_appointments', {
-    name: context.cliente_nome,
-    list,
-    action: flowLabel,
-    count: futureAppointments.length,
-  }, lang)
+  // Build response directly without LLM to guarantee real data is shown
+  const intro = `${context.cliente_nome ? context.cliente_nome + ', h' : 'H'}ere are your upcoming appointments:\n\n${list}`
+  const prompt = `\n\nWhich one would you like to ${flowLabel}?`
+  const response = intro + prompt
 
   return {
     nextState: 'SELECT_APPOINTMENT',
@@ -71,13 +67,12 @@ export const handleShowAppointments: StateHandler = async (_message, context, se
  * Routes to CONFIRM_CANCEL or CONFIRM_RESCHEDULE based on intent_flow.
  */
 export const handleSelectAppointment: StateHandler = async (message, context, _services, llm) => {
-  const lang = context.language
   const appointments = context.appointments ?? []
 
   if (appointments.length === 0) {
     return {
       nextState: 'DETECT_INTENT',
-      response: await llm.generate('no_upcoming_appointments', { name: context.cliente_nome }, lang),
+      response: await llm.generate('no_upcoming_appointments', { name: context.cliente_nome }),
     }
   }
 
@@ -119,7 +114,7 @@ export const handleSelectAppointment: StateHandler = async (message, context, _s
   if (!selectedId) {
     const response = await llm.generate('invalid_selection', {
       count: appointments.length,
-    }, lang)
+    })
     return {
       nextState: 'SELECT_APPOINTMENT',
       response,
@@ -155,12 +150,10 @@ export const handleSelectAppointment: StateHandler = async (message, context, _s
  * On user response, processes yes/no.
  */
 export const handleConfirmCancelResponse: StateHandler = async (message, context, services, llm) => {
-  const lang = context.language
-
   if (!context.target_appointment_id) {
     return {
       nextState: 'SHOW_APPOINTMENTS',
-      response: await llm.generate('invalid_selection', {}, lang),
+      response: await llm.generate('invalid_selection', {}),
     }
   }
 
@@ -175,7 +168,7 @@ export const handleConfirmCancelResponse: StateHandler = async (message, context
       date: appointment?.date ?? 'unknown',
       time: appointment?.time ?? 'unknown',
       service_type: appointment?.service_type ?? 'cleaning',
-    }, lang)
+    })
 
     return {
       nextState: 'CONFIRM_CANCEL',
@@ -196,7 +189,7 @@ export const handleConfirmCancelResponse: StateHandler = async (message, context
   // User said no — go back to intent detection
   const response = await llm.generate('cancel_aborted', {
     name: context.cliente_nome,
-  }, lang)
+  })
 
   return {
     nextState: 'DETECT_INTENT',
@@ -211,13 +204,12 @@ export const handleConfirmCancelResponse: StateHandler = async (message, context
  * CANCEL_APPOINTMENT: Execute the cancellation. Silent handler.
  */
 export const handleCancelAppointment: StateHandler = async (_message, context, services, llm) => {
-  const lang = context.language
   const appointmentId = context.target_appointment_id
 
   if (!appointmentId) {
     return {
       nextState: 'DETECT_INTENT',
-      response: await llm.generate('cancel_error', {}, lang),
+      response: await llm.generate('cancel_error', {}),
     }
   }
 
@@ -225,7 +217,7 @@ export const handleCancelAppointment: StateHandler = async (_message, context, s
   try {
     result = await services.cancelAppointment(appointmentId)
   } catch {
-    const response = await llm.generate('cancel_error', {}, lang)
+    const response = await llm.generate('cancel_error', {})
     return {
       nextState: 'DETECT_INTENT',
       response,
@@ -239,7 +231,7 @@ export const handleCancelAppointment: StateHandler = async (_message, context, s
     const response = await llm.generate('cancel_success', {
       name: context.cliente_nome,
       appointment_id: appointmentId,
-    }, lang)
+    })
 
     return {
       nextState: 'DONE',
@@ -250,7 +242,7 @@ export const handleCancelAppointment: StateHandler = async (_message, context, s
     }
   }
 
-  const response = await llm.generate('cancel_error', {}, lang)
+  const response = await llm.generate('cancel_error', {})
   return {
     nextState: 'DETECT_INTENT',
     response,

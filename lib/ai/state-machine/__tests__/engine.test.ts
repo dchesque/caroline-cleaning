@@ -69,7 +69,6 @@ function makeLlm(): jest.Mocked<CarolLLM> {
   return {
     extract: jest.fn(),
     classifyIntent: jest.fn(),
-    detectLanguage: jest.fn().mockResolvedValue('en'),
     generate: jest.fn().mockResolvedValue('LLM response'),
     generateFaq: jest.fn(),
   } as unknown as jest.Mocked<CarolLLM>
@@ -108,7 +107,7 @@ describe('CarolStateMachine', () => {
       engine.registerHandler('GREETING', jest.fn().mockResolvedValue({
         nextState: 'COLLECT_PHONE',
         response: 'Hi there!',
-        contextUpdates: { language: 'pt' as const },
+        contextUpdates: { cliente_nome: 'Test User' },
       }))
 
       await engine.process('oi', 'session-2')
@@ -116,7 +115,7 @@ describe('CarolStateMachine', () => {
       expect(services.updateSession).toHaveBeenCalledTimes(1)
       const [sessionId, savedContext] = (services.updateSession as jest.Mock).mock.calls[0]
       expect(sessionId).toBe('session-2')
-      expect(savedContext.language).toBe('pt')
+      expect(savedContext.cliente_nome).toBe('Test User')
       expect(savedContext.state).toBe('COLLECT_PHONE')
     })
 
@@ -169,7 +168,7 @@ describe('CarolStateMachine', () => {
       engine.registerHandler('GREETING', jest.fn().mockResolvedValue({
         nextState: 'COLLECT_PHONE',
         response: 'Hi!',
-        contextUpdates: { cliente_telefone: '7045551234', language: 'en' as const },
+        contextUpdates: { cliente_telefone: '7045551234' },
       }))
 
       await engine.process('hi', 'session-ctx')

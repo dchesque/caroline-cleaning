@@ -115,7 +115,7 @@ export function routeByIntent(
 export const handleGuardrail: StateHandler = async (_message, context, _services, llm) => {
   const response = await llm.generate('guardrail', {
     name: context.cliente_nome,
-  }, context.language)
+  })
 
   let returnState = context.previousState ?? 'DETECT_INTENT'
 
@@ -146,11 +146,10 @@ export const handleGuardrail: StateHandler = async (_message, context, _services
  * UPDATE_CLIENT_INFO: Extract what the user wants to update and persist it.
  */
 export const handleUpdateClientInfo: StateHandler = async (message, context, services, llm) => {
-  const lang = context.language
   const updateRequest = context.update_request ?? message ?? ''
 
   if (!context.cliente_id) {
-    const response = await llm.generate('no_client_id', {}, lang)
+    const response = await llm.generate('no_client_id', {})
     return {
       nextState: 'COLLECT_PHONE',
       response,
@@ -181,14 +180,14 @@ export const handleUpdateClientInfo: StateHandler = async (message, context, ser
     if (retries >= 3) {
       return {
         nextState: 'DETECT_INTENT',
-        response: await llm.generate('ask_intent', { name: context.cliente_nome }, lang),
+        response: await llm.generate('ask_intent', { name: context.cliente_nome }),
         contextUpdates: { update_request: null, retry_count: 0, intent_retry_count: 0 },
       }
     }
 
     const response = await llm.generate('ask_update_details', {
       name: context.cliente_nome,
-    }, lang)
+    })
     return {
       nextState: 'UPDATE_CLIENT_INFO',
       response,
@@ -208,7 +207,7 @@ export const handleUpdateClientInfo: StateHandler = async (message, context, ser
   const response = await llm.generate('info_updated', {
     name: contextUpdates.cliente_nome ?? context.cliente_nome,
     fields: result.updated_fields.join(', '),
-  }, lang)
+  })
 
   return {
     nextState: 'DETECT_INTENT',
@@ -222,13 +221,11 @@ export const handleUpdateClientInfo: StateHandler = async (message, context, ser
  * classify the intent and route them back into the flow, or say goodbye.
  */
 export const handleDone: StateHandler = async (message, context, _services, llm) => {
-  const lang = context.language
-
   if (!message) {
     // Silent entry — just say goodbye
     const response = await llm.generate('goodbye', {
       name: context.cliente_nome,
-    }, lang)
+    })
     return {
       nextState: 'DONE',
       response,
@@ -260,7 +257,7 @@ export const handleDone: StateHandler = async (message, context, _services, llm)
   // Just a farewell or off-topic
   const response = await llm.generate('goodbye', {
     name: context.cliente_nome,
-  }, lang)
+  })
 
   return {
     nextState: 'DONE',

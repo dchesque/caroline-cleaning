@@ -181,7 +181,7 @@ export interface CallbackResult {
 export interface SessionContext {
     state: CarolState
     previousState: CarolState | null
-    language: 'pt' | 'en'
+    language?: never
     cliente_id: string | null
     cliente_nome: string | null
     cliente_telefone: string | null
@@ -889,6 +889,13 @@ export class CarolServices {
         return { status: 'confirmed', appointment_id: appointmentId }
     }
 
+    async updateAppointmentPreference(appointmentId: string, canal: 'sms' | 'whatsapp'): Promise<void> {
+        await this.supabase
+            .from('agendamentos')
+            .update({ canal_preferencia: canal })
+            .eq('id', appointmentId)
+    }
+
     async scheduleCallback(params: CallbackParams, sessionId?: string): Promise<CallbackResult> {
         logger.info('scheduleCallback', { phone: params.phone })
 
@@ -940,7 +947,6 @@ export class CarolServices {
         return {
             state: 'GREETING',
             previousState: null,
-            language: 'en',
             cliente_id: null,
             cliente_nome: null,
             cliente_telefone: null,

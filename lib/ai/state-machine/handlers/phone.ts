@@ -1,7 +1,7 @@
 // lib/ai/state-machine/handlers/phone.ts
 
 import type { StateHandler } from '../types'
-import { normalizePhone, formatPhone } from '../validators'
+import { normalizePhone, formatPhone, extractPhoneFromText } from '../validators'
 
 const MAX_COLLECTION_RETRIES = 5
 
@@ -10,16 +10,26 @@ const MAX_COLLECTION_RETRIES = 5
  * Max retries before offering a callback instead.
  */
 export const handleCollectPhone: StateHandler = async (message, context, services, llm) => {
-  const lang = context.language
+  // Silent/empty message means we were chained here — ask for phone directly
+  if (!message || !message.trim()) {
+    return {
+      nextState: 'COLLECT_PHONE',
+      response: 'Could you share your phone number so I can pull up your account? 😊',
+      contextUpdates: { retry_count: 0 },
+    }
+  }
 
-  const extracted = await llm.extract('phone', message)
-  const raw = extracted?.phone ?? extracted?.value ?? null
+  // Try regex extraction first (fast, reliable, no LLM needed)
+  const regexPhone = extractPhoneFromText(message)
+  // Fall back to LLM only if regex found nothing
+  const extracted = regexPhone ? null : await llm.extract('phone', message)
+  const raw = regexPhone ?? extracted?.phone ?? extracted?.value ?? null
 
   if (!raw) {
     const retries = (context.retry_count || 0) + 1
 
     if (retries >= MAX_COLLECTION_RETRIES) {
-      const response = await llm.generate('max_retries_phone', {}, lang)
+      const response = await llm.generate('max_retries_phone', {}, message)
       return {
         nextState: 'ASK_CALLBACK_TIME',
         response,
@@ -27,9 +37,11 @@ export const handleCollectPhone: StateHandler = async (message, context, service
       }
     }
 
+    // LLM with user message context: can acknowledge what user said + ask for phone
+    const response = await llm.generate('ask_phone_retry', {}, message)
     return {
       nextState: 'COLLECT_PHONE',
-      response: await llm.generate('ask_phone', {}, lang),
+      response,
       contextUpdates: { retry_count: retries },
     }
   }
@@ -40,15 +52,14 @@ export const handleCollectPhone: StateHandler = async (message, context, service
     const retries = (context.retry_count ?? 0) + 1
 
     if (retries >= MAX_COLLECTION_RETRIES) {
-      const response = await llm.generate('max_retries_phone', {}, lang)
       return {
         nextState: 'ASK_CALLBACK_TIME',
-        response,
+        response: "I wasn't able to capture your number. Would you like us to call you instead?",
         contextUpdates: { retry_count: retries },
       }
     }
 
-    const response = await llm.generate('invalid_phone', { attempts_left: MAX_COLLECTION_RETRIES - retries }, lang)
+    const response = await llm.generate('invalid_phone', {}, message)
     return {
       nextState: 'COLLECT_PHONE',
       response,
@@ -57,11 +68,10 @@ export const handleCollectPhone: StateHandler = async (message, context, service
   }
 
   const formatted = formatPhone(normalized)
-  const response = await llm.generate('confirm_phone', { phone: formatted }, lang)
-
+  // Hardcoded: critical step — must reliably show the number to confirm
   return {
     nextState: 'CONFIRM_PHONE',
-    response,
+    response: `Just to confirm: your number is ${formatted}, correct?`,
     contextUpdates: {
       cliente_telefone: normalized,
       retry_count: 0,
@@ -73,7 +83,6 @@ export const handleCollectPhone: StateHandler = async (message, context, service
  * CONFIRM_PHONE: User confirms or corrects the phone number.
  */
 export const handleConfirmPhone: StateHandler = async (message, context, services, llm) => {
-  const lang = context.language
   const intent = await llm.classifyIntent(message, ['yes', 'no', 'correction'])
 
   if (intent === 'yes') {
@@ -92,7 +101,7 @@ export const handleConfirmPhone: StateHandler = async (message, context, service
 
     if (normalized) {
       const formatted = formatPhone(normalized)
-      const response = await llm.generate('confirm_phone', { phone: formatted }, lang)
+      const response = await llm.generate('confirm_phone', { phone: formatted })
       return {
         nextState: 'CONFIRM_PHONE',
         response,
@@ -101,19 +110,17 @@ export const handleConfirmPhone: StateHandler = async (message, context, service
     }
 
     // Could not extract a correction — ask again
-    const response = await llm.generate('ask_phone', {}, lang)
     return {
       nextState: 'COLLECT_PHONE',
-      response,
+      response: "I couldn't catch the new number. Could you type it again? e.g. (704) 555-1234",
       contextUpdates: { cliente_telefone: null },
     }
   }
 
   // intent === 'no' — start over
-  const response = await llm.generate('ask_phone', {}, lang)
   return {
     nextState: 'COLLECT_PHONE',
-    response,
+    response: 'No problem! What is the correct phone number? 😊',
     contextUpdates: { cliente_telefone: null, retry_count: 0 },
   }
 }
@@ -127,12 +134,9 @@ export const handleLookupCustomer: StateHandler = async (_message, context, serv
   const phone = context.cliente_telefone
   if (!phone) {
     // Guard: shouldn't reach here without a phone — restart collection
-    const lang = context.language || 'en'
     return {
       nextState: 'COLLECT_PHONE',
-      response: lang === 'pt'
-        ? 'Preciso do seu telefone para continuar. Qual é o seu número?'
-        : "I need your phone number to continue. What's your number?",
+      response: "I need your phone number to continue. What's your number?",
     }
   }
 
@@ -158,7 +162,7 @@ export const handleLookupCustomer: StateHandler = async (_message, context, serv
   }
 
   // Not found — new customer flow
-  const response = await llm.generate('ask_name', {}, context.language)
+  const response = await llm.generate('ask_name', {})
   return {
     nextState: 'NEW_CUSTOMER_NAME',
     response,

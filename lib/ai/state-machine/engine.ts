@@ -157,7 +157,6 @@ export class CarolStateMachine {
         selected_date: context.selected_date,
         selected_time: context.selected_time,
         state: context.state,
-        language: context.language,
       }
       return {
         response: "I'm sorry, something went wrong on my end. Could you try again?",
@@ -211,7 +210,6 @@ export class CarolStateMachine {
         selected_date: context.selected_date,
         selected_time: context.selected_time,
         state: context.state,
-        language: context.language,
       }
       try {
         await this.services.updateSession(sessionId, { ...context, state: currentState });

@@ -16,13 +16,9 @@ export const handleFaqResponse: StateHandler = async (_message, context, service
     sessionContext: context,
   })
 
-  const followUp = context.language === 'pt'
-    ? '\n\nPosso ajudar com mais alguma coisa?'
-    : '\n\nIs there anything else I can help you with?'
-
   return {
     nextState: 'DETECT_INTENT',
-    response: response + followUp,
+    response: response + '\n\nIs there anything else I can help you with?',
     contextUpdates: {
       faq_question: null,
     },
@@ -39,7 +35,7 @@ export const handleDeflectPrice: StateHandler = async (_message, context, servic
     name: context.cliente_nome,
     business_name: businessInfo.name,
     phone: businessInfo.phone,
-  }, context.language)
+  })
 
   return {
     nextState: 'DETECT_INTENT',
@@ -52,12 +48,10 @@ export const handleDeflectPrice: StateHandler = async (_message, context, servic
  * Returns to the previous state so the flow continues where it left off.
  */
 export const handleSavePetInfo: StateHandler = async (message, context, services, llm) => {
-  const lang = context.language
-
   if (!message) {
     const response = await llm.generate('ask_pet_info', {
       name: context.cliente_nome,
-    }, lang)
+    })
     return {
       nextState: 'SAVE_PET_INFO',
       response,
@@ -75,20 +69,18 @@ export const handleSavePetInfo: StateHandler = async (message, context, services
         pets_detalhes: petDetails,
       })
     } catch (err) {
-      logger.error('[faq] Failed to save pet info', { error: err instanceof Error ? err.message : String(err) });
+      logger.error('[faq] Failed to save pet info', { error: err instanceof Error ? err.message : String(err) })
       return {
         nextState: 'DETECT_INTENT',
-        response: lang === 'pt'
-          ? 'Houve um problema ao salvar a informação. Por favor, tente novamente mais tarde.'
-          : 'There was an issue saving the information. Please try again later.',
-      };
+        response: 'There was an issue saving the information. Please try again later.',
+      }
     }
   }
 
   const response = await llm.generate('pet_info_saved', {
     name: context.cliente_nome,
     pets: petDetails,
-  }, lang)
+  })
 
   // Return to the previous state, with fallback and self-loop prevention
   let returnState = context.previousState ?? 'DETECT_INTENT'
@@ -110,12 +102,10 @@ export const handleSavePetInfo: StateHandler = async (message, context, services
  * Returns to the previous state so the flow continues where it left off.
  */
 export const handleSaveAllergyInfo: StateHandler = async (message, context, services, llm) => {
-  const lang = context.language
-
   if (!message) {
     const response = await llm.generate('ask_allergy_info', {
       name: context.cliente_nome,
-    }, lang)
+    })
     return {
       nextState: 'SAVE_ALLERGY_INFO',
       response,
@@ -132,20 +122,18 @@ export const handleSaveAllergyInfo: StateHandler = async (message, context, serv
         notas: `Allergies: ${allergyDetails}`,
       })
     } catch (err) {
-      logger.error('[faq] Failed to save allergy info', { error: err instanceof Error ? err.message : String(err) });
+      logger.error('[faq] Failed to save allergy info', { error: err instanceof Error ? err.message : String(err) })
       return {
         nextState: 'DETECT_INTENT',
-        response: lang === 'pt'
-          ? 'Houve um problema ao salvar a informação. Por favor, tente novamente mais tarde.'
-          : 'There was an issue saving the information. Please try again later.',
-      };
+        response: 'There was an issue saving the information. Please try again later.',
+      }
     }
   }
 
   const response = await llm.generate('allergy_info_saved', {
     name: context.cliente_nome,
     allergies: allergyDetails,
-  }, lang)
+  })
 
   // Return to the previous state, with fallback and self-loop prevention
   let returnState = context.previousState ?? 'DETECT_INTENT'

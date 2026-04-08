@@ -9,14 +9,12 @@ const MAX_COLLECTION_RETRIES = 5
  * CONFIRM_ADDRESS: Show the customer's current address and ask if it's still correct.
  */
 export const handleConfirmAddress: StateHandler = async (message, context, _services, llm) => {
-  const lang = context.language
-
   // First visit (silent entry): show address and ask for confirmation
   if (!message) {
     const response = await llm.generate('confirm_address', {
       address: context.cliente_endereco,
       name: context.cliente_nome,
-    }, lang)
+    })
 
     return {
       nextState: 'CONFIRM_ADDRESS',
@@ -36,9 +34,9 @@ export const handleConfirmAddress: StateHandler = async (message, context, _serv
   }
 
   // User said no — go back to collect a new address
-  const response = await llm.generate('ask_address', {
+  const response = await llm.generate('ask_address_again', {
     name: context.cliente_nome,
-  }, lang)
+  })
 
   return {
     nextState: 'NEW_CUSTOMER_ADDRESS',
@@ -52,13 +50,11 @@ export const handleConfirmAddress: StateHandler = async (message, context, _serv
  * If the user already stated one, extract and proceed.
  */
 export const handleAskServiceType: StateHandler = async (message, context, _services, llm) => {
-  const lang = context.language
-
   if (!message) {
     // Silent entry — ask for service type
     const response = await llm.generate('ask_service_type', {
       name: context.cliente_nome,
-    }, lang)
+    })
     return {
       nextState: 'ASK_SERVICE_TYPE',
       response,
@@ -72,18 +68,15 @@ export const handleAskServiceType: StateHandler = async (message, context, _serv
     const retries = (context.retry_count || 0) + 1
 
     if (retries >= MAX_COLLECTION_RETRIES) {
-      const response = await llm.generate('ask_service_type', { name: context.cliente_nome }, lang)
-      const escalation = lang === 'pt'
-        ? '\n\nEstou com dificuldade em entender. Quer que alguem ligue para voce?'
-        : "\n\nI'm having trouble understanding. Would you like someone to call you back?"
+      const response = await llm.generate('ask_service_type', { name: context.cliente_nome })
       return {
         nextState: 'ASK_CALLBACK_TIME',
-        response: response + escalation,
+        response: response + "\n\nI'm having trouble understanding. Would you like someone to call you back?",
         contextUpdates: { retry_count: 0 },
       }
     }
 
-    const response = await llm.generate('ask_service_type', { name: context.cliente_nome }, lang)
+    const response = await llm.generate('ask_service_type', { name: context.cliente_nome })
     return {
       nextState: 'ASK_SERVICE_TYPE',
       response,
@@ -112,7 +105,7 @@ export const handleAskDate: StateHandler = async (_message, context, _services, 
   if (!context.service_type) {
     const response = await llm.generate('ask_service_type', {
       name: context.cliente_nome,
-    }, context.language)
+    })
     return {
       nextState: 'ASK_SERVICE_TYPE',
       response,
@@ -122,7 +115,7 @@ export const handleAskDate: StateHandler = async (_message, context, _services, 
   const response = await llm.generate('ask_date', {
     name: context.cliente_nome,
     service_type: context.service_type,
-  }, context.language)
+  })
 
   return {
     nextState: 'COLLECT_DATE',
@@ -135,8 +128,6 @@ export const handleAskDate: StateHandler = async (_message, context, _services, 
  * Must be in the future and not a Sunday.
  */
 export const handleCollectDate: StateHandler = async (message, context, _services, llm) => {
-  const lang = context.language
-
   const extracted = await llm.extract('date', message)
   const dateStr = extracted?.date ?? extracted?.value ?? null
 
@@ -144,34 +135,37 @@ export const handleCollectDate: StateHandler = async (message, context, _service
 
   if (!dateStr) {
     if (dateRetries >= MAX_COLLECTION_RETRIES) {
-      const escalation = lang === 'pt'
-        ? 'Estou com dificuldade em entender a data. Quer que alguem ligue para voce?'
-        : "I'm having trouble understanding the date. Would you like someone to call you back?"
-      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response: "I'm having trouble understanding the date. Would you like someone to call you back?",
+        contextUpdates: { retry_count: 0 },
+      }
     }
-    const response = await llm.generate('invalid_date', {}, lang)
+    const response = await llm.generate('invalid_date', {})
     return { nextState: 'COLLECT_DATE', response, contextUpdates: { retry_count: dateRetries } }
   }
 
   if (!isFutureDate(dateStr)) {
     if (dateRetries >= MAX_COLLECTION_RETRIES) {
-      const escalation = lang === 'pt'
-        ? 'Estou com dificuldade em entender a data. Quer que alguem ligue para voce?'
-        : "I'm having trouble understanding the date. Would you like someone to call you back?"
-      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response: "I'm having trouble understanding the date. Would you like someone to call you back?",
+        contextUpdates: { retry_count: 0 },
+      }
     }
-    const response = await llm.generate('date_in_past', {}, lang)
+    const response = await llm.generate('date_in_past', {})
     return { nextState: 'COLLECT_DATE', response, contextUpdates: { retry_count: dateRetries } }
   }
 
   if (isSunday(dateStr)) {
     if (dateRetries >= MAX_COLLECTION_RETRIES) {
-      const escalation = lang === 'pt'
-        ? 'Estou com dificuldade em entender a data. Quer que alguem ligue para voce?'
-        : "I'm having trouble understanding the date. Would you like someone to call you back?"
-      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response: "I'm having trouble understanding the date. Would you like someone to call you back?",
+        contextUpdates: { retry_count: 0 },
+      }
     }
-    const response = await llm.generate('date_is_sunday', {}, lang)
+    const response = await llm.generate('date_is_sunday', {})
     return { nextState: 'COLLECT_DATE', response, contextUpdates: { retry_count: dateRetries } }
   }
 
@@ -233,7 +227,6 @@ export const handleCheckAvailability: StateHandler = async (_message, context, s
  * NO_SLOTS: No availability on the chosen date. Show alternatives from the next 7 days.
  */
 export const handleNoSlots: StateHandler = async (_message, context, services, llm) => {
-  const lang = context.language
   const date = context.selected_date ?? new Date().toISOString().slice(0, 10)
   const duration = context.duration_minutes ?? getDurationForService(context.service_type ?? 'regular')
 
@@ -241,14 +234,14 @@ export const handleNoSlots: StateHandler = async (_message, context, services, l
   try {
     result = await services.getAvailableSlotsMultiDay(date, 7, duration)
   } catch {
-    const response = await llm.generate('no_slots_at_all', { name: context.cliente_nome }, lang)
+    const response = await llm.generate('no_slots_at_all', { name: context.cliente_nome })
     return { nextState: 'COLLECT_DATE', response }
   }
 
   if (result.total_available === 0) {
     const response = await llm.generate('no_slots_at_all', {
       name: context.cliente_nome,
-    }, lang)
+    })
     return {
       nextState: 'COLLECT_DATE',
       response,
@@ -256,9 +249,9 @@ export const handleNoSlots: StateHandler = async (_message, context, services, l
   }
 
   const alternatives = result.days.map(day => {
-    const dayLabel = lang === 'pt' ? day.day_name : day.day_name_en
+    const dayLabel = day.day_name_en
     const slotCount = day.slots.length
-    const firstSlots = day.slots.slice(0, 3).map(s => s.time).join(', ')
+    const firstSlots = day.slots.slice(0, 3).map((s: any) => s.time).join(', ')
     return `${dayLabel} (${day.date}): ${slotCount} slot(s) — e.g. ${firstSlots}`
   }).join('\n')
 
@@ -266,7 +259,7 @@ export const handleNoSlots: StateHandler = async (_message, context, services, l
     date: context.selected_date,
     alternatives,
     name: context.cliente_nome,
-  }, lang)
+  })
 
   return {
     nextState: 'COLLECT_DATE',
@@ -278,16 +271,15 @@ export const handleNoSlots: StateHandler = async (_message, context, services, l
  * COLLECT_TIME: Extract a time from the user's message and validate it's among available slots.
  */
 export const handleCollectTime: StateHandler = async (message, context, _services, llm) => {
-  const lang = context.language
   const slots = context.available_slots ?? []
 
   if (!message) {
     // Show available times
-    const timeList = slots.map(s => s.time).join(', ')
+    const timeList = slots.map((s: any) => s.time).join(', ')
     const response = await llm.generate('ask_time', {
       date: context.selected_date,
       available_times: timeList,
-    }, lang)
+    })
     return {
       nextState: 'COLLECT_TIME',
       response,
@@ -299,16 +291,17 @@ export const handleCollectTime: StateHandler = async (message, context, _service
 
   if (!timeStr) {
     const timeRetries = (context.retry_count || 0) + 1
-    const timeList = slots.map(s => s.time).join(', ')
+    const timeList = slots.map((s: any) => s.time).join(', ')
 
     if (timeRetries >= MAX_COLLECTION_RETRIES) {
-      const escalation = lang === 'pt'
-        ? 'Estou com dificuldade em entender o horario. Quer que alguem ligue para voce?'
-        : "I'm having trouble understanding the time. Would you like someone to call you back?"
-      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response: "I'm having trouble understanding the time. Would you like someone to call you back?",
+        contextUpdates: { retry_count: 0 },
+      }
     }
 
-    const response = await llm.generate('invalid_time', { available_times: timeList }, lang)
+    const response = await llm.generate('invalid_time', { available_times: timeList })
     return { nextState: 'COLLECT_TIME', response, contextUpdates: { retry_count: timeRetries } }
   }
 
@@ -317,23 +310,24 @@ export const handleCollectTime: StateHandler = async (message, context, _service
     ? `${timeStr.slice(0, 2)}:${timeStr.slice(2)}`
     : timeStr
 
-  const isAvailable = slots.some(s => s.time === normalizedTime)
+  const isAvailable = slots.some((s: any) => s.time === normalizedTime)
 
   if (!isAvailable) {
     const unavailRetries = (context.retry_count || 0) + 1
-    const timeList = slots.map(s => s.time).join(', ')
+    const timeList = slots.map((s: any) => s.time).join(', ')
 
     if (unavailRetries >= MAX_COLLECTION_RETRIES) {
-      const escalation = lang === 'pt'
-        ? 'Estou com dificuldade em encontrar o horario. Quer que alguem ligue para voce?'
-        : "I'm having trouble finding the right time. Would you like someone to call you back?"
-      return { nextState: 'ASK_CALLBACK_TIME', response: escalation, contextUpdates: { retry_count: 0 } }
+      return {
+        nextState: 'ASK_CALLBACK_TIME',
+        response: "I'm having trouble finding the right time. Would you like someone to call you back?",
+        contextUpdates: { retry_count: 0 },
+      }
     }
 
     const response = await llm.generate('time_not_available', {
       time: normalizedTime,
       available_times: timeList,
-    }, lang)
+    })
     return {
       nextState: 'COLLECT_TIME',
       response,
@@ -356,12 +350,10 @@ export const handleCollectTime: StateHandler = async (message, context, _service
  * Handles conflict, missing_address, and success outcomes.
  */
 export const handleCreateBooking: StateHandler = async (_message, context, services, llm) => {
-  const lang = context.language
-
   if (!context.selected_date || !context.selected_time || !context.cliente_id) {
     return {
       nextState: 'ASK_DATE',
-      response: await llm.generate('booking_error', {}, context.language || 'en'),
+      response: await llm.generate('booking_error', {}),
       contextUpdates: { last_error: 'Missing required booking fields' },
     }
   }
@@ -379,7 +371,7 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
     const response = await llm.generate('booking_conflict', {
       time: context.selected_time,
       suggested_times: suggestedTimes,
-    }, lang)
+    })
     return {
       nextState: 'COLLECT_TIME',
       response,
@@ -390,7 +382,7 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
   if (result.status === 'missing_address') {
     const response = await llm.generate('need_address', {
       name: context.cliente_nome,
-    }, lang)
+    })
     return {
       nextState: 'NEW_CUSTOMER_ADDRESS',
       response,
@@ -398,7 +390,7 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
   }
 
   if (result.status === 'error') {
-    const response = await llm.generate('booking_error', {}, lang)
+    const response = await llm.generate('booking_error', {})
     return {
       nextState: 'ASK_DATE',
       response,
@@ -418,7 +410,7 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
     duration: result.details?.duration ?? context.duration_minutes,
     address: result.details?.address ?? context.cliente_endereco,
     appointment_id: result.appointment_id,
-  }, lang)
+  })
 
   return {
     nextState: 'CONFIRM_SUMMARY',
@@ -435,8 +427,6 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
  * Handle yes / no / correction.
  */
 export const handleConfirmSummary: StateHandler = async (message, context, services, llm) => {
-  const lang = context.language
-
   if (!message) {
     // Silent entry — regenerate summary so user sees the confirmation prompt
     const response = await llm.generate('confirm_summary', {
@@ -446,7 +436,7 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
       date: context.selected_date,
       time: context.selected_time,
       service: context.service_type,
-    }, lang)
+    })
     return {
       nextState: 'CONFIRM_SUMMARY',
       response,
@@ -465,10 +455,25 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
       // Non-critical - booking already created, confirmation is secondary
     }
 
+    // Check if the user already stated their channel preference in the same message
+    // e.g. "Yes, WhatsApp please" — avoid forcing them to repeat it
+    const prefExtracted = await llm.extract('preference', message)
+    const prefValue = prefExtracted?.canal ?? prefExtracted?.preference ?? prefExtracted?.value ?? null
+    const normalizedPref = normalizePreference(prefValue)
+
+    if (normalizedPref) {
+      return {
+        nextState: 'UPDATE_PREFERENCE',
+        response: '',
+        silent: true,
+        contextUpdates: { canal_preferencia: normalizedPref },
+      }
+    }
+
     // Ask for communication preference
     const response = await llm.generate('ask_preference', {
       name: context.cliente_nome,
-    }, lang)
+    })
 
     return {
       nextState: 'COLLECT_PREFERENCE',
@@ -488,7 +493,7 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
 
     const response = await llm.generate('booking_correction', {
       name: context.cliente_nome,
-    }, lang)
+    })
 
     return {
       nextState: 'ASK_DATE',
@@ -514,7 +519,7 @@ export const handleConfirmSummary: StateHandler = async (message, context, servi
 
   const response = await llm.generate('booking_cancelled_by_user', {
     name: context.cliente_nome,
-  }, lang)
+  })
 
   return {
     nextState: 'DETECT_INTENT',
@@ -543,18 +548,14 @@ export const handleCollectPreference: StateHandler = async (message, context, _s
 
     if (retries >= MAX_COLLECTION_RETRIES) {
       // Default to SMS and inform user
-      const lang = context.language || 'en'
-      const notice = lang === 'pt'
-        ? 'Vou enviar a confirmacao por SMS, tudo bem? 😊'
-        : "I'll send the confirmation via SMS, okay? 😊"
       return {
         nextState: 'UPDATE_PREFERENCE',
-        response: notice,
+        response: "I'll send the confirmation via SMS, okay? 😊",
         contextUpdates: { canal_preferencia: 'sms', retry_count: 0 },
       }
     }
 
-    const response = await llm.generate('ask_preference_again', {}, context.language)
+    const response = await llm.generate('ask_preference_again', {})
     return {
       nextState: 'COLLECT_PREFERENCE',
       response,
@@ -586,10 +587,19 @@ export const handleUpdatePreference: StateHandler = async (_message, context, se
     }
   }
 
+  // Also update the appointment record so notification routing is correct
+  if (context.booking_id && context.canal_preferencia) {
+    try {
+      await services.updateAppointmentPreference(context.booking_id, context.canal_preferencia)
+    } catch {
+      // Non-critical — booking is confirmed regardless
+    }
+  }
+
   const response = await llm.generate('done_booking', {
     name: context.cliente_nome,
     preference: context.canal_preferencia,
-  }, context.language)
+  })
 
   return {
     nextState: 'DONE',

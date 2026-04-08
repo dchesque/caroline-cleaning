@@ -9,8 +9,6 @@ import { logger } from '@/lib/logger'
  * If no → return to DETECT_INTENT.
  */
 export const handleConfirmReschedule: StateHandler = async (message, context, services, llm) => {
-  const lang = context.language
-
   if (!message) {
     // Silent entry — show the reschedule confirmation prompt
     const appointment = (context.appointments ?? []).find(
@@ -22,7 +20,7 @@ export const handleConfirmReschedule: StateHandler = async (message, context, se
       date: appointment?.date ?? 'unknown',
       time: appointment?.time ?? 'unknown',
       service_type: appointment?.service_type ?? 'cleaning',
-    }, lang)
+    })
 
     return {
       nextState: 'CONFIRM_RESCHEDULE',
@@ -39,13 +37,11 @@ export const handleConfirmReschedule: StateHandler = async (message, context, se
       try {
         await services.cancelAppointment(appointmentId, 'Rescheduled via chat')
       } catch (cancelError) {
-        logger.error('[reschedule] Failed to cancel old appointment', { error: cancelError instanceof Error ? cancelError.message : String(cancelError) });
+        logger.error('[reschedule] Failed to cancel old appointment', { error: cancelError instanceof Error ? cancelError.message : String(cancelError) })
         return {
           nextState: 'DONE',
-          response: lang === 'pt'
-            ? 'Houve um problema ao cancelar o agendamento anterior. Por favor, entre em contato conosco diretamente.'
-            : 'There was an issue cancelling the previous appointment. Please contact us directly.',
-        };
+          response: 'There was an issue cancelling the previous appointment. Please contact us directly.',
+        }
       }
     }
 
@@ -57,7 +53,7 @@ export const handleConfirmReschedule: StateHandler = async (message, context, se
 
     const response = await llm.generate('reschedule_pick_date', {
       name: context.cliente_nome,
-    }, lang)
+    })
 
     return {
       nextState: 'ASK_DATE',
@@ -76,7 +72,7 @@ export const handleConfirmReschedule: StateHandler = async (message, context, se
   // User said no — go back to intent detection
   const response = await llm.generate('reschedule_aborted', {
     name: context.cliente_nome,
-  }, lang)
+  })
 
   return {
     nextState: 'DETECT_INTENT',

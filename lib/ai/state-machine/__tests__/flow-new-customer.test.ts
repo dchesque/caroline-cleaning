@@ -116,7 +116,7 @@ function buildMockServices(): jest.Mocked<CarolServices> {
 
 function buildMockLlm(): jest.Mocked<CarolLLM> {
   return {
-    detectLanguage: jest.fn().mockResolvedValue('en'),
+    
     extract: jest.fn(),
     classifyIntent: jest.fn(),
     generate: jest.fn().mockImplementation(async (template: string) => `[${template}]`),
