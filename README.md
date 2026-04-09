@@ -99,12 +99,21 @@ docker run -p 3000:3000 chesque-cleaning
 
 ## 📚 Documentação
 
-A documentação detalhada do projeto encontra-se na pasta `docs/`:
+**Toda a documentação consolidada está em [`docs/`](docs/README.md)**
 
--   [PRD (Visão do Produto)](docs/PRD_Chesque_Premium_Cleaning_v5.md)
--   [Rotas e Telas](docs/ROTAS_TELAS_Chesque.md)
--   [Schema do Banco de Dados](docs/SCHEMA_SUPABASE_Chesque.md)
--   [Design System](docs/DESIGN_SYSTEM_Chesque.md)
+Acesse [**docs/README.md**](docs/README.md) para o índice completo com:
+- [Getting Started](docs/GETTING_STARTED.md) — Setup local
+- [Architecture](docs/ARCHITECTURE.md) — Design do sistema
+- [API Reference](docs/API.md) — 30+ endpoints
+- [Routes & Screens](docs/ROUTES_SCREENS.md) — 40+ páginas
+- [Development Guide](docs/DEVELOPMENT.md) — Workflow de código
+- [Deployment](docs/DEPLOYMENT.md) — Production setup
+- [Security](docs/SECURITY.md) — Auth e proteção
+- [Database Schema](docs/DATABASE.md) — Supabase
+- [Design System](docs/DESIGN_SYSTEM.md) — UI guidelines
+- [PRD](docs/PRD.md) — Product requirements
+- [Changelog](changelog.md) — Version history
+- [Roadmap](roadmap.md) — Future features
 
 ## 🤝 Colaboração
 

@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
         // Disparar evento server-side
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/tracking/event`, {
+            await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/tracking/event`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

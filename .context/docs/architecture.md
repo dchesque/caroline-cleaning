@@ -16,7 +16,7 @@ Carolinas Premium is a **monolithic full-stack Next.js 14+ application** using t
 | **Backend** | Next.js API Routes, Server Actions |
 | **Database** | Supabase (Postgres + Auth + Realtime) |
 | **Styling** | Tailwind + `cn()` utility ([lib/utils.ts](lib/utils.ts)) |
-| **AI/Integrations** | Carol AI (custom API), N8N Webhooks |
+| **AI/Integrations** | Carol AI (custom LLM agent), N8N Webhooks, Twilio SMS |
 | **Exports** | Excel/PDF ([lib/export-utils.ts](lib/export-utils.ts)) |
 | **Charts** | Recharts (analytics funnels/trends) |
 
@@ -25,208 +25,201 @@ Carolinas Premium is a **monolithic full-stack Next.js 14+ application** using t
 Public Visitor → Root Layout (app/layout.tsx) → SSR Pages (app/(public)/) → Supabase RLS Queries
                   ↓ (Middleware: rateLimit, auth)
 Authenticated Admin → Admin Layout (app/(admin)/layout.tsx) → Dynamic Pages → Hooks → API Routes → Supabase + Webhooks
-Chat Widget → /api/chat → Carol AI → /api/webhook/n8n → Notifications/DB Updates
+Chat Widget → /api/chat → Carol AI (CarolStateMachine) → /api/webhook/n8n → Services → Notifications/DB Updates
 ```
 - **Auth Flow**: Supabase Auth → `updateSession` ([lib/supabase/middleware.ts](lib/supabase/middleware.ts)) → Protected Routes.
 - **Realtime**: Supabase subscriptions via hooks (e.g., `useChat` [hooks/use-chat.ts](hooks/use-chat.ts)).
 
+## Dependency Graph
+High-level module dependencies (inferred from imports/exports):
+
+```
+Config (.) ─→ Utils (lib/*)
+Utils ─→ Controllers (app/api/*, lib/ai/state-machine/handlers/*)
+Services (lib/services/*) ─→ Components (components/*)
+Controllers ─→ Components (app/(admin)/(public)/, components/ui/*)
+```
+
+**Top Dependencies** (most imported files):
+- `lib/ai/state-machine/handlers/index.ts` (10 importers)
+- `components/agenda/appointment-modal.tsx` (8 importers)
+- `components/agenda/calendar-view.tsx` (5 importers)
+- `lib/ai/carol-agent.ts` (3 importers)
+
 ## Architectural Layers
 
 ### 1. Utils (`lib/`)
-Reusable primitives: **55 symbols** (formatting, Supabase clients, exports, config, actions, logger).
+Reusable primitives: **55+ symbols** (formatting, Supabase clients, logger, tracking, AI prompts, rate limiting).
 
 - **Key Files**:
   | File | Exports | Usage Example |
   |------|---------|---------------|
   | [lib/utils.ts](lib/utils.ts) | `cn`, `formatCurrency`, `formatDate` | `cn("btn", isActive && "btn-primary")` |
-  | [lib/formatters.ts](lib/formatters.ts) | `formatPhoneUS`, `isValidEmail`, `formatCurrencyInput`, `formatZipCode`, `isValidZipCode`, `formatState` | `<Input value={formatCurrencyInput(val)} />` |
-  | [lib/export-utils.ts](lib/export-utils.ts) | `exportToExcel`, `exportToPDF` | `exportToExcel(clientsData, 'clientes.xlsx')` |
-  | [lib/supabase/server.ts](lib/supabase/server.ts), [lib/supabase/client.ts](lib/supabase/client.ts) | `createClient` | `const { data } = await createClient().from('clientes').select('*')` |
-  | [lib/logger.ts](lib/logger.ts) | `Logger` class, `LogLevel` | `new Logger().info('User login', { userId })` |
-  | [lib/business-config.ts](lib/business-config.ts) | `BusinessSettings`, `getBusinessSettingsClient`, `saveBusinessSettings`, `mapDbToSettings` | `const settings = getBusinessSettingsClient()` |
-  | [lib/config/webhooks.ts](lib/config/webhooks.ts) | `getWebhookUrl`, `getWebhookSecret`, `isWebhookConfigured`, `getWebhookTimeout` | `if (isWebhookConfigured()) { sendWebhookAction(...) }` |
-  | [lib/actions/webhook.ts](lib/actions/webhook.ts) | `sendWebhookAction` | Server Action for outbound webhooks |
+  | [lib/formatters.ts](lib/formatters.ts) | `formatPhoneUS`, `isValidEmail`, `formatCurrencyInput` | `<Input value={formatCurrencyInput(val)} />` |
+  | [lib/supabase/server.ts](lib/supabase/server.ts) | `createClient` | `await createClient().from('clientes').select('*')` |
+  | [lib/logger.ts](lib/logger.ts) | `Logger` | `new Logger().info('Event', { data })` |
+  | [lib/rate-limit.ts](lib/rate-limit.ts) | `checkRateLimit`, `getClientIp` | `if (await checkRateLimit(ip)) return;` |
+  | [lib/ai/llm.ts](lib/ai/llm.ts) | `CarolLLM` | Custom OpenAI wrapper for structured extraction |
+  | [lib/ai/state-machine/engine.ts](lib/ai/state-machine/engine.ts) | `CarolStateMachine` | `const machine = new CarolStateMachine(state)` |
+  | [lib/business-config.ts](lib/business-config.ts) | `BusinessSettings` | `getBusinessSettingsClient()` |
+  | [lib/notifications.ts](lib/notifications.ts) | `notify`, `notifyOwner` | `notify(NotificationTypes.LEAD_CREATED, data)` |
 
-### 2. Repositories
-Data access layer: **3 symbols**. Abstracts Supabase queries for core entities (`Cliente`, `Agendamento`, etc.). Dependencies flow: Services → Components → Repositories.
+### 2. Services (`lib/services/`)
+Business logic: **~5 symbols** (webhooks, chat logging).
 
-### 3. Services (`lib/services/`)
-Lightweight business logic: **2 symbols**.
+- **Key Classes**:
+  | Class | File | Purpose |
+  |-------|------|---------|
+  | `WebhookService` | [lib/services/webhookService.ts](lib/services/webhookService.ts) | Handles `WebhookPayload` (leads, appointments, payments) |
+  | `ChatLoggerService` | [lib/services/chat-logger.ts](lib/services/chat-logger.ts) | Logs `ChatMessage`, generates `SessionSummary` |
 
-- **Key**: `WebhookService` ([lib/services/webhookService.ts](lib/services/webhookService.ts)) – processes leads/appointments/feedback/payments.
-- **Pattern**: DB ops + notifications; used in hooks/API routes.
-- **Dependencies**: Components, Repositories, [types/webhook.ts](types/webhook.ts).
+### 3. Components & Pages (`components/`, `app/`)
+**152+ symbols**. UI layer with heavy use in admin dashboard.
 
-### 4. Components & Pages (`components/`, `app/`)
-- **Components**: **152 symbols** (UI primitives/views). Top dependencies: `components/agenda/appointment-modal.tsx` (8 importers), `app/(admin)/admin/configuracoes/webhooks/components/webhooks-tabs.tsx` (6 importers), `components/agenda/calendar-view.tsx` (5 importers).
-  | Category | Count | Examples | Props |
-  |----------|-------|----------|-------|
-  | **Chat** | 5+ | `ChatWidget`, `ChatWindow`, `ChatInput` ([components/chat/](components/chat/)) | `ChatWindowProps` |
-  | **Clients** | 10+ | `ClientsFilters`, `ClientsTable` ([components/clientes/](components/clientes/)) | `ClientsFiltersProps`, `ClientsTableProps` |
-  | **Agenda** | 20+ | `CalendarView`, `AppointmentForm` ([components/agenda/](components/agenda/)) | `UseAppointmentFormProps`, `AppointmentFormData` |
-  | **Analytics** | 10+ | `ConversionFunnel` ([components/analytics/](components/analytics/)) | Recharts props |
-  | **Financeiro** | 5+ | `TransactionForm`, `CategoryQuickForm`, `ExpenseCategories` ([components/financeiro/](components/financeiro/)) | `TransactionFormProps`, `CategoryQuickFormProps` |
-  | **Admin/Landing** | 20+ | `AdminHeader`, `AdminLayout`, `AnnouncementBar`, `AboutUs`, `ConfigLinkCard` | N/A |
+- **Key Components**:
+  | Category | Examples | Props/Types |
+  |----------|----------|-------------|
+  | **Chat** | `ChatWidget`, `ChatWindow`, `ChatInput` | `ChatMessage[]` |
+  | **Agenda** | `CalendarView`, `AppointmentForm` ([components/agenda/](components/agenda/)) | `AppointmentFormData`, `ServicoTipo`, `Addon` |
+  | **Clients** | `ClientsFilters`, `ClientsTable` | `Cliente[]` |
+  | **Admin** | `AdminLayout`, `AdminHeader` | Contexts: `BusinessSettingsProvider`, `AdminI18nProvider` |
+  | **Analytics** | Trends/Satisfaction charts | `DashboardStats` |
+  | **Financeiro** | `CategoryQuickForm` | `Categoria[]` |
 
-- **Pages** (App Router, parallel routes):
-  | Route Group | Key Pages | Features |
-  |-------------|-----------|----------|
-  | `(admin)` | `/admin/agenda` (`AgendaPage`) | Scheduler (`CalendarView`) |
-  | | `/admin/clientes/[id]` (`ClienteDetalhePage`) | Tabs: info/financeiro/contrato/agendamentos |
-  | | `/admin/analytics/clientes` (`ClientesAnalyticsPage`) | Client trends |
-  | | `/admin/financeiro/categorias` (`CategoriasPage`) | Expense categories |
-  | | `/admin/configuracoes` (`ConfiguracoesPage`) | Team/business settings |
-  | `(public)` / `(auth)` | Landing: `AboutUs`; Auth: `AuthLayout` | SSR marketing/auth |
+- **Pages** (App Router):
+  | Group | Examples |
+  |-------|----------|
+  | `(admin)` | `/admin/agenda` (`AgendaPage`), `/admin/clientes/[id]` (`ClienteDetalhePage`), `/admin/chat-logs/[sessionId]` (`ChatLogDetailPage`) |
+  | `(public)` | Landing, `/contrato/[id]/assinar` |
 
-### 5. Hooks (`hooks/`)
-Custom React logic: state, data fetching, realtime (**10+ hooks**).
+### 4. Hooks (`hooks/`)
+**10+ hooks** for state/API/realtime.
 
-| Hook | File | Purpose | Example |
-|------|------|---------|---------|
-| `useChat` | [hooks/use-chat.ts](hooks/use-chat.ts) | Messages/sessions (`ChatMessage`) | `const { messages, sendMessage } = useChat()` |
-| `useChatSession` | [hooks/use-chat-session.ts](hooks/use-chat-session.ts) | Session ID (`generateSessionId`) | `const sessionId = useChatSession()` |
-| `useWebhook` & variants (`useSendChatMessage`, `useNotifyLeadCreated`, `useNotifyAppointmentCreated`, `useNotifyAppointmentCompleted`, `useNotifyAppointmentCancelled`, `useNotifyFeedbackReceived`, `useNotifyPaymentReceived`) | [hooks/use-webhook.ts](hooks/use-webhook.ts) | Notifications (`WebhookEventType`) | `const notify = useNotifyAppointmentCreated()` |
-| `useAppointmentForm` | [components/agenda/appointment-form/use-appointment-form.ts](components/agenda/appointment-form/use-appointment-form.ts) | Form state (`AppointmentFormData`) | Integrated in `AppointmentForm` |
+| Hook | Purpose | Returns |
+|------|---------|---------|
+| `useChat` | Chat messages/sending | `{ messages, sendMessage }` |
+| `useWebhook` | Webhook notifications | `UseWebhookResult` (e.g., `useNotifyAppointmentCreated`) |
+| `useCarolChat` | Carol AI integration | `UseCarolChatReturn` |
 
-### 6. Controllers (API Routes, `app/api/`)
-**50 symbols**; Zod-validated handlers.
+### 5. Controllers (API Routes `app/api/`)
+**50+ symbols**, Zod-validated.
 
-| Route | Method | File | Payloads |
-|-------|--------|------|----------|
-| `/api/chat` | POST | [app/api/chat/route.ts](app/api/chat/route.ts) | `ChatRequest` → Carol AI |
-| `/api/webhook/n8n` | POST | [app/api/webhook/n8n/route.ts](app/api/webhook/n8n/route.ts) | `IncomingWebhookPayload` → `WebhookService` |
-| `/api/carol/query` | POST | [app/api/carol/query/route.ts](app/api/carol/query/route.ts) | `QueryPayload` (`QueryType`) |
-| `/api/carol/actions` | POST | [app/api/carol/actions/route.ts](app/api/carol/actions/route.ts) | `ActionPayload` (`ActionType`) |
-| `/api/notifications/send` | POST | [app/api/notifications/send/route.ts](app/api/notifications/send/route.ts) | `NotificationPayload` |
-| `/api/tracking/event` | POST | [app/api/tracking/event/route.ts](app/api/tracking/event/route.ts) | `EventPayload` |
-| `/api/slots` | GET | [app/api/slots/route.ts](app/api/slots/route.ts) | Availability slots |
-| `/api/financeiro/categorias/[id]` | DELETE | [app/api/financeiro/categorias/[id]/route.ts](app/api/financeiro/categorias/[id]/route.ts) | Category ops |
+| Route | Key Exports | Payloads |
+|-------|-------------|----------|
+| `/api/chat` | Chat handling | `ChatMessage` → `CarolAgent` |
+| `/api/webhook/n8n` | N8N events | `WebhookPayload` (15+ types: `AppointmentCreatedPayload`, etc.) |
+| `/api/carol/query` / `actions` | AI state machine | `CarolState`, `UserIntent` |
+| `/api/tracking/event` | Analytics events | `TrackingEventData` |
+| `/api/notifications/send` | Owner alerts | `NotificationData` |
 
-- **Middleware** ([middleware.ts](middleware.ts)): `rateLimit` → Auth → `updateSession`.
+- **Middleware** ([middleware.ts](middleware.ts)): Rate limiting + auth.
 
-### 7. Types (`types/`)
-Shared contracts (Supabase + custom).
+### 6. Types (`types/`)
+Core contracts (**30+**).
 
-| File | Key Exports |
-|------|-------------|
-| [types/index.ts](types/index.ts) | `Cliente(Insert/Update)`, `Agendamento(Insert/Update)`, `Contrato`, `Financeiro`, `DashboardStats`, `AgendaHoje`, `UserProfile`, `NotificationTypes` |
-| [types/webhook.ts](types/webhook.ts) | `WebhookEventType`, `WebhookPayload`, `WebhookResponse`, `WebhookOptions`, 12+ payloads (`ChatMessagePayload`, `LeadCreatedPayload`, `Appointment*Payload`, `FeedbackReceivedPayload`, `PaymentReceivedPayload`, `ClientInactiveAlertPayload`, `ClientBirthdayPayload`) |
-| [types/supabase.ts](types/supabase.ts) | `Database`, `Json` |
-| [components/agenda/types.ts](components/agenda/types.ts) | `ServicoTipo`, `Addon`, `AddonSelecionado`, `AppointmentFormData` |
+| File | Key Types |
+|------|-----------|
+| [types/index.ts](types/index.ts) | `Cliente(Insert/Update)`, `Agendamento(Insert/Update)`, `DashboardStats`, `AgendaHoje` |
+| [types/webhook.ts](types/webhook.ts) | `WebhookEventType`, 15+ `Payload`s (e.g., `LeadCreatedPayload`, `ClientBirthdayPayload`) |
+| [lib/ai/state-machine/types.ts](lib/ai/state-machine/types.ts) | `CarolState`, `StateHandler`, `HandlerResult` |
 
 ## Design Patterns & Conventions
-| Pattern | Examples | Benefits |
-|---------|----------|----------|
-| **Custom Hooks** | `useChat*`, `useWebhook*`, `useAppointmentForm` | Reusable API/state logic |
-| **Server Actions** | [lib/actions/webhook.ts](lib/actions/webhook.ts), [lib/supabase/middleware.ts](lib/supabase/middleware.ts) | Secure, type-safe mutations |
-| **Route Handlers** | `/api/*` (Zod-typed) | Validation + HMAC (webhooks) |
-| **Colocation** | Page + `loading.tsx` + local hooks/components | Fast iteration |
-| **Event-Driven** | N8N → `WebhookPayload` → Hooks/Services | Decoupling (idempotency via timestamps) |
-| **Contexts** | `BusinessSettingsProvider` ([lib/context/business-settings-context.tsx](lib/context/business-settings-context.tsx)), `AdminI18nProvider` ([lib/admin-i18n/context.tsx](lib/admin-i18n/context.tsx)) | Scoped config/i18n |
-| **Tracking** | [lib/tracking/](lib/tracking/), `TrackingEventName`, `generateEventId` | UTM/FB cookies, hashed PII |
+- **AI State Machine**: `CarolStateMachine` + handlers (`lib/ai/state-machine/handlers/*.ts`) for intents (booking, greeting, customer).
+- **Event-Driven**: Webhooks → Services → DB/Notifications (idempotent via timestamps).
+- **Custom Hooks**: Encapsulate API calls (e.g., `useNotify*` variants).
+- **Server Actions**: Mutations like `sendWebhookAction`.
+- **Contexts**: Business settings, i18n, tracking (`lib/tracking/`).
+- **Validation**: Zod in API routes; phone/ZIP formatters.
 
-## Public API (Exported Symbols)
-Core reusables (**~178**; top examples):
-
+## Public API (Top Exports)
 ```ts
 // Utils
-import { cn, formatCurrency } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/server';
-import { exportToExcel } from '@/lib/export-utils';
+import { cn } from '@/lib/utils';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { notify } from '@/lib/notifications';
 
-// Components/Hooks
+// AI
+import { CarolAgent } from '@/lib/ai/carol-agent';
+import { CarolStateMachine } from '@/lib/ai/state-machine/engine';
+
+// Components
 import { ChatWidget } from '@/components/chat/chat-widget';
-import { AdminLayout } from '@/app/(admin)/layout';
-import { useChat } from '@/hooks/use-chat';
-import { useNotifyAppointmentCreated } from '@/hooks/use-webhook';
+import { CalendarView } from '@/components/agenda/calendar-view';
 
 // Types
-import type { Cliente, Agendamento, WebhookPayload } from '@/types';
+import type { Cliente, WebhookPayload } from '@/types';
 ```
 
 ## External Dependencies
-| Service | Config | Handling |
-|---------|--------|----------|
-| **Supabase** | Env vars, [lib/supabase/*](lib/supabase/) | RLS, realtime subs |
-| **N8N Webhooks** | [lib/config/webhooks.ts](lib/config/webhooks.ts) | HMAC verify (`getWebhookSecret`), retries (`getWebhookTimeout`) |
-| **Carol AI** | `/api/carol/*` | Typed payloads (`QueryPayload`, `ActionPayload`) |
-| **Libs** | `lucide-react`, `recharts`, `xlsx`, `@supabase/supabase-js` | Tree-shaken |
+| Service | Integration |
+|---------|-------------|
+| **Supabase** | RLS, realtime ([types/supabase.ts](types/supabase.ts)) |
+| **N8N** | `/api/webhook/n8n` (HMAC via `getWebhookSecret`) |
+| **Carol AI** | `CarolLLM` (OpenAI), `buildCarolPrompt` |
+| **Twilio** | `sendSMS` ([lib/twilio.ts](lib/twilio.ts)) |
 
 ## Diagrams
 
 ### High-Level Flow
 ```mermaid
 graph TD
-    A[Browser/Public] --> B[app/layout.tsx]
-    B --> C[middleware.ts<br/>rateLimit/auth]
-    C --> D[(admin)/layout.tsx<br/>AdminHeader]
-    C --> E[Public Pages<br/>ChatWidget]
-    D --> F[Pages/Hooks<br/>useChat, useWebhook]
-    E --> G[/api/chat<br/>ChatRequest]
-    F --> H[/api/*<br/>WebhookService]
-    G --> I[Carol AI]
-    H --> J[Supabase<br/>Postgres]
-    H --> K[N8N Webhooks]
-    J -.-> L[Realtime Subs]
+    A[Public/Admin] --> B[Middleware<br/>rateLimit/auth]
+    B --> C[Pages/Hooks<br/>useChat/useWebhook]
+    C --> D[/api/chat<br/>CarolAgent]
+    D --> E[CarolStateMachine<br/>Handlers]
+    C --> F[/api/webhook/n8n<br/>WebhookService]
+    E --> F
+    F --> G[Supabase]
+    F --> H[N8N/Notifications]
+    G -.-> I[Realtime]
 ```
 
-### Domain Boundaries
+### Domain Layers
 ```mermaid
 graph LR
-    CRM[Admin CRM<br/>Clientes/Agenda/Financeiro<br/>152 Components] --> Types[types/index.ts<br/>Cliente/Agendamento]
-    Chat[Chat Widget<br/>hooks/use-chat.ts] --> AI[Carol API<br/>/api/carol/*]
-    Analytics[Charts/Funnels<br/>DashboardStats] --> DB[Supabase<br/>types/supabase.ts]
-    Events[Webhooks<br/>types/webhook.ts<br/>12+ Payloads] --> Services[WebhookService]
-    Repos[Repositories<br/>3 symbols] --> DB
+    UI[Components/Pages<br/>152 symbols] --> Hooks[Hooks<br/>useChat*]
+    Hooks --> API[Controllers<br/>50 routes]
+    API --> Services[Services<br/>WebhookService]
+    Services --> DB[Supabase<br/>types/*]
+    UI --> AI[lib/ai/<br/>CarolStateMachine]
 ```
 
 ## Key Decisions & Risks
-| Area | Decision | Trade-offs/Risks |
-|------|----------|------------------|
-| **Monolith** | Next.js single deploy | Simplicity; vertical scale limits |
-| **Supabase** | BaaS w/ RLS | Speed; vendor lock-in (export schema) |
-| **No Global State** | Hooks + Context | Performant; prop-drilling in deep tabs |
-| **Webhooks** | N8N events | Loose coupling; ensure idempotency |
-| **SSR + Suspense** | Default for pages | SEO/mobile good; hydration mismatches |
-| **i18n** | `AdminI18nProvider` | Admin-focused; expand to public? |
-
-**Constraints**: pt-BR/BRL focus, US phone/ZIP ([lib/formatters.ts](lib/formatters.ts)), mobile-first chat.
+| Area | Decision | Risks |
+|------|----------|-------|
+| **Monolith** | Single Next.js deploy | Scale via Vercel edge |
+| **Supabase** | Full BaaS | Export schema for migrations |
+| **State Machine** | Typed handlers for Carol | Test coverage (`__tests__`) |
+| **Webhooks** | Typed payloads | Idempotency, timeouts |
 
 ## Directory Structure
 ```
 app/
-├── (admin)/layout.tsx          # AdminLayout + i18n
-├── (auth)/layout.tsx           # AuthLayout
-├── api/                        # 50 controllers (chat/webhook/carol/...)
-├── (admin)/admin/              # agenda/clientes/analytics/financeiro/configuracoes
+├── (admin)/layout.tsx (AdminLayout)
+├── api/ (chat, webhook/n8n, carol/*, tracking/*)
+├── (admin)/admin/ (agenda, clientes/[id], chat-logs/[sessionId], analytics/*)
 components/
-├── chat/                       # ChatWidget + window/input
-├── clientes/                   # Table/Filters
-├── agenda/                     # AppointmentForm/Calendar (top deps)
-├── analytics/                  # Charts/Funnels
-├── financeiro/                 # Forms/Categories
+├── agenda/ (CalendarView, AppointmentForm – top deps)
+├── chat/ (ChatWidget)
+├── admin/ (header, sidebar)
 lib/
-├── utils.ts                    # cn/formatters
-├── supabase/                   # Clients/middleware
-├── services/                   # WebhookService (2 symbols)
-├── hooks/                      # useChat/useWebhook
-types/                          # index.ts + webhook/supabase
-docs/                           # architecture.md
+├── ai/ (carol-agent, state-machine – handlers/tests)
+├── services/ (webhookService, chat-logger)
+├── utils.ts, supabase/, tracking/
+types/ (index.ts, webhook.ts)
 ```
 
 ## Development Guidelines
-1. **Types First**: Extend [types/index.ts](types/index.ts) for models; regenerate [types/supabase.ts](types/supabase.ts).
-2. **Hooks for Logic**: Wrap API/DB in `use*` hooks (e.g., `useNotify*`).
-3. **Components**: Define props interfaces + `cn()`; colocate forms/hooks.
-4. **API Routes**: Zod validation + auth; use `WebhookPayload` for events.
-5. **Exports/Charts**: `exportToExcel(data)`; Recharts for `DashboardStats`.
-6. **Debug**: `Logger`, Supabase Studio; mock webhooks with `getWebhookUrl`.
-7. **New Feature**: Types → Hook → Component → Page → Supabase migration.
-8. **Usage Examples**: Search importers (e.g., `components/agenda/appointment-modal.tsx` → 8 files).
+1. **Extend Types**: Update [types/index.ts](types/index.ts); regen Supabase types.
+2. **Hooks First**: `use*` for API/realtime (e.g., derive `useNotifyFeedbackReceived`).
+3. **Components**: Props interfaces + `cn()`; colocate in `appointment-form/`.
+4. **API**: Zod + auth; use `WebhookPayload` union.
+5. **AI Handlers**: Add to `lib/ai/state-machine/handlers/`; test in `__tests__/`.
+6. **Debug**: `Logger`, Supabase Studio, scripts (`scripts/run_booking_scenarios.ts`).
+7. **New Feature**: Types → Service → Hook → Component → Page → Migration.
 
 ## Related Files
-- [Project Overview](project-overview.md)
-- [API Routes](api-routes.md)
-- Supabase: [types/supabase.ts](types/supabase.ts), `supabase/migrations/`
-- Chat: [components/chat/](components/chat/), [hooks/use-chat.ts](hooks/use-chat.ts)
-- Webhooks: [types/webhook.ts](types/webhook.ts), [hooks/use-webhook.ts](hooks/use-webhook.ts)
+- [project-overview.md](project-overview.md)
+- Supabase schema: `supabase/migrations/`
+- AI Tests: `lib/ai/state-machine/__tests__/`
+- Scripts: `scripts/` (chat scenarios, zip checks)

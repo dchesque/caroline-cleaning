@@ -1,6 +1,6 @@
 # Development Workflow
 
-This guide outlines the engineering processes for **Carolinas Premium**, a Next.js 14+ App Router application using TypeScript, Tailwind CSS, Supabase (PostgreSQL), N8N webhooks, AI-powered chat (`useChat` @ [hooks/use-chat.ts:17](hooks/use-chat.ts#L17)), admin dashboards, analytics (`ConversionFunnel` @ [components/analytics/conversion-funnel.tsx:15](components/analytics/conversion-funnel.tsx#L15)), and financial management (`TransactionFormProps` @ [components/financeiro/transaction-form.tsx:27](components/financeiro/transaction-form.tsx#L27)). Core entities include `Cliente` (`types/index.ts:5`), `Agendamento` (`types/index.ts:9`), `Contrato` (`types/index.ts:14`), and `Financeiro` (`types/index.ts:15`). Real-time features use `useWebhook` hooks (`hooks/use-webhook.ts:31`) and `WebhookService` (`lib/services/webhookService.ts:35`).
+This guide outlines the engineering processes for **Carolinas Premium**, a Next.js 14+ App Router application using TypeScript, Tailwind CSS, Supabase (PostgreSQL), N8N webhooks, AI-powered chat (`useChat` @ [hooks/use-chat.ts:17](hooks/use-chat.ts#L17)), admin dashboards, analytics (`ConversionFunnel` @ [components/analytics/conversion-funnel.tsx:15](components/analytics/conversion-funnel.tsx#L15)), and financial management (`TransactionFormProps` @ [components/financeiro/transaction-form.tsx:27](components/financeiro/transaction-form.tsx#L27)). Core entities include `Cliente` ([types/index.ts:5](types/index.ts#L5)), `Agendamento` ([types/index.ts:9](types/index.ts#L9)), `Contrato` ([types/index.ts:14](types/index.ts#L14)), and `Financeiro` ([types/index.ts:15](types/index.ts#L15)). Real-time features leverage `useWebhook` hooks ([hooks/use-webhook.ts:31](hooks/use-webhook.ts#L31)) and `WebhookService` ([lib/services/webhookService.ts:35](lib/services/webhookService.ts#L35)).
 
 ## Branching Strategy & Releases
 
@@ -15,7 +15,7 @@ Use short-lived feature branches from `main` (always production-ready). Avoid lo
 | `chore/`   | `chore/supabase-upgrade` | Maintenance (e.g., `createClient` @ [lib/supabase/server.ts:4](lib/supabase/server.ts#L4)) |
 | `hotfix/`  | `hotfix/payment-webhook` | Production hotfixes (e.g., `PaymentReceivedPayload` @ [types/webhook.ts:176](types/webhook.ts#L176)) |
 
-- **Pull Requests (PRs)**: Rebase merges for linear history. Require passing lint, build, and type-check checks. Use GitHub CLI:
+- **Pull Requests (PRs)**: Rebase merges for linear history. Require passing lint, build, type-check, and tests. Use GitHub CLI:
   ```bash
   gh pr create --title "feat: add ConversionFunnel" --body "Refs #123. See components/analytics/conversion-funnel.tsx"
   ```
@@ -31,7 +31,7 @@ Continuous deployment: `main` → staging; tags → production.
 
 1. Update `CHANGELOG.md` (e.g., "Added `ChatWidget` @ [components/chat/chat-widget.tsx:12](components/chat/chat-widget.tsx#L12)").
 2. Merge PR to `main`.
-3. `npm version patch && git push --tags` (use `minor` or `major` as needed).
+3. `npm version patch && git push --tags` (use `minor`/`major` as needed).
 4. Auto-deploy via GitHub Actions and Vercel.
 
 ## Local Development Setup
@@ -41,6 +41,7 @@ Continuous deployment: `main` → staging; tags → production.
 - Supabase project (remote preferred; local: `npx supabase start`).
 - GitHub CLI (`gh pr create`).
 - N8N (optional, for testing `/api/webhook/n8n` @ [app/api/webhook/n8n/route.ts](app/api/webhook/n8n/route.ts)).
+- Vercel CLI (for previews: `vercel dev`).
 
 ### Quick Start
 ```bash
@@ -65,20 +66,23 @@ npm run db:generate  # Regenerates types/supabase.ts (Database @ types/supabase.
 | `npm run db:generate`| Supabase types (Database)            | -      |
 | `npm run db:studio`  | Supabase Studio UI                   | 54323  |
 | `npm run db:reset`   | Reset + migrate (dev only)           | -      |
+| `npm run test`       | Run Jest tests (e.g., `lib/ai/state-machine/__tests__/engine.test.ts`) | - |
 
-- **Seeding**: Use Supabase Dashboard or `supabase/migrations/` to insert `ClienteInsert`/`AgendamentoInsert` data.
-- **Key Routes**:
+- **Seeding**: Use Supabase Dashboard or `supabase/migrations/` for `ClienteInsert`/`AgendamentoInsert` data.
+- **Instrumentation**: `npm run telemetry` for OpenTelemetry setup ([instrumentation.ts:1](instrumentation.ts#L1)).
 
+### Key Routes
 | Route                              | Page/Component                          | Notes |
 |------------------------------------|-----------------------------------------|-------|
-| `/`                                | Landing (`AboutUs` @ [components/landing/about-us.tsx:14](components/landing/about-us.tsx#L14), `AnnouncementBar`) | Public, SEO-optimized |
-| `/admin`                           | `AdminLayout` @ [app/(admin)/layout.tsx:8](app/(admin)/layout.tsx#L8) (`AdminHeader`) | Auth via `middleware.ts` (`rateLimit` @ [middleware.ts:9](middleware.ts#L9)) |
+| `/`                                | Landing (`AnnouncementBar` @ [components/landing/announcement-bar.tsx:5](components/landing/announcement-bar.tsx#L5)) | Public, SEO-optimized |
+| `/chat`                            | `ChatWidget` @ [components/chat/chat-widget.tsx:12](components/chat/chat-widget.tsx#L12) | AI chat (`CarolAgent` @ [lib/ai/carol-agent.ts:29](lib/ai/carol-agent.ts#L29)) |
+| `/admin`                           | `AdminLayout` @ [app/(admin)/layout.tsx:8](app/(admin)/layout.tsx#L8) | Auth via `middleware.ts` ([middleware.ts:8](middleware.ts#L8)) |
 | `/admin/agenda`                    | `AgendaPage` @ [app/(admin)/admin/agenda/page.tsx:9](app/(admin)/admin/agenda/page.tsx#L9) (`CalendarView` @ [components/agenda/calendar-view.tsx:25](components/agenda/calendar-view.tsx#L25)) | `appointment-modal.tsx` (imported by 8 files) |
-| `/admin/clientes`                  | `ClientesPage` @ [app/(admin)/admin/clientes/page.tsx:12](app/(admin)/admin/clientes/page.tsx#L12) (`ClientsFilters` @ [components/clientes/clients-filters.tsx:24](components/clientes/clients-filters.tsx#L24)) | `ClientsTableProps` @ [components/clientes/clients-table.tsx:63](components/clientes/clients-table.tsx#L63) |
+| `/admin/clientes`                  | `ClientesPage` @ [app/(admin)/admin/clientes/page.tsx:12](app/(admin)/admin/clientes/page.tsx#L12) | `ClientsFilters` @ [components/clientes/clients-filters.tsx:24](components/clientes/clients-filters.tsx#L24) |
 | `/admin/clientes/[id]`             | `ClienteDetalhePage` @ [app/(admin)/admin/clientes/[id]/page.tsx:11](app/(admin)/admin/clientes/[id]/page.tsx#L11) | Tabs for agendamentos/financeiro |
-| `/admin/analytics/clientes`        | `ClientesAnalyticsPage` @ [app/(admin)/admin/analytics/clientes/page.tsx:9](app/(admin)/admin/analytics/clientes/page.tsx#L9) | `ConversionFunnel` |
-| `/admin/financeiro/categorias`     | `CategoriasPage` @ [app/(admin)/admin/financeiro/categorias/page.tsx:6](app/(admin)/admin/financeiro/categorias/page.tsx#L6) | `CategoryQuickForm` @ [components/financeiro/category-quick-form.tsx:23](components/financeiro/category-quick-form.tsx#L23) |
-| `/admin/configuracoes`             | `ConfiguracoesPage` @ [app/(admin)/admin/configuracoes/page.tsx:7](app/(admin)/admin/configuracoes/page.tsx#L7) | `BusinessSettings` @ [lib/business-config.ts:3](lib/business-config.ts#L3) |
+| `/admin/analytics`                 | Various (`ClientesAnalyticsPage` etc.) | `ConversionFunnel` |
+| `/admin/financeiro/categorias`     | `CategoriasPage` @ [app/(admin)/admin/financeiro/categorias/page.tsx:9](app/(admin)/admin/financeiro/categorias/page.tsx#L9) | `CategoryQuickForm` @ [components/financeiro/category-quick-form.tsx:23](components/financeiro/category-quick-form.tsx#L23) |
+| `/admin/configuracoes`             | Config pages                           | `BusinessSettings` @ [lib/business-config.ts:3](lib/business-config.ts#L3) |
 
 ## Debugging & Testing
 
@@ -86,101 +90,122 @@ npm run db:generate  # Regenerates types/supabase.ts (Database @ types/supabase.
 
 - **Supabase Clients**:
   ```ts
-  // Server-side
+  // Server
   import { createClient } from '@/lib/supabase/server';
   const supabase = createClient();
-
-  // Client-side ('use client')
+  // Client ('use client')
   import { createClient } from '@/lib/supabase/client';
   ```
 
-- **Webhooks** (`types/webhook.ts` – e.g., `AppointmentCreatedPayload` @ [types/webhook.ts:90](types/webhook.ts#L90)):
+- **Webhooks** (`WebhookPayload` @ [types/webhook.ts:214](types/webhook.ts#L214)):
   ```ts
   import { getWebhookUrl, getWebhookSecret } from '@/lib/config/webhooks';
-  const payload: AppointmentCreatedPayload = { event: 'appointment.created', data: { id: 1, cliente_id: 1 } };
+  const payload: AppointmentCreatedPayload = { event: 'appointment.created', data: { id: 1 } };
   await fetch(getWebhookUrl(), {
     method: 'POST',
     headers: { 'x-webhook-secret': getWebhookSecret() },
     body: JSON.stringify(payload)
   });
   ```
-  Hooks: `useNotifyAppointmentCreated` (`hooks/use-webhook.ts:117`), `sendWebhookAction` (`lib/actions/webhook.ts:9`).
+  See `WebhookService` ([lib/services/webhookService.ts:29](lib/services/webhookService.ts#L29)), hooks like `useNotifyAppointmentCreated`.
 
-- **Chat** (`useChat` @ [hooks/use-chat.ts:17](hooks/use-chat.ts#L17), `ChatMessage` @ [hooks/use-chat.ts:14](hooks/use-chat.ts#L14)):
+- **AI Chat** (`CarolStateMachine` @ [lib/ai/state-machine/engine.ts:60](lib/ai/state-machine/engine.ts#L60)):
   ```tsx
   'use client';
   import { useChat } from '@/hooks/use-chat';
   import { ChatWindow } from '@/components/chat/chat-window'; // Imported by 3 files
 
-  function ChatExample() {
-    const { messages, sendMessage, isLoading } = useChat();
-    return <ChatWindow messages={messages} onSend={sendMessage} loading={isLoading} />;
-  }
+  const { messages, sendMessage, isLoading } = useChat();
   ```
-  Embed: `<ChatWidget />` (`components/chat/chat-widget.tsx:12`, imported by 2 files) or `useChatSession`.
+  Embed: `<ChatWidget />`. Handlers: `lib/ai/state-machine/handlers/` (e.g., `booking.ts`, imported by 2 files).
 
-- **Exports** (`lib/export-utils.ts`):
+- **Tracking & Logger**:
   ```ts
-  import { exportToExcel } from '@/lib/export-utils';
-  const data: Cliente[] = await supabase.from('clientes').select('*');
-  exportToExcel(data, 'clientes.xlsx');
+  import { Logger } from '@/lib/logger'; // Logger @ lib/logger.ts:11
+  const logger = new Logger();
+  logger.info('Event', { data });
+
+  // Tracking
+  import { trackEvent } from '@/lib/tracking'; // TrackingEventData @ lib/tracking/types.ts:37
+  trackEvent('appointment_created', { cliente_id: 1 });
   ```
 
-- **Business Settings**: Client: `BusinessSettingsProvider` (`lib/context/business-settings-context.tsx:8`); Server: `getBusinessSettingsServer` (`lib/business-config-server.ts:8`).
-- **Utils**: `cn` (`lib/utils.ts:6`), `formatCurrency` (`lib/utils.ts:10`), `formatPhoneUS`/`isValidEmail` (`lib/formatters.ts`).
-- **Logger**: `new Logger().info('Event', data)` (`lib/logger.ts:11`).
+- **Exports & Utils**:
+  ```ts
+  import { cn, formatCurrency } from '@/lib/utils'; // cn @ lib/utils.ts:6
+  import { exportToExcel } from '@/lib/export-utils';
+  <div className={cn("p-4", isActive && "bg-blue-500")}>...</div>
+  ```
+
+- **Rate Limiting**:
+  ```ts
+  import { checkRateLimit } from '@/lib/rate-limit'; // checkRateLimit @ lib/rate-limit.ts:32
+  if (await checkRateLimit(req)) { /* handle */ }
+  ```
+
+### Testing Scripts
+Run chat/AI scenarios via scripts (Node.js):
+```bash
+# Example: Test booking flows
+node scripts/run_booking_scenarios.ts
+# Or long scenarios
+node scripts/run_long_scenarios.ts
+```
+Scripts cover: `run_chat_scenarios.ts`, `test_agent_direct.ts`, `run_advanced_scenarios.ts`, etc. (22+ scripts for AI testing).
 
 ### Console Commands
 ```bash
 npx supabase status    # Local Supabase
 npx supabase logs db   # DB logs
 npm run db:studio      # http://localhost:54323
-
-# DevTools: Inspect POST /api/chat (ChatRequest), /api/webhook/n8n (IncomingWebhookPayload)
+vercel logs            # Production logs
 ```
 
 ## Code Standards & Review
 
 ### PR Checklist
 - [ ] `npm run build && npm run lint && npm run type-check`
-- [ ] Types: Extend `types/index.ts` (e.g., `ClienteUpdate` @ [types/index.ts:7](types/index.ts#L7)), `types/webhook.ts` (`WebhookPayload` @ [types/webhook.ts:214](types/webhook.ts#L214))
-- [ ] Components: Typed props (e.g., `ClientsFiltersProps` @ [components/clientes/clients-filters.tsx:14](components/clientes/clients-filters.tsx#L14)), use `cn(...)` for Tailwind
-- [ ] Hooks: `'use client';` directive; e.g., `useWebhook` (`hooks/use-webhook.ts`)
-- [ ] Server Actions: `sendWebhookAction`, input validation
-- [ ] Security: `isValidPhoneUS` (`lib/formatters.ts:29`), `middleware.ts` auth/rateLimit
-- [ ] i18n (Admin): `AdminI18nProvider` (`lib/admin-i18n/context.tsx:14`)
-- [ ] No `any`; prefer `Json`/`Database` from `types/supabase.ts`
+- [ ] Types: Extend `types/index.ts`/`types/webhook.ts`; run `npm run db:generate`
+- [ ] Components: Typed props, `cn(...)` for Tailwind (e.g., `AdminHeader` @ [components/admin/header.tsx:18](components/admin/header.tsx#L18))
+- [ ] Hooks: `'use client'` (e.g., `useCarolChat` @ [hooks/use-carol-chat.ts:8](hooks/use-carol-chat.ts#L8))
+- [ ] Server Actions: Validate inputs (e.g., `isValidPhoneUS` @ [lib/formatters.ts:29](lib/formatters.ts#L29))
+- [ ] Security: `middleware.ts`, rate limits, `checkRateLimit`
+- [ ] i18n: `AdminI18nProvider` ([lib/admin-i18n/context.tsx:14](lib/admin-i18n/context.tsx#L14))
+- [ ] No `any`; use `Json`/`Database` from Supabase types
+- [ ] Tests: Update/add for new features (e.g., `lib/ai/state-machine/__tests__/flow-new-customer.test.ts`)
 
 ### Common Pitfalls & Fixes
 
 | Issue                      | Fix/Reference |
 |----------------------------|---------------|
 | Client/Server Supabase     | `lib/supabase/server.ts` vs `client.ts` |
-| Hooks fail in SSR          | Add `'use client'`; see `hooks/use-webhook.ts` |
-| Env validation fails       | `validateEnv` (`lib/env.ts:20`), set `WEBHOOK_SECRET` |
-| Webhook issues             | `isWebhookConfigured`/`getWebhookTimeout` (`lib/config/webhooks.ts`) |
-| Formatting (currency/phone)| `formatCurrencyInput`/`parseCurrency` (`lib/formatters.ts:58`, `:79`) |
-| Missing DB types           | `npm run db:generate` |
-| Bundle warnings            | Check deps like `components/agenda/appointment-modal.tsx` (8 importers) |
+| Hooks fail in SSR          | `'use client'`; see `hooks/use-webhook.ts` |
+| Env validation fails       | `lib/env.ts`; set `WEBHOOK_SECRET` |
+| Webhook timeouts           | `getWebhookTimeout` ([lib/config/webhooks.ts](lib/config/webhooks.ts)) |
+| Currency/Phone formatting  | `formatCurrencyInput`/`formatPhoneUS` ([lib/formatters.ts](lib/formatters.ts)) |
+| AI state issues            | `CarolState` ([lib/ai/state-machine/types.ts:14](lib/ai/state-machine/types.ts#L14)); check handlers |
+| High deps (e.g., appointment-modal.tsx) | Review importers (8 files) |
 
 ## Onboarding
 
 ### Week 1 Goals
-1. Run `npm run dev`; navigate `/admin/agenda` (`CalendarView`, imported by 5 files), `/admin/clientes`.
-2. Review core: `types/index.ts`, `hooks/use-chat.ts`/`use-webhook.ts`, `lib/supabase/`, `components/chat/`, `components/agenda/`.
-3. Submit PR for "good first issue" (e.g., refine `CategoryQuickFormProps` @ [components/financeiro/category-quick-form.tsx:18](components/financeiro/category-quick-form.tsx#L18)).
+1. Run `npm run dev`; test `/admin/agenda` (`CalendarView`, imported by 5 files), `/chat`.
+2. Review core: `types/index.ts`, `hooks/use-chat.ts`, `lib/ai/`, `lib/supabase/`, `components/chat/`, `components/agenda/`.
+3. Run a script: `node scripts/run_booking_scenarios.ts`.
+4. Submit PR for "good first issue" (e.g., add test for `CategoryQuickForm`).
 
 ### Resources
 | Category     | Links/Details |
 |--------------|---------------|
 | **Issues**   | GitHub "good first issue" label |
-| **Deploy**   | Vercel dashboard; `npm version` → prod |
+| **Deploy**   | Vercel; `npm version` → prod |
 | **DB**       | Supabase Dashboard; `npm run db:generate` |
-| **Webhooks** | Test `/api/webhook/n8n`; `WebhookConfig` (`app/(admin)/admin/configuracoes/webhooks/data/webhooks-data.ts:10`) |
-| **Chat**     | `ChatWidget`/`ChatWindow`; `generateSessionId` (`lib/chat-session.ts:1`) |
-| **Analytics**| `components/analytics/` (`ConversionFunnel`) |
-| **Finance**  | `components/financeiro/` (`transaction-form.tsx`, imported by 2 files) |
-| **Logs**     | Supabase/Vercel Logs, `Logger` class |
+| **Webhooks** | `/api/webhook/n8n`; test payloads ([types/webhook.ts](types/webhook.ts)) |
+| **Chat/AI**  | `CarolAgent`, handlers (`lib/ai/state-machine/handlers/index.ts`, imported by 10 files) |
+| **Analytics**| `components/analytics/` |
+| **Finance**  | `components/financeiro/` |
+| **Services** | `ChatLoggerService` ([lib/services/chat-logger.ts:109](lib/services/chat-logger.ts#L109)) |
+| **Tests**    | `lib/ai/state-machine/__tests__/`, scripts/ |
 
 **Last Updated**: October 2024  
-**Roadmap**: Jest unit tests (`/tests/`), Playwright E2E, 80% CI coverage.
+**Roadmap**: Full Jest/Playwright coverage (target 80%), E2E for chat flows, policy expansions (`scripts/test_new_policies.ts`).
