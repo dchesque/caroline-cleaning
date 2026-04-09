@@ -1,6 +1,25 @@
 # Caroline Cleaning - Complete Security Audit Report
-**Date:** April 9, 2026  
+**Date:** April 9, 2026
 **Severity Summary:** 5 CRITICAL | 9 HIGH | 5 MEDIUM | 2 LOW
+
+> **REDACTION NOTICE (2026-04-09):** The initial commit of this file
+> (`e3b36b4 context update`) contained a live OpenRouter API key in plain
+> text. That key, along with the Supabase anon and service_role keys, was
+> rotated on 2026-04-09. The working tree of this file has been sanitized
+> — the key has been replaced with `[REDACTED-ROTATED-2026-04-09]`.
+>
+> The historical commit still carries the original value. Rewriting git
+> history is **not** recommended at this point: (a) the commit is already
+> public on origin/master, so any secret-scanner, fork, or clone already
+> has it, and (b) rotation already neutralized the leaked values. The BFG
+> instructions under "STEP 3: Remove from Git History" below are kept for
+> reference only — do not run them.
+>
+> Remediation status:
+> - ✅ OpenRouter key rotated
+> - ✅ Supabase anon + service_role keys rotated
+> - ✅ CRON_SECRET rotated (see .env)
+> - ✅ See FASE 1/2/3 commits (`e02d9f5`..`ce25797`) for RLS + app hardening
 
 ---
 
@@ -28,7 +47,7 @@ This security audit identified **21 vulnerabilities** in the Caroline Cleaning c
 ```
 Line 9:  NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 Line 10: SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
-Line 24: OPENROUTER_API_KEY=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
+Line 24: OPENROUTER_API_KEY=sk-or-v1-[REDACTED-ROTATED-2026-04-09]
 Line 33: CRON_SECRET=seu-segredo-aqui
 ```
 
@@ -60,7 +79,7 @@ Line 33: CRON_SECRET=seu-segredo-aqui
 # In OpenRouter Dashboard:
 1. Go to Settings > API Keys
 2. Create new API key
-3. Delete old key: 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
+3. Delete old key: sk-or-v1-[REDACTED-ROTATED-2026-04-09]
 4. Update .env with new key
 ```
 
@@ -75,7 +94,7 @@ git reflog expire --expire=now --all && git gc --prune=now --aggressive
 git push origin master --force-with-lease
 
 # Verify removal:
-git log --all -S "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" --full-history
+git log --all -S "sk-or-v1-[REDACTED-ROTATED-2026-04-09]" --full-history
 ```
 
 **STEP 4: Audit Access Logs**
