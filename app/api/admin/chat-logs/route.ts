@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { chatLogger } from '@/lib/services/chat-logger'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,6 +22,12 @@ export async function GET(req: NextRequest) {
 
     if (!profile || profile.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Rate limit AFTER auth so unauth spam hits 401 first and doesn't
+    // consume rate-limit slots meant for real admins.
+    if (!checkRateLimit(getClientIp(req), RATE_LIMITS.admin)) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
     }
 
     const { searchParams } = new URL(req.url)
