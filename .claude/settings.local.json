@@ -76,7 +76,10 @@
       "Bash(wc -l /c/Workspace/caroline-cleaning/*.md)",
       "Bash(xargs -I{} basename {})",
       "Bash(grep -E '\\\\.\\(js|mjs|config|ts\\)$')",
-      "Bash(grep -E \"^\\\\.env$\")"
+      "Bash(grep -E \"^\\\\.env$\")",
+      "mcp__supabase__get_advisors",
+      "mcp__supabase__apply_migration",
+      "Bash(openssl rand:*)"
     ]
   }
 }
