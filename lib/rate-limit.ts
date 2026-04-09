@@ -65,11 +65,31 @@ export const RATE_LIMITS = {
 
 /**
  * Helper: extract client IP from request headers.
+ *
+ * Only trusts headers set by known-good infrastructure:
+ *   - `cf-connecting-ip` from Cloudflare (trusted end-to-end)
+ *   - On Vercel, `x-real-ip` and the first hop of `x-forwarded-for`
+ *
+ * Off Vercel / without Cloudflare, `x-forwarded-for` and `x-real-ip` are
+ * client-controlled and cannot be trusted for rate-limiting, so we fall
+ * back to `'unknown'`. In local development this means every caller
+ * shares a single `'unknown'` rate-limit bucket, which is acceptable
+ * because there is no attacker to spoof against.
  */
 export function getClientIp(request: Request): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') ||
-    'unknown'
-  )
+  // Cloudflare sets this and is trusted end-to-end
+  const cf = request.headers.get('cf-connecting-ip')
+  if (cf) return cf
+
+  // On Vercel, x-real-ip is set by the platform and trustworthy.
+  // Off Vercel, x-real-ip and x-forwarded-for are client-controlled
+  // and cannot be trusted for rate-limiting.
+  if (process.env.VERCEL === '1') {
+    const real = request.headers.get('x-real-ip')
+    if (real) return real
+    const xff = request.headers.get('x-forwarded-for')
+    if (xff) return xff.split(',')[0]?.trim() || 'unknown'
+  }
+
+  return 'unknown'
 }
