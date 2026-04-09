@@ -5,6 +5,20 @@ import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
 // Forçar Node.js runtime (Supabase SSR não é compatível com Edge Runtime)
 export const runtime = 'nodejs'
 
+/**
+ * Baseline security headers applied to every middleware response.
+ * X-XSS-Protection is intentionally omitted — it is deprecated and can
+ * introduce XSS vectors on legacy browsers.
+ */
+function applySecurityHeaders<T extends NextResponse>(res: T): T {
+    res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    res.headers.set('X-Content-Type-Options', 'nosniff')
+    res.headers.set('X-Frame-Options', 'DENY')
+    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+    return res
+}
+
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
 
@@ -16,7 +30,7 @@ export async function middleware(request: NextRequest) {
         pathname.includes('/favicon.ico') ||
         pathname.includes('.') // common for static files
     ) {
-        return NextResponse.next()
+        return applySecurityHeaders(NextResponse.next())
     }
 
     // 2. Rate limiting for APIs
@@ -29,9 +43,11 @@ export async function middleware(request: NextRequest) {
                 : RATE_LIMITS.api
 
         if (!checkRateLimit(ip, config)) {
-            return NextResponse.json(
-                { error: 'Too many requests' },
-                { status: 429 }
+            return applySecurityHeaders(
+                NextResponse.json(
+                    { error: 'Too many requests' },
+                    { status: 429 }
+                )
             )
         }
     }
@@ -70,17 +86,17 @@ export async function middleware(request: NextRequest) {
             const url = request.nextUrl.clone()
             url.pathname = '/login'
             // Keep original query params if needed
-            return NextResponse.redirect(url)
+            return applySecurityHeaders(NextResponse.redirect(url))
         }
 
         if (isLoginPage && user) {
             const url = request.nextUrl.clone()
             url.pathname = '/admin'
-            return NextResponse.redirect(url)
+            return applySecurityHeaders(NextResponse.redirect(url))
         }
     }
 
-    return supabaseResponse
+    return applySecurityHeaders(supabaseResponse)
 }
 
 export const config = {
