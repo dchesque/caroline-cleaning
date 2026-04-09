@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { validatePassword } from '@/lib/security/password'
 
 export async function PUT(request: NextRequest) {
     try {
@@ -17,12 +18,10 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json({ error: 'Current password is required' }, { status: 400 })
         }
 
-        // Validar nova senha
-        if (!newPassword || newPassword.length < 8) {
-            return NextResponse.json(
-                { error: 'Password must be at least 8 characters' },
-                { status: 400 }
-            )
+        // Validate new password against strong policy
+        const check = validatePassword(newPassword)
+        if (!check.valid) {
+            return NextResponse.json({ error: check.error }, { status: 400 })
         }
 
         // Verificar senha atual fazendo login novamente
