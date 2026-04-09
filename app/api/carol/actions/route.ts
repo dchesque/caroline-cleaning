@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { CarolServices } from '@/lib/services/carol-services'
 import { timingSafeEqual } from 'crypto'
 import { logger } from '@/lib/logger'
+import { CarolActionsSchema, parseJson } from '@/lib/validation/schemas'
 
 type ActionType =
     | 'create_lead'
@@ -37,13 +38,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    try {
-        const payload: ActionPayload = await request.json()
+    const parsed = await parseJson(request, CarolActionsSchema)
+    if (!parsed.ok) {
+        return NextResponse.json({ error: parsed.error }, { status: parsed.status })
+    }
+    const { action, session_id, params } = parsed.data
 
+    try {
         const supabase = createAdminClient()
         const services = new CarolServices()
 
-        const { action, session_id, params } = payload
         let result: any = null
 
         switch (action) {

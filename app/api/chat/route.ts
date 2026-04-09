@@ -5,6 +5,7 @@ import { chatLogger } from '@/lib/services/chat-logger'
 import { createAdminClient } from '@/lib/supabase/server'
 import { nanoid } from 'nanoid'
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
+import { ChatRequestSchema, parseJson } from '@/lib/validation/schemas'
 import type { ChatResponse } from '@/lib/ai/carol-agent'
 
 export const dynamic = 'force-dynamic'
@@ -52,25 +53,13 @@ export async function POST(req: NextRequest) {
         );
     }
 
+    const parsed = await parseJson(req, ChatRequestSchema)
+    if (!parsed.ok) {
+        return NextResponse.json({ error: parsed.error }, { status: parsed.status })
+    }
+    const { message, sessionId } = parsed.data
+
     try {
-        const body = await req.json()
-        const { message, sessionId } = body
-
-        // Validações básicas
-        if (!message || typeof message !== 'string') {
-            return NextResponse.json(
-                { error: 'Message is required and must be a string' },
-                { status: 400 }
-            )
-        }
-
-        if (message.length > 2000) {
-            return NextResponse.json(
-                { error: 'Message is too long (max 2000 characters)' },
-                { status: 400 }
-            )
-        }
-
         // Garantir session_id
         const currentSessionId = sessionId || nanoid(16)
 

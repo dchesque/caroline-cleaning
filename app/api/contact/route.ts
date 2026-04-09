@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
 import { hashData } from '@/lib/tracking/utils'
+import { ContactRequestSchema, parseJson } from '@/lib/validation/schemas'
 
 export async function POST(request: NextRequest) {
     try {
@@ -11,25 +12,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Too many submissions. Please try again later.' }, { status: 429 });
         }
 
-        const body = await request.json()
-        const { nome, telefone, cidade } = body
-
-        // Validação básica
-        if (!nome || !telefone) {
+        const parsed = await parseJson(request, ContactRequestSchema)
+        if (!parsed.ok) {
             return NextResponse.json(
-                { success: false, error: 'Nome e telefone são obrigatórios' },
-                { status: 400 }
+                { success: false, error: parsed.error },
+                { status: parsed.status }
             )
         }
-
-        // Validar formato do telefone (básico)
-        const phoneRegex = /^[\d\s\-\(\)\+]{10,}$/
-        if (!phoneRegex.test(telefone)) {
-            return NextResponse.json(
-                { success: false, error: 'Formato de telefone inválido' },
-                { status: 400 }
-            )
-        }
+        const { nome, telefone, cidade } = parsed.data
 
         const supabase = await createClient()
 

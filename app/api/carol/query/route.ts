@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { timingSafeEqual } from 'crypto'
 import { logger } from '@/lib/logger'
+import { CarolQuerySchema, parseJson } from '@/lib/validation/schemas'
 
 function escapeLikePattern(value: string): string {
     return value.replace(/[%_\\]/g, '\\$&');
@@ -38,8 +39,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const parsed = await parseJson(request, CarolQuerySchema)
+    if (!parsed.ok) {
+        return NextResponse.json({ error: parsed.error }, { status: parsed.status })
+    }
+    const { type, params } = parsed.data
+
     try {
-        const { type, params }: QueryPayload = await request.json()
         const supabase = createAdminClient()
 
         let result: any = null
