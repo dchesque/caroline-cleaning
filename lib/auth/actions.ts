@@ -75,7 +75,9 @@ export async function verifyOtp(
 
 export async function requestPasswordReset(email: string): Promise<ActionResult> {
   const supabase = createClient()
-  const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent('/login?mode=new-password')}`
+  // Supabase will append ?code=<hash>&type=recovery to this URL.
+  // Don't encode here - Supabase handles it internally.
+  const redirectTo = `${window.location.origin}/auth/callback?next=/login?mode=new-password`
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo,
   })
