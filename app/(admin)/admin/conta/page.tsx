@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { Button } from '@/components/ui/button'
@@ -21,17 +20,6 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
-import {
     ArrowLeft,
     User,
     Shield,
@@ -40,26 +28,25 @@ import {
     Save,
     Eye,
     EyeOff,
-    AlertTriangle,
-    Monitor,
-    Smartphone,
     Globe,
     Bell,
     Mail,
     MessageSquare,
-    Check
+    Check,
+    Camera,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ptBR, enUS } from 'date-fns/locale'
 import { formatPhoneUS } from '@/lib/formatters'
-import { UserProfile, NotificationTypes } from '@/types'
+import { validatePassword } from '@/lib/security/password'
+import { Locale } from '@/lib/admin-i18n/translations'
+import { UserProfile } from '@/types'
 import { cn } from '@/lib/utils'
 
 export default function ContaPage() {
-    const { t, locale } = useAdminI18n()
-    const router = useRouter()
+    const { t, locale, setLocale } = useAdminI18n()
     const supabase = createClient()
 
     const accountT = t('account')
@@ -69,28 +56,18 @@ export default function ContaPage() {
     const [profile, setProfile] = useState<UserProfile | null>(null)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
+    const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
-    // Estados para formulário de senha
-    const [passwords, setPasswords] = useState({
-        current: '',
-        new: '',
-        confirm: ''
-    })
-    const [showPasswords, setShowPasswords] = useState({
-        current: false,
-        new: false,
-        confirm: false
-    })
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // Password form state
+    const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' })
+    const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
     const [changingPassword, setChangingPassword] = useState(false)
-
-    // Estado para zona de perigo
-    const [deactivateConfirm, setDeactivateConfirm] = useState('')
 
     const adminInputStyles = "bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
 
-    useEffect(() => {
-        fetchProfile()
-    }, [])
+    useEffect(() => { fetchProfile() }, [])
 
     async function fetchProfile() {
         try {
@@ -109,17 +86,14 @@ export default function ContaPage() {
 
     async function handleUpdateProfile() {
         if (!profile) return
-
         try {
             setSaving(true)
             const response = await fetch('/api/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(profile)
+                body: JSON.stringify(profile),
             })
-
             if (!response.ok) throw new Error('Failed to update profile')
-
             toast.success(accountT.profile.success)
         } catch (error) {
             console.error(error)
@@ -129,14 +103,53 @@ export default function ContaPage() {
         }
     }
 
+    async function handleAvatarUpload(file: File) {
+        if (!profile) return
+        const MAX_MB = 2
+        if (file.size > MAX_MB * 1024 * 1024) {
+            toast.error(`Imagem muito grande. Máximo ${MAX_MB}MB.`)
+            return
+        }
+        try {
+            setUploadingAvatar(true)
+            const ext = file.name.split('.').pop()
+            const path = `avatars/${profile.id}/${Date.now()}.${ext}`
+            const { error: uploadError } = await supabase.storage
+                .from('public-assets')
+                .upload(path, file, { upsert: true, contentType: file.type })
+            if (uploadError) throw uploadError
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('public-assets')
+                .getPublicUrl(path)
+
+            const updated = { ...profile, avatar_url: publicUrl }
+            setProfile(updated)
+
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated),
+            })
+            if (!response.ok) throw new Error('Failed to save avatar')
+            toast.success('Foto atualizada com sucesso.')
+        } catch (error) {
+            console.error(error)
+            toast.error('Erro ao fazer upload da foto.')
+        } finally {
+            setUploadingAvatar(false)
+        }
+    }
+
     async function handleChangePassword() {
         if (passwords.new !== passwords.confirm) {
             toast.error(accountT.security.passwordMismatch)
             return
         }
 
-        if (passwords.new.length < 8) {
-            toast.error(accountT.security.passwordRequirements)
+        const validation = validatePassword(passwords.new)
+        if (!validation.valid) {
+            toast.error(validation.error)
             return
         }
 
@@ -147,21 +160,14 @@ export default function ContaPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     currentPassword: passwords.current,
-                    newPassword: passwords.new
-                })
+                    newPassword: passwords.new,
+                }),
             })
-
             const data = await response.json()
-
             if (!response.ok) {
-                if (data.error === 'Current password is incorrect') {
-                    toast.error(accountT.security.wrongPassword)
-                } else {
-                    throw new Error(data.error || 'Failed to change password')
-                }
+                toast.error(data.error || accountT.security.passwordError)
                 return
             }
-
             toast.success(accountT.security.passwordSuccess)
             setPasswords({ current: '', new: '', confirm: '' })
         } catch (error) {
@@ -169,21 +175,6 @@ export default function ContaPage() {
             toast.error(accountT.security.passwordError)
         } finally {
             setChangingPassword(false)
-        }
-    }
-
-    async function handleDeactivateAccount() {
-        const confirmText = accountT.danger.confirmWord
-        if (deactivateConfirm !== confirmText) return
-
-        try {
-            const { error } = await supabase.auth.signOut()
-            if (error) throw error
-            toast.success(accountT.danger.deactivateSuccess)
-            router.push('/login')
-        } catch (error) {
-            console.error(error)
-            toast.error(accountT.danger.deactivateError)
         }
     }
 
@@ -235,14 +226,40 @@ export default function ContaPage() {
                         </CardHeader>
                         <CardContent className="pt-6 space-y-6">
                             <div className="flex flex-col md:flex-row gap-8 items-start">
+                                {/* Avatar + upload */}
                                 <div className="flex flex-col items-center gap-4">
-                                    <Avatar className="h-24 w-24 border-4 border-white shadow-md">
-                                        <AvatarImage src={profile.avatar_url || ''} />
-                                        <AvatarFallback className="bg-brandy-rose-100 text-brandy-rose-600 text-2xl font-bold">
-                                            {profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <Button variant="outline" size="sm" className="w-full">
+                                    <div className="relative">
+                                        <Avatar className="h-24 w-24 border-4 border-white shadow-md">
+                                            <AvatarImage src={profile.avatar_url || ''} />
+                                            <AvatarFallback className="bg-brandy-rose-100 text-brandy-rose-600 text-2xl font-bold">
+                                                {profile.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        {uploadingAvatar && (
+                                            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                                                <Loader2 className="h-6 w-6 animate-spin text-white" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0]
+                                            if (file) handleAvatarUpload(file)
+                                            e.target.value = ''
+                                        }}
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full"
+                                        disabled={uploadingAvatar}
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <Camera className="h-4 w-4 mr-2" />
                                         {accountT.profile.changePhoto}
                                     </Button>
                                 </div>
@@ -312,15 +329,9 @@ export default function ContaPage() {
                                     className="bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white min-w-[150px]"
                                 >
                                     {saving ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            {accountT.profile.saving}
-                                        </>
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{accountT.profile.saving}</>
                                     ) : (
-                                        <>
-                                            <Save className="mr-2 h-4 w-4" />
-                                            {accountT.profile.saveChanges}
-                                        </>
+                                        <><Save className="mr-2 h-4 w-4" />{accountT.profile.saveChanges}</>
                                     )}
                                 </Button>
                             </div>
@@ -335,14 +346,14 @@ export default function ContaPage() {
                             <CardTitle className="text-xl text-gray-800">{accountT.security.changePassword}</CardTitle>
                             <CardDescription>{accountT.security.description}</CardDescription>
                         </CardHeader>
-                        <CardContent className="pt-6 space-y-6">
+                        <CardContent className="pt-6">
                             <div className="max-w-md space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="current-password">{accountT.security.currentPassword}</Label>
                                     <div className="relative">
                                         <Input
                                             id="current-password"
-                                            type={showPasswords.current ? "text" : "password"}
+                                            type={showPasswords.current ? 'text' : 'password'}
                                             value={passwords.current}
                                             onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
                                             placeholder={accountT.security.currentPasswordPlaceholder}
@@ -363,7 +374,7 @@ export default function ContaPage() {
                                     <div className="relative">
                                         <Input
                                             id="new-password"
-                                            type={showPasswords.new ? "text" : "password"}
+                                            type={showPasswords.new ? 'text' : 'password'}
                                             value={passwords.new}
                                             onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
                                             placeholder={accountT.security.newPasswordPlaceholder}
@@ -378,7 +389,7 @@ export default function ContaPage() {
                                         </button>
                                     </div>
                                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                                        {accountT.security.passwordRequirements}
+                                        Mínimo 12 caracteres · maiúscula · minúscula · número · caractere especial
                                     </p>
                                 </div>
 
@@ -387,7 +398,7 @@ export default function ContaPage() {
                                     <div className="relative">
                                         <Input
                                             id="confirm-password"
-                                            type={showPasswords.confirm ? "text" : "password"}
+                                            type={showPasswords.confirm ? 'text' : 'password'}
                                             value={passwords.confirm}
                                             onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
                                             placeholder={accountT.security.confirmPasswordPlaceholder}
@@ -409,41 +420,9 @@ export default function ContaPage() {
                                     className="bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white min-w-[150px]"
                                 >
                                     {changingPassword ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            {accountT.security.updating}
-                                        </>
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{accountT.security.updating}</>
                                     ) : accountT.security.updatePassword}
                                 </Button>
-                            </div>
-
-                            <Separator className="bg-[#F7F2ED]" />
-
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-gray-800">{accountT.security.activeSessions}</h3>
-                                <p className="text-sm text-muted-foreground">{accountT.security.activeSessionsDescription}</p>
-
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between p-4 rounded-lg border border-[#F7F2ED] bg-[#FDF8F6]/30">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-2 rounded-full bg-brandy-rose-50 text-brandy-rose-600">
-                                                <Monitor className="h-5 w-5" />
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-gray-900">Chrome (Windows 11)</span>
-                                                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 text-[10px] py-0">
-                                                        {accountT.security.currentSession}
-                                                    </Badge>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground">Boca Raton, FL · 192.168.1.1</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right text-xs text-muted-foreground">
-                                            {accountT.security.lastActive}: {commonT.today}
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -457,7 +436,6 @@ export default function ContaPage() {
                             <CardDescription>{accountT.preferences.description}</CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6 space-y-8">
-                            {/* Idioma e Tema */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-2">
@@ -467,10 +445,13 @@ export default function ContaPage() {
                                     <p className="text-sm text-muted-foreground">{accountT.preferences.languageDescription}</p>
                                     <Select
                                         value={profile.language}
-                                        onValueChange={(v) => setProfile({ ...profile, language: v })}
+                                        onValueChange={(v) => {
+                            setProfile({ ...profile, language: v })
+                            setLocale(v as Locale)
+                        }}
                                     >
                                         <SelectTrigger className={adminInputStyles}>
-                                            <SelectValue placeholder="Selecione o idioma" />
+                                            <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
@@ -490,7 +471,7 @@ export default function ContaPage() {
                                         onValueChange={(v: any) => setProfile({ ...profile, theme: v })}
                                     >
                                         <SelectTrigger className={adminInputStyles}>
-                                            <SelectValue placeholder="Selecione o tema" />
+                                            <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="light">{accountT.preferences.themes.light}</SelectItem>
@@ -503,7 +484,6 @@ export default function ContaPage() {
 
                             <Separator className="bg-[#F7F2ED]" />
 
-                            {/* Canais de Notificação */}
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2">
                                     <Bell className="h-5 w-5 text-brandy-rose-500" />
@@ -515,35 +495,27 @@ export default function ContaPage() {
                                     <div className="flex items-center justify-between p-4 rounded-lg border border-[#F7F2ED] bg-[#FDF8F6]/10">
                                         <div className="flex items-center gap-3">
                                             <Mail className="h-5 w-5 text-gray-400" />
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium">{accountT.preferences.emailNotifications}</span>
-                                            </div>
+                                            <span className="text-sm font-medium">{accountT.preferences.emailNotifications}</span>
                                         </div>
                                         <Switch
                                             checked={profile.email_notifications}
                                             onCheckedChange={(v) => setProfile({ ...profile, email_notifications: v })}
                                         />
                                     </div>
-
                                     <div className="flex items-center justify-between p-4 rounded-lg border border-[#F7F2ED] bg-[#FDF8F6]/10">
                                         <div className="flex items-center gap-3">
                                             <Bell className="h-5 w-5 text-gray-400" />
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium">{accountT.preferences.pushNotifications}</span>
-                                            </div>
+                                            <span className="text-sm font-medium">{accountT.preferences.pushNotifications}</span>
                                         </div>
                                         <Switch
                                             checked={profile.push_notifications}
                                             onCheckedChange={(v) => setProfile({ ...profile, push_notifications: v })}
                                         />
                                     </div>
-
                                     <div className="flex items-center justify-between p-4 rounded-lg border border-[#F7F2ED] bg-[#FDF8F6]/10">
                                         <div className="flex items-center gap-3">
                                             <MessageSquare className="h-5 w-5 text-gray-400" />
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium">{accountT.preferences.smsNotifications}</span>
-                                            </div>
+                                            <span className="text-sm font-medium">{accountT.preferences.smsNotifications}</span>
                                         </div>
                                         <Switch
                                             checked={profile.sms_notifications}
@@ -553,9 +525,10 @@ export default function ContaPage() {
                                 </div>
                             </div>
 
-                            {/* Tipos de Alerta */}
                             <div className="space-y-4">
-                                <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{accountT.preferences.notificationTypes.title}</Label>
+                                <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                                    {accountT.preferences.notificationTypes.title}
+                                </Label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                                     {Object.entries(profile.notification_types).map(([key, value]) => (
                                         <div key={key} className="flex items-center justify-between">
@@ -566,10 +539,7 @@ export default function ContaPage() {
                                                 checked={value}
                                                 onCheckedChange={(v) => setProfile({
                                                     ...profile,
-                                                    notification_types: {
-                                                        ...profile.notification_types,
-                                                        [key]: v
-                                                    }
+                                                    notification_types: { ...profile.notification_types, [key]: v },
                                                 })}
                                             />
                                         </div>
@@ -584,15 +554,9 @@ export default function ContaPage() {
                                     className="bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white min-w-[200px]"
                                 >
                                     {saving ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            {accountT.profile.saving}
-                                        </>
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{accountT.profile.saving}</>
                                     ) : (
-                                        <>
-                                            <Save className="mr-2 h-4 w-4" />
-                                            {accountT.preferences.savePreferences}
-                                        </>
+                                        <><Save className="mr-2 h-4 w-4" />{accountT.preferences.savePreferences}</>
                                     )}
                                 </Button>
                             </div>
@@ -600,59 +564,6 @@ export default function ContaPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
-
-            {/* ZONA DE PERIGO */}
-            <Card className="border-red-200 shadow-sm bg-red-50/30">
-                <CardHeader>
-                    <div className="flex items-center gap-2 text-red-600">
-                        <AlertTriangle className="h-5 w-5" />
-                        <CardTitle className="text-xl">{accountT.danger.title}</CardTitle>
-                    </div>
-                    <CardDescription className="text-red-600/70">{accountT.danger.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
-                                {accountT.danger.deactivateButton}
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="border-red-100">
-                            <AlertDialogHeader>
-                                <AlertDialogTitle className="text-red-600 flex items-center gap-2">
-                                    <AlertTriangle className="h-5 w-5" />
-                                    {accountT.danger.deactivateConfirm}
-                                </AlertDialogTitle>
-                                <AlertDialogDescription className="space-y-4">
-                                    <p className="font-semibold text-red-500">{accountT.danger.deactivateWarning}</p>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="confirm-deactivate" className="text-gray-900">
-                                            {accountT.danger.typeToConfirm.replace('{word}', accountT.danger.confirmWord)}
-                                        </Label>
-                                        <Input
-                                            id="confirm-deactivate"
-                                            value={deactivateConfirm}
-                                            onChange={(e) => setDeactivateConfirm(e.target.value)}
-                                            placeholder={accountT.danger.confirmWord}
-                                            className="border-red-200 focus:border-red-500 focus:ring-red-500"
-                                        />
-                                    </div>
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>{commonT.cancel}</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleDeactivateAccount}
-                                    disabled={deactivateConfirm !== accountT.danger.confirmWord}
-                                    className="bg-red-600 hover:bg-red-700 text-white"
-                                >
-                                    {accountT.danger.deactivateAccount}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </CardContent>
-            </Card>
         </div>
     )
 }

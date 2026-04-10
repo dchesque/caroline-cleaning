@@ -4,6 +4,7 @@ import { CarolServices } from '@/lib/services/carol-services'
 import { timingSafeEqual } from 'crypto'
 import { logger } from '@/lib/logger'
 import { CarolActionsSchema, parseJson } from '@/lib/validation/schemas'
+import { notifyAdmins } from '@/lib/services/evolutionService'
 
 type ActionType =
     | 'create_lead'
@@ -112,6 +113,9 @@ async function actionCreateLead(services: CarolServices, sessionId: string, para
             { name, phone, email, zip_code, service_interest, notes },
             sessionId
         )
+        if (result.status === 'created') {
+            notifyAdmins('newLead', { name: result.client_name ?? name, phone, service: service_interest, source: 'carol_chat' }).catch(() => {})
+        }
         return result
     } catch (e) {
         logger.error('[Create Lead] Error', { error: e instanceof Error ? e.message : String(e) })
@@ -178,10 +182,20 @@ async function actionCreateAppointment(supabase: any, services: CarolServices, s
             return { status: 'error', message: 'Client not found. Create lead first.' }
         }
 
-        return await services.createAppointment(
+        const result = await services.createAppointment(
             { client_id: clientId, service_type, date, time, duration, notes },
             sessionId
         )
+        if (result.status === 'created') {
+            notifyAdmins('newAppointment', {
+                name: result.details?.client_name,
+                service: result.details?.service ?? service_type,
+                date: result.details?.date ?? date,
+                time: result.details?.time ?? time,
+                phone,
+            }).catch(() => {})
+        }
+        return result
     } catch (e) {
         logger.error('[Create Appointment] Error', { error: e instanceof Error ? e.message : String(e) })
         return { status: 'error', message: 'Internal error processing request' }
@@ -192,7 +206,16 @@ async function actionCreateAppointment(supabase: any, services: CarolServices, s
 async function actionConfirmAppointment(services: CarolServices, params: any) {
     try {
         const { appointment_id } = params
-        return await services.confirmAppointment(appointment_id)
+        const result = await services.confirmAppointment(appointment_id)
+        if (result.status === 'confirmed') {
+            notifyAdmins('appointmentConfirmed', {
+                name: result.details?.client_name,
+                service: result.details?.service,
+                date: result.details?.date,
+                time: result.details?.time,
+            }).catch(() => {})
+        }
+        return result
     } catch (e) {
         logger.error('[Confirm Appointment] Error', { error: e instanceof Error ? e.message : String(e) })
         return { status: 'error', message: 'Internal error processing request' }

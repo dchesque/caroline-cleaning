@@ -344,6 +344,23 @@ export function useAppointmentForm({
                     fetch('/api/cron/recurrences').catch(console.error)
                 }
 
+                // Notify admins via Evolution API (fire-and-forget)
+                fetch('/api/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        event: 'newAppointment',
+                        data: {
+                            name: selectedClient?.nome,
+                            service: formData.tipo,
+                            date: formData.data,
+                            time: formData.horario_inicio?.substring(0, 5),
+                            phone: selectedClient?.telefone,
+                            address: selectedClient?.endereco_completo,
+                        },
+                    }),
+                }).catch(() => {})
+
                 toast.success(agendaT.success?.created)
             }
 

@@ -153,6 +153,26 @@ export function TransactionForm({
                     .insert(payload)
 
                 if (error) throw error
+
+                // Notify admins when a paid revenue is logged (fire-and-forget)
+                if (type === 'receita' && formData.status === 'pago') {
+                    const clientName = clientes.find(c => c.id === formData.cliente_id)?.nome
+                    fetch('/api/notify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            event: 'paymentReceived',
+                            data: {
+                                name: clientName || 'Avulso',
+                                amount: valor,
+                                method: formData.forma_pagamento,
+                                description: formData.descricao,
+                                date: formData.data,
+                            },
+                        }),
+                    }).catch(() => {})
+                }
+
                 toast.success(`${type === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`)
             }
 

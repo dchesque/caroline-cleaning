@@ -11,10 +11,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
     if (!user) redirect('/login')
 
+    const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('full_name, avatar_url, role')
+        .eq('id', user.id)
+        .single()
+
     return (
         <AdminI18nProvider>
             <div className="min-h-screen bg-[#FDF8F6]">
-                <Sidebar user={user} />
+                <Sidebar user={user} profile={profile} />
                 <div className="lg:pl-64">
                     <AdminHeader />
                     <main className="p-4 lg:p-6">{children}</main>

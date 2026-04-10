@@ -69,6 +69,12 @@ export const env = {
     nodeEnv: process.env.NODE_ENV || 'development',
     isProduction: process.env.NODE_ENV === 'production',
 
+    // Evolution API (internal WhatsApp admin notifications — all optional)
+    evolutionApiUrl: process.env.EVOLUTION_API_URL,
+    evolutionApiKey: process.env.EVOLUTION_API_KEY,
+    evolutionInstanceName: process.env.EVOLUTION_INSTANCE_NAME,
+    evolutionAdminPhone: process.env.EVOLUTION_ADMIN_PHONE,
+
     // Analytics / Monitoring
     gaId: process.env.NEXT_PUBLIC_GA_ID,
     sentryDsn: process.env.SENTRY_DSN,

@@ -18,6 +18,7 @@ import {
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { TranslationKeys } from '@/lib/admin-i18n/translations'
 import { signOut } from '@/lib/actions/auth'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
     LayoutDashboard,
     Calendar,
@@ -102,17 +103,16 @@ const navigation: NavigationItem[] = [
 interface SidebarContentProps {
     pathname: string
     user: any
+    profile?: { full_name: string | null; avatar_url: string | null; role: string } | null
     onLinkClick?: () => void
 }
 
-function SidebarContent({ pathname, user, onLinkClick }: SidebarContentProps) {
+function SidebarContent({ pathname, user, profile, onLinkClick }: SidebarContentProps) {
     const { t } = useAdminI18n()
     const sidebar = t('sidebar')
     const common = t('common')
-    const initials = (user?.email as string | undefined)
-        ?.split('@')[0]
-        ?.slice(0, 2)
-        ?.toUpperCase() ?? 'A'
+    const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Admin'
+    const initials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
     const [isSettingsOpen, setIsSettingsOpen] = useState(pathname.startsWith('/admin/configuracoes'))
 
     useEffect(() => {
@@ -223,14 +223,17 @@ function SidebarContent({ pathname, user, onLinkClick }: SidebarContentProps) {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors text-left">
-                            <div className="w-8 h-8 rounded-full bg-[#C48B7F] text-white flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                                {initials}
-                            </div>
+                            <Avatar className="w-8 h-8 flex-shrink-0">
+                                <AvatarImage src={profile?.avatar_url || ''} alt={displayName} />
+                                <AvatarFallback className="bg-[#C48B7F] text-white text-xs font-semibold">
+                                    {initials}
+                                </AvatarFallback>
+                            </Avatar>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-700 truncate leading-tight">
-                                    {user?.email ?? ''}
+                                    {displayName}
                                 </p>
-                                <p className="text-xs text-muted-foreground leading-tight">{common.admin}</p>
+                                <p className="text-xs text-muted-foreground leading-tight truncate">{user?.email ?? ''}</p>
                             </div>
                             <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         </button>
@@ -261,7 +264,7 @@ function SidebarContent({ pathname, user, onLinkClick }: SidebarContentProps) {
     )
 }
 
-export function Sidebar({ user }: { user: any }) {
+export function Sidebar({ user, profile }: { user: any; profile?: { full_name: string | null; avatar_url: string | null; role: string } | null }) {
     const [isMobileOpen, setIsMobileOpen] = useState(false)
     const pathname = usePathname()
 
@@ -269,7 +272,7 @@ export function Sidebar({ user }: { user: any }) {
         <>
             {/* Desktop Sidebar */}
             <aside className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col bg-white border-r border-[#EAE0D5]">
-                <SidebarContent pathname={pathname} user={user} />
+                <SidebarContent pathname={pathname} user={user} profile={profile} />
             </aside>
 
             {/* Mobile Sidebar */}
@@ -290,6 +293,7 @@ export function Sidebar({ user }: { user: any }) {
                     <SidebarContent
                         pathname={pathname}
                         user={user}
+                        profile={profile}
                         onLinkClick={() => setIsMobileOpen(false)}
                     />
                 </SheetContent>
