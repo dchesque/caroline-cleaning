@@ -67,7 +67,10 @@ export function LoginCard({ initialMode = 'password', initialError = null }: Pro
 
   return (
     <div className="mx-auto grid w-full max-w-[400px] gap-6">
-      <div className="flex flex-col space-y-2 text-center">
+      <div
+        key={`heading-${mode}`}
+        className="flex flex-col space-y-2 text-center animate-in fade-in duration-300"
+      >
         <h1 className="text-2xl sm:text-3xl font-heading font-semibold tracking-tight text-foreground">
           {title}
         </h1>
@@ -75,49 +78,57 @@ export function LoginCard({ initialMode = 'password', initialError = null }: Pro
       </div>
 
       {urlError && mode === 'password' && (
-        <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
+        <Alert
+          variant="destructive"
+          className="bg-destructive/10 border-destructive/20 animate-in fade-in duration-300"
+        >
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{urlError}</AlertDescription>
         </Alert>
       )}
 
-      {mode === 'password' && (
-        <PasswordForm
-          onSuccess={goToAdmin}
-          onForgotPassword={() => switchMode('forgot')}
-          onUseOtp={() => switchMode('otp-request')}
-        />
-      )}
+      <div
+        key={`form-${mode}`}
+        className="animate-in fade-in slide-in-from-right-8 duration-300"
+      >
+        {mode === 'password' && (
+          <PasswordForm
+            onSuccess={goToAdmin}
+            onForgotPassword={() => switchMode('forgot')}
+            onUseOtp={() => switchMode('otp-request')}
+          />
+        )}
 
-      {mode === 'otp-request' && (
-        <OtpRequestForm
-          initialEmail={otpEmail}
-          onSent={(email) => {
-            setOtpEmail(email)
-            switchMode('otp-verify')
-          }}
-          onBackToPassword={() => switchMode('password')}
-        />
-      )}
+        {mode === 'otp-request' && (
+          <OtpRequestForm
+            initialEmail={otpEmail}
+            onSent={(email) => {
+              setOtpEmail(email)
+              switchMode('otp-verify')
+            }}
+            onBackToPassword={() => switchMode('password')}
+          />
+        )}
 
-      {mode === 'otp-verify' && (
-        <OtpVerifyForm
-          email={otpEmail}
-          onSuccess={goToAdmin}
-          onBackToRequest={() => switchMode('otp-request')}
-        />
-      )}
+        {mode === 'otp-verify' && (
+          <OtpVerifyForm
+            email={otpEmail}
+            onSuccess={goToAdmin}
+            onBackToRequest={() => switchMode('otp-request')}
+          />
+        )}
 
-      {mode === 'forgot' && (
-        <ForgotPasswordForm onBackToPassword={() => switchMode('password')} />
-      )}
+        {mode === 'forgot' && (
+          <ForgotPasswordForm onBackToPassword={() => switchMode('password')} />
+        )}
 
-      {mode === 'new-password' && (
-        <NewPasswordForm
-          onSuccess={goToAdmin}
-          onSessionExpired={() => switchMode('forgot')}
-        />
-      )}
+        {mode === 'new-password' && (
+          <NewPasswordForm
+            onSuccess={goToAdmin}
+            onSessionExpired={() => switchMode('forgot')}
+          />
+        )}
+      </div>
     </div>
   )
 }
