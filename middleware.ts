@@ -90,9 +90,15 @@ export async function middleware(request: NextRequest) {
         }
 
         if (isLoginPage && user) {
-            const url = request.nextUrl.clone()
-            url.pathname = '/admin'
-            return applySecurityHeaders(NextResponse.redirect(url))
+            // Exception: the password-recovery flow lands on /login?mode=new-password
+            // *with* an active recovery session. Without this guard the middleware
+            // would bounce the user to /admin before they can set their new password.
+            const mode = request.nextUrl.searchParams.get('mode')
+            if (mode !== 'new-password') {
+                const url = request.nextUrl.clone()
+                url.pathname = '/admin'
+                return applySecurityHeaders(NextResponse.redirect(url))
+            }
         }
     }
 
