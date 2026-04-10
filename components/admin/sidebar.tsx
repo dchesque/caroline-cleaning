@@ -97,8 +97,6 @@ const navigation: NavigationItem[] = [
         ],
     },
 
-    // Account
-    { key: 'account', href: '/admin/conta', icon: UserCircle, dividerBefore: true },
 ]
 
 interface SidebarContentProps {
