@@ -14,9 +14,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     return (
         <AdminI18nProvider>
             <div className="min-h-screen bg-[#FDF8F6]">
-                <Sidebar />
+                <Sidebar user={user} />
                 <div className="lg:pl-64">
-                    <AdminHeader user={user} />
+                    <AdminHeader />
                     <main className="p-4 lg:p-6">{children}</main>
                 </div>
                 <Toaster richColors position="top-right" />
