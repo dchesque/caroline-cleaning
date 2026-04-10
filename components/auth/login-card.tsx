@@ -66,7 +66,7 @@ export function LoginCard({ initialMode = 'password', initialError = null }: Pro
   const { title, subtitle } = HEADINGS[mode]
 
   return (
-    <div className="mx-auto grid w-full max-w-[400px] gap-6">
+    <div className="grid w-full gap-6">
       <div
         key={`heading-${mode}`}
         className="flex flex-col space-y-2 text-center animate-in fade-in duration-300"

@@ -27,54 +27,100 @@ export default async function LoginPage({ searchParams }: PageProps) {
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
-      {/* Left Side: Login Card */}
-      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-desert-storm">
-        <LoginCard initialMode={mode} initialError={initialError} />
-      </div>
-
-      {/* Right Side: Brand Panel (unchanged) */}
-      <div className="hidden bg-muted lg:block relative overflow-hidden">
-        <div className="absolute inset-0 bg-brandy-rose-900" />
-        <div className="absolute inset-0 bg-gradient-to-t from-brandy-rose-950/90 to-brandy-rose-900/50" />
+      {/* Left Side: Auth Card with gradient background */}
+      <div className="relative flex items-center justify-center min-h-screen lg:min-h-0 py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Gradient background */}
         <div
-          className="absolute inset-0 opacity-10"
+          className="absolute inset-0"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            background:
+              'radial-gradient(ellipse at 60% 40%, #E8D9CF 0%, #ECE9E4 40%, #F8F8F7 100%)',
           }}
         />
-        <div className="relative z-10 h-full flex flex-col justify-between p-12 text-white">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+        {/* Decorative blobs */}
+        <div
+          className="absolute -top-24 -left-24 w-96 h-96 rounded-full opacity-40 blur-3xl"
+          style={{ background: '#E8D9CF' }}
+        />
+        <div
+          className="absolute -bottom-32 -right-16 w-80 h-80 rounded-full opacity-30 blur-3xl"
+          style={{ background: '#D9C1B0' }}
+        />
+        {/* Glass card */}
+        <div className="relative z-10 w-full max-w-[420px]">
+          <div
+            className="rounded-2xl border border-white/40 shadow-lg p-8 sm:p-10"
+            style={{ background: 'rgba(255,255,255,0.70)', backdropFilter: 'blur(8px)' }}
+          >
+            {/* Logo mark */}
+            <div className="flex flex-col items-center gap-2 mb-8">
+              <div className="h-10 w-10 rounded-full bg-brandy-rose-500 flex items-center justify-center shadow-sm">
+                <span className="font-heading font-bold text-white text-lg">C</span>
+              </div>
+              <span className="font-heading text-sm font-medium tracking-wide text-brandy-rose-700">
+                Chesque Premium
+              </span>
+            </div>
+
+            <LoginCard initialMode={mode} initialError={initialError} />
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side: Brand Panel Repaginado */}
+      <div className="hidden lg:flex relative overflow-hidden">
+        {/* Background layers */}
+        <div className="absolute inset-0 bg-brandy-rose-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-brandy-rose-800/80 via-brandy-rose-900 to-brandy-rose-950" />
+        <div
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundSize: '60px 60px',
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between w-full p-12 text-white">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
               <span className="font-heading font-bold text-white">C</span>
             </div>
-            <span className="font-heading text-xl font-medium tracking-tight">
+            <span className="font-heading text-lg font-medium tracking-tight">
               Chesque Premium Cleaning
             </span>
           </div>
-          <div className="space-y-6 max-w-lg">
-            <blockquote className="space-y-2">
-              <p className="font-heading text-3xl leading-snug">
-                &ldquo;Efficiency is not just about speed, it&apos;s about
-                minimizing the friction for our clients. Manage your operations
-                with elegance.&rdquo;
-              </p>
-            </blockquote>
-            <div className="flex items-center gap-4">
-              <div className="flex -space-x-2">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-10 w-10 rounded-full border-2 border-brandy-rose-900 bg-brandy-rose-800 flex items-center justify-center text-xs font-medium"
-                  >
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                ))}
+
+          {/* Center: Tagline */}
+          <div className="space-y-4 max-w-sm">
+            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-brandy-rose-300">
+              Admin Portal
+            </p>
+            <h2 className="font-heading text-4xl leading-tight font-semibold">
+              Premium cleaning you can trust.
+            </h2>
+            <p className="text-white/60 text-base leading-relaxed">
+              Manage your operations with elegance. Everything you need to run
+              a world-class cleaning service, in one place.
+            </p>
+          </div>
+
+          {/* Bottom: Metrics */}
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { value: '4.9★', label: 'Rating' },
+              { value: '150+', label: 'Reviews' },
+              { value: '2+', label: 'Years' },
+            ].map(({ value, label }) => (
+              <div
+                key={label}
+                className="rounded-xl border border-white/10 bg-white/5 p-4 text-center backdrop-blur-sm"
+              >
+                <p className="font-heading text-2xl font-bold text-white">{value}</p>
+                <p className="text-xs text-white/50 mt-1 tracking-wide uppercase">{label}</p>
               </div>
-              <div className="text-sm text-white/80">
-                <div className="font-medium text-white">Trusted by our team</div>
-                <div>Admin Portal v1.0</div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
