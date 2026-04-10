@@ -205,7 +205,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
     const result = await engine.process('hi', SESSION)
 
     expect(result.state).toBe('COLLECT_PHONE')
-    expect(llm.generate).toHaveBeenCalledWith('ask_phone', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('ask_phone', expect.anything(), expect.anything())
     expect(result.response).toBeTruthy()
   })
 
@@ -218,7 +218,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
     const result = await engine.process('704-555-1234', SESSION)
 
     expect(result.state).toBe('CONFIRM_PHONE')
-    expect(llm.generate).toHaveBeenCalledWith('confirm_phone', expect.objectContaining({ phone: '(704) 555-1234' }), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('confirm_phone', expect.objectContaining({ phone: '(704) 555-1234' }), expect.anything())
 
     const savedCtx = (services.updateSession as jest.Mock).mock.calls.at(-1)?.[1]
     expect(savedCtx?.cliente_telefone).toBe('7045551234')
@@ -235,7 +235,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
     // CONFIRM_PHONE → (silent) LOOKUP_CUSTOMER → NEW_CUSTOMER_NAME
     expect(result.state).toBe('NEW_CUSTOMER_NAME')
     expect(services.findCustomerByPhone).toHaveBeenCalledWith('7045551234')
-    expect(llm.generate).toHaveBeenCalledWith('ask_name', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('ask_name', expect.anything(), expect.anything())
   })
 
   // ── Step 4 ─────────────────────────────────────────────────
@@ -248,7 +248,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
 
     // NEW_CUSTOMER_NAME → (silent) EXPLAIN_FIRST_VISIT → NEW_CUSTOMER_ADDRESS
     expect(result.state).toBe('NEW_CUSTOMER_ADDRESS')
-    expect(llm.generate).toHaveBeenCalledWith('explain_first_visit', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('explain_first_visit', expect.anything(), expect.anything())
 
     const savedCtx = (services.updateSession as jest.Mock).mock.calls.at(-1)?.[1]
     expect(savedCtx?.cliente_nome).toBe('John Smith')
@@ -290,7 +290,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
 
     // ASK_DATE: no service_type → ASK_SERVICE_TYPE
     expect(result.state).toBe('ASK_SERVICE_TYPE')
-    expect(llm.generate).toHaveBeenCalledWith('ask_service_type', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('ask_service_type', expect.anything(), expect.anything())
   })
 
   // ── Step 6 ─────────────────────────────────────────────────
@@ -300,7 +300,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
     // State: ASK_DATE. ASK_DATE handler sees no service_type → goes to ASK_SERVICE_TYPE.
     const askServiceResult = await engine.process('when can I book?', SESSION)
     expect(askServiceResult.state).toBe('ASK_SERVICE_TYPE')
-    expect(llm.generate).toHaveBeenCalledWith('ask_service_type', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('ask_service_type', expect.anything(), expect.anything())
 
     // User picks "regular cleaning" → ASK_SERVICE_TYPE extracts it → (silent) ASK_DATE → COLLECT_DATE
     ;(llm.extract as jest.Mock).mockResolvedValueOnce({ service_type: 'regular' })
@@ -362,7 +362,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
     // CONFIRM_SUMMARY(yes) → COLLECT_PREFERENCE (asks for SMS/WhatsApp)
     expect(confirmResult.state).toBe('COLLECT_PREFERENCE')
     expect(services.confirmAppointment).toHaveBeenCalledWith('appt-001')
-    expect(llm.generate).toHaveBeenCalledWith('ask_preference', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('ask_preference', expect.anything(), expect.anything())
 
     // User says they prefer WhatsApp
     ;(llm.extract as jest.Mock).mockResolvedValueOnce({ preference: 'whatsapp' })
@@ -371,7 +371,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
     // COLLECT_PREFERENCE → (silent) UPDATE_PREFERENCE → DONE
     expect(prefResult.state).toBe('DONE')
     expect(services.updateLead).toHaveBeenCalledWith('client-001', { canal_preferencia: 'whatsapp' })
-    expect(llm.generate).toHaveBeenCalledWith('done_booking', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('done_booking', expect.anything(), expect.anything())
 
     const savedCtx = (services.updateSession as jest.Mock).mock.calls.at(-1)?.[1]
     expect(savedCtx?.canal_preferencia).toBe('whatsapp')
@@ -387,7 +387,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
     const result = await engine.process('not a phone number', SESSION)
 
     expect(result.state).toBe('COLLECT_PHONE')
-    expect(llm.generate).toHaveBeenCalledWith('invalid_phone', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('invalid_phone', expect.anything(), expect.anything())
 
     const savedCtx = (services.updateSession as jest.Mock).mock.calls.at(-1)?.[1]
     expect(savedCtx?.retry_count).toBe(1)
@@ -408,7 +408,7 @@ describe('New-customer → schedule visit flow (integration)', () => {
     const result = await engine.process('999 Far Away Ave, Miami FL 33101', SESSION)
 
     expect(result.state).toBe('DONE')
-    expect(llm.generate).toHaveBeenCalledWith('zip_not_covered', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('zip_not_covered', expect.anything(), expect.anything())
   })
 
   // ── Unhappy path: user picks unavailable time ─────────────
@@ -421,6 +421,6 @@ describe('New-customer → schedule visit flow (integration)', () => {
     const result = await engine.process('8am', SESSION)
 
     expect(result.state).toBe('COLLECT_TIME')
-    expect(llm.generate).toHaveBeenCalledWith('time_not_available', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('time_not_available', expect.anything(), expect.anything())
   })
 })

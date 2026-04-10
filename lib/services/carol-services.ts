@@ -410,14 +410,20 @@ export class CarolServices {
     async getAvailableSlots(date: string, durationMinutes: number, equipeId?: string | null): Promise<SlotsResult> {
         logger.debug('getAvailableSlots', { date, durationMinutes, equipeId })
 
-        const rpcParams: any = { p_data: date, p_duracao_minutos: durationMinutes }
-        if (equipeId) rpcParams.p_equipe_id = equipeId
+        // Always pass p_equipe_id (null if unset) to disambiguate between the
+        // 2-arg and 3-arg overloads of get_available_slots in Postgres — otherwise
+        // PostgREST returns "function is not unique" and the call fails silently.
+        const rpcParams: Record<string, unknown> = {
+            p_data: date,
+            p_duracao_minutos: durationMinutes,
+            p_equipe_id: equipeId ?? null,
+        }
 
         const { data, error } = await this.supabase.rpc('get_available_slots', rpcParams)
 
         if (error) {
-            logger.error('getAvailableSlots RPC error', { error })
-            return { date, slots: [], total: 0 }
+            logger.error('getAvailableSlots RPC error', { error, date, durationMinutes, equipeId })
+            throw new Error(`getAvailableSlots failed: ${error.message}`)
         }
 
         let availableSlots = (data || []).filter((s: any) => s.disponivel)

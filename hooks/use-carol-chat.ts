@@ -87,6 +87,10 @@ export function useCarolChat(): UseCarolChatReturn {
                     : m
             ))
 
+            // Typing delay — mantém o TypingIndicator visível por ~2s
+            // para dar sensação de conversa com humano
+            await new Promise(resolve => setTimeout(resolve, 2000))
+
             // Adicionar resposta da Carol
             const assistantMessage: ChatMessage = {
                 id: nanoid(),

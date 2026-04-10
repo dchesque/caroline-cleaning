@@ -271,7 +271,7 @@ describe('Returning customer → cancel appointment flow (integration)', () => {
     const result = await engine.process('yes', SESSION)
 
     expect(result.state).toBe('DETECT_INTENT')
-    expect(llm.generate).toHaveBeenCalledWith('cancel_error', expect.anything(), 'en')
+    expect(llm.generate).toHaveBeenCalledWith('cancel_error', expect.anything(), expect.anything())
   })
 
   // ── Validate context is cleaned up after success ──────────

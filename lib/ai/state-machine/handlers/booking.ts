@@ -154,9 +154,34 @@ export const handleAskAddons: StateHandler = async (message, context, services, 
  * If a message is already present (e.g. user answered inline after reschedule confirmation),
  * process it immediately so the user never has to send the date twice.
  */
-export const handleAskDate: StateHandler = async (message, context, _services, llm) => {
-  // If we don't have a service type yet, ask for it first
+export const handleAskDate: StateHandler = async (message, context, services, llm) => {
+  // If we don't have a service type yet, try to extract it from the current
+  // message first — otherwise we'd throw away whatever the user just said
+  // (e.g. "regular cleaning") and force them to repeat it.
   if (!context.service_type) {
+    if (message && message.trim()) {
+      const extracted = await llm.extract('service_type', message)
+      const serviceType = extracted?.service_type ?? extracted?.value ?? null
+      if (serviceType) {
+        // Delegate to the service-type handler by updating context and
+        // continuing the booking chain. Use a silent transition so the next
+        // handler (ASK_ADDONS or ASK_DATE for visits) runs immediately.
+        const duration = getDurationForService(serviceType)
+        const nextAfterService = serviceType === 'visit' ? 'ASK_DATE' : 'ASK_ADDONS'
+        return {
+          nextState: nextAfterService,
+          response: '',
+          silent: true,
+          contextUpdates: {
+            service_type: serviceType,
+            duration_minutes: duration,
+            selected_addons: [],
+          },
+        }
+      }
+    }
+
+    // No service_type in the message — fall back to asking explicitly.
     const response = await llm.generate('ask_service_type', {
       name: context.cliente_nome,
     })
