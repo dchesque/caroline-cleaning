@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,7 +14,7 @@ import {
 import { TransactionForm } from '@/components/financeiro/transaction-form'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 import { Badge } from '@/components/ui/badge'
-import { TrendingUp, DollarSign, Clock, Settings, Plus, Tags, Search, Download, Filter, Loader2, MoreHorizontal, Trash2, Calendar as CalendarIcon } from 'lucide-react'
+import { TrendingUp, DollarSign, Clock, Plus, Download, Filter, Loader2, MoreHorizontal, Pencil, Trash2, Calendar as CalendarIcon } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
@@ -34,6 +34,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
+import Link from 'next/link'
 
 interface Transaction {
     id: string
@@ -47,10 +49,35 @@ interface Transaction {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
 
+function getDateRange(period: string) {
+    const now = new Date()
+    switch (period) {
+        case 'last_month': {
+            const d = subMonths(now, 1)
+            return { start: format(startOfMonth(d), 'yyyy-MM-dd'), end: format(endOfMonth(d), 'yyyy-MM-dd') }
+        }
+        case 'last_3_months': {
+            const d = subMonths(now, 3)
+            return { start: format(startOfMonth(d), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') }
+        }
+        case 'last_6_months': {
+            const d = subMonths(now, 6)
+            return { start: format(startOfMonth(d), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') }
+        }
+        case 'this_year': {
+            return { start: `${now.getFullYear()}-01-01`, end: format(endOfMonth(now), 'yyyy-MM-dd') }
+        }
+        case 'this_month':
+        default: {
+            return { start: format(startOfMonth(now), 'yyyy-MM-dd'), end: format(endOfMonth(now), 'yyyy-MM-dd') }
+        }
+    }
+}
+
 export default function DespesasPage() {
     const { t, locale } = useAdminI18n()
     const common = t('common')
-    const financeT = t('finance')
+    const expT = t('finance_expenses')
     const supabase = createClient()
 
     const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -58,7 +85,6 @@ export default function DespesasPage() {
     const [period, setPeriod] = useState('this_month')
     const [categoryFilter, setCategoryFilter] = useState('all')
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false)
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
     const [stats, setStats] = useState({
         totalPeriod: 0,
@@ -70,17 +96,17 @@ export default function DespesasPage() {
     })
     const [chartData, setChartData] = useState<{ name: string; value: number }[]>([])
 
-    useEffect(() => {
-        fetchTransactions()
-    }, [period, categoryFilter])
-
-    const fetchTransactions = async () => {
+    const fetchTransactions = useCallback(async () => {
         setLoading(true)
         try {
+            const { start, end } = getDateRange(period)
+
             let query = supabase
                 .from('financeiro')
                 .select('*')
                 .eq('tipo', 'custo')
+                .gte('data', start)
+                .lte('data', end)
                 .order('data', { ascending: false })
 
             if (categoryFilter !== 'all') {
@@ -97,11 +123,15 @@ export default function DespesasPage() {
             }
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao carregar dados')
+            toast.error(expT.toast.loadError)
         } finally {
             setLoading(false)
         }
-    }
+    }, [period, categoryFilter])
+
+    useEffect(() => {
+        fetchTransactions()
+    }, [fetchTransactions])
 
     const processStats = (data: Transaction[]) => {
         const totalPeriod = data.reduce((acc, curr) => acc + curr.valor, 0)
@@ -132,7 +162,7 @@ export default function DespesasPage() {
     }
 
     const handleDelete = async (id: string, descricao: string) => {
-        if (!confirm(`Deseja realmente excluir "${descricao}"?`)) return
+        if (!confirm(expT.table.confirmDelete(descricao))) return
 
         try {
             const { error } = await supabase
@@ -141,17 +171,38 @@ export default function DespesasPage() {
                 .eq('id', id)
 
             if (error) throw error
-            toast.success('Operação realizada com sucesso')
+            toast.success(expT.toast.operationSuccess)
             fetchTransactions()
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao realizar operação')
+            toast.error(expT.toast.operationError)
         }
     }
 
     const handleEdit = (transaction: Transaction) => {
         setEditingTransaction(transaction)
         setIsFormOpen(true)
+    }
+
+    const handleExportCSV = () => {
+        if (transactions.length === 0) return
+        const headers = ['Data', 'Descrição', 'Categoria', 'Valor', 'Status', 'Forma Pagamento']
+        const rows = transactions.map(t => [
+            t.data,
+            t.descricao || '',
+            t.categoria,
+            t.valor.toString(),
+            t.status,
+            t.forma_pagamento || ''
+        ])
+        const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${expT.export.filename}_${period}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
     }
 
     const categories = useMemo(() => {
@@ -165,20 +216,22 @@ export default function DespesasPage() {
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <h1 className="font-heading text-2xl font-bold text-foreground">Despesas</h1>
-                            <p className="text-sm text-muted-foreground">Gestão de custos e despesas</p>
+                            <h1 className="font-heading text-2xl font-bold text-foreground">{expT.title}</h1>
+                            <p className="text-sm text-muted-foreground">{expT.subtitle}</p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => setIsManageCategoriesOpen(true)}>
-                                <Settings className="w-4 h-4 mr-2" />
-                                Configurações
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href="/admin/financeiro/categorias">
+                                    <Filter className="w-4 h-4 mr-2" />
+                                    {expT.settings}
+                                </Link>
                             </Button>
                             <Button size="sm" onClick={() => {
                                 setEditingTransaction(null)
                                 setIsFormOpen(true)
                             }}>
                                 <Plus className="w-4 h-4 mr-2" />
-                                Nova Despesa
+                                {expT.newExpense}
                             </Button>
                         </div>
                     </div>
@@ -190,13 +243,13 @@ export default function DespesasPage() {
                             <Card>
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium text-muted-foreground">Total no Período</p>
+                                        <p className="text-sm font-medium text-muted-foreground">{expT.stats.totalPeriod}</p>
                                         <TrendingUp className="w-4 h-4 text-primary" />
                                     </div>
                                     <div className="mt-2">
                                         <h3 className="text-2xl font-bold">{formatCurrency(stats.totalPeriod)}</h3>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            {stats.count} registros
+                                            {stats.count} {expT.stats.records}
                                         </p>
                                     </div>
                                 </CardContent>
@@ -204,13 +257,13 @@ export default function DespesasPage() {
                             <Card>
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium text-muted-foreground">Pago</p>
+                                        <p className="text-sm font-medium text-muted-foreground">{expT.stats.paid}</p>
                                         <DollarSign className="w-4 h-4 text-green-500" />
                                     </div>
                                     <div className="mt-2">
                                         <h3 className="text-2xl font-bold">{formatCurrency(stats.totalPaid)}</h3>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            Total liquidado
+                                            {expT.stats.totalSettled}
                                         </p>
                                     </div>
                                 </CardContent>
@@ -218,13 +271,13 @@ export default function DespesasPage() {
                             <Card>
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium text-muted-foreground">Pendente</p>
+                                        <p className="text-sm font-medium text-muted-foreground">{expT.stats.pending}</p>
                                         <Clock className="w-4 h-4 text-yellow-500" />
                                     </div>
                                     <div className="mt-2">
                                         <h3 className="text-2xl font-bold">{formatCurrency(stats.totalPending)}</h3>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            A pagar
+                                            {expT.stats.toPay}
                                         </p>
                                     </div>
                                 </CardContent>
@@ -232,7 +285,7 @@ export default function DespesasPage() {
 
                             <Card className="h-[300px]">
                                 <CardContent className="pt-6 h-full">
-                                    <p className="text-sm font-medium mb-4">Distribuição por Categoria</p>
+                                    <p className="text-sm font-medium mb-4">{expT.stats.distributionByCategory}</p>
                                     <ResponsiveContainer width="100%" height="80%">
                                         <PieChart>
                                             <Pie
@@ -264,11 +317,14 @@ export default function DespesasPage() {
                                             <Select value={period} onValueChange={setPeriod}>
                                                 <SelectTrigger>
                                                     <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
-                                                    <SelectValue placeholder="Período" />
+                                                    <SelectValue placeholder={expT.filters.period} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="this_month">Este Mês</SelectItem>
-                                                    <SelectItem value="last_month">Mês Passado</SelectItem>
+                                                    <SelectItem value="this_month">{common.periods.thisMonth}</SelectItem>
+                                                    <SelectItem value="last_month">{common.periods.lastMonth}</SelectItem>
+                                                    <SelectItem value="last_3_months">{common.periods.last3Months}</SelectItem>
+                                                    <SelectItem value="last_6_months">{common.periods.last6Months}</SelectItem>
+                                                    <SelectItem value="this_year">{common.periods.thisYear}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -276,17 +332,17 @@ export default function DespesasPage() {
                                             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                                                 <SelectTrigger>
                                                     <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
-                                                    <SelectValue placeholder="Categoria" />
+                                                    <SelectValue placeholder={expT.filters.category} />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="all">Todas</SelectItem>
+                                                    <SelectItem value="all">{expT.filters.allCategories}</SelectItem>
                                                     {categories.map(category => (
                                                         <SelectItem key={category} value={category}>{category}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <Button variant="outline" size="icon">
+                                        <Button variant="outline" size="icon" onClick={handleExportCSV} title={expT.export.tooltip}>
                                             <Download className="w-4 h-4" />
                                         </Button>
                                     </div>
@@ -297,35 +353,36 @@ export default function DespesasPage() {
                                 <Table>
                                     <TableHeader className="bg-muted/50">
                                         <TableRow>
-                                            <TableHead>Data</TableHead>
-                                            <TableHead>Descrição</TableHead>
-                                            <TableHead>Categoria</TableHead>
-                                            <TableHead>Valor</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Ações</TableHead>
+                                            <TableHead>{expT.table.date}</TableHead>
+                                            <TableHead>{expT.table.description}</TableHead>
+                                            <TableHead>{expT.table.category}</TableHead>
+                                            <TableHead>{expT.table.paymentMethod}</TableHead>
+                                            <TableHead className="text-right">{expT.table.value}</TableHead>
+                                            <TableHead className="text-center">{expT.table.status}</TableHead>
+                                            <TableHead className="text-right">{expT.table.actions}</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {loading ? (
                                             <TableRow>
-                                                <TableCell colSpan={6} className="h-48 text-center text-muted-foreground">
+                                                <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
                                                     <div className="flex flex-col items-center gap-2">
                                                         <Loader2 className="w-8 h-8 animate-spin" />
-                                                        <span>Carregando...</span>
+                                                        <span>{expT.table.loading}</span>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
                                         ) : transactions.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                                    Nenhum registro encontrado.
+                                                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                                                    {expT.table.empty}
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
                                             transactions.map((transaction) => (
                                                 <TableRow key={transaction.id} className="hover:bg-muted/50 transition-colors">
                                                     <TableCell className="text-sm font-medium">
-                                                        {new Date(transaction.data).toLocaleDateString()}
+                                                        {new Date(transaction.data + 'T00:00:00').toLocaleDateString(locale)}
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex flex-col">
@@ -338,14 +395,14 @@ export default function DespesasPage() {
                                                             {transaction.categoria}
                                                         </span>
                                                     </TableCell>
-                                                    <TableCell className="text-sm">{transaction.forma_pagamento || '-'}</TableCell>
+                                                    <TableCell className="text-sm text-muted-foreground">{transaction.forma_pagamento || '-'}</TableCell>
                                                     <TableCell className="text-right font-semibold text-destructive">
                                                         {formatCurrency(transaction.valor)}
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex justify-center">
                                                             <Badge variant={transaction.status === 'pago' ? 'default' : 'secondary'}>
-                                                                {transaction.status === 'pago' ? 'Sim' : 'Não'}
+                                                                {transaction.status === 'pago' ? expT.table.paid : expT.table.unpaid}
                                                             </Badge>
                                                         </div>
                                                     </TableCell>
@@ -358,12 +415,12 @@ export default function DespesasPage() {
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuItem onClick={() => handleEdit(transaction)}>
-                                                                    <Plus className="w-4 h-4 mr-2" />
-                                                                    Editar
+                                                                    <Pencil className="w-4 h-4 mr-2" />
+                                                                    {expT.table.edit}
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(transaction.id, transaction.descricao || '')}>
                                                                     <Trash2 className="w-4 h-4 mr-2" />
-                                                                    Excluir
+                                                                    {expT.table.delete}
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>

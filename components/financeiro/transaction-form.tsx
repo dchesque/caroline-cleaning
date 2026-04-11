@@ -23,6 +23,7 @@ import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { FORMAS_PAGAMENTO } from './constants'
 import { CategoryQuickForm } from './category-quick-form'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface TransactionFormProps {
     type: 'receita' | 'custo'
@@ -39,6 +40,8 @@ export function TransactionForm({
     onOpenChange,
     onSuccess
 }: TransactionFormProps) {
+    const { t } = useAdminI18n()
+    const txT = t('finance_transaction')
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
         categoria: '',
@@ -47,8 +50,8 @@ export function TransactionForm({
         valor: '',
         data: new Date().toISOString().split('T')[0],
         forma_pagamento: '',
-        status: 'pendente', // Default for receitas
-        cliente_id: 'null' // Optional for receitas
+        status: 'pendente',
+        cliente_id: 'null'
     })
     const [clientes, setClientes] = useState<any[]>([])
     const [dbCategories, setDbCategories] = useState<any[]>([])
@@ -67,7 +70,6 @@ export function TransactionForm({
                 cliente_id: transaction.cliente_id || 'null'
             })
         } else {
-            // Reset form
             setFormData({
                 categoria: '',
                 subcategoria: '',
@@ -75,7 +77,7 @@ export function TransactionForm({
                 valor: '',
                 data: new Date().toISOString().split('T')[0],
                 forma_pagamento: '',
-                status: type === 'receita' ? 'pendente' : 'pago', // Expenses usually paid immediately
+                status: type === 'receita' ? 'pendente' : 'pago',
                 cliente_id: 'null'
             })
         }
@@ -119,7 +121,7 @@ export function TransactionForm({
         try {
             const valor = parseFloat(formData.valor)
             if (isNaN(valor)) {
-                toast.error('Por favor, insira um valor válido.')
+                toast.error(txT.invalidValue)
                 setLoading(false)
                 return
             }
@@ -146,7 +148,7 @@ export function TransactionForm({
                     .eq('id', transaction.id)
 
                 if (error) throw error
-                toast.success(`${type === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`)
+                toast.success(type === 'receita' ? txT.revenueUpdated : txT.expenseUpdated)
             } else {
                 const { error } = await supabase
                     .from('financeiro')
@@ -173,45 +175,44 @@ export function TransactionForm({
                     }).catch(() => {})
                 }
 
-                toast.success(`${type === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`)
+                toast.success(type === 'receita' ? txT.revenueCreated : txT.expenseCreated)
             }
 
             onSuccess()
             onOpenChange(false)
         } catch (error) {
             console.error(error)
-            toast.error('Erro ao salvar transação')
+            toast.error(txT.saveError)
         } finally {
             setLoading(false)
         }
     }
 
-    // Removido categorias fixas para usar as do banco
-    // const categories = type === 'receita' ? CATEGORIAS_RECEITA : CATEGORIAS_DESPESA
+    const dialogTitle = transaction
+        ? (type === 'receita' ? txT.editRevenue : txT.editExpense)
+        : (type === 'receita' ? txT.newRevenue : txT.newExpense)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>
-                        {transaction ? 'Editar' : 'Nova'} {type === 'receita' ? 'Receita' : 'Despesa'}
-                    </DialogTitle>
+                    <DialogTitle>{dialogTitle}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
 
                     {/* Cliente Select (Only for Receita) */}
                     {type === 'receita' && (
                         <div className="space-y-2">
-                            <Label>Cliente (Opcional)</Label>
+                            <Label>{txT.clientOptional}</Label>
                             <Select
                                 value={formData.cliente_id}
                                 onValueChange={(val) => setFormData({ ...formData, cliente_id: val })}
                             >
                                 <SelectTrigger className="bg-white border-gray-200 shadow-sm">
-                                    <SelectValue placeholder="Selecione um cliente" />
+                                    <SelectValue placeholder={txT.selectClient} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="null">Nenhum / Avulso</SelectItem>
+                                    <SelectItem value="null">{txT.noneWalkIn}</SelectItem>
                                     {clientes.map(cliente => (
                                         <SelectItem key={cliente.id} value={cliente.id}>
                                             {cliente.nome}
@@ -224,7 +225,7 @@ export function TransactionForm({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Categoria</Label>
+                            <Label>{txT.category}</Label>
                             <div className="flex gap-2">
                                 <Select
                                     value={formData.categoria}
@@ -232,7 +233,7 @@ export function TransactionForm({
                                     required
                                 >
                                     <SelectTrigger className="flex-1 bg-white border-gray-200 shadow-sm">
-                                        <SelectValue placeholder="Selecione" />
+                                        <SelectValue placeholder={txT.select} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {dbCategories.map(cat => (
@@ -253,7 +254,7 @@ export function TransactionForm({
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Valor ($)</Label>
+                            <Label>{txT.value}</Label>
                             <Input
                                 type="number"
                                 step="0.01"
@@ -267,11 +268,11 @@ export function TransactionForm({
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Descrição</Label>
+                        <Label>{txT.description}</Label>
                         <Input
                             value={formData.descricao}
                             onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                            placeholder="Ex: Limpeza Residencial"
+                            placeholder={txT.descriptionPlaceholder}
                             required
                             className="bg-white border-gray-200 shadow-sm focus:border-brandy-rose-400 focus:ring-brandy-rose-400"
                         />
@@ -279,7 +280,7 @@ export function TransactionForm({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Data</Label>
+                            <Label>{txT.date}</Label>
                             <Input
                                 type="date"
                                 value={formData.data}
@@ -290,13 +291,13 @@ export function TransactionForm({
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Pagamento</Label>
+                            <Label>{txT.payment}</Label>
                             <Select
                                 value={formData.forma_pagamento}
                                 onValueChange={(val) => setFormData({ ...formData, forma_pagamento: val })}
                             >
                                 <SelectTrigger className="bg-white border-gray-200 shadow-sm">
-                                    <SelectValue placeholder="Selecione" />
+                                    <SelectValue placeholder={txT.select} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {FORMAS_PAGAMENTO.map(forma => (
@@ -311,19 +312,19 @@ export function TransactionForm({
 
                     {type === 'receita' && (
                         <div className="space-y-2">
-                            <Label>Status</Label>
+                            <Label>{txT.status}</Label>
                             <Select
                                 value={formData.status}
                                 onValueChange={(val) => setFormData({ ...formData, status: val })}
                             >
                                 <SelectTrigger className="bg-white border-gray-200 shadow-sm">
-                                    <SelectValue placeholder="Selecione" />
+                                    <SelectValue placeholder={txT.select} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="pendente">Pendente</SelectItem>
-                                    <SelectItem value="pago">Pago</SelectItem>
-                                    <SelectItem value="cancelado">Cancelado</SelectItem>
-                                    <SelectItem value="reembolsado">Reembolsado</SelectItem>
+                                    <SelectItem value="pendente">{txT.statusPending}</SelectItem>
+                                    <SelectItem value="pago">{txT.statusPaid}</SelectItem>
+                                    <SelectItem value="cancelado">{txT.statusCancelled}</SelectItem>
+                                    <SelectItem value="reembolsado">{txT.statusRefunded}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -331,11 +332,11 @@ export function TransactionForm({
 
                     <DialogFooter className="pt-4">
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancelar
+                            {txT.cancel}
                         </Button>
                         <Button type="submit" disabled={loading} className="bg-primary hover:bg-primary/90">
                             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Salvar
+                            {txT.save}
                         </Button>
                     </DialogFooter>
                 </form>

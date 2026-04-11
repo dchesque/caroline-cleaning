@@ -16,7 +16,6 @@ import {
     TrendingUp,
     TrendingDown,
     DollarSign,
-    PieChart as PieChartIcon,
     Calendar as CalendarIcon,
     Loader2
 } from 'lucide-react'
@@ -36,7 +35,7 @@ import {
     Pie
 } from 'recharts'
 import { formatCurrency } from '@/lib/utils'
-import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval, isWithinInterval } from 'date-fns'
+import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns'
 import { ptBR, enUS } from 'date-fns/locale'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 
@@ -51,42 +50,81 @@ export default function RelatoriosPage() {
     const [loading, setLoading] = useState(true)
     const [period, setPeriod] = useState('this_year')
     const [transactions, setTransactions] = useState<any[]>([])
-    const [categories, setCategories] = useState<any[]>([])
-
     const supabase = createClient()
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true)
-            const [transRes, catsRes] = await Promise.all([
-                supabase.from('financeiro').select('*').order('data', { ascending: true }),
-                supabase.from('financeiro_categorias').select('*')
-            ])
+            const { data } = await supabase
+                .from('financeiro')
+                .select('*')
+                .order('data', { ascending: true })
 
-            if (transRes.data) setTransactions(transRes.data)
-            if (catsRes.data) setCategories(catsRes.data)
+            if (data) setTransactions(data)
             setLoading(false)
         }
         fetchData()
     }, [])
 
-    // Process data for charts
+    // Filter transactions by selected period
+    const filteredTransactions = useMemo(() => {
+        const now = new Date()
+        let start: Date
+
+        switch (period) {
+            case 'this_month':
+                start = startOfMonth(now)
+                break
+            case 'last_month':
+                start = startOfMonth(subMonths(now, 1))
+                break
+            case 'last_3_months':
+                start = startOfMonth(subMonths(now, 3))
+                break
+            case 'last_6_months':
+                start = startOfMonth(subMonths(now, 6))
+                break
+            case 'this_year':
+                start = new Date(now.getFullYear(), 0, 1)
+                break
+            default:
+                start = new Date(now.getFullYear(), 0, 1)
+        }
+
+        return transactions.filter(t => {
+            const d = new Date(t.data)
+            return d >= start && d <= now
+        })
+    }, [transactions, period])
+
+    // Process data for charts - using filtered transactions for stats but full range for chart
     const chartData = useMemo(() => {
         if (!transactions.length) return []
 
-        // Last 12 months interval
+        const now = new Date()
+        let monthsBack: number
+
+        switch (period) {
+            case 'this_month': monthsBack = 0; break
+            case 'last_month': monthsBack = 1; break
+            case 'last_3_months': monthsBack = 3; break
+            case 'last_6_months': monthsBack = 6; break
+            case 'this_year': monthsBack = now.getMonth(); break
+            default: monthsBack = 11
+        }
+
         const interval = eachMonthOfInterval({
-            start: subMonths(new Date(), 11),
-            end: new Date()
+            start: subMonths(now, Math.max(monthsBack, 1)),
+            end: now
         })
 
         return interval.map(month => {
-            const start = startOfMonth(month)
-            const end = endOfMonth(month)
+            const mStart = startOfMonth(month)
+            const mEnd = endOfMonth(month)
 
             const monthTrans = transactions.filter(t => {
                 const d = new Date(t.data)
-                return d >= start && d <= end
+                return d >= mStart && d <= mEnd
             })
 
             const revenue = monthTrans
@@ -104,10 +142,10 @@ export default function RelatoriosPage() {
                 profit: revenue - expenses
             }
         })
-    }, [transactions, currentLocale])
+    }, [transactions, currentLocale, period])
 
     const categoryData = useMemo(() => {
-        const expenses = transactions.filter(t => t.tipo === 'custo')
+        const expenses = filteredTransactions.filter(t => t.tipo === 'custo')
         const groups = new Map()
 
         expenses.forEach(t => {
@@ -118,14 +156,14 @@ export default function RelatoriosPage() {
         return Array.from(groups.entries())
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value)
-    }, [transactions])
+    }, [filteredTransactions])
 
     const stats = useMemo(() => {
-        const revenue = transactions
+        const revenue = filteredTransactions
             .filter(t => t.tipo === 'receita' && t.status === 'pago')
             .reduce((acc, curr) => acc + curr.valor, 0)
 
-        const expenses = transactions
+        const expenses = filteredTransactions
             .filter(t => t.tipo === 'custo')
             .reduce((acc, curr) => acc + curr.valor, 0)
 
@@ -135,7 +173,7 @@ export default function RelatoriosPage() {
             netProfit: revenue - expenses,
             margin: revenue > 0 ? ((revenue - expenses) / revenue) * 100 : 0
         }
-    }, [transactions])
+    }, [filteredTransactions])
 
     if (loading) {
         return (
@@ -167,7 +205,21 @@ export default function RelatoriosPage() {
                             <SelectItem value="this_year">{common.periods.thisYear}</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => {
+                        if (!filteredTransactions.length) return
+                        const headers = ['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Status']
+                        const rows = filteredTransactions.map(t => [
+                            t.data, t.tipo, t.categoria, t.descricao || '', t.valor.toString(), t.status || ''
+                        ])
+                        const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
+                        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `relatorio_financeiro_${period}.csv`
+                        a.click()
+                        URL.revokeObjectURL(url)
+                    }}>
                         <Download className="w-4 h-4 mr-2" />
                         {common.exportCSV || 'Exportar CSV'}
                     </Button>

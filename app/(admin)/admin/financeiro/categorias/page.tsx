@@ -30,7 +30,7 @@ export default function CategoriasPage() {
                 </div>
                 <div className="hidden sm:flex items-center gap-2 p-3 bg-primary/10 rounded-lg">
                     <Tags className="w-5 h-5 text-primary" />
-                    <span className="text-sm font-medium text-primary">Controle Total</span>
+                    <span className="text-sm font-medium text-primary">{categoriesT.fullControl}</span>
                 </div>
             </div>
 
