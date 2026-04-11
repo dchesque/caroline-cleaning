@@ -151,15 +151,31 @@ export default function ServicosPage() {
     const fetchData = async () => {
         setIsLoading(true)
 
-        const [servicosRes, addonsRes] = await Promise.all([
-            supabase.from('servicos_tipos').select('*').order('ordem'),
-            supabase.from('addons').select('*').order('ordem'),
-        ])
+        try {
+            const [servicosRes, addonsRes] = await Promise.all([
+                supabase.from('servicos_tipos').select('*').order('ordem'),
+                supabase.from('addons').select('*').order('ordem'),
+            ])
 
-        if (servicosRes.data) setServicos(servicosRes.data)
-        if (addonsRes.data) setAddons(addonsRes.data)
+            if (servicosRes.error) {
+                console.error('Error fetching services:', servicosRes.error)
+                toast.error(common.error)
+            } else {
+                setServicos(servicosRes.data)
+            }
 
-        setIsLoading(false)
+            if (addonsRes.error) {
+                console.error('Error fetching addons:', addonsRes.error)
+                toast.error(common.error)
+            } else {
+                setAddons(addonsRes.data)
+            }
+        } catch (error) {
+            console.error('Error fetching data:', error)
+            toast.error(common.error)
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     // SERVIÇOS HANDLERS
@@ -222,13 +238,13 @@ export default function ServicosPage() {
                     .update(data)
                     .eq('id', editingServico.id)
                 if (error) throw error
-                toast.success(common.save)
+                toast.success(servicesT.modals.successUpdate)
             } else {
                 const { error } = await supabase
                     .from('servicos_tipos')
                     .insert({ ...data, ordem: servicos.length })
                 if (error) throw error
-                toast.success(common.save)
+                toast.success(servicesT.modals.successCreate)
             }
 
             setShowServicoModal(false)
@@ -250,7 +266,7 @@ export default function ServicosPage() {
                 .delete()
                 .eq('id', id)
             if (error) throw error
-            toast.success(common.delete)
+            toast.success(servicesT.modals.successDelete)
             fetchData()
         } catch (error) {
             toast.error(common.error)
@@ -264,7 +280,7 @@ export default function ServicosPage() {
                 .update({ ativo: !servico.ativo })
                 .eq('id', servico.id)
             if (error) throw error
-            toast.success(common.save)
+            toast.success(servicesT.modals.successStatusUpdate)
             fetchData()
         } catch (error) {
             toast.error(common.error)
@@ -331,13 +347,13 @@ export default function ServicosPage() {
                     .update(data)
                     .eq('id', editingAddon.id)
                 if (error) throw error
-                toast.success(common.save)
+                toast.success(servicesT.modals.successUpdate)
             } else {
                 const { error } = await supabase
                     .from('addons')
                     .insert({ ...data, ordem: addons.length })
                 if (error) throw error
-                toast.success(common.save)
+                toast.success(servicesT.modals.successCreate)
             }
 
             setShowAddonModal(false)
@@ -359,7 +375,7 @@ export default function ServicosPage() {
                 .delete()
                 .eq('id', id)
             if (error) throw error
-            toast.success(common.delete)
+            toast.success(servicesT.modals.successDelete)
             fetchData()
         } catch (error) {
             toast.error(common.error)
@@ -373,7 +389,7 @@ export default function ServicosPage() {
                 .update({ ativo: !addon.ativo })
                 .eq('id', addon.id)
             if (error) throw error
-            toast.success(common.save)
+            toast.success(servicesT.modals.successStatusUpdate)
             fetchData()
         } catch (error) {
             toast.error(common.error)
@@ -547,7 +563,7 @@ export default function ServicosPage() {
                 {/* Addons Tab */}
                 <TabsContent value="addons" className="mt-6">
                     <Card>
-                        <CardContent className="p-0">
+                        <CardContent className="p-0 overflow-x-auto">
                             {addons.length === 0 ? (
                                 <div className="py-12 text-center">
                                     <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
@@ -558,15 +574,15 @@ export default function ServicosPage() {
                                     </Button>
                                 </div>
                             ) : (
-                                <Table>
+                                <Table className="w-full table-fixed">
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>{servicesT.table.name}</TableHead>
-                                            <TableHead>{servicesT.table.code}</TableHead>
-                                            <TableHead>{servicesT.table.price}</TableHead>
-                                            <TableHead>{servicesT.table.additionalTime}</TableHead>
-                                            <TableHead>{servicesT.table.status}</TableHead>
-                                            <TableHead className="w-[70px]"></TableHead>
+                                            <TableHead className="w-[28%]">{servicesT.table.name}</TableHead>
+                                            <TableHead className="w-[20%]">{servicesT.table.code}</TableHead>
+                                            <TableHead className="w-[16%]">{servicesT.table.price}</TableHead>
+                                            <TableHead className="w-[14%]">{servicesT.table.additionalTime}</TableHead>
+                                            <TableHead className="w-[12%]">{servicesT.table.status}</TableHead>
+                                            <TableHead className="w-[10%]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -582,15 +598,15 @@ export default function ServicosPage() {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline" className="font-mono text-xs">
+                                                <TableCell className="truncate">
+                                                    <Badge variant="outline" className="font-mono text-xs truncate max-w-full">
                                                         {addon.codigo}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="font-medium">
+                                                <TableCell className="font-medium whitespace-nowrap">
                                                     {getPrecoLabel(addon)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="whitespace-nowrap">
                                                     +{addon.minutos_adicionais}min
                                                 </TableCell>
                                                 <TableCell>

@@ -699,6 +699,10 @@ export const translations = {
                     addonRequired: 'Código, Nome e Preço são obrigatórios',
                 },
                 confirmDelete: 'Tem certeza que deseja excluir?',
+                successCreate: 'Criado com sucesso!',
+                successUpdate: 'Atualizado com sucesso!',
+                successDelete: 'Excluído com sucesso!',
+                successStatusUpdate: 'Status atualizado!',
             }
         },
         pricing: {
@@ -1969,6 +1973,10 @@ export const translations = {
                     addonRequired: 'Code, Name and Price are required',
                 },
                 confirmDelete: 'Are you sure you want to delete?',
+                successCreate: 'Created successfully!',
+                successUpdate: 'Updated successfully!',
+                successDelete: 'Deleted successfully!',
+                successStatusUpdate: 'Status updated!',
             }
         },
         messages: {
