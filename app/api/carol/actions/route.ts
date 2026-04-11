@@ -206,7 +206,7 @@ async function actionCreateAppointment(supabase: any, services: CarolServices, s
 async function actionConfirmAppointment(services: CarolServices, params: any) {
     try {
         const { appointment_id } = params
-        const result = await services.confirmAppointment(appointment_id)
+        const result = await services.confirmAppointment(appointment_id) as any
         if (result.status === 'confirmed') {
             notifyAdmins('appointmentConfirmed', {
                 name: result.details?.client_name,

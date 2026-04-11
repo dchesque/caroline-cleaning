@@ -5,31 +5,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
 import { startOfDay, endOfDay } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Clock, Loader2 } from 'lucide-react'
+import { MapPin, Clock, Loader2, AlertCircle } from 'lucide-react'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 export function TodaySchedule() {
-    const { t } = useAdminI18n()
+    const { t, locale } = useAdminI18n()
     const dashboardT = t('dashboard')
     const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [appointments, setAppointments] = useState<any[]>([])
     const supabase = createClient()
 
     useEffect(() => {
         async function fetchAppointments() {
-            const today = new Date()
-            const { data } = await supabase
-                .from('agendamentos')
-                .select(`
-                    *,
-                    cliente:clientes(nome, endereco_completo, cidade, estado, zip_code)
-                `)
-                .gte('data', startOfDay(today).toISOString())
-                .lte('data', endOfDay(today).toISOString())
-                .order('data', { ascending: true })
+            try {
+                const today = new Date()
+                const { data, error: queryError } = await supabase
+                    .from('agendamentos')
+                    .select(`
+                        *,
+                        cliente:clientes(nome, endereco_completo, cidade, estado, zip_code)
+                    `)
+                    .gte('data', startOfDay(today).toISOString())
+                    .lte('data', endOfDay(today).toISOString())
+                    .order('data', { ascending: true })
 
-            setAppointments(data || [])
-            setIsLoading(false)
+                if (queryError) throw queryError
+                setAppointments(data || [])
+            } catch (err) {
+                console.error('Failed to fetch today schedule:', err)
+                setError('Failed to load schedule')
+            } finally {
+                setIsLoading(false)
+            }
         }
         fetchAppointments()
     }, [])
@@ -44,6 +52,11 @@ export function TodaySchedule() {
                     <div className="flex items-center justify-center py-12">
                         <Loader2 className="w-8 h-8 animate-spin text-brandy-rose-600" />
                     </div>
+                ) : error ? (
+                    <div className="flex items-center gap-2 text-destructive py-4">
+                        <AlertCircle className="w-5 h-5" />
+                        <p className="text-sm">{error}</p>
+                    </div>
                 ) : !appointments?.length ? (
                     <p className="text-muted-foreground text-sm">{dashboardT.todaySchedule.empty}</p>
                 ) : (
@@ -53,14 +66,14 @@ export function TodaySchedule() {
                                 <div className="flex gap-4 items-center">
                                     <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-[#EAE0D5]/50 text-[#5D5D5D] shrink-0">
                                         <span className="text-xs font-medium">
-                                            {new Date(appointment.data).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                            {new Date(appointment.data).toLocaleTimeString(locale === 'pt-BR' ? 'pt-BR' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
                                     <div className="min-w-0">
                                         <h4 className="font-medium text-foreground truncate">{appointment.cliente?.nome || dashboardT.todaySchedule.unknownClient}</h4>
                                         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                             <Clock className="w-3 h-3 shrink-0" />
-                                            <span>{appointment.duracao_estimada || 2}h</span>
+                                            <span>{appointment.duracao_minutos ? `${Math.floor(appointment.duracao_minutos / 60)}h${appointment.duracao_minutos % 60 > 0 ? ` ${appointment.duracao_minutos % 60}min` : ''}` : '3h'}</span>
                                             <span className="text-xs">•</span>
                                             <MapPin className="w-3 h-3 shrink-0" />
                                             <span className="truncate max-w-[150px]">{[

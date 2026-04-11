@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { UserPlus, Phone } from 'lucide-react'
+import { UserPlus, Phone, AlertCircle, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
@@ -14,27 +14,36 @@ export function RecentLeadsWidget() {
     const dashboardT = t('dashboard')
     const [leads, setLeads] = useState<any[]>([])
     const [stats, setStats] = useState<any>(null)
+    const [error, setError] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
     const supabase = createClient()
 
     useEffect(() => {
-        async function fetch() {
-            // Stats
-            const { data: statsData } = await supabase
-                .from('contact_leads_stats')
-                .select('*')
-                .single()
-            setStats(statsData)
+        async function fetchLeads() {
+            try {
+                const [statsRes, leadsRes] = await Promise.all([
+                    supabase
+                        .from('contact_leads_stats')
+                        .select('*')
+                        .single(),
+                    supabase
+                        .from('contact_leads')
+                        .select('*')
+                        .eq('status', 'novo')
+                        .order('created_at', { ascending: false })
+                        .limit(5),
+                ])
 
-            // Recent leads
-            const { data: leadsData } = await supabase
-                .from('contact_leads')
-                .select('*')
-                .eq('status', 'novo')
-                .order('created_at', { ascending: false })
-                .limit(5)
-            setLeads(leadsData || [])
+                setStats(statsRes.data)
+                setLeads(leadsRes.data || [])
+            } catch (err) {
+                console.error('Failed to fetch leads:', err)
+                setError('Failed to load leads')
+            } finally {
+                setIsLoading(false)
+            }
         }
-        fetch()
+        fetchLeads()
     }, [])
 
     return (
@@ -51,7 +60,16 @@ export function RecentLeadsWidget() {
                 )}
             </CardHeader>
             <CardContent>
-                {leads.length === 0 ? (
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                ) : error ? (
+                    <div className="flex items-center gap-2 text-destructive py-4">
+                        <AlertCircle className="w-4 h-4" />
+                        <p className="text-sm">{error}</p>
+                    </div>
+                ) : leads.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
                         {dashboardT.recentLeads.empty}
                     </p>

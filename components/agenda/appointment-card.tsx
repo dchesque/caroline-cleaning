@@ -1,7 +1,10 @@
+'use client'
+
 import { Clock, MapPin, User, DollarSign } from 'lucide-react'
 import { format } from 'date-fns'
 import { formatCurrencyUSD } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
+import { useAdminI18n } from '@/lib/admin-i18n/context'
 
 interface AppointmentCardProps {
     appointment: any
@@ -11,6 +14,9 @@ interface AppointmentCardProps {
 }
 
 export function AppointmentCard({ appointment, onClick, showTooltip = true, variant = 'normal' }: AppointmentCardProps) {
+    const { t } = useAdminI18n()
+    const cardT = t('agenda').card
+
     // Formatação de horários
     const formatTime = (time: string) => time?.substring(0, 5)
 
@@ -63,13 +69,13 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
                         ? "bg-amber-100 text-amber-700"
                         : "bg-emerald-100 text-emerald-700"
                 )}>
-                    {isVisit ? '1ª Visita' : 'Serviço'}
+                    {isVisit ? cardT?.visit : cardT?.service}
                 </span>
                 <span className="font-bold text-[11px] text-[#C48B7F] shrink-0">
                     {formatTime(appointment.horario_inicio)}-{getEndTime()}
                 </span>
                 <span className="text-[11px] font-semibold text-[#2C211A] truncate">
-                    {appointment.cliente?.nome || 'Cliente'}
+                    {appointment.cliente?.nome || cardT?.client}
                 </span>
             </div>
         )
@@ -110,7 +116,7 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
 
                     {/* 3. Cliente */}
                     <h4 className="font-sans font-bold text-[14px] leading-tight mt-0.5 truncate text-[#2C211A] tracking-tight">
-                        {appointment.cliente?.nome || 'Cliente'}
+                        {appointment.cliente?.nome || cardT?.client}
                     </h4>
 
                     {/* 4. Serviços com Badge de Tipo */}
@@ -122,7 +128,7 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
                                 ? "bg-amber-100 text-amber-700"
                                 : "bg-emerald-100 text-emerald-700"
                         )}>
-                            {appointment.tipo === 'visit' ? '1ª Visita' : 'Serviço'}
+                            {appointment.tipo === 'visit' ? cardT?.visit : cardT?.service}
                         </span>
                         <p className="text-[11px] text-[#5D5D5D] font-medium truncate">
                             {appointment.tipo}
@@ -153,7 +159,7 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
                             <div className="flex items-center gap-2 mb-3">
                                 <User className="size-4 text-[#C48B7F]" />
                                 <div>
-                                    <p className="font-bold text-sm">{appointment.cliente?.nome || 'Cliente'}</p>
+                                    <p className="font-bold text-sm">{appointment.cliente?.nome || cardT?.client}</p>
                                     <p className="text-xs text-gray-400">{appointment.cliente?.telefone || 'N/A'}</p>
                                 </div>
                             </div>
@@ -180,11 +186,11 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
 
                             {/* Serviço */}
                             <div className="border-t border-[#C48B7F]/20 pt-2">
-                                <p className="text-xs text-gray-400 mb-1">Serviço</p>
+                                <p className="text-xs text-gray-400 mb-1">{cardT?.service}</p>
                                 <p className="text-sm font-semibold text-[#C48B7F]">{appointment.tipo}</p>
                                 {hasAddons && (
                                     <div className="mt-2">
-                                        <p className="text-xs text-gray-400 mb-1">Adicionais</p>
+                                        <p className="text-xs text-gray-400 mb-1">{cardT?.addons}</p>
                                         <div className="flex flex-wrap gap-1">
                                             {appointment.addons.map((addon: any, idx: number) => (
                                                 <span key={idx} className="text-[10px] bg-[#C48B7F]/20 text-[#C48B7F] px-1.5 py-0.5 rounded">
@@ -199,7 +205,7 @@ export function AppointmentCard({ appointment, onClick, showTooltip = true, vari
                             {/* Notas */}
                             {appointment.notas && (
                                 <div className="border-t border-[#C48B7F]/20 pt-2 mt-2">
-                                    <p className="text-xs text-gray-400 mb-1">Observações</p>
+                                    <p className="text-xs text-gray-400 mb-1">{cardT?.notes}</p>
                                     <p className="text-xs italic line-clamp-3">{appointment.notas}</p>
                                 </div>
                             )}

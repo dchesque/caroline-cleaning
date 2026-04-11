@@ -2,82 +2,97 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Calendar, Users, DollarSign, Star, Loader2 } from 'lucide-react'
+import { Calendar, Users, DollarSign, Star, Loader2, AlertCircle } from 'lucide-react'
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminI18n } from '@/lib/admin-i18n/context'
 
-function formatCurrency(value: number) {
-    return new Intl.NumberFormat('en-US', {
+function formatCurrencyLocale(value: number, locale: string) {
+    return new Intl.NumberFormat(locale === 'pt-BR' ? 'pt-BR' : 'en-US', {
         style: 'currency',
         currency: 'USD',
     }).format(value)
 }
 
+interface DashboardStats {
+    agendamentosHoje: number
+    confirmadosHoje: number
+    novosLeads: number
+    receitaMes: number
+    ratingMedio: string
+}
+
 export function StatsCards() {
-    const { t } = useAdminI18n()
+    const { t, locale } = useAdminI18n()
     const dashboardT = t('dashboard')
     const [isLoading, setIsLoading] = useState(true)
-    const [stats, setStats] = useState<any>(null)
+    const [error, setError] = useState<string | null>(null)
+    const [stats, setStats] = useState<DashboardStats | null>(null)
     const supabase = createClient()
 
     useEffect(() => {
         async function fetchStats() {
-            const today = new Date()
+            try {
+                const today = new Date()
+                const dayStart = startOfDay(today).toISOString()
+                const dayEnd = endOfDay(today).toISOString()
 
-            // Agendamentos Hoje
-            const { count: agendamentosHoje } = await supabase
-                .from('agendamentos')
-                .select('*', { count: 'exact', head: true })
-                .gte('data', startOfDay(today).toISOString())
-                .lte('data', endOfDay(today).toISOString())
+                // Run all queries in parallel
+                const [
+                    agendamentosRes,
+                    confirmadosRes,
+                    leadsRes,
+                    financeiroRes,
+                    ratingsRes,
+                ] = await Promise.all([
+                    supabase
+                        .from('agendamentos')
+                        .select('*', { count: 'exact', head: true })
+                        .gte('data', dayStart)
+                        .lte('data', dayEnd),
+                    supabase
+                        .from('agendamentos')
+                        .select('*', { count: 'exact', head: true })
+                        .gte('data', dayStart)
+                        .lte('data', dayEnd)
+                        .eq('status', 'confirmado'),
+                    supabase
+                        .from('clientes')
+                        .select('*', { count: 'exact', head: true })
+                        .gte('created_at', startOfWeek(today).toISOString())
+                        .lte('created_at', endOfWeek(today).toISOString())
+                        .eq('status', 'lead'),
+                    supabase
+                        .from('financeiro')
+                        .select('valor')
+                        .gte('data_pagamento', startOfMonth(today).toISOString())
+                        .lte('data_pagamento', endOfMonth(today).toISOString())
+                        .eq('status', 'pago'),
+                    supabase
+                        .from('feedback')
+                        .select('rating')
+                        .gte('created_at', new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString()),
+                ])
 
-            const { count: confirmadosHoje } = await supabase
-                .from('agendamentos')
-                .select('*', { count: 'exact', head: true })
-                .gte('data', startOfDay(today).toISOString())
-                .lte('data', endOfDay(today).toISOString())
-                .eq('status', 'confirmado')
+                const receitaMes = financeiroRes.data?.reduce((acc, curr) => acc + Number(curr.valor), 0) || 0
+                const ratings = ratingsRes.data
+                const ratingMedio = ratings?.length
+                    ? (ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length).toFixed(1)
+                    : '5.0'
 
-            // Novos Leads Semana
-            const { count: novosLeads } = await supabase
-                .from('clientes')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', startOfWeek(today).toISOString())
-                .lte('created_at', endOfWeek(today).toISOString())
-                .eq('status', 'lead')
-
-            // Receita Mês
-            const { data: financeiroMes } = await supabase
-                .from('financeiro')
-                .select('valor')
-                .gte('data_pagamento', startOfMonth(today).toISOString())
-                .lte('data_pagamento', endOfMonth(today).toISOString())
-                .eq('status', 'pago')
-
-            const receitaMes = financeiroMes?.reduce((acc, curr) => acc + Number(curr.valor), 0) || 0
-
-            // Avaliação Média (last 90 days)
-            const ninetyDaysAgo = new Date()
-            ninetyDaysAgo.setDate(today.getDate() - 90)
-
-            const { data: ratings } = await supabase
-                .from('feedback')
-                .select('rating')
-                .gte('created_at', ninetyDaysAgo.toISOString())
-
-            const ratingMedio = ratings?.length
-                ? (ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length).toFixed(1)
-                : '5.0'
-
-            setStats({
-                agendamentosHoje: agendamentosHoje || 0,
-                confirmadosHoje: confirmadosHoje || 0,
-                novosLeads: novosLeads || 0,
-                receitaMes,
-                ratingMedio
-            })
-            setIsLoading(false)
+                setStats({
+                    agendamentosHoje: agendamentosRes.count || 0,
+                    confirmadosHoje: confirmadosRes.count || 0,
+                    novosLeads: leadsRes.count || 0,
+                    receitaMes,
+                    ratingMedio,
+                })
+            } catch (err) {
+                console.error('Failed to fetch dashboard stats:', err)
+                setError('Failed to load stats')
+            } finally {
+                setIsLoading(false)
+            }
         }
         fetchStats()
     }, [])
@@ -95,6 +110,21 @@ export function StatsCards() {
             </div>
         )
     }
+
+    if (error) {
+        return (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <Card className="border-none shadow-sm col-span-full">
+                    <CardContent className="p-6 flex items-center gap-3 text-destructive">
+                        <AlertCircle className="w-5 h-5" />
+                        <p className="text-sm">{error}</p>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    if (!stats) return null
 
     const cards = [
         {
@@ -115,7 +145,7 @@ export function StatsCards() {
         },
         {
             title: dashboardT.stats.revenueMonth,
-            value: formatCurrency(stats.receitaMes),
+            value: formatCurrencyLocale(stats.receitaMes, locale),
             subtitle: dashboardT.subtitles.vsLastMonth,
             icon: DollarSign,
             color: 'text-green-500',
