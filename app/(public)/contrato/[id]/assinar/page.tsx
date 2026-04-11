@@ -17,6 +17,7 @@ export default function SignContractPage() {
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
+    const [pendingSignature, setPendingSignature] = useState<string | null>(null)
 
     const supabase = createClient()
 
@@ -146,34 +147,33 @@ export default function SignContractPage() {
                         </div>
                         
                         <div className="max-w-xl mx-auto">
-                            <SignaturePad 
+                            <SignaturePad
                                 disabled={saving}
-                                onSave={handleSaveSignature}
+                                onSave={(sig) => setPendingSignature(sig)}
                             />
                         </div>
-                        
+
                         <div className="flex justify-center mt-6">
-                            <Button 
+                            <Button
                                 className="w-full max-w-xs h-12 text-lg bg-brandy-rose-600 hover:bg-brandy-rose-700 disabled:opacity-50"
                                 onClick={() => {
-                                    // Hack: The signature pad saves on internal save trigger.
-                                    // To make the explicit button work, we can just alert the user to finish drawing, 
-                                    // but since we made onSave trigger on mouseup, we can just use the state from it.
-                                    // Alternatively, we leave the save to an explicit button in the SignaturePad. 
-                                    // We already pass onSave to SignaturePad and it triggers auto-save on stopDrawing.
-                                    // To improve UX we add a tiny note or change the SignaturePad to only save when clicking this button.
+                                    if (pendingSignature) {
+                                        handleSaveSignature(pendingSignature)
+                                    }
                                 }}
-                                disabled={saving}
+                                disabled={saving || !pendingSignature}
                             >
                                 {saving ? (
                                     <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Salvando...</>
+                                ) : pendingSignature ? (
+                                    <><CheckCircle className="w-5 h-5 mr-2" /> Confirmar Assinatura</>
                                 ) : (
-                                    'Aguardando Assinatura...'
+                                    'Assine acima para continuar'
                                 )}
                             </Button>
                         </div>
                         <p className="text-center text-xs text-muted-foreground mt-2">
-                            A assinatura é salva automaticamente ao terminar o traço no quadro acima.
+                            Desenhe sua assinatura no quadro acima e clique em &quot;Confirmar Assinatura&quot;.
                         </p>
                     </div>
                 </div>

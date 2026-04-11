@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
     ArrowLeft,
-    Download,
     Edit,
     CheckCircle,
     Clock,
@@ -21,7 +20,7 @@ import { SERVICE_TYPES, FREQUENCIES, WEEKDAYS } from '@/lib/constants'
 import { SendContractButton } from './SendContractButton'
 
 const STATUS_CONTRACT = {
-    rascunho: { label: 'Rascunho', variant: 'secondary' },
+    pendente: { label: 'Pendente', variant: 'secondary' },
     enviado: { label: 'Aguardando Assinatura', variant: 'warning' },
     assinado: { label: 'Assinado', variant: 'success' },
     cancelado: { label: 'Cancelado', variant: 'destructive' },
@@ -58,6 +57,7 @@ export default async function ContratoDetalhePage({ params }: PageProps) {
 
     const statusConfig = STATUS_CONTRACT[contract.status as keyof typeof STATUS_CONTRACT]
     const getLabel = (array: any[], value: string) => array.find(i => i.value === value)?.label || value
+    const recurrence = contract.recorrencias?.[0]
 
     return (
         <div className="space-y-6">
@@ -84,36 +84,17 @@ export default async function ContratoDetalhePage({ params }: PageProps) {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    {contract.status === 'rascunho' && (
-                        <>
-                            <Button variant="outline" className="gap-2">
-                                <Edit className="w-4 h-4" />
-                                Editar
-                            </Button>
-                            <SendContractButton contractId={contract.id} />
-                        </>
+                    {contract.status === 'pendente' && (
+                        <SendContractButton contractId={contract.id} />
                     )}
                     
-                    {/* Button for iPad or local signature check */}
-                    {(contract.status === 'enviado' || contract.status === 'rascunho' || contract.status === 'pendente') && (
+                    {/* Button for iPad or local signature */}
+                    {(contract.status === 'enviado' || contract.status === 'pendente') && (
                         <Button className="gap-2 bg-brandy-rose-600 hover:bg-brandy-rose-700 text-white" asChild>
                             <Link href={`/contrato/${contract.id}/assinar`}>
                                 <Edit className="w-4 h-4" />
                                 Assinar neste dispositivo
                             </Link>
-                        </Button>
-                    )}
-
-                    {contract.status === 'enviado' && (
-                        <Button variant="outline" className="gap-2">
-                            <CheckCircle className="w-4 h-4" />
-                            Marcar como Assinado
-                        </Button>
-                    )}
-                    {contract.documento_url && (
-                        <Button variant="outline" className="gap-2">
-                            <Download className="w-4 h-4" />
-                            Baixar PDF
                         </Button>
                     )}
                 </div>
@@ -170,25 +151,19 @@ export default async function ContratoDetalhePage({ params }: PageProps) {
                                     <p className="text-caption text-muted-foreground">Frequência</p>
                                     <p className="text-body font-medium">{getLabel(FREQUENCIES, contract.frequencia)}</p>
                                 </div>
-                                <div>
-                                    <p className="text-caption text-muted-foreground">Dia Preferido</p>
-                                    <p className="text-body font-medium">{getLabel(WEEKDAYS, contract.dia_preferido)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-caption text-muted-foreground">Horário</p>
-                                    <p className="text-body font-medium">{contract.horario_preferido}</p>
-                                </div>
-                                <div>
-                                    <p className="text-caption text-muted-foreground">Duração Estimada</p>
-                                    <p className="text-body font-medium">{contract.duracao_estimada_minutos} minutos</p>
-                                </div>
+                                {recurrence?.dia_preferido && (
+                                    <div>
+                                        <p className="text-caption text-muted-foreground">Dia Preferido</p>
+                                        <p className="text-body font-medium">{getLabel(WEEKDAYS, recurrence.dia_preferido)}</p>
+                                    </div>
+                                )}
+                                {recurrence?.horario && (
+                                    <div>
+                                        <p className="text-caption text-muted-foreground">Horário</p>
+                                        <p className="text-body font-medium">{recurrence.horario}</p>
+                                    </div>
+                                )}
                             </div>
-                            {contract.observacoes && (
-                                <div className="mt-6 pt-6 border-t border-pampas">
-                                    <p className="text-caption text-muted-foreground mb-2">Observações</p>
-                                    <p className="text-body">{contract.observacoes}</p>
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
 
@@ -265,7 +240,7 @@ export default async function ContratoDetalhePage({ params }: PageProps) {
                                         </div>
                                     </div>
                                 )}
-                                {contract.assinado_em && (
+                                {contract.data_assinatura && (
                                     <div className="flex gap-4">
                                         <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
                                             <CheckCircle className="w-4 h-4 text-success" />
@@ -273,7 +248,7 @@ export default async function ContratoDetalhePage({ params }: PageProps) {
                                         <div>
                                             <p className="text-body-sm font-medium">Assinado pelo cliente</p>
                                             <p className="text-caption text-muted-foreground">
-                                                {formatDate(contract.assinado_em)}
+                                                {formatDate(contract.data_assinatura)}
                                             </p>
                                         </div>
                                     </div>

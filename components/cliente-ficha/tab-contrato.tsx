@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -14,7 +15,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table'
-import { FileText, Plus, Download, Eye, Construction } from 'lucide-react'
+import { FileText, Plus, Download, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -32,7 +33,6 @@ interface TabContratoProps {
 export function TabContrato({ client }: TabContratoProps) {
     const [contracts, setContracts] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [showModal, setShowModal] = useState(false)
     const supabase = createClient()
 
     const fetchContracts = async () => {
@@ -72,12 +72,11 @@ export function TabContrato({ client }: TabContratoProps) {
                         {contracts.length} contrato(s) cadastrado(s)
                     </p>
                 </div>
-                <Button
-                    onClick={() => setShowModal(true)}
-                    className="bg-[#C48B7F] hover:bg-[#A66D60]"
-                >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Novo Contrato
+                <Button asChild className="bg-[#C48B7F] hover:bg-[#A66D60]">
+                    <Link href="/admin/contratos/novo">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Novo Contrato
+                    </Link>
                 </Button>
             </div>
 
@@ -123,13 +122,11 @@ export function TabContrato({ client }: TabContratoProps) {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            {contract.documento_url && (
-                                                <Button variant="ghost" size="sm" asChild>
-                                                    <a href={contract.documento_url} target="_blank" rel="noopener">
-                                                        <Download className="w-4 h-4" />
-                                                    </a>
-                                                </Button>
-                                            )}
+                                            <Button variant="ghost" size="sm" asChild>
+                                                <Link href={`/admin/contratos/${contract.id}`}>
+                                                    <Eye className="w-4 h-4" />
+                                                </Link>
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -139,39 +136,6 @@ export function TabContrato({ client }: TabContratoProps) {
                 </CardContent>
             </Card>
 
-            {/* Modal Placeholder - Em desenvolvimento */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <Card className="w-full max-w-md mx-4">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Construction className="w-5 h-5 text-yellow-500" />
-                                Em Desenvolvimento
-                            </CardTitle>
-                            <CardDescription>
-                                O modal de criação de contratos está sendo implementado.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground mb-4">
-                                Esta funcionalidade estará disponível em breve com:
-                            </p>
-                            <ul className="text-sm space-y-1 text-muted-foreground mb-4">
-                                <li>• Geração automática de número</li>
-                                <li>• Seleção de tipo de serviço</li>
-                                <li>• Definição de valor e frequência</li>
-                                <li>• Upload de documento PDF</li>
-                            </ul>
-                            <Button
-                                className="w-full"
-                                onClick={() => setShowModal(false)}
-                            >
-                                Fechar
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
         </div>
     )
 }

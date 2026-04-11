@@ -45,7 +45,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 
 const STATUS_CONTRACT = {
-    rascunho: { label: 'Rascunho', variant: 'secondary', icon: FileText },
+    pendente: { label: 'Pendente', variant: 'secondary', icon: FileText },
     enviado: { label: 'Enviado', variant: 'warning', icon: Clock },
     assinado: { label: 'Assinado', variant: 'success', icon: CheckCircle },
     cancelado: { label: 'Cancelado', variant: 'destructive', icon: XCircle },
@@ -84,12 +84,15 @@ export default function ContratosPage() {
                 query = query.eq('status', statusFilter)
             }
 
-            if (search) {
-                query = query.or(`numero.ilike.%${search}%,clientes.nome.ilike.%${search}%`)
-            }
-
             const { data } = await query
-            setContracts(data || [])
+            // Client-side filter for search (cross-table ilike not supported in Supabase .or())
+            const filtered = search
+                ? (data || []).filter(c =>
+                    c.numero?.toLowerCase().includes(search.toLowerCase()) ||
+                    c.clientes?.nome?.toLowerCase().includes(search.toLowerCase())
+                )
+                : (data || [])
+            setContracts(filtered)
             setIsLoading(false)
         }
 
@@ -100,7 +103,7 @@ export default function ContratosPage() {
     const stats = {
         total: contracts.length,
         assinados: contracts.filter(c => c.status === 'assinado').length,
-        pendentes: contracts.filter(c => c.status === 'enviado').length,
+        pendentes: contracts.filter(c => c.status === 'pendente' || c.status === 'enviado').length,
         valorTotal: contracts
             .filter(c => c.status === 'assinado')
             .reduce((acc, c) => acc + (c.valor_acordado || 0), 0),
@@ -199,7 +202,7 @@ export default function ContratosPage() {
                         <SelectItem value="all">{common.all}</SelectItem>
                         {Object.entries(STATUS_CONTRACT).map(([key, value]) => (
                             <SelectItem key={key} value={key}>
-                                {contractsT.status[key as keyof typeof contractsT.status] || value.label}
+                                {value.label}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -289,7 +292,7 @@ export default function ContratosPage() {
                                                                 {common.view}
                                                             </Link>
                                                         </DropdownMenuItem>
-                                                        {(contract.status === 'rascunho' || contract.status === 'pendente') && (
+                                                        {contract.status === 'pendente' && (
                                                             <DropdownMenuItem asChild>
                                                                 <Link href={`/admin/contratos/${contract.id}`}>
                                                                     <Send className="w-4 h-4 mr-2 text-brandy-rose-600" />

@@ -23,12 +23,15 @@ export const SERVICE_TYPES = [
     { value: 'regular', label: 'Limpeza Regular' },
     { value: 'deep', label: 'Limpeza Profunda' },
     { value: 'move_in_out', label: 'Move-in/Move-out' },
+    { value: 'office', label: 'Escritório' },
+    { value: 'airbnb', label: 'Airbnb Turnover' },
 ]
 
 export const FREQUENCIES = [
     { value: 'weekly', label: 'Semanal' },
     { value: 'biweekly', label: 'Quinzenal' },
     { value: 'monthly', label: 'Mensal' },
+    { value: 'one_time', label: 'Avulso' },
 ]
 
 export const WEEKDAYS = [
