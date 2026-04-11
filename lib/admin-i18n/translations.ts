@@ -256,6 +256,12 @@ export const translations = {
                 converted: 'Convertidos',
                 dropped: 'Descartados',
             },
+            status: {
+                novo: 'Novo',
+                contatado: 'Contatado',
+                convertido: 'Convertido',
+                descartado: 'Descartado',
+            },
             filters: {
                 search: 'Buscar por nome, telefone ou cidade...',
                 statusPlaceholder: 'Filtrar status',
@@ -272,7 +278,19 @@ export const translations = {
                 call: 'Ligar',
                 sms: 'SMS',
                 notesPlaceholder: 'Adicionar notas sobre este lead...',
-            }
+                receivedAt: 'Recebido',
+                contactedAt: 'Contatado',
+                noCityProvided: 'Cidade não informada',
+            },
+            success: {
+                statusUpdated: 'Status atualizado!',
+                notesSaved: 'Notas salvas!',
+            },
+            error: {
+                load: 'Erro ao carregar leads',
+                updateStatus: 'Erro ao atualizar status',
+                saveNotes: 'Erro ao salvar notas',
+            },
         },
         clients: {
             title: 'Clientes',
@@ -1580,6 +1598,12 @@ export const translations = {
                 converted: 'Converted',
                 dropped: 'Discarded',
             },
+            status: {
+                novo: 'New',
+                contatado: 'Contacted',
+                convertido: 'Converted',
+                descartado: 'Discarded',
+            },
             filters: {
                 search: 'Search by name, phone or city...',
                 statusPlaceholder: 'Filter status',
@@ -1596,7 +1620,19 @@ export const translations = {
                 call: 'Call',
                 sms: 'SMS',
                 notesPlaceholder: 'Add notes about this lead...',
-            }
+                receivedAt: 'Received',
+                contactedAt: 'Contacted',
+                noCityProvided: 'City not provided',
+            },
+            success: {
+                statusUpdated: 'Status updated!',
+                notesSaved: 'Notes saved!',
+            },
+            error: {
+                load: 'Error loading leads',
+                updateStatus: 'Error updating status',
+                saveNotes: 'Error saving notes',
+            },
         },
         clients: {
             title: 'Clients',
