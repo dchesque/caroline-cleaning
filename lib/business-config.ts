@@ -169,8 +169,8 @@ export interface BusinessSettings {
 
 export const DEFAULT_SETTINGS: BusinessSettings = {
     business_name: 'Chesque Premium Cleaning',
-    business_phone: '(551) 389-7394',
-    business_phone_display: '(551) 389-7394',
+    business_phone: '(803) 792-1351',
+    business_phone_display: '(803) 792-1351',
     business_email: 'hello@chesquecleaning.com',
     business_address: '123 Ocean Drive, Miami, FL 33139',
     business_website: 'www.chesquecleaning.com',

@@ -90,14 +90,14 @@ export async function Footer() {
                         <ul className="space-y-4 text-sm">
                             <li className="flex gap-3">
                                 <Phone className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <a href={`tel:${config.business_phone || '+15513897394'}`} className="hover:text-white transition-colors">
-                                    {config.business_phone_display || '(551) 389-7394'}
+                                <a href={`tel:${config.business_phone || '+18037921351'}`} className="hover:text-white transition-colors">
+                                    {config.business_phone_display || '(803) 792-1351'}
                                 </a>
                             </li>
                             <li className="flex gap-3">
                                 <MessageCircle className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <a href={`sms:${config.business_phone || '+15513897394'}`} className="hover:text-white transition-colors">
-                                    Text: {config.business_phone_display || '(551) 389-7394'}
+                                <a href={`sms:${config.business_phone || '+18037921351'}`} className="hover:text-white transition-colors">
+                                    Text: {config.business_phone_display || '(803) 792-1351'}
                                 </a>
                             </li>
                             <li className="flex gap-3">
