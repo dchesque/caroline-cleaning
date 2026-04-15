@@ -1,4 +1,4 @@
-import { useCarolChat } from '@/hooks/use-carol-chat'
+import type { ChatHookReturn } from '@/types/carol'
 import { ChatHeader } from './chat-header'
 import { ChatMessages } from './chat-messages'
 import { ChatInput } from './chat-input'
@@ -9,7 +9,7 @@ interface ChatWindowProps {
     onClose: () => void
     onMinimize?: () => void
     className?: string
-    chat: ReturnType<typeof useCarolChat>
+    chat: ChatHookReturn
 }
 
 export function ChatWindow({ isOpen, onClose, onMinimize, className, chat }: ChatWindowProps) {

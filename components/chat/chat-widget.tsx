@@ -6,8 +6,11 @@ import { MessageCircle } from 'lucide-react'
 import { ChatWindow } from './chat-window'
 import { ChatBubbleNotification } from './chat-bubble-notification'
 import { useCarolChat } from '@/hooks/use-carol-chat'
+import { useLeadChat } from '@/hooks/use-lead-chat'
 import { cn } from '@/lib/utils'
 import { useTracking } from '@/components/tracking/tracking-provider'
+
+const CHAT_MODE = process.env.NEXT_PUBLIC_CHAT_MODE ?? 'full'
 
 export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false)
@@ -18,7 +21,12 @@ export function ChatWidget() {
         title: "Hi! I'm Carol.",
         message: "Need help scheduling a cleaning? 😊"
     })
-    const chat = useCarolChat()
+
+    // Both hooks are always called (React rules forbid conditional hooks).
+    // Only one is wired to the UI based on CHAT_MODE.
+    const fullChat = useCarolChat()
+    const leadChat = useLeadChat()
+    const chat = CHAT_MODE === 'lead' ? leadChat : fullChat
 
     const INITIAL_DELAY_MS = 15000 // 15 seconds
     const SECOND_DELAY_MS = 45000 // 45 seconds total

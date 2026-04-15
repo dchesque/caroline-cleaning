@@ -58,6 +58,7 @@ export function checkRateLimit(
  */
 export const RATE_LIMITS = {
   chat: { prefix: 'chat', limit: 20, windowMs: 60_000 } as RateLimitConfig,
+  leadChat: { prefix: 'lead-chat', limit: 20, windowMs: 60_000 } as RateLimitConfig,
   contact: { prefix: 'contact', limit: 5, windowMs: 10 * 60_000 } as RateLimitConfig,
   api: { prefix: 'api', limit: 100, windowMs: 60_000 } as RateLimitConfig,
   slots: { prefix: 'slots', limit: 30, windowMs: 60_000 } as RateLimitConfig,

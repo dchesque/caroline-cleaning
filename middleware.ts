@@ -38,9 +38,11 @@ export async function middleware(request: NextRequest) {
         const ip = getClientIp(request)
         const config = pathname === '/api/chat'
             ? RATE_LIMITS.chat
-            : pathname === '/api/slots'
-                ? RATE_LIMITS.slots
-                : RATE_LIMITS.api
+            : pathname === '/api/lead-chat'
+                ? RATE_LIMITS.leadChat
+                : pathname === '/api/slots'
+                    ? RATE_LIMITS.slots
+                    : RATE_LIMITS.api
 
         if (!checkRateLimit(ip, config)) {
             return applySecurityHeaders(

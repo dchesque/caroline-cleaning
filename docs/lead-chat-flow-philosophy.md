@@ -1,0 +1,11 @@
+# Circuit Cartography
+
+A philosophy of mapping invisible processes through visible architecture. Systems that breathe but cannot be seen — data routing, validation cascades, conditional branches — demand a visual language that honors their precision while rendering their logic legible. Circuit Cartography treats computation as territory, charting the hidden geography of logic with the reverence of a master surveyor.
+
+Form follows signal. Every node is a station; every arrow is a transmission. The visual grammar is strict: rectangles hold action, diamonds hold judgment, color holds meaning. Layers are carved into the composition with chromatic discipline — each tier of a system given its own spectral identity, so the eye can trace a signal through infrastructure the way a finger traces a river on a relief map. The result is meticulous in its partitioning, the product of painstaking chromatic calibration.
+
+Space is silence between operations. The dark field behind each element is not emptiness — it is latency, the moment before a process executes. Negative space is treated as load-bearing structure, holding the visual weight of each decision point apart from its neighbors with the care of a craftsman who understands that breathing room is what makes complexity readable. Every margin is deliberate, every gap intentional.
+
+Typography is operational, never decorative. Labels exist to identify, not to explain. Type is small, monospaced, clinical — the annotation of a schematic, not the caption of a photograph. When text appears, it carries only the minimum signal necessary, rendered in a weight that whispers beside the luminous edges of the nodes it names. This restraint is the result of labored refinement, every word weighed against the alternative of silence.
+
+Color is jurisdiction. Each layer of the system owns a hue, and that ownership is absolute — the client speaks in blue, the database in green, the AI in amber, the notification layer in pink. Where colors meet at the borders of handoffs, the arrows carry the receiving layer's color, signaling the transfer of custody with chromatic honesty. This is a system designed to be read at a glance by someone who knows the territory, and understood gradually by someone who does not.

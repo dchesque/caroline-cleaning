@@ -14,3 +14,15 @@ export interface ChatResponse {
     state: string
     timestamp: string
 }
+
+// Shared return-type interface for both useCarolChat and useLeadChat.
+// Used to type the `chat` prop in ChatWindow so both hooks are drop-in compatible.
+export interface ChatHookReturn {
+    messages: ChatMessage[]
+    isLoading: boolean
+    isProcessing: boolean
+    sessionId: string
+    sendMessage: (content: string) => Promise<void>
+    clearMessages: () => void
+    error: string | null
+}
