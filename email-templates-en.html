@@ -1,0 +1,238 @@
+<!--
+  Supabase Email Templates - Chesque Premium Cleaning
+  Language: English
+  Palette: Brandy Rose (BE9982) + Desert Storm (F8F8F7) + Pampas (ECE9E4)
+
+  Copy each template below to Supabase Dashboard > Authentication > Email Templates
+-->
+
+<!-- ============================================================
+     1. CONFIRM SIGN UP (Email Verification)
+     ============================================================ -->
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body style="margin: 0; padding: 20px; background-color: #F8F8F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #ECE9E4; border-radius: 8px; overflow: hidden;">
+      <tr>
+        <td style="padding: 40px 20px; text-align: center; background: linear-gradient(135deg, #BE9982 0%, #A88470 100%);">
+          <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: 600;">Chesque Premium</h1>
+          <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Cleaning Services</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 40px 30px;">
+          <h2 style="color: #4A3A2E; font-size: 24px; margin: 0 0 20px 0; font-weight: 600;">Confirm your email</h2>
+          <p style="color: #4A3A2E; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Thank you for signing up! Click the button below to confirm your email and activate your account.</p>
+          <table border="0" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+            <tr>
+              <td align="center">
+                <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #BE9982; color: #FFFFFF; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px; border: 2px solid #BE9982; transition: all 0.3s;">Confirm Email</a>
+              </td>
+            </tr>
+          </table>
+          <p style="color: #A88470; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; border-top: 1px solid #ECE9E4; padding-top: 20px;">If you didn't sign up, you can ignore this email. This link expires in 24 hours.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 20px 30px; background-color: #F8F8F7; text-align: center; border-top: 1px solid #ECE9E4;">
+          <p style="color: #A88470; font-size: 12px; margin: 0;">© 2026 Chesque Premium Cleaning. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+
+<!-- ============================================================
+     2. RESET PASSWORD (Password Recovery)
+     ============================================================ -->
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body style="margin: 0; padding: 20px; background-color: #F8F8F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #ECE9E4; border-radius: 8px; overflow: hidden;">
+      <tr>
+        <td style="padding: 40px 20px; text-align: center; background: linear-gradient(135deg, #BE9982 0%, #A88470 100%);">
+          <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: 600;">Chesque Premium</h1>
+          <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Cleaning Services</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 40px 30px;">
+          <h2 style="color: #4A3A2E; font-size: 24px; margin: 0 0 20px 0; font-weight: 600;">Reset your password</h2>
+          <p style="color: #4A3A2E; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">We received a request to reset your password. Click the button below to create a new password.</p>
+          <table border="0" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+            <tr>
+              <td align="center">
+                <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #BE9982; color: #FFFFFF; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px; border: 2px solid #BE9982; transition: all 0.3s;">Reset Password</a>
+              </td>
+            </tr>
+          </table>
+          <p style="color: #A88470; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; border-top: 1px solid #ECE9E4; padding-top: 20px;">If you didn't request a password reset, you can ignore this email. This link expires in 24 hours.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 20px 30px; background-color: #F8F8F7; text-align: center; border-top: 1px solid #ECE9E4;">
+          <p style="color: #A88470; font-size: 12px; margin: 0;">© 2026 Chesque Premium Cleaning. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+
+<!-- ============================================================
+     3. ONE-TIME PASSWORD (6-Digit Code)
+     ============================================================ -->
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body style="margin: 0; padding: 20px; background-color: #F8F8F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #ECE9E4; border-radius: 8px; overflow: hidden;">
+      <tr>
+        <td style="padding: 40px 20px; text-align: center; background: linear-gradient(135deg, #BE9982 0%, #A88470 100%);">
+          <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: 600;">Chesque Premium</h1>
+          <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Cleaning Services</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 40px 30px;">
+          <h2 style="color: #4A3A2E; font-size: 24px; margin: 0 0 20px 0; font-weight: 600;">Your login code</h2>
+          <p style="color: #4A3A2E; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">Enter this code to access your account:</p>
+          <div style="background: linear-gradient(135deg, #FAF7F5 0%, #F3E8DC 100%); border: 2px solid #BE9982; border-radius: 8px; padding: 30px; text-align: center; margin: 30px 0;">
+            <p style="font-size: 48px; font-weight: 700; letter-spacing: 8px; color: #BE9982; margin: 0; font-family: 'Courier New', monospace;">{{ .Token }}</p>
+          </div>
+          <p style="color: #4A3A2E; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; text-align: center;">This code expires in <strong>10 minutes</strong></p>
+          <p style="color: #A88470; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; border-top: 1px solid #ECE9E4; padding-top: 20px;">If you didn't request this code, you can ignore this email. Never share this code with anyone.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 20px 30px; background-color: #F8F8F7; text-align: center; border-top: 1px solid #ECE9E4;">
+          <p style="color: #A88470; font-size: 12px; margin: 0;">© 2026 Chesque Premium Cleaning. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+
+<!-- ============================================================
+     4. INVITE USER (Admin Invitation)
+     ============================================================ -->
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body style="margin: 0; padding: 20px; background-color: #F8F8F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #ECE9E4; border-radius: 8px; overflow: hidden;">
+      <tr>
+        <td style="padding: 40px 20px; text-align: center; background: linear-gradient(135deg, #BE9982 0%, #A88470 100%);">
+          <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: 600;">Chesque Premium</h1>
+          <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Cleaning Services</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 40px 30px;">
+          <h2 style="color: #4A3A2E; font-size: 24px; margin: 0 0 20px 0; font-weight: 600;">You've been invited!</h2>
+          <p style="color: #4A3A2E; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">You've been invited to access the Chesque Premium admin panel. Click the button below to accept the invitation and create your account.</p>
+          <table border="0" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+            <tr>
+              <td align="center">
+                <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #BE9982; color: #FFFFFF; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px; border: 2px solid #BE9982; transition: all 0.3s;">Accept Invitation</a>
+              </td>
+            </tr>
+          </table>
+          <p style="color: #A88470; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; border-top: 1px solid #ECE9E4; padding-top: 20px;">If you weren't expecting this invitation, you can ignore this email. This link expires in 7 days.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 20px 30px; background-color: #F8F8F7; text-align: center; border-top: 1px solid #ECE9E4;">
+          <p style="color: #A88470; font-size: 12px; margin: 0;">© 2026 Chesque Premium Cleaning. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+
+<!-- ============================================================
+     5. CHANGE EMAIL ADDRESS (Email Change Confirmation)
+     ============================================================ -->
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body style="margin: 0; padding: 20px; background-color: #F8F8F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #ECE9E4; border-radius: 8px; overflow: hidden;">
+      <tr>
+        <td style="padding: 40px 20px; text-align: center; background: linear-gradient(135deg, #BE9982 0%, #A88470 100%);">
+          <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: 600;">Chesque Premium</h1>
+          <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Cleaning Services</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 40px 30px;">
+          <h2 style="color: #4A3A2E; font-size: 24px; margin: 0 0 20px 0; font-weight: 600;">Confirm your new email</h2>
+          <p style="color: #4A3A2E; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">We received a request to change your account email. Click the button below to confirm your new email address.</p>
+          <table border="0" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+            <tr>
+              <td align="center">
+                <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #BE9982; color: #FFFFFF; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px; border: 2px solid #BE9982; transition: all 0.3s;">Confirm Email</a>
+              </td>
+            </tr>
+          </table>
+          <p style="color: #A88470; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; border-top: 1px solid #ECE9E4; padding-top: 20px;">If you didn't request this change, you can ignore this email. This link expires in 24 hours.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 20px 30px; background-color: #F8F8F7; text-align: center; border-top: 1px solid #ECE9E4;">
+          <p style="color: #A88470; font-size: 12px; margin: 0;">© 2026 Chesque Premium Cleaning. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+
+<!-- ============================================================
+     6. MAGIC LINK (Passwordless Login)
+     ============================================================ -->
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body style="margin: 0; padding: 20px; background-color: #F8F8F7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #FFFFFF; border: 1px solid #ECE9E4; border-radius: 8px; overflow: hidden;">
+      <tr>
+        <td style="padding: 40px 20px; text-align: center; background: linear-gradient(135deg, #BE9982 0%, #A88470 100%);">
+          <h1 style="margin: 0; color: #FFFFFF; font-size: 28px; font-weight: 600;">Chesque Premium</h1>
+          <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Cleaning Services</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 40px 30px;">
+          <h2 style="color: #4A3A2E; font-size: 24px; margin: 0 0 20px 0; font-weight: 600;">Your access link</h2>
+          <p style="color: #4A3A2E; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Click the button below to securely log in to your account.</p>
+          <table border="0" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+            <tr>
+              <td align="center">
+                <a href="{{ .ConfirmationURL }}" style="display: inline-block; background-color: #BE9982; color: #FFFFFF; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 16px; border: 2px solid #BE9982; transition: all 0.3s;">Access Account</a>
+              </td>
+            </tr>
+          </table>
+          <p style="color: #A88470; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; border-top: 1px solid #ECE9E4; padding-top: 20px;">This link is personal and expires in 24 hours. Do not share this email with anyone.</p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 20px 30px; background-color: #F8F8F7; text-align: center; border-top: 1px solid #ECE9E4;">
+          <p style="color: #A88470; font-size: 12px; margin: 0;">© 2026 Chesque Premium Cleaning. All rights reserved.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

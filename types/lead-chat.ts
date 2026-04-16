@@ -8,7 +8,6 @@ export interface LeadContext {
   zip: string | null
   leadSaved: boolean
   leadId: string | null
-  retries: number
 }
 
 export function defaultLeadContext(): LeadContext {
@@ -18,6 +17,5 @@ export function defaultLeadContext(): LeadContext {
     zip: null,
     leadSaved: false,
     leadId: null,
-    retries: 0,
   }
 }

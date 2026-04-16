@@ -33,6 +33,14 @@ export interface ErrorRecord {
   state?: string
 }
 
+export interface ToolCallRecord {
+  tool: string
+  args: Record<string, any>
+  result: Record<string, any> | null
+  success: boolean
+  duration_ms: number
+}
+
 export interface LogInteractionParams {
   sessionId: string
   clienteId?: string
@@ -41,6 +49,7 @@ export interface LogInteractionParams {
   stateBefore?: string
   stateAfter?: string
   llmCalls: LLMCallRecord[]
+  toolCalls: ToolCallRecord[]
   handlersExecuted: HandlerRecord[]
   extractedData: Record<string, any>
   contextSnapshot: Record<string, any>
@@ -69,6 +78,7 @@ export interface LogEntry {
   state_before?: string
   state_after?: string
   llm_calls: LLMCallRecord[]
+  tool_calls: ToolCallRecord[]
   handlers_executed: HandlerRecord[]
   extracted_data: Record<string, any>
   context_snapshot: Record<string, any>
@@ -128,6 +138,7 @@ class ChatLoggerService {
           state_before: params.stateBefore || null,
           state_after: params.stateAfter || null,
           llm_calls: params.llmCalls,
+          tool_calls: params.toolCalls,
           handlers_executed: params.handlersExecuted,
           extracted_data: params.extractedData,
           context_snapshot: params.contextSnapshot,

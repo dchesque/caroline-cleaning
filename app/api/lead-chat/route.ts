@@ -4,11 +4,12 @@ import { nanoid } from 'nanoid'
 import { processLeadMessage, defaultLeadContext } from '@/lib/ai/lead-chat-agent'
 import { parseJson } from '@/lib/validation/schemas'
 import { logger } from '@/lib/logger'
+import { chatLogger } from '@/lib/services/chat-logger'
 
 export const dynamic = 'force-dynamic'
 
 const LeadChatRequestSchema = z.object({
-  message: z.string().min(1).max(2000),
+  message: z.string().trim().min(1).max(2000),
   sessionId: z.string().min(1).max(100).optional(),
   history: z
     .array(
@@ -27,7 +28,6 @@ const LeadChatRequestSchema = z.object({
       zip: z.string().nullable().optional(),
       leadSaved: z.boolean().optional(),
       leadId: z.string().nullable().optional(),
-      retries: z.number().optional(),
     })
     .optional(),
 })
@@ -49,12 +49,58 @@ export async function POST(req: NextRequest) {
   const context = { ...defaultLeadContext(), ...rawContext }
 
   try {
+    const startTime = Date.now()
+
     const result = await processLeadMessage({
       message,
       sessionId: sessionIdFinal,
       history: history ?? [],
       context,
     })
+
+    const duration = Date.now() - startTime
+
+    // Log user message (fire-and-forget)
+    chatLogger.logInteraction({
+      sessionId: sessionIdFinal,
+      clienteId: result.context.leadId ?? undefined,
+      direction: 'user',
+      messageContent: message,
+      stateBefore: 'LEAD_CHAT',
+      stateAfter: result.context.leadSaved ? 'LEAD_SAVED' : 'LEAD_CHAT',
+      llmCalls: [],
+      toolCalls: [],
+      handlersExecuted: [],
+      extractedData: {
+        name: result.context.name,
+        phone: result.context.phone,
+        zip: result.context.zip,
+      },
+      contextSnapshot: result.context as Record<string, any>,
+      errors: [],
+      responseTimeMs: duration,
+    }).catch(() => {})
+
+    // Log assistant response with full LLM + tool call records (fire-and-forget)
+    chatLogger.logInteraction({
+      sessionId: sessionIdFinal,
+      clienteId: result.context.leadId ?? undefined,
+      direction: 'assistant',
+      messageContent: result.message,
+      stateBefore: 'LEAD_CHAT',
+      stateAfter: result.context.leadSaved ? 'LEAD_SAVED' : 'LEAD_CHAT',
+      llmCalls: result.llmCalls,
+      toolCalls: result.toolCalls,
+      handlersExecuted: [],
+      extractedData: {
+        name: result.context.name,
+        phone: result.context.phone,
+        zip: result.context.zip,
+      },
+      contextSnapshot: result.context as Record<string, any>,
+      errors: [],
+      responseTimeMs: duration,
+    }).catch(() => {})
 
     return NextResponse.json({
       message: result.message,

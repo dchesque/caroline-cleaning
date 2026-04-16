@@ -29,8 +29,8 @@ export function LlmCallsPanel({ calls }: Props) {
         {calls.map((call, i) => (
           <div key={i} className="text-xs p-2 bg-muted/30 rounded flex items-center gap-3">
             <span className="font-mono bg-muted px-1 rounded">{call.type}</span>
-            <span className="text-muted-foreground truncate flex-1">
-              {call.prompt_preview}...
+            <span className="text-muted-foreground truncate flex-1" title={call.prompt_content}>
+              {call.prompt_content.substring(0, 100)}...
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />

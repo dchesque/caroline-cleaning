@@ -8,7 +8,10 @@ import { logger } from '@/lib/logger'
 export interface LLMCallRecord {
   type: 'extract' | 'classify' | 'generate' | 'faq'
   model: string
-  prompt_preview: string
+  /** Full system prompt sent to the LLM */
+  prompt_content: string
+  /** Raw LLM response text (before any sanitization) */
+  response_content: string
   tokens_used?: number
   prompt_tokens?: number
   completion_tokens?: number
@@ -401,12 +404,12 @@ export class CarolLLM {
     return data
   }
 
-  /** Internal: returns parsed data + raw usage from the API response */
+  /** Internal: returns parsed data + raw usage + raw response text from the API response */
   private async _extractRaw(
     type: ExtractionType,
     message: string,
     extraContext?: any
-  ): Promise<{ data: any; usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number } }> {
+  ): Promise<{ data: any; rawResponse: string; usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number } }> {
     const sanitizedMessage = sanitizeInput(message)
     const systemPrompt = getExtractionPrompt(type, extraContext)
 
@@ -424,7 +427,7 @@ export class CarolLLM {
       })
     } catch (error) {
       logger.error(`[CarolLLM] extract(${type}) API error:`, { error: error instanceof Error ? error.message : String(error) })
-      return { data: {} }
+      return { data: {}, rawResponse: '' }
     }
 
     const usage = response.usage
@@ -439,11 +442,11 @@ export class CarolLLM {
     try {
       const parsed = JSON.parse(content)
       // Detect empty or error responses and return null-safe defaults
-      if (parsed._error) return { data: {}, usage }
-      return { data: parsed, usage }
+      if (parsed._error) return { data: {}, rawResponse: content, usage }
+      return { data: parsed, rawResponse: content, usage }
     } catch (error) {
       logger.error(`[CarolLLM] JSON parse error in extract(${type}):`, { content, error: error instanceof Error ? error.message : String(error) })
-      return { data: {}, usage }
+      return { data: {}, rawResponse: content, usage }
     }
   }
 
@@ -457,14 +460,15 @@ export class CarolLLM {
     const startTime = Date.now()
     const systemPrompt = getExtractionPrompt(type, extraContext)
 
-    const { data, usage } = await this._extractRaw(type, message, extraContext)
+    const { data, rawResponse, usage } = await this._extractRaw(type, message, extraContext)
 
     return {
       data,
       metrics: {
         type: 'extract',
         model: this.model,
-        prompt_preview: systemPrompt.substring(0, 100),
+        prompt_content: systemPrompt,
+        response_content: rawResponse,
         tokens_used: usage?.total_tokens,
         prompt_tokens: usage?.prompt_tokens,
         completion_tokens: usage?.completion_tokens,
@@ -541,21 +545,22 @@ export class CarolLLM {
     return text
   }
 
-  /** Internal: returns generated text + raw usage from the API response */
+  /** Internal: returns generated text + raw response + usage from the API response */
   private async _generateRaw(
     template: string,
     data: Record<string, any>,
     userMessage?: string
-  ): Promise<{ text: string; usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number } }> {
+  ): Promise<{ text: string; systemPrompt: string; rawResponse: string; usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number } }> {
     const templateFn = RESPONSE_TEMPLATES[template]
     if (!templateFn) {
       logger.error(`[CarolLLM] Unknown response template: ${template}`)
-      return { text: "I'm sorry, something went wrong. Could you say that again?" }
+      return { text: "I'm sorry, something went wrong. Could you say that again?", systemPrompt: '', rawResponse: '' }
     }
 
     const safeData = sanitizePromptData(data)
     const instruction = templateFn(safeData)
     const persona = carolPersona()
+    const systemPrompt = `${persona}\n\nTask: ${instruction}`
 
     try {
       const contextMessage = userMessage
@@ -567,7 +572,7 @@ export class CarolLLM {
         temperature: 0.6,
         max_tokens: 300,
         messages: [
-          { role: 'system', content: `${persona}\n\nTask: ${instruction}` },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: contextMessage },
         ],
       })
@@ -585,13 +590,13 @@ export class CarolLLM {
 
       if (!text) {
         logger.warn(`[CarolLLM] generate(${template}) returned empty response — using template fallback`)
-        return { text: "Sorry, could you say that again?", usage }
+        return { text: "Sorry, could you say that again?", systemPrompt, rawResponse: raw, usage }
       }
 
-      return { text, usage }
+      return { text, systemPrompt, rawResponse: raw, usage }
     } catch (error) {
       logger.error(`[CarolLLM] generate(${template}) API error:`, { error: error instanceof Error ? error.message : String(error) })
-      return { text: "I'm sorry, I had a technical issue. Could you try again?" }
+      return { text: "I'm sorry, I had a technical issue. Could you try again?", systemPrompt, rawResponse: '' }
     }
   }
 
@@ -604,14 +609,15 @@ export class CarolLLM {
   ): Promise<{ response: string; metrics: LLMCallRecord }> {
     const startTime = Date.now()
 
-    const { text, usage } = await this._generateRaw(template, data, userMessage)
+    const { text, systemPrompt, rawResponse, usage } = await this._generateRaw(template, data, userMessage)
 
     return {
       response: text,
       metrics: {
         type: 'generate',
         model: this.model,
-        prompt_preview: text.substring(0, 100),
+        prompt_content: systemPrompt,
+        response_content: rawResponse,
         tokens_used: usage?.total_tokens,
         prompt_tokens: usage?.prompt_tokens,
         completion_tokens: usage?.completion_tokens,
