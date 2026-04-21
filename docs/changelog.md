@@ -1,3 +1,9 @@
+# Changelog - v3.5.27 (2026-04-21)
+
+## [3.5.27] - 2026-04-21
+### Changed
+- **Tracking (SSR Hydration)**: Pixel scripts now mount on the first server-rendered paint instead of waiting for a client-side `/api/tracking/config` roundtrip. `PublicLayout` derives a `TrackingConfig` from the already-fetched `BusinessSettings` and passes it as `initialConfig` to `TrackingProvider`. Meta Pixel Helper (and other extensions) detect events immediately on page load with no perceptible delay. `access_token` is still stripped before the config is shipped to the browser — server-side CAPI reads it directly via service-role client.
+
 # Changelog - v3.5.26 (2026-04-21)
 
 ## [3.5.26] - 2026-04-21

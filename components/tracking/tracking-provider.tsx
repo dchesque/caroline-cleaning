@@ -79,11 +79,17 @@ function RawHtmlInjector({ html, target, id }: { html: string; target: 'head' | 
 
 interface TrackingProviderProps {
     children: ReactNode;
+    /**
+     * Optional server-side hydrated config. When present, pixel scripts
+     * mount on first render (before hydration fetch), so Meta Pixel Helper
+     * and other extensions detect events immediately on initial paint.
+     */
+    initialConfig?: TrackingConfig | null;
 }
 
-export function TrackingProvider({ children }: TrackingProviderProps) {
-    const [config, setConfig] = useState<TrackingConfig | null>(null);
-    const [isLoaded, setIsLoaded] = useState(false);
+export function TrackingProvider({ children, initialConfig }: TrackingProviderProps) {
+    const [config, setConfig] = useState<TrackingConfig | null>(initialConfig ?? null);
+    const [isLoaded, setIsLoaded] = useState<boolean>(!!initialConfig);
     const pathname = usePathname();
     const searchParams = useSearchParams();
     // Each platform's base snippet fires the initial PageView on its own.
@@ -91,8 +97,9 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
     // emit PageView via trackEvent on subsequent SPA route changes.
     const initialPageViewSkipped = useRef(false);
 
-    // Carregar configurações
+    // Carregar configurações apenas se não veio do SSR
     useEffect(() => {
+        if (initialConfig) return;
         async function loadConfig() {
             try {
                 const response = await fetch('/api/tracking/config');
@@ -110,7 +117,7 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
         }
 
         loadConfig();
-    }, []);
+    }, [initialConfig]);
 
     // Função principal de tracking
     const trackEvent = useCallback((
