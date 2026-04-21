@@ -1,3 +1,11 @@
+# Changelog - v3.5.26 (2026-04-21)
+
+## [3.5.26] - 2026-04-21
+### Fixed
+- **Tracking (Meta Pixel Helper Detection)**: Added the canonical `fbq('track', 'PageView')` call inline in the Meta Pixel snippet (was missing, relying on a delayed `useEffect`), plus the standard `<noscript>` image fallback. Pixel Helper now detects the event immediately on page load.
+- **Tracking (UTMify URL Format)**: Fixed broken UTMify script URL — was `cdn.utmify.com.br/scripts/{id}/utmify.js` (invalid), now uses the official `/scripts/pixel/pixel.js` with `data-utmify-pixel-id="…"`, plus the companion `/scripts/utms/latest.js` for UTM capture.
+- **Tracking (Duplicate PageViews)**: Client-side `useEffect` was firing a second PageView on initial load on top of each platform's own bootstrap PageView. The effect now skips its first invocation via a ref and only fires on subsequent SPA route changes.
+
 # Changelog - v3.5.25 (2026-04-21)
 
 ## [3.5.25] - 2026-04-21

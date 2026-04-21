@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
@@ -86,6 +86,10 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
     const [isLoaded, setIsLoaded] = useState(false);
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    // Each platform's base snippet fires the initial PageView on its own.
+    // We skip the first effect-driven PageView to avoid duplicates and only
+    // emit PageView via trackEvent on subsequent SPA route changes.
+    const initialPageViewSkipped = useRef(false);
 
     // Carregar configurações
     useEffect(() => {
@@ -200,18 +204,18 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
 
     }, [config]);
 
-    // Disparar PageView em mudanças de rota
+    // Disparar PageView em mudanças de rota (SPA). Pula a primeira invocação
+    // porque a snippet inline de cada pixel já disparou o PageView inicial.
     useEffect(() => {
-        if (isLoaded && config) {
-            // Pequeno delay para garantir que os scripts carregaram
-            const timer = setTimeout(() => {
-                trackEvent('PageView', {
-                    content_name: document.title,
-                });
-            }, 100);
-
-            return () => clearTimeout(timer);
+        if (!isLoaded || !config) return;
+        if (!initialPageViewSkipped.current) {
+            initialPageViewSkipped.current = true;
+            return;
         }
+        const timer = setTimeout(() => {
+            trackEvent('PageView', { content_name: document.title });
+        }, 100);
+        return () => clearTimeout(timer);
     }, [pathname, searchParams, isLoaded, config, trackEvent]);
 
     return (
@@ -219,7 +223,7 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
             {/* Scripts de Tracking */}
             {isLoaded && config && (
                 <>
-                    {/* Meta Pixel */}
+                    {/* Meta Pixel — official snippet: init + track PageView */}
                     {config.meta_enabled && config.meta_pixel_id && (
                         <Script
                             id="meta-pixel"
@@ -235,9 +239,22 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
                                     s.parentNode.insertBefore(t,s)}(window, document,'script',
                                     'https://connect.facebook.net/en_US/fbevents.js');
                                     fbq('init', '${config.meta_pixel_id}');
+                                    fbq('track', 'PageView');
                                 `,
                             }}
                         />
+                    )}
+                    {/* Meta Pixel noscript fallback */}
+                    {config.meta_enabled && config.meta_pixel_id && (
+                        <noscript>
+                            <img
+                                height={1}
+                                width={1}
+                                style={{ display: 'none' }}
+                                alt=""
+                                src={`https://www.facebook.com/tr?id=${config.meta_pixel_id}&ev=PageView&noscript=1`}
+                            />
+                        </noscript>
                     )}
 
                     {/* Google Tag (GA4 + Ads) */}
@@ -308,13 +325,27 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
                         />
                     )}
 
-                    {/* UTMify */}
+                    {/* UTMify — official: pixel.js with data-utmify-pixel-id + utms/latest.js for UTM capture */}
                     {config.utmify_enabled && config.utmify_pixel_id && (
-                        <Script
-                            id="utmify-pixel"
-                            strategy="afterInteractive"
-                            src={`https://cdn.utmify.com.br/scripts/${config.utmify_pixel_id}/utmify.js`}
-                        />
+                        <>
+                            <Script
+                                id="utmify-pixel"
+                                strategy="afterInteractive"
+                                src="https://cdn.utmify.com.br/scripts/pixel/pixel.js"
+                                data-utmify-pixel-id={config.utmify_pixel_id}
+                                async
+                                defer
+                            />
+                            <Script
+                                id="utmify-utms"
+                                strategy="afterInteractive"
+                                src="https://cdn.utmify.com.br/scripts/utms/latest.js"
+                                data-utmify-prevent-xcod-sck=""
+                                data-utmify-prevent-subids=""
+                                async
+                                defer
+                            />
+                        </>
                     )}
 
                     {/* Custom Head Scripts (user-pasted raw HTML, scripts execute) */}
