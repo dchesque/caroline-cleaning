@@ -1,3 +1,10 @@
+# Changelog - v3.5.28 (2026-04-21)
+
+## [3.5.28] - 2026-04-21
+### Fixed
+- **Tracking (Meta Pixel SSR)**: Switched all inline pixel snippets (Meta, TikTok, GTM, GA4/Ads config, UTMify) from `next/script` with `dangerouslySetInnerHTML` to plain `<script>` tags. `next/script` with `afterInteractive` only injects the inline content post-hydration, which delayed Meta Pixel Helper detection. Plain `<script>` ships in the SSR HTML and executes immediately on first paint.
+- **Tracking (Numeric Pixel IDs)**: JSONB returned large numeric pixel IDs (16 digits) as numbers, causing snippets to render as `fbq('init', 1234567890123456)` without quotes — technically invalid. SSR now coerces all IDs with `String(...)` in the initial config mapping.
+
 # Changelog - v3.5.27 (2026-04-21)
 
 ## [3.5.27] - 2026-04-21

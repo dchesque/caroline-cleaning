@@ -230,24 +230,23 @@ export function TrackingProvider({ children, initialConfig }: TrackingProviderPr
             {/* Scripts de Tracking */}
             {isLoaded && config && (
                 <>
-                    {/* Meta Pixel — official snippet: init + track PageView */}
+                    {/* Meta Pixel — plain <script> so it ships in the SSR HTML
+                        (next/script dangerouslySetInnerHTML is deferred to
+                        post-hydration, delaying Pixel Helper detection). */}
                     {config.meta_enabled && config.meta_pixel_id && (
-                        <Script
+                        <script
                             id="meta-pixel"
-                            strategy="afterInteractive"
                             dangerouslySetInnerHTML={{
-                                __html: `
-                                    !function(f,b,e,v,n,t,s)
-                                    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-                                    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-                                    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-                                    n.queue=[];t=b.createElement(e);t.async=!0;
-                                    t.src=v;s=b.getElementsByTagName(e)[0];
-                                    s.parentNode.insertBefore(t,s)}(window, document,'script',
-                                    'https://connect.facebook.net/en_US/fbevents.js');
-                                    fbq('init', '${config.meta_pixel_id}');
-                                    fbq('track', 'PageView');
-                                `,
+                                __html: `!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '${String(config.meta_pixel_id).replace(/'/g, "")}');
+fbq('track', 'PageView');`,
                             }}
                         />
                     )}
@@ -264,88 +263,75 @@ export function TrackingProvider({ children, initialConfig }: TrackingProviderPr
                         </noscript>
                     )}
 
-                    {/* Google Tag (GA4 + Ads) */}
+                    {/* Google Tag (GA4 + Ads) — plain <script> for SSR delivery */}
                     {(config.ga4_enabled || config.google_ads_enabled) && (
                         <>
-                            <Script
+                            <script
                                 id="gtag-base"
-                                strategy="afterInteractive"
+                                async
                                 src={`https://www.googletagmanager.com/gtag/js?id=${config.ga4_measurement_id || config.google_ads_id}`}
                             />
-                            <Script
+                            <script
                                 id="gtag-config"
-                                strategy="afterInteractive"
                                 dangerouslySetInnerHTML={{
-                                    __html: `
-                                        window.dataLayer = window.dataLayer || [];
-                                        function gtag(){dataLayer.push(arguments);}
-                                        gtag('js', new Date());
-                                        ${config.ga4_enabled && config.ga4_measurement_id ? `gtag('config', '${config.ga4_measurement_id}');` : ''}
-                                        ${config.google_ads_enabled && config.google_ads_id ? `gtag('config', '${config.google_ads_id}');` : ''}
-                                    `,
+                                    __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+${config.ga4_enabled && config.ga4_measurement_id ? `gtag('config', '${String(config.ga4_measurement_id).replace(/'/g, "")}');` : ''}
+${config.google_ads_enabled && config.google_ads_id ? `gtag('config', '${String(config.google_ads_id).replace(/'/g, "")}');` : ''}`,
                                 }}
                             />
                         </>
                     )}
 
-                    {/* Google Tag Manager */}
+                    {/* Google Tag Manager — plain <script> for SSR delivery */}
                     {config.gtm_enabled && config.gtm_id && (
-                        <>
-                            <Script
-                                id="gtm-script"
-                                strategy="afterInteractive"
-                                dangerouslySetInnerHTML={{
-                                    __html: `
-                                        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-                                        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-                                        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-                                        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-                                        })(window,document,'script','dataLayer','${config.gtm_id}');
-                                    `,
-                                }}
-                            />
-                        </>
-                    )}
-
-                    {/* TikTok Pixel */}
-                    {config.tiktok_enabled && config.tiktok_pixel_id && (
-                        <Script
-                            id="tiktok-pixel"
-                            strategy="afterInteractive"
+                        <script
+                            id="gtm-script"
                             dangerouslySetInnerHTML={{
-                                __html: `
-                                    !function (w, d, t) {
-                                        w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
-                                        ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];
-                                        ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
-                                        for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
-                                        ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};
-                                        ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";
-                                        ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};
-                                        var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;
-                                        var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
-                                        ttq.load('${config.tiktok_pixel_id}');
-                                        ttq.page();
-                                    }(window, document, 'ttq');
-                                `,
+                                __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${String(config.gtm_id).replace(/'/g, "")}');`,
                             }}
                         />
                     )}
 
-                    {/* UTMify — official: pixel.js with data-utmify-pixel-id + utms/latest.js for UTM capture */}
+                    {/* TikTok Pixel — plain <script> for SSR delivery */}
+                    {config.tiktok_enabled && config.tiktok_pixel_id && (
+                        <script
+                            id="tiktok-pixel"
+                            dangerouslySetInnerHTML={{
+                                __html: `!function (w, d, t) {
+w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
+ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];
+ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
+for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};
+ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";
+ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};
+var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;
+var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+ttq.load('${String(config.tiktok_pixel_id).replace(/'/g, "")}');
+ttq.page();
+}(window, document, 'ttq');`,
+                            }}
+                        />
+                    )}
+
+                    {/* UTMify — plain <script> for SSR delivery */}
                     {config.utmify_enabled && config.utmify_pixel_id && (
                         <>
-                            <Script
+                            <script
                                 id="utmify-pixel"
-                                strategy="afterInteractive"
                                 src="https://cdn.utmify.com.br/scripts/pixel/pixel.js"
                                 data-utmify-pixel-id={config.utmify_pixel_id}
                                 async
                                 defer
                             />
-                            <Script
+                            <script
                                 id="utmify-utms"
-                                strategy="afterInteractive"
                                 src="https://cdn.utmify.com.br/scripts/utms/latest.js"
                                 data-utmify-prevent-xcod-sck=""
                                 data-utmify-prevent-subids=""
