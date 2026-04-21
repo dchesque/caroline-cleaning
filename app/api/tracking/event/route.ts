@@ -1,10 +1,11 @@
 // app/api/tracking/event/route.ts
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { hashData, normalizePhone } from '@/lib/tracking/utils';
 import { timingSafeEqual } from 'crypto';
 import { logger } from '@/lib/logger';
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit';
 
 interface EventPayload {
     event_name: string;
@@ -40,30 +41,28 @@ function hashIp(ip: string): string {
 }
 
 export async function POST(request: NextRequest) {
-    // Auth: accept internal bearer token OR valid user session
+    // Server-to-server bypass of rate limit via internal bearer token
     const authHeader = request.headers.get('authorization') || '';
     const internalSecret = process.env.CRON_SECRET;
-    let isAuthorized = false;
+    let isInternal = false;
 
-    // Check internal bearer token (server-to-server calls)
     if (internalSecret && authHeader.length > 0) {
         const expectedAuth = `Bearer ${internalSecret}`;
         if (
             authHeader.length === expectedAuth.length &&
             timingSafeEqual(Buffer.from(authHeader), Buffer.from(expectedAuth))
         ) {
-            isAuthorized = true;
+            isInternal = true;
         }
     }
 
-    // Fall back to session auth (client-side calls from tracking-provider)
-    if (!isAuthorized) {
-        const supabaseAuth = await createClient();
-        const { data: { user } } = await supabaseAuth.auth.getUser();
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Public tracking endpoint: rate-limit by IP to prevent abuse while
+    // allowing anonymous landing visitors to fire events (primary use case).
+    if (!isInternal) {
+        const ip = getClientIp(request);
+        if (!checkRateLimit(ip, RATE_LIMITS.tracking)) {
+            return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
         }
-        isAuthorized = true;
     }
 
     try {
@@ -77,7 +76,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const supabase = await createClient();
+        // Service-role client: must read `tracking_meta_access_token` which is
+        // not exposed by the anon RLS policy. Token never leaves the server.
+        const supabase = createAdminClient();
 
         // Buscar configurações de tracking
         const { data: configs } = await supabase
@@ -91,16 +92,31 @@ export async function POST(request: NextRequest) {
                 'tracking_meta_test_event_code'
             ]);
 
-        const getConfig = (key: string): string => {
+        const getString = (key: string): string => {
             const config = configs?.find(c => c.chave === key);
-            return config?.valor?.replace(/^"|"$/g, '') || '';
+            const raw = config?.valor;
+            if (raw == null) return '';
+            if (typeof raw === 'string') return raw.replace(/^"|"$/g, '');
+            if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw);
+            return '';
+        };
+        const getBool = (key: string): boolean => {
+            const config = configs?.find(c => c.chave === key);
+            const raw = config?.valor;
+            if (typeof raw === 'boolean') return raw;
+            if (typeof raw === 'number') return raw === 1;
+            if (typeof raw === 'string') {
+                const v = raw.replace(/^"|"$/g, '').toLowerCase();
+                return v === 'true' || v === '1';
+            }
+            return false;
         };
 
-        const metaEnabled = getConfig('tracking_meta_enabled') === 'true';
-        const metaCapiEnabled = getConfig('tracking_meta_capi_enabled') === 'true';
-        const pixelId = getConfig('tracking_meta_pixel_id');
-        const accessToken = getConfig('tracking_meta_access_token');
-        const testEventCode = getConfig('tracking_meta_test_event_code');
+        const metaEnabled = getBool('tracking_meta_enabled');
+        const metaCapiEnabled = getBool('tracking_meta_capi_enabled');
+        const pixelId = getString('tracking_meta_pixel_id');
+        const accessToken = getString('tracking_meta_access_token');
+        const testEventCode = getString('tracking_meta_test_event_code');
 
         // Capturar IP e User Agent
         const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] ||

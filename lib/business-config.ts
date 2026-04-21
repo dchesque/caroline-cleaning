@@ -156,8 +156,8 @@ export interface BusinessSettings {
     tracking_tiktok_pixel_id: string;
 
     // Trackeamento - UTMify
-    tracking_utmfy_enabled: boolean;
-    tracking_utmfy_pixel_id: string;
+    tracking_utmify_enabled: boolean;
+    tracking_utmify_pixel_id: string;
 
     // Scripts Customizados
     tracking_custom_head_scripts: string;
@@ -386,8 +386,8 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     tracking_gtm_id: '',
     tracking_tiktok_enabled: false,
     tracking_tiktok_pixel_id: '',
-    tracking_utmfy_enabled: false,
-    tracking_utmfy_pixel_id: '',
+    tracking_utmify_enabled: false,
+    tracking_utmify_pixel_id: '',
     tracking_custom_head_scripts: '',
     tracking_custom_body_scripts: '',
 };
@@ -523,25 +523,25 @@ const CONFIG_METADATA: Record<string, { grupo: string; categoria: string }> = {
     desconto_biweekly: { grupo: 'sistema', categoria: 'precos' },
     desconto_monthly: { grupo: 'sistema', categoria: 'precos' },
 
-    // Tracking (Mapped to empresa for now as they are global)
-    tracking_meta_enabled: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_meta_pixel_id: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_meta_access_token: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_meta_capi_enabled: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_meta_test_event_code: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_google_ads_enabled: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_google_ads_id: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_google_ads_label: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_ga4_enabled: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_ga4_measurement_id: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_gtm_enabled: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_gtm_id: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_tiktok_enabled: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_tiktok_pixel_id: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_utmfy_enabled: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_utmfy_pixel_id: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_custom_head_scripts: { grupo: 'empresa', categoria: 'integracao' },
-    tracking_custom_body_scripts: { grupo: 'empresa', categoria: 'integracao' },
+    // Tracking
+    tracking_meta_enabled: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_meta_pixel_id: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_meta_access_token: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_meta_capi_enabled: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_meta_test_event_code: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_google_ads_enabled: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_google_ads_id: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_google_ads_label: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_ga4_enabled: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_ga4_measurement_id: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_gtm_enabled: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_gtm_id: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_tiktok_enabled: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_tiktok_pixel_id: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_utmify_enabled: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_utmify_pixel_id: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_custom_head_scripts: { grupo: 'trackeamento', categoria: 'integracao' },
+    tracking_custom_body_scripts: { grupo: 'trackeamento', categoria: 'integracao' },
 };
 
 const REVERSE_KEY_MAP: Record<string, string> = Object.entries(KEY_MAP).reduce((acc, [k, v]) => ({ ...acc, [v]: k }), {});

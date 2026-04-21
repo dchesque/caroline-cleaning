@@ -37,6 +37,46 @@ const TrackingContext = createContext<TrackingContextValue>({
 
 export const useTracking = () => useContext(TrackingContext);
 
+/**
+ * Injects raw user-pasted HTML (scripts + noscript/iframes) into the DOM.
+ * Using innerHTML does NOT execute <script> tags, so we clone each script
+ * element so the browser runs it.
+ */
+function RawHtmlInjector({ html, target, id }: { html: string; target: 'head' | 'body'; id: string }) {
+    useEffect(() => {
+        if (!html) return;
+        const container = document.createElement('div');
+        container.setAttribute('data-tracking-injected', id);
+        container.innerHTML = html;
+
+        const host = target === 'head' ? document.head : document.body;
+        const mounted: Node[] = [];
+
+        Array.from(container.childNodes).forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE && (node as Element).tagName === 'SCRIPT') {
+                const original = node as HTMLScriptElement;
+                const script = document.createElement('script');
+                Array.from(original.attributes).forEach((attr) => script.setAttribute(attr.name, attr.value));
+                if (original.textContent) script.textContent = original.textContent;
+                host.appendChild(script);
+                mounted.push(script);
+            } else {
+                const clone = node.cloneNode(true);
+                host.appendChild(clone);
+                mounted.push(clone);
+            }
+        });
+
+        return () => {
+            mounted.forEach((n) => {
+                if (n.parentNode) n.parentNode.removeChild(n);
+            });
+        };
+    }, [html, target, id]);
+
+    return null;
+}
+
 interface TrackingProviderProps {
     children: ReactNode;
 }
@@ -277,15 +317,9 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
                         />
                     )}
 
-                    {/* Custom Head Scripts */}
+                    {/* Custom Head Scripts (user-pasted raw HTML, scripts execute) */}
                     {config.custom_head_scripts && (
-                        <Script
-                            id="custom-head-scripts"
-                            strategy="afterInteractive"
-                            dangerouslySetInnerHTML={{
-                                __html: config.custom_head_scripts,
-                            }}
-                        />
+                        <RawHtmlInjector html={config.custom_head_scripts} target="head" id="custom-head-scripts" />
                     )}
                 </>
             )}
@@ -304,9 +338,9 @@ export function TrackingProvider({ children }: TrackingProviderProps) {
                 </noscript>
             )}
 
-            {/* Custom Body Scripts */}
+            {/* Custom Body Scripts (user-pasted raw HTML, scripts execute) */}
             {isLoaded && config?.custom_body_scripts && (
-                <div dangerouslySetInnerHTML={{ __html: config.custom_body_scripts }} />
+                <RawHtmlInjector html={config.custom_body_scripts} target="body" id="custom-body-scripts" />
             )}
         </TrackingContext.Provider>
     );

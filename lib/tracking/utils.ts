@@ -89,17 +89,27 @@ export function getUtmParams(): Record<string, string> {
 /**
  * Mapeia configurações do Supabase para TrackingConfig
  */
-export function mapSupabaseConfigToTracking(configs: Array<{ chave: string; valor: string }>): TrackingConfig {
+export function mapSupabaseConfigToTracking(configs: Array<{ chave: string; valor: unknown }>): TrackingConfig {
     const getValue = (key: string): string => {
         const config = configs.find(c => c.chave === key);
-        if (!config) return '';
-        // Remove aspas extras se houver
-        return config.valor.replace(/^"|"$/g, '');
+        if (!config || config.valor == null) return '';
+        const raw = config.valor;
+        if (typeof raw === 'string') return raw.replace(/^"|"$/g, '');
+        if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw);
+        return '';
     };
 
     const getBool = (key: string): boolean => {
-        const value = getValue(key);
-        return value === 'true' || value === '1';
+        const config = configs.find(c => c.chave === key);
+        if (!config) return false;
+        const raw = config.valor;
+        if (typeof raw === 'boolean') return raw;
+        if (typeof raw === 'number') return raw === 1;
+        if (typeof raw === 'string') {
+            const v = raw.replace(/^"|"$/g, '').toLowerCase();
+            return v === 'true' || v === '1';
+        }
+        return false;
     };
 
     return {

@@ -21,8 +21,8 @@ INSERT INTO configuracoes (chave, valor, grupo, categoria) VALUES
 ('tracking_gtm_id', '""', 'trackeamento', 'marketing'),
 ('tracking_tiktok_enabled', 'false', 'trackeamento', 'marketing'),
 ('tracking_tiktok_pixel_id', '""', 'trackeamento', 'marketing'),
-('tracking_utmfy_enabled', 'false', 'trackeamento', 'marketing'),
-('tracking_utmfy_pixel_id', '""', 'trackeamento', 'marketing'),
+('tracking_utmify_enabled', 'false', 'trackeamento', 'marketing'),
+('tracking_utmify_pixel_id', '""', 'trackeamento', 'marketing'),
 ('tracking_custom_head_scripts', '""', 'trackeamento', 'integracao'),
 ('tracking_custom_body_scripts', '""', 'trackeamento', 'integracao')
 ON CONFLICT (chave) DO NOTHING;

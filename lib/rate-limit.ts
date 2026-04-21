@@ -63,6 +63,7 @@ export const RATE_LIMITS = {
   api: { prefix: 'api', limit: 100, windowMs: 60_000 } as RateLimitConfig,
   slots: { prefix: 'slots', limit: 30, windowMs: 60_000 } as RateLimitConfig,
   admin: { prefix: 'admin', limit: 60, windowMs: 60_000 } as RateLimitConfig,
+  tracking: { prefix: 'tracking', limit: 120, windowMs: 60_000 } as RateLimitConfig,
 } as const
 
 /**

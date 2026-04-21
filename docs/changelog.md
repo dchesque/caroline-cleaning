@@ -1,3 +1,18 @@
+# Changelog - v3.5.25 (2026-04-21)
+
+## [3.5.25] - 2026-04-21
+### Fixed
+- **Tracking (Admin Persistence)**: Pixels and scripts saved in `/admin/configuracoes/trackeamento` are now actually persisted and take effect on the public site. Resolved a `grupo` mismatch in `CONFIG_METADATA` that caused every save to silently drop all tracking keys, and the corresponding load filter that always returned `DEFAULT_SETTINGS`. Migrated 18 `tracking_*` rows from `grupo='empresa'` to `grupo='trackeamento'`.
+- **Tracking (UTMify Key Inconsistency)**: Standardized on `tracking_utmify_*` across UI, defaults, seed migration, and DB (was split between `utmfy` and `utmify`, so UTMify never activated even with a pixel saved).
+- **Tracking (JSONB Parsing)**: `mapSupabaseConfigToTracking` and the Meta CAPI handler no longer crash when reading JSONB boolean/number values from `configuracoes`. Rewritten to accept `boolean | number | string | null`.
+- **Tracking (RLS Public Read)**: Extended the anon read policy on `configuracoes` to include `tracking_%` keys, excluding any containing `access_token`, `secret`, `api_key`, or `private`. `/api/tracking/config` was previously returning an empty array for all public visitors.
+- **Tracking (Server-Side CAPI Auth)**: `/api/tracking/event` no longer returns 401 to anonymous landing visitors (the primary use case). Replaced the session-auth gate with an IP-based rate limit (120 req/min). Internal bearer (`CRON_SECRET`) still bypasses the limit for server-to-server calls.
+- **Tracking (Access Token Visibility)**: The event route now uses `createAdminClient()` (service role) to read `tracking_meta_access_token` server-side. The token never leaves the server; it is used only in the Meta Graph API call URL.
+- **Tracking (Custom Scripts Execution)**: Replaced `<Script dangerouslySetInnerHTML>` + `<div dangerouslySetInnerHTML>` wrappers with a new `RawHtmlInjector` that clones each `<script>` node via `document.createElement` so user-pasted snippets (including full `<script>…</script>` tags) actually execute in the browser.
+
+### Changed
+- **Rate Limits**: Added dedicated `tracking` rate limit bucket (120 req/min/IP) in `lib/rate-limit.ts`.
+
 # Changelog - v3.5.24 (2026-03-19)
 
 ## [3.5.24] - 2026-03-19

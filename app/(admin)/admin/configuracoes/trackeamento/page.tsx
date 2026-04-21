@@ -277,16 +277,16 @@ export default function TrackeamentoPage() {
                                     {settingsT.tracking.sections.utmfy}
                                 </CardTitle>
                                 <Switch
-                                    checked={config.tracking_utmfy_enabled}
-                                    onCheckedChange={(val) => setConfig({ ...config, tracking_utmfy_enabled: val })}
+                                    checked={config.tracking_utmify_enabled}
+                                    onCheckedChange={(val) => setConfig({ ...config, tracking_utmify_enabled: val })}
                                 />
                             </div>
                         </CardHeader>
                         <CardContent className="pb-4">
                             <Input
                                 placeholder="UTMify Pixel ID"
-                                value={config.tracking_utmfy_pixel_id}
-                                onChange={(e) => setConfig({ ...config, tracking_utmfy_pixel_id: e.target.value })}
+                                value={config.tracking_utmify_pixel_id}
+                                onChange={(e) => setConfig({ ...config, tracking_utmify_pixel_id: e.target.value })}
                                 className={inputClasses}
                             />
                         </CardContent>
