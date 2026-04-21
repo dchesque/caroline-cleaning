@@ -1,3 +1,10 @@
+# Changelog - v3.5.30 (2026-04-21)
+
+## [3.5.30] - 2026-04-21
+### Added
+- **WhatsApp contact links** in the public header (next to the SMS shortcut, desktop only) and in the footer contact column. Both point to `https://wa.me/<business_phone>` using the same phone number as SMS, open in a new tab, and fire the `ClickToWhatsApp` conversion event so campaigns can attribute WhatsApp-initiated leads.
+- New inline `WhatsAppIcon` component (`components/ui/whatsapp-icon.tsx`) — pure SVG, no new dependency, uses `currentColor` so it inherits text color.
+
 # Changelog - v3.5.29 (2026-04-21)
 
 ## [3.5.29] - 2026-04-21

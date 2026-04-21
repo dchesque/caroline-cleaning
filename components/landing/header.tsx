@@ -7,6 +7,14 @@ import { MessageSquare, MessageCircle, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useBusinessSettings } from '@/lib/context/business-settings-context'
 import { useTracking } from '@/components/tracking/tracking-provider'
+import { WhatsAppIcon } from '@/components/ui/whatsapp-icon'
+
+/** Normalize to E.164-ish digits for wa.me (US default: prepend 1). */
+function toWaNumber(phone: string | undefined | null): string {
+    const digits = String(phone ?? '').replace(/\D/g, '')
+    if (!digits) return ''
+    return digits.startsWith('1') ? digits : `1${digits}`
+}
 
 export function Header() {
     const settings = useBusinessSettings()
@@ -110,7 +118,7 @@ export function Header() {
 
                     {/* Desktop Actions */}
                     <div className="hidden lg:flex items-center gap-6">
-                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <div className="flex items-center gap-3 text-sm font-medium text-muted-foreground">
                             <a
                                 href={`sms:${settings.business_phone}`}
                                 onClick={() => trackEvent('ClickToCall', { content_name: 'Header SMS' })}
@@ -118,6 +126,18 @@ export function Header() {
                             >
                                 <MessageSquare className="w-4 h-4 text-brandy-rose-500" />
                                 {settings.business_phone_display}
+                            </a>
+                            <a
+                                href={`https://wa.me/${toWaNumber(settings.business_phone)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => trackEvent('ClickToWhatsApp', { content_name: 'Header WhatsApp' })}
+                                aria-label="WhatsApp"
+                                title="WhatsApp"
+                                className="flex items-center hover:opacity-80 transition-opacity"
+                                style={{ color: '#25D366' }}
+                            >
+                                <WhatsAppIcon className="w-5 h-5" />
                             </a>
                         </div>
                         <Button
