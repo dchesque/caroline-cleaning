@@ -6,6 +6,8 @@ import { nanoid } from 'nanoid'
 import type { ChatMessage } from '@/types/carol'
 import type { LeadContext } from '@/types/lead-chat'
 import { defaultLeadContext } from '@/types/lead-chat'
+import { useTracking } from '@/components/tracking/tracking-provider'
+import type { TrackingEventName, CustomData, UserData } from '@/lib/tracking/types'
 
 // Marker used to exclude synthetic (client-generated) messages from
 // the history we send to the LLM — they were never part of a real LLM exchange.
@@ -20,6 +22,7 @@ export function useLeadChat() {
   const [sessionId, setSessionId] = useState<string>('')
   const [context, setContext] = useState<LeadContext>(defaultLeadContext())
   const [error, setError] = useState<string | null>(null)
+  const { trackEvent } = useTracking()
 
   // Initialize session + show greeting (no LLM call — hardcoded for instant UX)
   useEffect(() => {
@@ -97,6 +100,16 @@ export function useLeadChat() {
           setContext(data.context as LeadContext)
         }
 
+        // Forward server-triggered conversion to the pixel layer (dedup via event_id).
+        if (data.conversion?.eventId && data.conversion.eventName) {
+          trackEvent(
+            data.conversion.eventName as TrackingEventName,
+            data.conversion.customData as Partial<CustomData> | undefined,
+            data.conversion.userData as Partial<UserData> | undefined,
+            { eventId: data.conversion.eventId },
+          )
+        }
+
         // Mark user message as sent
         setMessages((prev) =>
           prev.map((m) => (m.id === userMessage.id ? { ...m, status: 'sent' as const } : m))
@@ -124,7 +137,7 @@ export function useLeadChat() {
         setIsLoading(false)
       }
     },
-    [isLoading, sessionId, context, messages]
+    [isLoading, sessionId, context, messages, trackEvent]
   )
 
   const clearMessages = useCallback(() => {

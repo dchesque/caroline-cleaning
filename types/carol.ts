@@ -13,6 +13,12 @@ export interface ChatResponse {
     session_id: string
     state: string
     timestamp: string
+    conversion?: {
+        eventId: string
+        eventName: string
+        userData?: Record<string, unknown>
+        customData?: Record<string, unknown>
+    }
 }
 
 // Shared return-type interface for both useCarolChat and useLeadChat.

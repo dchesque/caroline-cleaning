@@ -510,12 +510,40 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
     appointment_id: result.appointment_id,
   })
 
+  // Fire Schedule conversion (Meta CAPI + eventId for client dedup)
+  const { fireServerConversion } = await import('@/lib/tracking/server')
+  const priceRaw = (result.details as { price?: number | string } | undefined)?.price
+  const priceNum = typeof priceRaw === 'number' ? priceRaw : Number(priceRaw) || 0
+  const conversion = fireServerConversion({
+    eventName: 'Schedule',
+    userData: {
+      phone: context.cliente_telefone ?? undefined,
+      email: context.cliente_email ?? undefined,
+      first_name: context.cliente_nome ?? undefined,
+      zip_code: context.cliente_zip ?? undefined,
+      country: 'us',
+    },
+    customData: {
+      value: priceNum,
+      currency: 'USD',
+      content_name: context.service_type ?? 'cleaning',
+      content_category: 'booking',
+      order_id: result.appointment_id ?? undefined,
+    },
+  })
+
   return {
     nextState: 'CONFIRM_SUMMARY',
     response,
     contextUpdates: {
       booking_id: result.appointment_id ?? null,
       booking_confirmed: true,
+      pending_conversion: {
+        eventId: conversion.eventId,
+        eventName: conversion.eventName,
+        userData: conversion.userData as Record<string, unknown>,
+        customData: conversion.customData as Record<string, unknown>,
+      },
     },
   }
 }

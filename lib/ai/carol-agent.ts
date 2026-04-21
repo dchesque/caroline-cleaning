@@ -17,6 +17,12 @@ export interface ChatResponse {
     timestamp: string
     cliente_id?: string
     state_before?: string
+    conversion?: {
+        eventId: string
+        eventName: string
+        userData?: Record<string, unknown>
+        customData?: Record<string, unknown>
+    }
     metrics?: {
         llmCalls: LLMCallRecord[]
         handlersExecuted: { handler: string; duration_ms: number }[]
@@ -48,6 +54,7 @@ export class CarolAgent {
             timestamp: new Date().toISOString(),
             cliente_id: result.cliente_id,
             state_before: result.state_before,
+            conversion: result.conversion,
             metrics: result.metrics,
         }
     }

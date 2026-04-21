@@ -1,3 +1,16 @@
+# Changelog - v3.5.29 (2026-04-21)
+
+## [3.5.29] - 2026-04-21
+### Added
+- **Conversion tracking on chat milestones**: Carol's state machine and the lead-chat agent now fire `Lead`, `Schedule`, and `Contact` conversion events the moment a lead is saved, a booking is confirmed, or a callback is scheduled. Events are dual-fired: server-side via Meta CAPI (`/api/tracking/event` with `CRON_SECRET` bearer) and client-side via `fbq`/`gtag`/`ttq`/`dataLayer`, sharing the same `event_id` for deduplication in Meta Events Manager.
+- **`lib/tracking/server.ts`**: New `fireServerConversion()` helper that handlers call to send CAPI and receive a matching `event_id` to forward to the client.
+- **`trackEvent` accepts external `event_id`**: New `options.eventId` parameter on the client `trackEvent` enables dedup with server-originated events; when supplied, the client skips its own `/api/tracking/event` POST to prevent double-counting.
+- **`ClickToCall` on all public SMS/tel links**: Hero, CTA section, and footer contact links now fire `ClickToCall` (previously only the header link did).
+
+### Notes
+- No public WhatsApp links exist on the landing today (communication is SMS-first), so no `ClickToWhatsApp` call sites were added — the event name remains available in the enum for when it's needed.
+- Server-side CAPI still requires `CRON_SECRET` and `tracking_meta_access_token` to be configured; without them, the client-side pixel path continues to work.
+
 # Changelog - v3.5.28 (2026-04-21)
 
 ## [3.5.28] - 2026-04-21

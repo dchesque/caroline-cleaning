@@ -3,9 +3,11 @@
 import { Button } from '@/components/ui/button'
 import { MessageCircle, Star, Shield, ExternalLink } from 'lucide-react'
 import { useBusinessSettings } from '@/lib/context/business-settings-context'
+import { useTracking } from '@/components/tracking/tracking-provider'
 
 export function Hero() {
     const settings = useBusinessSettings()
+    const { trackEvent } = useTracking()
 
     const openChat = () => {
         window.dispatchEvent(new CustomEvent('open-chat'))
@@ -60,6 +62,7 @@ export function Hero() {
                             <a
                                 href={`sms:${settings.business_phone}`}
                                 className="text-brandy-rose-600 hover:underline font-medium"
+                                onClick={() => trackEvent('ClickToCall', { content_name: 'Hero SMS' })}
                             >
                                 send us a message
                             </a>

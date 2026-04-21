@@ -226,6 +226,16 @@ export interface SessionContext {
     _same_state_count?: number
     _last_processed_state?: CarolState
     _last_activity?: string
+    // Conversion event pending dispatch to the client (set by handlers that
+    // reach a business milestone — lead saved, booking confirmed, callback
+    // scheduled — and consumed by the chat route to forward eventId to the
+    // client for Pixel dedup).
+    pending_conversion?: {
+        eventId: string
+        eventName: string
+        userData?: Record<string, unknown>
+        customData?: Record<string, unknown>
+    } | null
     [key: string]: any
 }
 

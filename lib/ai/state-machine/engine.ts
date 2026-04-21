@@ -93,7 +93,19 @@ export class CarolStateMachine {
   async process(
     message: string,
     sessionId: string,
-  ): Promise<{ response: string; state: CarolState; state_before: CarolState; metrics: ProcessingMetrics; cliente_id?: string }> {
+  ): Promise<{
+    response: string
+    state: CarolState
+    state_before: CarolState
+    metrics: ProcessingMetrics
+    cliente_id?: string
+    conversion?: {
+      eventId: string
+      eventName: string
+      userData?: Record<string, unknown>
+      customData?: Record<string, unknown>
+    }
+  }> {
     // Initialize metrics
     const metrics: ProcessingMetrics = {
       llmCalls: [],
@@ -334,6 +346,12 @@ export class CarolStateMachine {
       state: context.state,
     }
 
+    // Extract pending_conversion so we can forward it to the client, then
+    // clear it from the persisted context to prevent duplicate fires on the
+    // next turn.
+    const conversion = context.pending_conversion ?? undefined
+    context.pending_conversion = null
+
     // 5. Persist context
     try {
       await this.services.updateSession(sessionId, context)
@@ -387,6 +405,7 @@ export class CarolStateMachine {
       state_before: stateBefore,
       metrics,
       cliente_id: context.cliente_id || undefined,
+      conversion: conversion ?? undefined,
     }
   }
 

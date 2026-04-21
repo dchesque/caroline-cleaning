@@ -254,6 +254,23 @@ export const handleCreateLead: StateHandler = async (_message, context, services
 
   const clientId = result.client_id
 
+  // Fire Lead conversion (Meta CAPI + return eventId for client-side dedup)
+  const { fireServerConversion } = await import('@/lib/tracking/server')
+  const conversion = fireServerConversion({
+    eventName: 'Lead',
+    userData: {
+      phone: context.cliente_telefone ?? undefined,
+      email: context.cliente_email ?? undefined,
+      first_name: context.cliente_nome ?? undefined,
+      zip_code: context.cliente_zip ?? undefined,
+      country: 'us',
+    },
+    customData: {
+      content_category: 'lead',
+      content_name: 'Carol Chat Lead',
+    },
+  })
+
   const response = await llm.generate('ask_date', {
     name: context.cliente_nome,
   })
@@ -263,6 +280,12 @@ export const handleCreateLead: StateHandler = async (_message, context, services
     response,
     contextUpdates: {
       cliente_id: clientId,
+      pending_conversion: {
+        eventId: conversion.eventId,
+        eventName: conversion.eventName,
+        userData: conversion.userData as Record<string, unknown>,
+        customData: conversion.customData as Record<string, unknown>,
+      },
     },
   }
 }

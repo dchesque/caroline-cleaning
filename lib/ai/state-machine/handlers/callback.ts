@@ -73,9 +73,32 @@ export const handleScheduleCallback: StateHandler = async (message, context, ser
       time: preferredTime,
     })
 
+    // Fire Contact conversion (Meta CAPI + eventId for client dedup)
+    const { fireServerConversion } = await import('@/lib/tracking/server')
+    const conversion = fireServerConversion({
+      eventName: 'Contact',
+      userData: {
+        phone: context.cliente_telefone ?? undefined,
+        first_name: context.cliente_nome ?? undefined,
+        country: 'us',
+      },
+      customData: {
+        content_name: 'Callback Requested',
+        content_category: 'callback',
+      },
+    })
+
     return {
       nextState: 'DONE',
       response,
+      contextUpdates: {
+        pending_conversion: {
+          eventId: conversion.eventId,
+          eventName: conversion.eventName,
+          userData: conversion.userData as Record<string, unknown>,
+          customData: conversion.customData as Record<string, unknown>,
+        },
+      },
     }
   }
 

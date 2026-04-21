@@ -4,6 +4,8 @@
 import { useState, useCallback, useEffect } from 'react'
 import { nanoid } from 'nanoid'
 import type { ChatMessage, ChatResponse } from '@/types/carol'
+import { useTracking } from '@/components/tracking/tracking-provider'
+import type { TrackingEventName, CustomData, UserData } from '@/lib/tracking/types'
 
 interface UseCarolChatReturn {
     messages: ChatMessage[]
@@ -21,6 +23,7 @@ export function useCarolChat(): UseCarolChatReturn {
     const [isProcessing, setIsProcessing] = useState(false)
     const [sessionId, setSessionId] = useState<string>('')
     const [error, setError] = useState<string | null>(null)
+    const { trackEvent } = useTracking()
 
     // Inicializar session_id e greeting automático
     useEffect(() => {
@@ -80,6 +83,17 @@ export function useCarolChat(): UseCarolChatReturn {
 
             const data: ChatResponse = await response.json()
 
+            // Forward server-triggered conversion to the pixel layer (dedup
+            // happens on Meta via shared event_id — server already fired CAPI).
+            if (data.conversion?.eventId && data.conversion.eventName) {
+                trackEvent(
+                    data.conversion.eventName as TrackingEventName,
+                    data.conversion.customData as Partial<CustomData> | undefined,
+                    data.conversion.userData as Partial<UserData> | undefined,
+                    { eventId: data.conversion.eventId },
+                )
+            }
+
             // Atualizar mensagem do usuário como enviada
             setMessages(prev => prev.map(m =>
                 m.id === userMessage.id
@@ -116,7 +130,7 @@ export function useCarolChat(): UseCarolChatReturn {
         } finally {
             setIsLoading(false)
         }
-    }, [isLoading, sessionId])
+    }, [isLoading, sessionId, trackEvent])
 
     const clearMessages = useCallback(() => {
         if (sessionId) {

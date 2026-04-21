@@ -7,6 +7,7 @@ import {
     TrackingConfig,
     TrackingContextValue,
     TrackingEventName,
+    TrackEventOptions,
     CustomData,
     UserData,
     EVENT_MAPPING
@@ -123,11 +124,17 @@ export function TrackingProvider({ children, initialConfig }: TrackingProviderPr
     const trackEvent = useCallback((
         eventName: TrackingEventName,
         customData?: Partial<CustomData>,
-        userData?: Partial<UserData>
+        userData?: Partial<UserData>,
+        options?: TrackEventOptions,
     ) => {
         if (!config) return;
 
-        const eventId = generateEventId();
+        // When an eventId is supplied the server has already fired the CAPI
+        // call (dedup is by eventID at Meta). Use that id and skip our own
+        // internal POST to /api/tracking/event to avoid a duplicate.
+        const externalEventId = options?.eventId;
+        const eventId = externalEventId || generateEventId();
+        const skipServerPost = !!externalEventId;
         const { fbc, fbp } = getFacebookCookies();
         const utmParams = getUtmParams();
 
@@ -193,9 +200,8 @@ export function TrackingProvider({ children, initialConfig }: TrackingProviderPr
         }
 
         // ========== SERVER-SIDE TRACKING ==========
-
-        // Enviar para API de eventos (Meta CAPI + logging)
-        if (config.meta_capi_enabled || true) { // Sempre loga no servidor
+        // Only fire if the server hasn't already handled this event (dedup).
+        if (!skipServerPost) {
             fetch('/api/tracking/event', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

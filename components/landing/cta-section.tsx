@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button'
 import { MessageCircle } from 'lucide-react'
 
 import { useBusinessSettings } from '@/lib/context/business-settings-context'
+import { useTracking } from '@/components/tracking/tracking-provider'
 
 export function CTASection() {
     const settings = useBusinessSettings()
+    const { trackEvent } = useTracking()
 
     const openChat = () => {
         window.dispatchEvent(new CustomEvent('open-chat'))
@@ -41,6 +43,7 @@ export function CTASection() {
                     <a
                         href={`sms:${settings.business_phone}`}
                         className="text-white hover:underline font-medium"
+                        onClick={() => trackEvent('ClickToCall', { content_name: 'CTA SMS' })}
                     >
                         Text us at {settings.business_phone_display}
                     </a>

@@ -11,6 +11,7 @@ import type { LeadContext } from '@/types/lead-chat'
 import { defaultLeadContext } from '@/types/lead-chat'
 import type { LLMCallRecord } from '@/lib/ai/llm'
 import type { ToolCallRecord } from '@/lib/services/chat-logger'
+import { fireServerConversion, type ServerConversionResult } from '@/lib/tracking/server'
 
 export type { LeadContext }
 export { defaultLeadContext }
@@ -30,6 +31,7 @@ export interface LeadChatResponse {
   timestamp: string
   llmCalls: LLMCallRecord[]
   toolCalls: ToolCallRecord[]
+  conversion?: ServerConversionResult
 }
 
 // ─── Tool definition ─────────────────────────────────────────────────────────
@@ -218,6 +220,7 @@ function sanitizeResponse(text: string): string {
 interface SaveLeadResult {
   id: string
   isNew: boolean
+  conversion?: ServerConversionResult
 }
 
 async function saveLead(context: LeadContext, sessionId: string): Promise<SaveLeadResult | null> {
@@ -277,8 +280,23 @@ async function saveLead(context: LeadContext, sessionId: string): Promise<SaveLe
       source: 'Lead Chat',
     })
 
+    // Fire Lead conversion (Meta CAPI + return eventId for client-side dedup)
+    const conversion = fireServerConversion({
+      eventName: 'Lead',
+      userData: {
+        phone: context.phone ?? undefined,
+        first_name: context.name ?? undefined,
+        zip_code: context.zip ?? undefined,
+        country: 'us',
+      },
+      customData: {
+        content_category: 'lead',
+        content_name: 'Lead Chat',
+      },
+    })
+
     logger.info('[lead-chat] lead saved', { leadId })
-    return { id: leadId, isNew: true }
+    return { id: leadId, isNew: true, conversion }
   } catch (err) {
     logger.error('[lead-chat] saveLead error', { error: String(err) })
     return null
@@ -448,7 +466,14 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
           ? `Perfect, ${confirmName}! We've got your info and our team will reach out soon to schedule your free evaluation visit. It was great chatting with you! 😊`
           : `Welcome back, ${confirmName}! We already have your info on file — our team will be in touch with you soon. 😊`
 
-        return { message: confirmMessage, context: updatedContext, timestamp, llmCalls, toolCalls }
+        return {
+          message: confirmMessage,
+          context: updatedContext,
+          timestamp,
+          llmCalls,
+          toolCalls,
+          conversion: result.conversion,
+        }
       } catch (parseErr) {
         logger.warn('[lead-chat] tool args parse error', { error: String(parseErr) })
         return {

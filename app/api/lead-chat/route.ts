@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
       context: result.context,
       session_id: sessionIdFinal,
       timestamp: result.timestamp,
+      conversion: result.conversion,
     })
   } catch (err) {
     logger.error('[lead-chat route] unhandled error', { error: String(err) })

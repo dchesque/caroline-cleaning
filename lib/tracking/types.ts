@@ -82,10 +82,24 @@ export type TrackingEventName =
     | 'ViewContent'
     | 'Search';
 
+export interface TrackEventOptions {
+    /**
+     * Pre-generated event id for server/browser deduplication. When passed,
+     * the client skips its own server-side CAPI POST because the server is
+     * already firing it with the same id.
+     */
+    eventId?: string;
+}
+
 export interface TrackingContextValue {
     config: TrackingConfig | null;
     isLoaded: boolean;
-    trackEvent: (eventName: TrackingEventName, data?: Partial<CustomData>, userData?: Partial<UserData>) => void;
+    trackEvent: (
+        eventName: TrackingEventName,
+        data?: Partial<CustomData>,
+        userData?: Partial<UserData>,
+        options?: TrackEventOptions,
+    ) => void;
 }
 
 // Mapeamento de eventos por plataforma

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 import { getBusinessSettingsServer } from '@/lib/business-config-server'
 import { Button } from '@/components/ui/button'
+import { FooterContactLinks } from '@/components/landing/footer-contact-links'
 
 async function getFooterData() {
     const supabase = await createClient()
@@ -88,18 +89,10 @@ export async function Footer() {
                     <div className="col-span-1">
                         <h3 className="text-white font-semibold mb-6">Contact</h3>
                         <ul className="space-y-4 text-sm">
-                            <li className="flex gap-3">
-                                <Phone className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <a href={`tel:${config.business_phone || '+18037921351'}`} className="hover:text-white transition-colors">
-                                    {config.business_phone_display || '(803) 792-1351'}
-                                </a>
-                            </li>
-                            <li className="flex gap-3">
-                                <MessageCircle className="w-5 h-5 text-brandy-rose-500 shrink-0" />
-                                <a href={`sms:${config.business_phone || '+18037921351'}`} className="hover:text-white transition-colors">
-                                    Text: {config.business_phone_display || '(803) 792-1351'}
-                                </a>
-                            </li>
+                            <FooterContactLinks
+                                phone={config.business_phone || '+18037921351'}
+                                phoneDisplay={config.business_phone_display || '(803) 792-1351'}
+                            />
                             <li className="flex gap-3">
                                 <Mail className="w-5 h-5 text-brandy-rose-500 shrink-0" />
                                 <span>{config.business_email || 'hello@chesquecleaning.com'}</span>
