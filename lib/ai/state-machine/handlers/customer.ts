@@ -3,6 +3,7 @@
 import type { StateHandler } from '../types'
 import { extractZipFromAddress, getDurationForService } from '../validators'
 import { routeByIntent } from './guardrail'
+import { fireServerConversion } from '@/lib/tracking/server'
 
 const MAX_COLLECTION_RETRIES = 5
 
@@ -255,7 +256,6 @@ export const handleCreateLead: StateHandler = async (_message, context, services
   const clientId = result.client_id
 
   // Fire Lead conversion (Meta CAPI + return eventId for client-side dedup)
-  const { fireServerConversion } = await import('@/lib/tracking/server')
   const conversion = fireServerConversion({
     eventName: 'Lead',
     userData: {

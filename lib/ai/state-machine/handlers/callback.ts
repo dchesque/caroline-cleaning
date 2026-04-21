@@ -1,6 +1,7 @@
 // lib/ai/state-machine/handlers/callback.ts
 
 import type { StateHandler } from '../types'
+import { fireServerConversion } from '@/lib/tracking/server'
 
 /**
  * ASK_CALLBACK_TIME: Ask the user when they'd like to receive a callback.
@@ -74,7 +75,6 @@ export const handleScheduleCallback: StateHandler = async (message, context, ser
     })
 
     // Fire Contact conversion (Meta CAPI + eventId for client dedup)
-    const { fireServerConversion } = await import('@/lib/tracking/server')
     const conversion = fireServerConversion({
       eventName: 'Contact',
       userData: {

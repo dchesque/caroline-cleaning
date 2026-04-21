@@ -2,6 +2,7 @@
 
 import type { StateHandler } from '../types'
 import { isFutureDate, isSunday, getDurationForService } from '../validators'
+import { fireServerConversion } from '@/lib/tracking/server'
 
 const MAX_COLLECTION_RETRIES = 5
 
@@ -511,9 +512,9 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
   })
 
   // Fire Schedule conversion (Meta CAPI + eventId for client dedup)
-  const { fireServerConversion } = await import('@/lib/tracking/server')
   const priceRaw = (result.details as { price?: number | string } | undefined)?.price
-  const priceNum = typeof priceRaw === 'number' ? priceRaw : Number(priceRaw) || 0
+  const priceNum = typeof priceRaw === 'number' ? priceRaw : Number(priceRaw)
+  const hasValidPrice = Number.isFinite(priceNum) && priceNum > 0
   const conversion = fireServerConversion({
     eventName: 'Schedule',
     userData: {
@@ -524,8 +525,7 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
       country: 'us',
     },
     customData: {
-      value: priceNum,
-      currency: 'USD',
+      ...(hasValidPrice ? { value: priceNum, currency: 'USD' } : {}),
       content_name: context.service_type ?? 'cleaning',
       content_category: 'booking',
       order_id: result.appointment_id ?? undefined,
