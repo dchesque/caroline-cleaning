@@ -15,6 +15,13 @@ export default async function PublicLayout({
 }) {
     const settings = await getBusinessSettingsServer()
 
+    // Resolve chat mode server-side from env (no NEXT_PUBLIC_ prefix so it's
+    // not baked into the client bundle — changing the env var + restarting the
+    // server is enough to flip between flows, no rebuild required).
+    // Falls back to the legacy NEXT_PUBLIC_CHAT_MODE for backwards compatibility.
+    const rawMode = process.env.CHAT_MODE ?? process.env.NEXT_PUBLIC_CHAT_MODE ?? 'full'
+    const chatMode = rawMode === 'lead' ? 'lead' : 'full'
+
     // Derive tracking config server-side so pixel scripts mount on first
     // render (avoids client fetch roundtrip delay for Pixel Helper detection).
     // NOTE: access_token is never shipped to the browser — it lives only in
@@ -52,7 +59,7 @@ export default async function PublicLayout({
                         <AnnouncementBar />
                         <Header />
                         {children}
-                        <ChatWidget />
+                        <ChatWidget mode={chatMode} />
                     </div>
                 </BusinessSettingsProvider>
             </TrackingProvider>

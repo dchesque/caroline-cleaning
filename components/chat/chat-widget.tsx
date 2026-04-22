@@ -10,9 +10,9 @@ import { useLeadChat } from '@/hooks/use-lead-chat'
 import { cn } from '@/lib/utils'
 import { useTracking } from '@/components/tracking/tracking-provider'
 
-const CHAT_MODE = process.env.NEXT_PUBLIC_CHAT_MODE ?? 'full'
+export type ChatMode = 'full' | 'lead'
 
-export function ChatWidget() {
+export function ChatWidget({ mode = 'full' }: { mode?: ChatMode } = {}) {
     const [isOpen, setIsOpen] = useState(false)
     const { trackEvent } = useTracking()
 
@@ -23,10 +23,11 @@ export function ChatWidget() {
     })
 
     // Both hooks are always called (React rules forbid conditional hooks).
-    // Only one is wired to the UI based on CHAT_MODE.
+    // Only one is wired to the UI based on the mode prop (resolved server-side
+    // from env var, so changes take effect on restart without rebuilding the bundle).
     const fullChat = useCarolChat()
     const leadChat = useLeadChat()
-    const chat = CHAT_MODE === 'lead' ? leadChat : fullChat
+    const chat = mode === 'lead' ? leadChat : fullChat
 
     const INITIAL_DELAY_MS = 15000 // 15 seconds
     const SECOND_DELAY_MS = 45000 // 45 seconds total
