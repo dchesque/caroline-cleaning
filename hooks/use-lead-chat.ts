@@ -8,6 +8,7 @@ import type { LeadContext } from '@/types/lead-chat'
 import { defaultLeadContext } from '@/types/lead-chat'
 import { useTracking } from '@/components/tracking/tracking-provider'
 import type { TrackingEventName, CustomData, UserData } from '@/lib/tracking/types'
+import { getClientBrowserContext } from '@/lib/tracking/browser-context'
 
 // Marker used to exclude synthetic (client-generated) messages from
 // the history we send to the LLM — they were never part of a real LLM exchange.
@@ -85,6 +86,7 @@ export function useLeadChat() {
             sessionId,
             history: historyForApi,
             context,
+            browserContext: getClientBrowserContext(),
           }),
         })
 

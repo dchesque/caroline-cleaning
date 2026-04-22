@@ -269,6 +269,7 @@ export const handleCreateLead: StateHandler = async (_message, context, services
       content_category: 'lead',
       content_name: 'Carol Chat Lead',
     },
+    browserContext: context.browser_context,
   })
 
   const response = await llm.generate('ask_date', {

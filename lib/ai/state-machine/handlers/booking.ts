@@ -530,6 +530,7 @@ export const handleCreateBooking: StateHandler = async (_message, context, servi
       content_category: 'booking',
       order_id: result.appointment_id ?? undefined,
     },
+    browserContext: context.browser_context,
   })
 
   return {

@@ -1,8 +1,17 @@
 import { z } from 'zod'
 
+export const BrowserContextSchema = z.object({
+    fbc: z.string().max(500).optional(),
+    fbp: z.string().max(500).optional(),
+    userAgent: z.string().max(1000).optional(),
+    eventSourceUrl: z.string().max(2000).optional(),
+    referrer: z.string().max(2000).optional(),
+}).optional()
+
 export const ChatRequestSchema = z.object({
     message: z.string().min(1).max(2000),
     sessionId: z.string().min(1).max(100).optional(),
+    browserContext: BrowserContextSchema,
 })
 
 export const ContactRequestSchema = z.object({

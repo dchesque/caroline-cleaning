@@ -9,6 +9,7 @@ import { CarolServices } from '@/lib/services/carol-services'
 import { CarolLLM, LLMCallRecord } from './llm'
 import { logger } from '@/lib/logger'
 import { env } from '@/lib/env'
+import type { BrowserContext } from '@/lib/tracking/browser-context'
 
 export interface ChatResponse {
     message: string
@@ -42,10 +43,10 @@ export class CarolAgent {
         registerAllHandlers(this.machine)
     }
 
-    async chat(message: string, sessionId: string): Promise<ChatResponse> {
+    async chat(message: string, sessionId: string, browserContext?: BrowserContext): Promise<ChatResponse> {
         logger.info('CarolAgent.chat', { sessionId, messageLength: message.length })
 
-        const result = await this.machine.process(message, sessionId)
+        const result = await this.machine.process(message, sessionId, browserContext)
 
         return {
             message: result.response,

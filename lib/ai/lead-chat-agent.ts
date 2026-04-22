@@ -12,6 +12,7 @@ import { defaultLeadContext } from '@/types/lead-chat'
 import type { LLMCallRecord } from '@/lib/ai/llm'
 import type { ToolCallRecord } from '@/lib/services/chat-logger'
 import { fireServerConversion, type ServerConversionResult } from '@/lib/tracking/server'
+import type { BrowserContext } from '@/lib/tracking/browser-context'
 
 export type { LeadContext }
 export { defaultLeadContext }
@@ -23,6 +24,7 @@ export interface LeadChatRequest {
   sessionId: string
   history: Array<{ role: 'user' | 'assistant'; content: string }>
   context: LeadContext
+  browserContext?: BrowserContext
 }
 
 export interface LeadChatResponse {
@@ -223,7 +225,7 @@ interface SaveLeadResult {
   conversion?: ServerConversionResult
 }
 
-async function saveLead(context: LeadContext, sessionId: string): Promise<SaveLeadResult | null> {
+async function saveLead(context: LeadContext, sessionId: string, browserContext?: BrowserContext): Promise<SaveLeadResult | null> {
   try {
     const supabase = createAdminClient()
     const phone = (context.phone ?? '').replace(/\D/g, '')
@@ -293,6 +295,7 @@ async function saveLead(context: LeadContext, sessionId: string): Promise<SaveLe
         content_category: 'lead',
         content_name: 'Lead Chat',
       },
+      browserContext,
     })
 
     logger.info('[lead-chat] lead saved', { leadId })
@@ -435,7 +438,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
         }
 
         const toolStart = Date.now()
-        const result = await saveLead(updatedContext, req.sessionId)
+        const result = await saveLead(updatedContext, req.sessionId, req.browserContext)
         const toolDuration = Date.now() - toolStart
 
         toolCalls.push({

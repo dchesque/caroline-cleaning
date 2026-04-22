@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid'
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rate-limit'
 import { ChatRequestSchema, parseJson } from '@/lib/validation/schemas'
 import type { ChatResponse } from '@/lib/ai/carol-agent'
+import type { BrowserContext } from '@/lib/tracking/browser-context'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,7 +58,14 @@ export async function POST(req: NextRequest) {
     if (!parsed.ok) {
         return NextResponse.json({ error: parsed.error }, { status: parsed.status })
     }
-    const { message, sessionId } = parsed.data
+    const { message, sessionId, browserContext: clientBrowserContext } = parsed.data
+
+    const browserContext: BrowserContext = {
+        ...(clientBrowserContext ?? {}),
+        clientIp: ip,
+        userAgent: clientBrowserContext?.userAgent || req.headers.get('user-agent') || undefined,
+        referrer: clientBrowserContext?.referrer || req.headers.get('referer') || undefined,
+    }
 
     try {
         // Garantir session_id
@@ -86,7 +94,7 @@ export async function POST(req: NextRequest) {
         const CHAT_TIMEOUT = 60_000; // 60 seconds
 
         const response: ChatResponse = await Promise.race([
-          carol.chat(message, currentSessionId),
+          carol.chat(message, currentSessionId, browserContext),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('Chat processing timeout')), CHAT_TIMEOUT)
           ),

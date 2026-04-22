@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid'
 import type { ChatMessage, ChatResponse } from '@/types/carol'
 import { useTracking } from '@/components/tracking/tracking-provider'
 import type { TrackingEventName, CustomData, UserData } from '@/lib/tracking/types'
+import { getClientBrowserContext } from '@/lib/tracking/browser-context'
 
 interface UseCarolChatReturn {
     messages: ChatMessage[]
@@ -72,7 +73,8 @@ export function useCarolChat(): UseCarolChatReturn {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: content.trim(),
-                    sessionId: sessionId
+                    sessionId: sessionId,
+                    browserContext: getClientBrowserContext(),
                 })
             })
 

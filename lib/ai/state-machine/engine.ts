@@ -5,6 +5,7 @@ import { CarolState, SessionContext, HandlerResult, StateHandler } from './types
 import { CarolServices } from '@/lib/services/carol-services'
 import { CarolLLM, LLMCallRecord } from '../llm'
 import { logger } from '@/lib/logger'
+import type { BrowserContext } from '@/lib/tracking/browser-context'
 
 export interface ProcessingMetrics {
   llmCalls: LLMCallRecord[]
@@ -93,6 +94,7 @@ export class CarolStateMachine {
   async process(
     message: string,
     sessionId: string,
+    browserContext?: BrowserContext,
   ): Promise<{
     response: string
     state: CarolState
@@ -121,6 +123,21 @@ export class CarolStateMachine {
     // If there is no state yet, initialise with defaults
     if (!context.state) {
       context = this.initializeContext()
+    }
+
+    // Merge incoming browser context (from request) on top of whatever was
+    // persisted from previous turns. Client won't always resend (e.g. fbc only
+    // available on the first visit), so the stored values act as fallback.
+    if (browserContext) {
+      const prev = (context.browser_context as BrowserContext | undefined) || {}
+      context.browser_context = {
+        fbc: browserContext.fbc || prev.fbc,
+        fbp: browserContext.fbp || prev.fbp,
+        clientIp: browserContext.clientIp || prev.clientIp,
+        userAgent: browserContext.userAgent || prev.userAgent,
+        eventSourceUrl: browserContext.eventSourceUrl || prev.eventSourceUrl,
+        referrer: browserContext.referrer || prev.referrer,
+      }
     }
 
     let currentState = validateState(context.state, sessionId)

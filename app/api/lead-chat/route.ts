@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { nanoid } from 'nanoid'
 import { processLeadMessage, defaultLeadContext } from '@/lib/ai/lead-chat-agent'
-import { parseJson } from '@/lib/validation/schemas'
+import { parseJson, BrowserContextSchema } from '@/lib/validation/schemas'
+import { getClientIp } from '@/lib/rate-limit'
+import type { BrowserContext } from '@/lib/tracking/browser-context'
 import { logger } from '@/lib/logger'
 import { chatLogger } from '@/lib/services/chat-logger'
 
@@ -30,6 +32,7 @@ const LeadChatRequestSchema = z.object({
       leadId: z.string().nullable().optional(),
     })
     .optional(),
+  browserContext: BrowserContextSchema,
 })
 
 export async function POST(req: NextRequest) {
@@ -42,11 +45,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error }, { status: parsed.status })
   }
 
-  const { message, sessionId, history, context: rawContext } = parsed.data
+  const { message, sessionId, history, context: rawContext, browserContext: clientBrowserContext } = parsed.data
   const sessionIdFinal = sessionId ?? nanoid(16)
 
   // Merge incoming context with defaults (client may send partial or nothing)
   const context = { ...defaultLeadContext(), ...rawContext }
+
+  // Merge client-sent browser context with server-known IP + UA fallback.
+  // Server headers are authoritative for IP; client UA is trusted over nothing.
+  const browserContext: BrowserContext = {
+    ...(clientBrowserContext ?? {}),
+    clientIp: getClientIp(req),
+    userAgent: clientBrowserContext?.userAgent || req.headers.get('user-agent') || undefined,
+    referrer: clientBrowserContext?.referrer || req.headers.get('referer') || undefined,
+  }
 
   try {
     const startTime = Date.now()
@@ -56,6 +68,7 @@ export async function POST(req: NextRequest) {
       sessionId: sessionIdFinal,
       history: history ?? [],
       context,
+      browserContext,
     })
 
     const duration = Date.now() - startTime

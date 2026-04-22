@@ -86,6 +86,7 @@ export const handleScheduleCallback: StateHandler = async (message, context, ser
         content_name: 'Callback Requested',
         content_category: 'callback',
       },
+      browserContext: context.browser_context,
     })
 
     return {

@@ -74,6 +74,7 @@ const navigation: NavigationItem[] = [
     // Communication
     { key: 'messages',   href: '/admin/mensagens',  icon: MessageSquare, dividerBefore: true },
     { key: 'chatLogs',   href: '/admin/chat-logs',  icon: Bot },
+    { key: 'trackingEvents', href: '/admin/tracking/events', icon: BarChart3 },
 
     // Team & Analytics
     { key: 'team',       href: '/admin/equipe',     icon: Users2,        dividerBefore: true },

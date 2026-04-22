@@ -30,6 +30,19 @@ interface MetaSettings {
     testEventCode: string
 }
 
+interface MetaSendResult {
+    ok: boolean
+    status: number
+    fbtraceId: string | null
+    errorMessage: string | null
+    responseBody: unknown
+    attempts: number
+}
+
+const RETRIABLE_STATUS = new Set([408, 429, 500, 502, 503, 504])
+const MAX_RETRIES = 1
+const RETRY_DELAY_MS = 500
+
 async function loadMetaSettings(): Promise<MetaSettings> {
     const supabase = createAdminClient()
     const { data: configs } = await supabase
@@ -85,15 +98,23 @@ function buildHashedUserData(userData: UserData | undefined, clientIp: string, u
     if (userData?.external_id) hashed.external_id = [hashData(userData.external_id)]
     if (userData?.fbc) hashed.fbc = userData.fbc
     if (userData?.fbp) hashed.fbp = userData.fbp
-    hashed.client_ip_address = clientIp
-    hashed.client_user_agent = userAgent
+    if (clientIp && clientIp !== '0.0.0.0') hashed.client_ip_address = clientIp
+    if (userAgent) hashed.client_user_agent = userAgent
     return hashed
 }
 
-async function sendToMeta(event: MetaCapiEventInput, cfg: MetaSettings): Promise<boolean> {
-    const clientIp = event.clientIp || '0.0.0.0'
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function sendToMeta(event: MetaCapiEventInput, cfg: MetaSettings): Promise<MetaSendResult> {
+    const clientIp = event.clientIp || ''
     const userAgent = event.userAgent || ''
     const hashedUserData = buildHashedUserData(event.userData, clientIp, userAgent)
+
+    // Empty strings in DB must not leak into the payload — Meta treats any
+    // truthy test_event_code as "route to Test Events tab".
+    const testCode = cfg.testEventCode?.trim() || ''
 
     const metaPayload = {
         data: [
@@ -107,38 +128,108 @@ async function sendToMeta(event: MetaCapiEventInput, cfg: MetaSettings): Promise
                 custom_data: event.customData || {},
             },
         ],
-        ...(cfg.testEventCode && { test_event_code: cfg.testEventCode }),
+        ...(testCode ? { test_event_code: testCode } : {}),
     }
 
-    const url = `https://graph.facebook.com/v18.0/${cfg.pixelId}/events?access_token=${cfg.accessToken}`
+    // Pixel IDs arrive via JSONB and can be number or string — coerce to be
+    // safe. Access token is trimmed defensively.
+    const pixelId = String(cfg.pixelId).trim()
+    const accessToken = cfg.accessToken.trim()
+    const url = `https://graph.facebook.com/v18.0/${encodeURIComponent(pixelId)}/events?access_token=${encodeURIComponent(accessToken)}`
 
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(metaPayload),
-        })
+    let attempts = 0
+    let lastResult: MetaSendResult = {
+        ok: false,
+        status: 0,
+        fbtraceId: null,
+        errorMessage: 'no attempt',
+        responseBody: null,
+        attempts: 0,
+    }
 
-        if (!response.ok) {
-            const body = await response.json().catch(() => ({}))
-            logger.error('Meta CAPI Error', {
+    while (attempts <= MAX_RETRIES) {
+        attempts += 1
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(metaPayload),
+            })
+
+            const responseBody = await response.json().catch(() => null)
+            const fbtraceId =
+                (responseBody && typeof responseBody === 'object' && 'fbtrace_id' in responseBody
+                    ? String((responseBody as { fbtrace_id?: unknown }).fbtrace_id ?? '')
+                    : '') || null
+
+            if (response.ok) {
+                return {
+                    ok: true,
+                    status: response.status,
+                    fbtraceId,
+                    errorMessage: null,
+                    responseBody,
+                    attempts,
+                }
+            }
+
+            const errObj =
+                responseBody && typeof responseBody === 'object' && 'error' in responseBody
+                    ? (responseBody as { error?: { type?: string; message?: string; code?: number } }).error
+                    : undefined
+            const errorMessage = errObj?.message || `HTTP ${response.status}`
+
+            lastResult = {
+                ok: false,
                 status: response.status,
-                errorType: body?.error?.type,
-                errorMessage: body?.error?.message,
+                fbtraceId,
+                errorMessage,
+                responseBody,
+                attempts,
+            }
+
+            logger.error('Meta CAPI Error', {
+                attempt: attempts,
+                status: response.status,
+                fbtrace_id: fbtraceId,
+                errorType: errObj?.type,
+                errorCode: errObj?.code,
+                errorMessage,
                 eventName: event.eventName,
                 eventId: event.eventId,
             })
-            return false
+
+            // Retry only on transient errors; auth/validation errors are terminal.
+            if (attempts <= MAX_RETRIES && RETRIABLE_STATUS.has(response.status)) {
+                await sleep(RETRY_DELAY_MS)
+                continue
+            }
+            return lastResult
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : String(err)
+            lastResult = {
+                ok: false,
+                status: 0,
+                fbtraceId: null,
+                errorMessage,
+                responseBody: null,
+                attempts,
+            }
+            logger.error('Meta CAPI Exception', {
+                attempt: attempts,
+                error: errorMessage,
+                eventName: event.eventName,
+                eventId: event.eventId,
+            })
+            if (attempts <= MAX_RETRIES) {
+                await sleep(RETRY_DELAY_MS)
+                continue
+            }
+            return lastResult
         }
-        return true
-    } catch (err) {
-        logger.error('Meta CAPI Exception', {
-            error: err instanceof Error ? err.message : String(err),
-            eventName: event.eventName,
-            eventId: event.eventId,
-        })
-        return false
     }
+
+    return lastResult
 }
 
 function hashIp(ip: string): string {
@@ -152,9 +243,25 @@ function hashIp(ip: string): string {
 export async function recordTrackingEvent(event: MetaCapiEventInput): Promise<{ metaSent: boolean }> {
     const cfg = await loadMetaSettings()
 
-    let metaSent = false
-    if (cfg.metaEnabled && cfg.metaCapiEnabled && cfg.pixelId && cfg.accessToken) {
-        metaSent = await sendToMeta(event, cfg)
+    let metaResult: MetaSendResult = {
+        ok: false,
+        status: 0,
+        fbtraceId: null,
+        errorMessage: null,
+        responseBody: null,
+        attempts: 0,
+    }
+    let skippedReason: string | null = null
+
+    if (!cfg.metaEnabled) skippedReason = 'tracking_meta_enabled=false'
+    else if (!cfg.metaCapiEnabled) skippedReason = 'tracking_meta_capi_enabled=false'
+    else if (!cfg.pixelId) skippedReason = 'missing pixel_id'
+    else if (!cfg.accessToken) skippedReason = 'missing access_token'
+
+    if (!skippedReason) {
+        metaResult = await sendToMeta(event, cfg)
+    } else {
+        metaResult.errorMessage = `skipped: ${skippedReason}`
     }
 
     const supabase = createAdminClient()
@@ -174,7 +281,13 @@ export async function recordTrackingEvent(event: MetaCapiEventInput): Promise<{ 
                 custom_data: event.customData || {},
                 page_url: event.eventSourceUrl || event.referrer || null,
                 referrer: event.referrer || null,
-                sent_to_meta: metaSent,
+                sent_to_meta: metaResult.ok,
+                meta_http_status: metaResult.status || null,
+                meta_fbtrace_id: metaResult.fbtraceId,
+                meta_error: metaResult.errorMessage,
+                meta_response: metaResult.responseBody as object | null,
+                meta_attempts: metaResult.attempts,
+                updated_at: new Date().toISOString(),
             },
             { onConflict: 'event_id', ignoreDuplicates: false }
         )
@@ -187,5 +300,5 @@ export async function recordTrackingEvent(event: MetaCapiEventInput): Promise<{ 
         })
     }
 
-    return { metaSent }
+    return { metaSent: metaResult.ok }
 }
