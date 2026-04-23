@@ -140,7 +140,7 @@ export function BeforeAfterTable({
                                     {item.imagem_antes ? (
                                         <img
                                             src={item.imagem_antes}
-                                            alt="antes"
+                                            alt={`${item.titulo} — ${ba.columnBefore}`}
                                             className="w-16 h-16 object-cover rounded"
                                         />
                                     ) : (
@@ -153,7 +153,7 @@ export function BeforeAfterTable({
                                     {item.imagem_depois ? (
                                         <img
                                             src={item.imagem_depois}
-                                            alt="depois"
+                                            alt={`${item.titulo} — ${ba.columnAfter}`}
                                             className="w-16 h-16 object-cover rounded"
                                         />
                                     ) : (

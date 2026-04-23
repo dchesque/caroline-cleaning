@@ -1605,6 +1605,8 @@ export const translations = {
             columnActive: 'Ativo',
             columnActions: 'Ações',
             storageCleanupWarning: 'Item excluído, mas a limpeza do storage falhou.',
+            invalidFileType: 'Tipo de arquivo inválido. Use JPEG, PNG ou WebP.',
+            fileTooLarge: 'Arquivo muito grande. Máximo 5 MB.',
         },
     },
     'en-US': {
@@ -3105,6 +3107,8 @@ export const translations = {
             columnActive: 'Active',
             columnActions: 'Actions',
             storageCleanupWarning: 'Item deleted, but storage cleanup failed.',
+            invalidFileType: 'Invalid file type. Use JPEG, PNG or WebP.',
+            fileTooLarge: 'File too large. Max 5 MB.',
         },
     },
 };

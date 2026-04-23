@@ -74,11 +74,11 @@ export function BeforeAfterModal({
 
     function validateFile(file: File): boolean {
         if (!ALLOWED_TYPES.includes(file.type)) {
-            toast.error('Tipo de arquivo inválido. Use JPEG, PNG ou WebP.')
+            toast.error(ba.invalidFileType)
             return false
         }
         if (file.size > MAX_SIZE) {
-            toast.error('Arquivo muito grande. Máximo 5 MB.')
+            toast.error(ba.fileTooLarge)
             return false
         }
         return true
