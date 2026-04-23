@@ -116,8 +116,8 @@ export function BeforeAfterModal({
     }
 
     async function handleSave() {
-        if (!titulo.trim()) {
-            toast.error(ba.fieldTitle + ' é obrigatório.')
+        if (!titulo.trim() || !imgAntes || !imgDepois) {
+            toast.error(ba.saveError)
             return
         }
 
@@ -169,6 +169,7 @@ export function BeforeAfterModal({
                             id="ba-titulo"
                             value={titulo}
                             onChange={(e) => setTitulo(e.target.value)}
+                            maxLength={120}
                             className={inputClasses}
                         />
                     </div>
