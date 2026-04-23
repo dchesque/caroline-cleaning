@@ -4,11 +4,12 @@ import type { BeforeAfterItem } from '@/types/before-after';
 
 export async function BeforeAfter() {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('before_after')
     .select('*')
     .eq('ativo', true)
     .order('ordem', { ascending: true });
+  if (error) console.error('[BeforeAfter] fetch error', error);
 
   const items = (data ?? []) as BeforeAfterItem[];
   if (items.length === 0) return null;

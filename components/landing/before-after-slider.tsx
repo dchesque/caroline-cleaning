@@ -34,6 +34,7 @@ export function BeforeAfterSlider({ antes, depois, titulo }: {
   return (
     <div
       ref={ref}
+      data-slider
       className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-neutral-100 select-none touch-none"
       onPointerDown={onDown}
       onPointerMove={onMove}

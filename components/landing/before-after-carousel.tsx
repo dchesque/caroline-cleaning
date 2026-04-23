@@ -6,7 +6,14 @@ import { BeforeAfterSlider } from './before-after-slider';
 import type { BeforeAfterItem } from '@/types/before-after';
 
 export function BeforeAfterCarousel({ items }: { items: BeforeAfterItem[] }) {
-  const [emblaRef, embla] = useEmblaCarousel({ align: 'start', loop: false });
+  const [emblaRef, embla] = useEmblaCarousel({
+    align: 'start',
+    loop: false,
+    watchDrag: (_api, evt) => {
+      const target = evt.target as Element | null;
+      return !target?.closest('[data-slider]');
+    },
+  });
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const [selected, setSelected] = useState(0);
@@ -25,6 +32,10 @@ export function BeforeAfterCarousel({ items }: { items: BeforeAfterItem[] }) {
     onSelect();
     embla.on('select', onSelect);
     embla.on('reInit', onSelect);
+    return () => {
+      embla.off('select', onSelect);
+      embla.off('reInit', onSelect);
+    };
   }, [embla, onSelect]);
 
   return (
@@ -32,7 +43,7 @@ export function BeforeAfterCarousel({ items }: { items: BeforeAfterItem[] }) {
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex gap-4">
           {items.map(it => (
-            <div key={it.id} className="min-w-0 shrink-0 grow-0 basis-full md:basis-2/3 lg:basis-1/2">
+            <div key={it.id} className="min-w-0 shrink-0 grow-0 basis-full md:basis-[62%] lg:basis-1/2">
               <BeforeAfterSlider antes={it.imagem_antes} depois={it.imagem_depois} titulo={it.titulo} />
               <h3 className="mt-3 text-lg font-semibold">{it.titulo}</h3>
             </div>
