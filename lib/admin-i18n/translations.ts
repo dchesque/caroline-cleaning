@@ -1604,6 +1604,7 @@ export const translations = {
             columnOrder: 'Ordem',
             columnActive: 'Ativo',
             columnActions: 'Ações',
+            storageCleanupWarning: 'Item excluído, mas a limpeza do storage falhou.',
         },
     },
     'en-US': {
@@ -3103,6 +3104,7 @@ export const translations = {
             columnOrder: 'Order',
             columnActive: 'Active',
             columnActions: 'Actions',
+            storageCleanupWarning: 'Item deleted, but storage cleanup failed.',
         },
     },
 };

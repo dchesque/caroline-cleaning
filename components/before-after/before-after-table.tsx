@@ -87,7 +87,7 @@ export function BeforeAfterTable({
                 }
             } catch (storageErr) {
                 console.warn('Storage cleanup failed (non-fatal):', storageErr)
-                toast.warning('Item excluído, mas a limpeza do storage falhou.')
+                toast.warning(ba.storageCleanupWarning)
             }
 
             toast.success(ba.deleteSuccess)
@@ -168,6 +168,7 @@ export function BeforeAfterTable({
                                     <Switch
                                         checked={item.ativo}
                                         onCheckedChange={() => void handleToggleAtivo(item)}
+                                        aria-label={`${ba.fieldActive}: ${item.titulo}`}
                                     />
                                 </TableCell>
                                 <TableCell>

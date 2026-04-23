@@ -123,7 +123,6 @@ export function BeforeAfterModal({
 
         setSaving(true)
         try {
-            const now = new Date().toISOString()
             const payload = {
                 id,
                 titulo: titulo.trim(),
@@ -131,8 +130,6 @@ export function BeforeAfterModal({
                 ativo,
                 imagem_antes: imgAntes,
                 imagem_depois: imgDepois,
-                updated_at: now,
-                ...(item ? {} : { created_at: now }),
             }
 
             const { error } = await supabase.from('before_after').upsert(payload)
