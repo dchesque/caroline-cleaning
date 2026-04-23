@@ -1,7 +1,7 @@
 -- supabase/migrations/29_before_after.sql
 -- Before/After gallery table + public storage bucket
 
-create table public.before_after (
+create table if not exists public.before_after (
   id            uuid        primary key default gen_random_uuid(),
   titulo        text        not null,
   imagem_antes  text        not null,
@@ -12,10 +12,10 @@ create table public.before_after (
   updated_at    timestamptz not null default now()
 );
 
-create index before_after_active_order_idx
+create index if not exists before_after_active_order_idx
   on public.before_after (ativo, ordem);
 
--- updated_at trigger (reuses function defined in 06_user_profiles.sql)
+-- updated_at trigger (reuses public.update_updated_at_column())
 create trigger before_after_set_updated_at
   before update on public.before_after
   for each row execute function update_updated_at_column();
@@ -23,6 +23,7 @@ create trigger before_after_set_updated_at
 -- RLS
 alter table public.before_after enable row level security;
 
+drop policy if exists "before_after public read active" on public.before_after;
 create policy "before_after public read active"
   on public.before_after for select
   to anon, authenticated
@@ -32,10 +33,17 @@ create policy "before_after public read active"
 grant all on public.before_after to service_role;
 
 -- Storage bucket (public read)
-insert into storage.buckets (id, name, public)
-values ('before-after', 'before-after', true)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'before-after',
+  'before-after',
+  true,
+  5242880,
+  ARRAY['image/jpeg', 'image/png', 'image/webp']
+)
 on conflict (id) do nothing;
 
+drop policy if exists "before_after bucket public read" on storage.objects;
 create policy "before_after bucket public read"
   on storage.objects for select
   to anon, authenticated
