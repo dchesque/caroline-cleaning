@@ -44,6 +44,7 @@ import {
     UserCog,
     Tag,
     Scissors,
+    Images,
     LogOut,
 } from 'lucide-react'
 
@@ -68,6 +69,7 @@ const navigation: NavigationItem[] = [
 
     // Business
     { key: 'services',   href: '/admin/servicos',   icon: Sparkles,      dividerBefore: true },
+    { key: 'beforeAfter', href: '/admin/before-after', icon: Images },
     { key: 'contracts',  href: '/admin/contratos',  icon: FileText },
     { key: 'finance',    href: '/admin/financeiro', icon: DollarSign },
 

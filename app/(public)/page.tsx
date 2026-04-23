@@ -5,6 +5,7 @@ import { Services } from '@/components/landing/services'
 import { Pricing } from '@/components/landing/pricing'
 import { HowItWorks } from '@/components/landing/how-it-works'
 import { AboutUs } from '@/components/landing/about-us'
+import { BeforeAfter } from '@/components/landing/before-after'
 import { Testimonials } from '@/components/landing/testimonials'
 import { FAQ } from '@/components/landing/faq'
 import { CTASection } from '@/components/landing/cta-section'
@@ -23,6 +24,7 @@ export default function HomePage() {
                 <HowItWorks />
                 <WhatsIncluded />
                 <AboutUs />
+                <BeforeAfter />
                 <Testimonials />
                 <FAQ />
                 <CTASection />
