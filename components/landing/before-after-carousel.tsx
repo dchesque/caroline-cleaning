@@ -1,76 +1,115 @@
 'use client';
-import useEmblaCarousel from 'embla-carousel-react';
 import { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { BeforeAfterSlider } from './before-after-slider';
+import { BeforeAfterHover } from './before-after-hover';
 import type { BeforeAfterItem } from '@/types/before-after';
 
-export function BeforeAfterCarousel({ items }: { items: BeforeAfterItem[] }) {
-  const [emblaRef, embla] = useEmblaCarousel({
-    align: 'start',
-    loop: false,
-    watchDrag: (_api, evt) => {
-      const target = evt.target as Element | null;
-      return !target?.closest('[data-slider]');
-    },
-  });
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(false);
-  const [selected, setSelected] = useState(0);
-  const [snaps, setSnaps] = useState<number[]>([]);
+type DisplayMode = 'slider' | 'hover';
 
-  const onSelect = useCallback(() => {
-    if (!embla) return;
-    setCanPrev(embla.canScrollPrev());
-    setCanNext(embla.canScrollNext());
-    setSelected(embla.selectedScrollSnap());
-  }, [embla]);
+interface Props {
+  items: BeforeAfterItem[];
+  displayMode: DisplayMode;
+  statCount: number;
+  statRegion: string;
+}
+
+export function BeforeAfterCarousel({ items, displayMode, statCount, statRegion }: Props) {
+  const [index, setIndex] = useState(0);
+  const total = items.length;
+  const canPrev = index > 0;
+  const canNext = index < total - 1;
+  const showNav = total > 1;
+  const current = items[index];
+
+  const goPrev = useCallback(() => setIndex(i => Math.max(0, i - 1)), []);
+  const goNext = useCallback(() => setIndex(i => Math.min(total - 1, i + 1)), [total]);
 
   useEffect(() => {
-    if (!embla) return;
-    setSnaps(embla.scrollSnapList());
-    onSelect();
-    embla.on('select', onSelect);
-    embla.on('reInit', onSelect);
-    return () => {
-      embla.off('select', onSelect);
-      embla.off('reInit', onSelect);
-    };
-  }, [embla, onSelect]);
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'ArrowLeft') goPrev();
+      else if (e.key === 'ArrowRight') goNext();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [goPrev, goNext]);
+
+  const Card = displayMode === 'hover' ? BeforeAfterHover : BeforeAfterSlider;
 
   return (
-    <div className="relative">
-      <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex gap-4">
-          {items.map(it => (
-            <div key={it.id} className="min-w-0 shrink-0 grow-0 basis-full md:basis-[62%] lg:basis-1/2">
-              <BeforeAfterSlider antes={it.imagem_antes} depois={it.imagem_depois} titulo={it.titulo} />
-              <h3 className="mt-3 text-lg font-semibold">{it.titulo}</h3>
-            </div>
-          ))}
-        </div>
+    <div className="mx-auto max-w-3xl">
+      {/* Card area */}
+      <div className="relative">
+        <Card
+          antes={current.imagem_antes}
+          depois={current.imagem_depois}
+          titulo={current.titulo}
+          tipoServico={current.tipo_servico}
+          cidade={current.cidade}
+        />
+
+        {showNav && (
+          <>
+            <button
+              type="button"
+              aria-label="Previous result"
+              onClick={goPrev}
+              disabled={!canPrev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white/90 shadow-md hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next result"
+              onClick={goNext}
+              disabled={!canNext}
+              className="absolute right-2 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white/90 shadow-md hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </>
+        )}
       </div>
 
-      <button
-        aria-label="Previous"
-        className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:grid h-10 w-10 place-items-center rounded-full bg-white shadow disabled:opacity-40"
-        onClick={() => embla?.scrollPrev()} disabled={!canPrev}>
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-      <button
-        aria-label="Next"
-        className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 hidden md:grid h-10 w-10 place-items-center rounded-full bg-white shadow disabled:opacity-40"
-        onClick={() => embla?.scrollNext()} disabled={!canNext}>
-        <ChevronRight className="h-5 w-5" />
-      </button>
+      {/* Thumb strip */}
+      {showNav && (
+        <div className="mt-6 flex justify-center gap-3 overflow-x-auto pb-1">
+          {items.map((it, i) => (
+            <button
+              key={it.id}
+              type="button"
+              aria-label={`Show ${it.titulo}`}
+              onClick={() => setIndex(i)}
+              className={`relative shrink-0 overflow-hidden rounded-md transition ${
+                i === index
+                  ? 'ring-2 ring-brandy-rose-500 opacity-100'
+                  : 'opacity-60 hover:opacity-100'
+              }`}
+            >
+              <img
+                src={it.imagem_depois}
+                alt={`${it.titulo} thumbnail`}
+                className="h-16 w-16 object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="mt-6 flex justify-center gap-2">
-        {snaps.map((_, i) => (
-          <button key={i}
-                  aria-label={`Go to slide ${i + 1}`}
-                  onClick={() => embla?.scrollTo(i)}
-                  className={`h-2 rounded-full transition-all ${i === selected ? 'w-6 bg-brandy-rose-500' : 'w-2 bg-neutral-300'}`} />
-        ))}
+      {/* Closing block */}
+      <div className="mt-12 text-center">
+        <p className="text-2xl md:text-3xl font-heading text-foreground">
+          {statCount}+ homes transformed in {statRegion}
+        </p>
+        <a
+          href="#contact"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-brandy-rose-500 px-6 py-3 text-sm font-medium text-white shadow hover:bg-brandy-rose-600 transition-colors"
+        >
+          Book yours <span aria-hidden>→</span>
+        </a>
       </div>
     </div>
   );
