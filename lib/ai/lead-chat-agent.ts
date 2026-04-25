@@ -101,9 +101,14 @@ function buildSystemPrompt(context: LeadContext): string {
   const stuckField = nextField && context.attempts[nextField.key as 'name' | 'phone' | 'zip' | 'address'] >= 3
     ? nextField.label
     : null
-  const giveUpField = nextField && context.attempts[nextField.key as 'name' | 'phone' | 'zip' | 'address'] >= 5
-    ? nextField.label
-    : null
+  // Phone is excluded from giveUp: the fallback message itself asks for a phone,
+  // so triggering it while stuck on phone produces a confused loop.
+  const giveUpField =
+    nextField &&
+    nextField.key !== 'phone' &&
+    context.attempts[nextField.key as 'name' | 'zip' | 'address'] >= 5
+      ? nextField.label
+      : null
 
   return `You are Carol, virtual assistant for Chesque Premium Cleaning.
 
@@ -121,7 +126,7 @@ Explain (once, near the start) that the service is fully personalized and a team
 - Acknowledge what the customer just said before asking the next question. Example: "Nice to meet you, John! What's the best phone to reach you?" — never just "What's your phone?".
 - Ask for ONE piece of information at a time. Never ask for multiple fields in the same message.
 - Look at your last 2 replies. Never repeat the same phrasing or sentence structure twice in a row. If you need to ask the same field again, rephrase completely and acknowledge the difficulty ("Sorry, I didn't catch that — could you share it again?").
-- Before calling save_lead, confirm all collected info naturally — it does NOT need to be a formal list. Something like "Just to make sure I got it right: John Smith, 704-555-1234, ZIP 28202, address 123 Main St — all good?" works, but vary the phrasing each conversation.
+- Before calling save_lead, confirm all collected info naturally. It does NOT need to be a formal list. Something like "Just to make sure I got it right: John Smith, 704-555-1234, ZIP 28202, address 123 Main St. All good?" works, but vary the phrasing each conversation.
 - NEVER say goodbye, "we'll be in touch", "talk soon", or thank-you-for-your-info BEFORE you have called save_lead and received confirmation. Saying these without saving is the worst failure mode.
 
 ## Service area (handled by the system, not by you)
@@ -164,7 +169,7 @@ ${context.offTopicCount >= 3 ? `\n## Off-topic fallback\nThe customer has been o
 function buildPostSavePrompt(context: LeadContext): string {
   const firstName = context.name?.split(' ')[0] ?? 'there'
   return `You are Carol, virtual assistant for Chesque Premium Cleaning.
-The customer's information has already been saved. Name: ${context.name ?? 'unknown'}, ZIP: ${context.zip ?? 'unknown'}.
+The customer's information has already been saved. Name: ${context.name ?? 'unknown'}, ZIP: ${context.zip ?? 'unknown'}, address: ${context.address ?? 'unknown'}.
 Your only job: respond warmly and briefly (1 sentence, max 2) to whatever they say.
 If they say goodbye or thanks, say goodbye warmly by first name (${firstName}) and remind them the team will be in touch.
 Do NOT ask for any information. Do NOT mention tools or saving. No em-dashes. 1-2 emojis max.`
@@ -251,7 +256,14 @@ function pickRandom<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-const SHORT_CONFIRMATIONS = new Set(['yes', 'no', 'ok', 'okay', 'sure', 'yep', 'nope', 'thanks', 'thank you', 'cool'])
+const SHORT_CONFIRMATIONS = new Set([
+  'yes', 'yeah', 'yep', 'yup', 'no', 'nope', 'nah',
+  'ok', 'okay', 'sure', 'cool', 'right', 'correct',
+  'thanks', 'thank you', 'thx', 'ty',
+  "that's right", "that is right", "that's correct", "sounds good", "looks good",
+])
+
+const CONFIRMATION_PREFIXES = ['yes ', 'yeah ', 'yep ', 'sure ', 'ok ', 'okay ', 'no ', 'nope ']
 
 function isLikelyOffTopic(
   userMessage: string,
@@ -262,6 +274,7 @@ function isLikelyOffTopic(
   if (Object.keys(extracted).length > 0) return false
   const trimmed = userMessage.trim().toLowerCase()
   if (SHORT_CONFIRMATIONS.has(trimmed)) return false
+  if (CONFIRMATION_PREFIXES.some((p) => trimmed.startsWith(p))) return false
   if (/^\d+$/.test(trimmed) && trimmed.length < 12) return false // mid-typing phone
   return true
 }
@@ -320,12 +333,31 @@ function reconcileToolArgs(
   return reconciled
 }
 
-function incrementAttempts(after: LeadContext): LeadContext['attempts'] {
+type AttemptKey = keyof LeadContext['attempts']
+
+function nextFieldKey(ctx: LeadContext): AttemptKey | null {
+  if (!ctx.name) return 'name'
+  if (!ctx.phone) return 'phone'
+  if (!ctx.zipConfirmed) return 'zip'
+  if (!ctx.address) return 'address'
+  return null
+}
+
+// Bumps the counter for the field Carol was asking about this turn — only if
+// the customer's reply did not satisfy that field. Other counters stay put so
+// off-topic / parallel turns don't inflate "stuck" detection.
+function incrementAttempts(
+  before: LeadContext,
+  after: LeadContext,
+  askedField: AttemptKey | null,
+): LeadContext['attempts'] {
+  if (!askedField) return after.attempts
+  const stillMissing =
+    askedField === 'zip' ? !after.zipConfirmed : !after[askedField]
+  if (!stillMissing) return after.attempts
   return {
-    name:    after.name           ? after.attempts.name    : after.attempts.name + 1,
-    phone:   after.phone          ? after.attempts.phone   : after.attempts.phone + 1,
-    zip:     after.zipConfirmed   ? after.attempts.zip     : after.attempts.zip + 1,
-    address: after.address        ? after.attempts.address : after.attempts.address + 1,
+    ...before.attempts,
+    [askedField]: before.attempts[askedField] + 1,
   }
 }
 
@@ -376,16 +408,35 @@ async function saveLead(context: LeadContext, sessionId: string, browserContext?
       return null
     }
 
-    // Duplicate check by phone
+    // Duplicate check by phone — and upgrade prior 'lead_incomplete' rows.
     const { data: existing } = await supabase
       .from('clientes')
-      .select('id')
+      .select('id, status')
       .eq('telefone', phone)
       .maybeSingle()
 
     if (existing) {
-      logger.info('[lead-chat] duplicate lead by phone', { phone })
-      return { id: existing.id as string, isNew: false }
+      const existingId = (existing as { id: string; status: string | null }).id
+      const existingStatus = (existing as { id: string; status: string | null }).status
+      if (existingStatus === 'lead_incomplete') {
+        const { error: updateError } = await supabase
+          .from('clientes')
+          .update({
+            nome: context.name,
+            zip_code: context.zip,
+            endereco_completo: context.address.trim(),
+            status: 'lead',
+          })
+          .eq('id', existingId)
+        if (updateError) {
+          logger.error('[lead-chat] failed to upgrade lead_incomplete', { error: updateError.message })
+        } else {
+          logger.info('[lead-chat] upgraded lead_incomplete → lead', { id: existingId })
+        }
+      } else {
+        logger.info('[lead-chat] duplicate lead by phone', { phone })
+      }
+      return { id: existingId, isNew: false }
     }
 
     const { data, error } = await supabase
@@ -548,6 +599,10 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
   // Build message array (cap history at last 30 messages)
   const recentHistory = req.history.slice(-30)
 
+  // Capture which field Carol was asking about BEFORE this turn's extraction.
+  // We only count the attempt against that specific field below.
+  const askedField = nextFieldKey(req.context)
+
   // Extract any fields the customer just provided. ZIP is validated against
   // our service area inline so we can react before involving the LLM.
   const { updates: extracted, zipRejected } = await extractPartialContext(
@@ -577,7 +632,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
     }
   }
 
-  updatedContext.attempts = incrementAttempts(updatedContext)
+  updatedContext.attempts = incrementAttempts(req.context, updatedContext, askedField)
 
   // Fallback: 5+ attempts on the same field with at least name+phone collected.
   const maxAttempts = Math.max(
@@ -833,3 +888,5 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
 export const extractPartialContextForTest = extractPartialContext
 export const looksLikeFalsePromiseForTest = looksLikeFalsePromise
 export const isLikelyOffTopicForTest = isLikelyOffTopic
+export const incrementAttemptsForTest = incrementAttempts
+export const nextFieldKeyForTest = nextFieldKey
