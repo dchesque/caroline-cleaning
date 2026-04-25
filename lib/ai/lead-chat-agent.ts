@@ -155,7 +155,8 @@ After 3 off-topic messages in a row, the system will switch you into a "have som
 ${collected.length > 0 ? `Already collected — ${collected.join(', ')}.` : 'No data collected yet.'}
 ${nextField ? `Next field to collect: ${nextField.label}.` : 'All fields collected. Confirm naturally with the customer, then call save_lead.'}
 ${stuckField ? `\n## Heads up\nYou've already asked for ${stuckField} more than once. Apologize briefly and rephrase very simply (e.g., "Sorry, I'm having trouble — could you just type your ${stuckField}?").` : ''}
-${giveUpField ? `\n## Fallback\nYou've asked for ${giveUpField} 5 times without success. Stop trying. Say warmly: "Let me have someone from our team give you a call instead. What's the best phone number to reach you?" If we already have a phone (${context.phone ?? 'not yet collected'}), say goodbye and let them know the team will call soon. The system will save what we have.` : ''}`
+${giveUpField ? `\n## Fallback\nYou've asked for ${giveUpField} 5 times without success. Stop trying. Say warmly: "Let me have someone from our team give you a call instead. What's the best phone number to reach you?" If we already have a phone (${context.phone ?? 'not yet collected'}), say goodbye and let them know the team will call soon. The system will save what we have.` : ''}
+${context.offTopicCount >= 3 ? `\n## Off-topic fallback\nThe customer has been off-topic for 3 messages. Stop trying to redirect to fields. Say warmly: "I see you have other questions — let me have someone from our team give you a call to chat directly. What's the best phone number to reach you?" Once you have a phone, save what we have and say goodbye.` : ''}`
 }
 
 // ─── Post-save system prompt ──────────────────────────────────────────────────
@@ -248,6 +249,21 @@ function sanitizeResponse(text: string): string {
 
 function pickRandom<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
+}
+
+const SHORT_CONFIRMATIONS = new Set(['yes', 'no', 'ok', 'okay', 'sure', 'yep', 'nope', 'thanks', 'thank you', 'cool'])
+
+function isLikelyOffTopic(
+  userMessage: string,
+  extracted: Partial<LeadContext>,
+  toolCalled: boolean,
+): boolean {
+  if (toolCalled) return false
+  if (Object.keys(extracted).length > 0) return false
+  const trimmed = userMessage.trim().toLowerCase()
+  if (SHORT_CONFIRMATIONS.has(trimmed)) return false
+  if (/^\d+$/.test(trimmed) && trimmed.length < 12) return false // mid-typing phone
+  return true
 }
 
 function incrementAttempts(after: LeadContext): LeadContext['attempts'] {
@@ -662,6 +678,12 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
 
     // Normal text response — extraction already ran before the LLM call.
     const content = choice.message.content ?? ''
+
+    if (isLikelyOffTopic(sanitized, extracted, false)) {
+      updatedContext.offTopicCount = updatedContext.offTopicCount + 1
+    } else {
+      updatedContext.offTopicCount = 0
+    }
 
     return {
       message: sanitizeResponse(content),
