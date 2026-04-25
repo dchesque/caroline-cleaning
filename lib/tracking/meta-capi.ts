@@ -6,7 +6,7 @@
 
 import { createAdminClient } from '@/lib/supabase/server'
 import { hashData, normalizePhone } from '@/lib/tracking/utils'
-import type { UserData, CustomData } from '@/lib/tracking/types'
+import { EVENT_MAPPING, type UserData, type CustomData, type TrackingEventName } from '@/lib/tracking/types'
 import { logger } from '@/lib/logger'
 
 export interface MetaCapiEventInput {
@@ -43,7 +43,26 @@ const RETRIABLE_STATUS = new Set([408, 429, 500, 502, 503, 504])
 const MAX_RETRIES = 1
 const RETRY_DELAY_MS = 500
 
+// Tracking config rarely changes but `recordTrackingEvent` runs on every
+// event. In-memory cache avoids a Supabase round-trip per fire.
+const SETTINGS_TTL_MS = 60_000
+let settingsCache: { value: MetaSettings; expiresAt: number } | null = null
+
+export function clearMetaSettingsCache(): void {
+    settingsCache = null
+}
+
 async function loadMetaSettings(): Promise<MetaSettings> {
+    const now = Date.now()
+    if (settingsCache && settingsCache.expiresAt > now) {
+        return settingsCache.value
+    }
+    const fresh = await fetchMetaSettings()
+    settingsCache = { value: fresh, expiresAt: now + SETTINGS_TTL_MS }
+    return fresh
+}
+
+async function fetchMetaSettings(): Promise<MetaSettings> {
     const supabase = createAdminClient()
     const { data: configs } = await supabase
         .from('configuracoes')
@@ -116,26 +135,50 @@ async function sendToMeta(event: MetaCapiEventInput, cfg: MetaSettings): Promise
     // truthy test_event_code as "route to Test Events tab".
     const testCode = cfg.testEventCode?.trim() || ''
 
-    const metaPayload = {
-        data: [
-            {
-                event_name: event.eventName,
-                event_time: event.eventTime ?? Math.floor(Date.now() / 1000),
-                event_id: event.eventId,
-                event_source_url: event.eventSourceUrl || event.referrer || '',
-                action_source: event.actionSource || 'website',
-                user_data: hashedUserData,
-                custom_data: event.customData || {},
-            },
-        ],
-        ...(testCode ? { test_event_code: testCode } : {}),
+    // Apply Meta-specific event name mapping so server CAPI matches what the
+    // browser Pixel sends (e.g. InitiateChat → InitiateCheckout). Without this,
+    // event_name differs between Pixel and CAPI and Meta double-counts.
+    const mappedEventName =
+        EVENT_MAPPING.meta[event.eventName as TrackingEventName] || event.eventName
+
+    const actionSource = event.actionSource || 'website'
+
+    // Meta requires event_source_url when action_source = "website". Falling
+    // back to '' breaks dedup (Pixel sends real URL) and degrades EMQ.
+    const eventSourceUrl = event.eventSourceUrl || event.referrer || ''
+    if (actionSource === 'website' && !eventSourceUrl) {
+        logger.warn('[meta-capi] missing event_source_url for action_source=website', {
+            eventName: event.eventName,
+            eventId: event.eventId,
+        })
     }
 
     // Pixel IDs arrive via JSONB and can be number or string — coerce to be
     // safe. Access token is trimmed defensively.
     const pixelId = String(cfg.pixelId).trim()
     const accessToken = cfg.accessToken.trim()
-    const url = `https://graph.facebook.com/v18.0/${encodeURIComponent(pixelId)}/events?access_token=${encodeURIComponent(accessToken)}`
+
+    const metaPayload = {
+        data: [
+            {
+                event_name: mappedEventName,
+                event_time: event.eventTime ?? Math.floor(Date.now() / 1000),
+                event_id: event.eventId,
+                // Omit event_source_url entirely when empty — Meta tolerates
+                // absence better than empty string and the warn() above flags
+                // dev-time misconfig for action_source=website.
+                ...(eventSourceUrl ? { event_source_url: eventSourceUrl } : {}),
+                action_source: actionSource,
+                user_data: hashedUserData,
+                custom_data: event.customData || {},
+            },
+        ],
+        ...(testCode ? { test_event_code: testCode } : {}),
+        // access_token in body avoids leakage via URL/proxy/CDN logs.
+        access_token: accessToken,
+    }
+
+    const url = `https://graph.facebook.com/v18.0/${encodeURIComponent(pixelId)}/events`
 
     let attempts = 0
     let lastResult: MetaSendResult = {

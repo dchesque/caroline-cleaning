@@ -7,7 +7,7 @@ import crypto from 'crypto';
  * Gera um event_id único para deduplicação
  */
 export function generateEventId(): string {
-    return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    return `evt_${crypto.randomUUID()}`;
 }
 
 /**

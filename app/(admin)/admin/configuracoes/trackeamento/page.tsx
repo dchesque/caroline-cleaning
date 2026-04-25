@@ -157,6 +157,9 @@ export default function TrackeamentoPage() {
         setIsSaving(true)
         try {
             await saveBusinessSettings(config, 'trackeamento')
+            // Drop the in-process CAPI settings cache so the next event uses
+            // the values we just persisted, not the (up to 60s) stale ones.
+            void fetch('/api/tracking/cache-invalidate', { method: 'POST' }).catch(() => {})
             toast.success(settingsT.saved)
         } catch (error) {
             console.error('Error saving tracking config:', error)

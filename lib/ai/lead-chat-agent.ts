@@ -430,12 +430,41 @@ async function saveLead(context: LeadContext, sessionId: string, browserContext?
           .eq('id', existingId)
         if (updateError) {
           logger.error('[lead-chat] failed to upgrade lead_incomplete', { error: updateError.message })
-        } else {
-          logger.info('[lead-chat] upgraded lead_incomplete → lead', { id: existingId })
+          return { id: existingId, isNew: false }
         }
-      } else {
-        logger.info('[lead-chat] duplicate lead by phone', { phone })
+        logger.info('[lead-chat] upgraded lead_incomplete → lead', { id: existingId })
+
+        // Notify admins via Evolution API — the upgrade IS when the lead
+        // becomes actionable (full name + address arrived). Same payload as
+        // the insert path so admin operators see a consistent message.
+        void notifyAdmins('newLead', {
+          name: context.name,
+          phone: context.phone,
+          source: 'Lead Chat',
+        })
+
+        // The transition lead_incomplete → lead IS the conversion moment;
+        // fire Lead CAPI here so it isn't lost (insert path below also fires).
+        // Note: isNew stays false — the row already existed, so downstream
+        // copy ("Welcome back") sees this as a returning user. Only the
+        // conversion + admin notification side-effects fire on this branch.
+        const conversion = fireServerConversion({
+          eventName: 'Lead',
+          userData: {
+            phone: context.phone ?? undefined,
+            first_name: context.name ?? undefined,
+            zip_code: context.zip ?? undefined,
+            country: 'us',
+          },
+          customData: {
+            content_category: 'lead',
+            content_name: 'Lead Chat',
+          },
+          browserContext,
+        })
+        return { id: existingId, isNew: false, conversion }
       }
+      logger.info('[lead-chat] duplicate lead by phone', { phone })
       return { id: existingId, isNew: false }
     }
 
