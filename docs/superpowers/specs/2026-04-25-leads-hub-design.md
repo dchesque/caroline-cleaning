@@ -47,9 +47,23 @@ ADD COLUMN mensagem TEXT;
 ALTER TABLE public.contact_leads
 ADD COLUMN data_retorno DATE;
 
+-- Adicionar campo de contato para form leads
+-- (já existe contact_leads.contacted_at)
+
 -- Adicionar campo de data para retorno futuro em clientes (para leads do Chat)
 ALTER TABLE public.clientes
 ADD COLUMN data_retorno DATE;
+
+-- Adicionar campo de contato para chat leads
+ALTER TABLE public.clientes
+ADD COLUMN contacted_at TIMESTAMPTZ;
+
+-- Adicionar campo para soft delete
+ALTER TABLE public.clientes
+ADD COLUMN deleted_at TIMESTAMPTZ;
+
+ALTER TABLE public.contact_leads
+ADD COLUMN deleted_at TIMESTAMPTZ;
 ```
 
 ### Normalização de Status
@@ -80,6 +94,7 @@ interface UnifiedLead {
   created_at: string
   contacted_at: string | null
   data_retorno: string | null
+  deleted_at: string | null  // Soft delete
   original_record: any  // Registro original para referência
 }
 
@@ -361,8 +376,9 @@ function normalizeToUnifiedLead(
       mensagem: null,
       notas: record.notas_internas || null,
       created_at: record.created_at,
-      contacted_at: null,
+      contacted_at: record.contacted_at || null,
       data_retorno: record.data_retorno || null,
+      deleted_at: record.deleted_at || null,
       original_record: record
     }
   } else {
@@ -379,6 +395,7 @@ function normalizeToUnifiedLead(
       created_at: record.created_at,
       contacted_at: record.contacted_at || null,
       data_retorno: record.data_retorno || null,
+      deleted_at: record.deleted_at || null,
       original_record: record
     }
   }
@@ -386,11 +403,36 @@ function normalizeToUnifiedLead(
 
 export function useLeads(filters: LeadFilters) {
   // Busca leads das duas fontes em paralelo
+  // Filtra apenas leads onde deleted_at IS NULL
   // Normaliza para UnifiedLead
   // Aplica filtros client-side (ou via query Supabase)
   // Retorna { leads, isLoading, error, refetch }
 }
 ```
+
+### Lógica de Exclusão (Soft Delete)
+
+**Leads do Chat:**
+```typescript
+await supabase
+  .from('clientes')
+  .update({ deleted_at: new Date().toISOString() })
+  .eq('id', leadId)
+```
+
+**Leads do Formulário:**
+```typescript
+await supabase
+  .from('contact_leads')
+  .update({ deleted_at: new Date().toISOString() })
+  .eq('id', leadId)
+```
+
+**Importante:**
+- Soft delete preserva o registro para auditoria
+- Leads com `deleted_at` não aparecem na listagem principal
+- Se um lead já foi convertido (tem `cliente_id`), o cliente NÃO é afetado pela exclusão do lead
+- Não há função de "restaurar" neste escopo (future enhancement)
 
 ---
 
@@ -458,11 +500,30 @@ ADD COLUMN mensagem TEXT;
 ALTER TABLE public.contact_leads
 ADD COLUMN data_retorno DATE;
 
--- 3. Adicionar campo de data para retorno futuro em clientes
+-- 3. Adicionar soft delete para contact_leads
+ALTER TABLE public.contact_leads
+ADD COLUMN deleted_at TIMESTAMPTZ;
+
+-- 4. Adicionar campo de data para retorno futuro em clientes (para leads do Chat)
 ALTER TABLE public.clientes
 ADD COLUMN data_retorno DATE;
 
--- 4. Atualizar view contact_leads_stats (se existir)
+-- 5. Adicionar campo de contato para chat leads
+ALTER TABLE public.clientes
+ADD COLUMN contacted_at TIMESTAMPTZ;
+
+-- 6. Adicionar soft delete para clientes (leads do chat)
+ALTER TABLE public.clientes
+ADD COLUMN deleted_at TIMESTAMPTZ;
+
+-- 7. Criar índices para performance
+CREATE INDEX idx_contact_leads_deleted_at ON public.contact_leads(deleted_at);
+CREATE INDEX idx_contact_leads_data_retorno ON public.contact_leads(data_retorno);
+CREATE INDEX idx_clientes_deleted_at ON public.clientes(deleted_at);
+CREATE INDEX idx_clientes_data_retorno ON public.clientes(data_retorno);
+CREATE INDEX idx_clientes_contacted_at ON public.clientes(contacted_at);
+
+-- 8. Atualizar view contact_leads_stats (se existir)
 -- DROP VIEW IF EXISTS public.contact_leads_stats;
 -- CREATE VIEW public.contact_leads_stats AS ...
 -- (Ver implementação atual da view e ajustar conforme necessário)
@@ -471,12 +532,50 @@ ADD COLUMN data_retorno DATE;
 ### Frontend Changes
 
 **Formulário de contato** (`components/landing/contact-form.tsx`):
-- Adicionar campo `mensagem` (Textarea, opcional)
-- Atualizar `formData` para incluir `mensagem`
-- Enviar `mensagem` para `/api/contact`
+
+Adicionar campo **após** o campo "Cidade":
+
+```tsx
+{/* Mensagem */}
+<div className="space-y-2">
+  <Label htmlFor="mensagem" className="text-sm font-medium">
+    Message (optional)
+  </Label>
+  <Textarea
+    id="mensagem"
+    name="mensagem"
+    placeholder="Tell us about your cleaning needs..."
+    value={formData.mensagem}
+    onChange={handleChange}
+    maxLength={500}
+    rows={3}
+    className="resize-none"
+  />
+  <p className="text-xs text-muted-foreground text-right">
+    {formData.mensagem.length}/500
+  </p>
+</div>
+```
+
+- **Tipo:** Textarea
+- **Obrigatório:** Não (opcional)
+- **MaxLength:** 500 caracteres
+- **Placeholder:** "Tell us about your cleaning needs..."
+- **Posição:** Após campo "Cidade", antes das mensagens de erro
+- **Contador:** Mostrar "X/500" no canto direito
+
+**FormData:**
+```typescript
+const [formData, setFormData] = useState({
+  nome: '',
+  telefone: '',
+  cidade: '',
+  mensagem: ''  // ← Adicionar
+})
+```
 
 **API** (`app/api/contact/route.ts`):
-- Adicionar `mensagem` ao `ContactRequestSchema`
+- Adicionar `mensagem` ao `ContactRequestSchema` (opcional, max 500 chars)
 - Incluir `mensagem` no `insert` do Supabase
 
 ---
