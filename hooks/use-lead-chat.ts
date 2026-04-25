@@ -78,6 +78,20 @@ export function useLeadChat() {
         .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
 
       try {
+        // Debug: Log the context being sent to server
+        console.log('[use-lead-chat] Sending to API:', {
+          message: content.trim(),
+          contextBeingSent: {
+            name: context.name,
+            phone: context.phone,
+            zip: context.zip,
+            zipConfirmed: context.zipConfirmed,
+            zipRejectedCount: context.zipRejectedCount,
+            offTopicCount: context.offTopicCount,
+            attempts: context.attempts,
+          },
+        })
+
         const response = await fetch('/api/lead-chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -96,6 +110,19 @@ export function useLeadChat() {
         }
 
         const data = await response.json()
+
+        // Debug: Log the context received from server
+        console.log('[use-lead-chat] Received from API:', {
+          contextReceived: {
+            name: data.context?.name,
+            phone: data.context?.phone,
+            zip: data.context?.zip,
+            zipConfirmed: data.context?.zipConfirmed,
+            zipRejectedCount: data.context?.zipRejectedCount,
+            offTopicCount: data.context?.offTopicCount,
+            attempts: data.context?.attempts,
+          },
+        })
 
         // Update context from server response
         if (data.context) {

@@ -61,23 +61,48 @@ const SAVE_LEAD_TOOL = {
 // ─── ZIP coverage check ───────────────────────────────────────────────────────
 
 async function isZipCovered(zip: string): Promise<boolean> {
+  logger.info('[lead-chat] isZipCovered checking', { zip })
+
   try {
     const supabase = createAdminClient()
+
+    // Method 1: Try using .contains() (Supabase client method for arrays)
     const { data, error } = await supabase
       .from('areas_atendidas')
-      .select('id')
+      .select('id, nome, zip_codes')
       .eq('ativo', true)
       .contains('zip_codes', [zip])
       .limit(1)
 
     if (error) {
-      logger.error('[lead-chat] isZipCovered query error', { error: error.message })
-      // Fail open: don't block the user if the DB check fails
+      logger.error('[lead-chat] isZipCovered .contains() error, trying RPC fallback', { error: error.message, zip })
+
+      // Fallback to RPC function
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('check_zip_code_coverage', { p_zip_code: zip })
+
+      if (!rpcError && rpcData && rpcData.length > 0) {
+        logger.info('[lead-chat] isZipCovered RPC fallback success', { zip, found: rpcData.length })
+        return true
+      }
+
+      // If both fail, fail open
+      logger.error('[lead-chat] isZipCovered RPC fallback also failed', { rpcError: rpcError?.message, zip })
       return true
     }
-    return !!(data && data.length > 0)
+
+    const covered = !!(data && data.length > 0)
+
+    logger.info('[lead-chat] isZipCovered result', {
+      zip,
+      covered,
+      foundAreas: data?.map((d: any) => ({ nome: d.nome, zip_codes: d.zip_codes })) || [],
+      resultCount: data?.length || 0,
+    })
+
+    return covered
   } catch (err) {
-    logger.error('[lead-chat] isZipCovered exception', { error: String(err) })
+    logger.error('[lead-chat] isZipCovered exception', { error: String(err), zip })
     return true
   }
 }
@@ -195,11 +220,23 @@ async function extractPartialContext(
     currentMessage,
   ]
 
+  logger.info('[lead-chat] extractPartialContext starting', {
+    existingPhone: existing.phone,
+    existingName: existing.name,
+    existingZip: existing.zip,
+    zipConfirmed: existing.zipConfirmed,
+    messageCount: userTexts.length,
+    currentMessage: currentMessage.substring(0, 50)
+  })
+
+  // Phone extraction — accept 9-11 digits (supports Brazil 9-digit + 2 DD, or US 10-digit)
   if (!existing.phone) {
     for (const text of userTexts) {
       const digits = text.replace(/\D/g, '')
-      if (digits.length >= 10 && digits.length <= 11) {
+      // Accept 9-11 digits: 9 (BR mobile), 10 (US), 11 (BR with DD)
+      if (digits.length >= 9 && digits.length <= 11) {
         updates.phone = digits
+        logger.info('[lead-chat] extracted phone', { phone: digits, source: text.substring(0, 30) })
         break
       }
     }
@@ -581,6 +618,24 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
   const llmCalls: LLMCallRecord[] = []
   const toolCalls: ToolCallRecord[] = []
 
+  // Debug: Log incoming context to track persistence issues
+  logger.info('[lead-chat] processLeadMessage START', {
+    sessionId: req.sessionId,
+    messageLength: req.message.length,
+    messagePreview: req.message.substring(0, 60),
+    incomingContext: {
+      name: req.context.name,
+      phone: req.context.phone,
+      zip: req.context.zip,
+      zipConfirmed: req.context.zipConfirmed,
+      address: req.context.address,
+      leadSaved: req.context.leadSaved,
+      zipRejectedCount: req.context.zipRejectedCount,
+      offTopicCount: req.context.offTopicCount,
+      attempts: req.context.attempts,
+    },
+  })
+
   // Lead already saved — respond warmly via LLM instead of a canned message
   if (req.context.leadSaved) {
     const sanitized = sanitizeInput(req.message)
@@ -645,10 +700,21 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
     sanitized,
     updatedContext,
   )
+
+  logger.info('[lead-chat] After extractPartialContext', {
+    extracted,
+    zipRejected,
+    currentZipRejectedCount: updatedContext.zipRejectedCount,
+  })
+
   Object.assign(updatedContext, extracted)
 
   if (zipRejected) {
     updatedContext.zipRejectedCount = updatedContext.zipRejectedCount + 1
+    logger.warn('[lead-chat] ZIP REJECTED', {
+      newCount: updatedContext.zipRejectedCount,
+      willTerminate: updatedContext.zipRejectedCount >= 2,
+    })
     if (updatedContext.zipRejectedCount >= 2) {
       return {
         message: "I'm sorry we can't help right now — your area isn't in our service zone yet. Feel free to come back if you ever move within our area! 😊",
@@ -899,6 +965,20 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
     } else {
       updatedContext.offTopicCount = 0
     }
+
+    // Debug: Log outgoing context before returning
+    logger.info('[lead-chat] processLeadMessage END (normal response)', {
+      sessionId: req.sessionId,
+      outgoingContext: {
+        name: updatedContext.name,
+        phone: updatedContext.phone,
+        zip: updatedContext.zip,
+        zipConfirmed: updatedContext.zipConfirmed,
+        zipRejectedCount: updatedContext.zipRejectedCount,
+        offTopicCount: updatedContext.offTopicCount,
+        attempts: updatedContext.attempts,
+      },
+    })
 
     return {
       message: sanitizeResponse(content),
