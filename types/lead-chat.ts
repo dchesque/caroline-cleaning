@@ -10,6 +10,9 @@ export interface LeadContext {
   address: string | null
   leadSaved: boolean
   leadId: string | null
+  attempts: { name: number; phone: number; zip: number; address: number }
+  zipRejectedCount: number
+  offTopicCount: number
 }
 
 export function defaultLeadContext(): LeadContext {
@@ -21,5 +24,8 @@ export function defaultLeadContext(): LeadContext {
     address: null,
     leadSaved: false,
     leadId: null,
+    attempts: { name: 0, phone: 0, zip: 0, address: 0 },
+    zipRejectedCount: 0,
+    offTopicCount: 0,
   }
 }

@@ -14,8 +14,8 @@ import { getClientBrowserContext } from '@/lib/tracking/browser-context'
 // the history we send to the LLM — they were never part of a real LLM exchange.
 const SYNTHETIC_ID_PREFIX = 'synthetic_'
 
-const LEAD_CONTEXT_KEY = (id: string) => `lead_context_v2_${id}`
-const LEAD_HISTORY_KEY = (id: string) => `lead_history_v2_${id}`
+const LEAD_CONTEXT_KEY = (id: string) => `lead_context_v3_${id}`
+const LEAD_HISTORY_KEY = (id: string) => `lead_history_v3_${id}`
 
 export function useLeadChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
