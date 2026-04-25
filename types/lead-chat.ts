@@ -6,6 +6,8 @@ export interface LeadContext {
   name: string | null
   phone: string | null
   zip: string | null
+  zipConfirmed: boolean
+  address: string | null
   leadSaved: boolean
   leadId: string | null
 }
@@ -15,6 +17,8 @@ export function defaultLeadContext(): LeadContext {
     name: null,
     phone: null,
     zip: null,
+    zipConfirmed: false,
+    address: null,
     leadSaved: false,
     leadId: null,
   }
