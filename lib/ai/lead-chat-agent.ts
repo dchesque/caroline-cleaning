@@ -488,8 +488,18 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
   Object.assign(updatedContext, extracted)
 
   if (zipRejected) {
+    updatedContext.zipRejectedCount = updatedContext.zipRejectedCount + 1
+    if (updatedContext.zipRejectedCount >= 2) {
+      return {
+        message: "I'm sorry we can't help right now — your area isn't in our service zone yet. Feel free to come back if you ever move within our area! 😊",
+        context: updatedContext,
+        timestamp,
+        llmCalls,
+        toolCalls,
+      }
+    }
     return {
-      message: "I'm sorry, that ZIP isn't in our service area yet 😔 Do you have another ZIP we could check?",
+      message: "Hmm, that ZIP isn't in our service area 😔 Do you have another ZIP we could check?",
       context: updatedContext,
       timestamp,
       llmCalls,
