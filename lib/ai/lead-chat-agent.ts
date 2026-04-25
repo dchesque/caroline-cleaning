@@ -98,6 +98,13 @@ function buildSystemPrompt(context: LeadContext): string {
   ]
   const nextField = fieldOrder.find((f) => !context[f.key])
 
+  const stuckField = nextField && context.attempts[nextField.key as 'name' | 'phone' | 'zip' | 'address'] >= 3
+    ? nextField.label
+    : null
+  const giveUpField = nextField && context.attempts[nextField.key as 'name' | 'phone' | 'zip' | 'address'] >= 5
+    ? nextField.label
+    : null
+
   return `You are Carol, virtual assistant for Chesque Premium Cleaning.
 
 ## Personality
@@ -146,7 +153,9 @@ After 3 off-topic messages in a row, the system will switch you into a "have som
 
 ## Current state
 ${collected.length > 0 ? `Already collected — ${collected.join(', ')}.` : 'No data collected yet.'}
-${nextField ? `Next field to collect: ${nextField.label}.` : 'All fields collected. Confirm naturally with the customer, then call save_lead.'}`
+${nextField ? `Next field to collect: ${nextField.label}.` : 'All fields collected. Confirm naturally with the customer, then call save_lead.'}
+${stuckField ? `\n## Heads up\nYou've already asked for ${stuckField} more than once. Apologize briefly and rephrase very simply (e.g., "Sorry, I'm having trouble — could you just type your ${stuckField}?").` : ''}
+${giveUpField ? `\n## Fallback\nYou've asked for ${giveUpField} 5 times without success. Stop trying. Say warmly: "Let me have someone from our team give you a call instead. What's the best phone number to reach you?" If we already have a phone (${context.phone ?? 'not yet collected'}), say goodbye and let them know the team will call soon. The system will save what we have.` : ''}`
 }
 
 // ─── Post-save system prompt ──────────────────────────────────────────────────
@@ -239,6 +248,15 @@ function sanitizeResponse(text: string): string {
 
 function pickRandom<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function incrementAttempts(after: LeadContext): LeadContext['attempts'] {
+  return {
+    name:    after.name           ? after.attempts.name    : after.attempts.name + 1,
+    phone:   after.phone          ? after.attempts.phone   : after.attempts.phone + 1,
+    zip:     after.zipConfirmed   ? after.attempts.zip     : after.attempts.zip + 1,
+    address: after.address        ? after.attempts.address : after.attempts.address + 1,
+  }
 }
 
 const SAVE_ERROR_MESSAGES = [
@@ -351,6 +369,55 @@ async function saveLead(context: LeadContext, sessionId: string, browserContext?
   }
 }
 
+async function saveIncompleteLead(
+  context: LeadContext,
+): Promise<{ id: string } | null> {
+  if (!context.name || !context.phone) return null
+  try {
+    const supabase = createAdminClient()
+    const phone = context.phone.replace(/\D/g, '')
+
+    const { data: existing } = await supabase
+      .from('clientes')
+      .select('id')
+      .eq('telefone', phone)
+      .maybeSingle()
+
+    if (existing) {
+      return { id: existing.id as string }
+    }
+
+    const { data, error } = await supabase
+      .from('clientes')
+      .insert({
+        nome: context.name,
+        telefone: phone,
+        zip_code: context.zip,
+        endereco_completo: context.address,
+        status: 'lead_incomplete',
+        origem: 'lead_chat',
+      })
+      .select('id')
+      .single()
+
+    if (error) {
+      logger.error('[lead-chat] saveIncompleteLead error', { error: error.message })
+      return null
+    }
+
+    void notifyAdmins('newLead', {
+      name: context.name,
+      phone: context.phone,
+      source: 'Lead Chat (incomplete)',
+    })
+
+    return { id: (data as { id: string }).id }
+  } catch (err) {
+    logger.error('[lead-chat] saveIncompleteLead exception', { error: String(err) })
+    return null
+  }
+}
+
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
 export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChatResponse> {
@@ -427,6 +494,35 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
       timestamp,
       llmCalls,
       toolCalls,
+    }
+  }
+
+  updatedContext.attempts = incrementAttempts(updatedContext)
+
+  // Fallback: 5+ attempts on the same field with at least name+phone collected.
+  const maxAttempts = Math.max(
+    updatedContext.attempts.name,
+    updatedContext.attempts.zip,
+    updatedContext.attempts.address,
+  )
+  if (maxAttempts >= 5 && updatedContext.phone && updatedContext.name && !updatedContext.leadSaved) {
+    const partial = await saveIncompleteLead(updatedContext)
+    if (partial) {
+      updatedContext.leadSaved = true
+      updatedContext.leadId = partial.id
+      toolCalls.push({
+        tool: 'save_lead',
+        args: {
+          name: updatedContext.name,
+          phone: updatedContext.phone,
+          zip: updatedContext.zip ?? '',
+          address: updatedContext.address ?? '',
+          incomplete: true,
+        },
+        result: { id: partial.id, isNew: true },
+        success: true,
+        duration_ms: 0,
+      })
     }
   }
 
