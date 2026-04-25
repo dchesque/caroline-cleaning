@@ -1,22 +1,54 @@
 // lib/tracking/utils.ts
 
 import { TrackingConfig } from './types';
-import crypto from 'crypto';
 
 /**
- * Gera um event_id único para deduplicação
+ * Gera um event_id único para deduplicação.
+ * Funciona tanto no Node.js quanto no browser.
  */
 export function generateEventId(): string {
-    return `evt_${crypto.randomUUID()}`;
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        // Browser: window.crypto.randomUUID()
+        return `evt_${crypto.randomUUID()}`;
+    }
+    if (typeof require === 'function') {
+        // Node.js: dinamicamente require crypto apenas no servidor
+        try {
+            const nodeCrypto = require('crypto');
+            return `evt_${nodeCrypto.randomUUID()}`;
+        } catch {
+            // Fall through para fallback
+        }
+    }
+    // Fallback seguro para ambientes sem crypto API
+    return `evt_${Date.now()}_${Math.random().toString(36).slice(2, 15)}`;
 }
 
 /**
  * Hash SHA256 para dados sensíveis (email, telefone)
+ * Server-only (requer Node.js crypto)
  */
 export function hashData(data: string): string {
     if (!data) return '';
     const normalized = data.toLowerCase().trim();
-    return crypto.createHash('sha256').update(normalized).digest('hex');
+    // Require dinâmico para não quebrar no cliente
+    if (typeof require === 'function') {
+        try {
+            const nodeCrypto = require('crypto');
+            return nodeCrypto.createHash('sha256').update(normalized).digest('hex');
+        } catch {
+            // Fall through
+        }
+    }
+    // Fallback para browser (não deve ser usado, mas previne crash)
+    // SHA-256 via SubtleCrypto seria assíncrono, então retornamos um hash simples
+    let hash = 0;
+    for (let i = 0; i < normalized.length; i++) {
+        const char = normalized.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(16);
 }
 
 /**
