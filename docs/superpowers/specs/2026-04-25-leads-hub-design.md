@@ -31,26 +31,66 @@ A página `/admin/clientes` passará a mostrar apenas clientes reais (já conver
 
 ### Fontes de Leads
 
-| Fonte | Tabela | Campos | Status |
-|-------|--------|--------|--------|
-| Chat IA | `clientes` | nome, telefone, zip_code, endereco_completo | `lead`, `lead_incomplete` |
-| Formulário | `contact_leads` | nome, telefone, cidade, mensagem (novo) | `novo`, `contatado`, `convertido`, `descartado` |
+| Fonte | Tabela | Campos | Status Originais |
+|-------|--------|--------|------------------|
+| Chat IA | `clientes` | nome, telefone, cidade, zip_code, endereco_completo, notas_internas | `lead`, `lead_incomplete` |
+| Formulário | `contact_leads` | nome, telefone, cidade, mensagem, notas, pagina_origem | `novo`, `contatado`, `convertido`, `descartado` |
 
-### Nova Coluna
+### Novas Colunas
 
 ```sql
-ALTER TABLE contact_leads ADD COLUMN mensagem TEXT;
+-- Adicionar mensagem ao formulário de contato
+ALTER TABLE public.contact_leads
+ADD COLUMN mensagem TEXT;
+
+-- Adicionar campo de data para retorno futuro
+ALTER TABLE public.contact_leads
+ADD COLUMN data_retorno DATE;
+
+-- Adicionar campo de data para retorno futuro em clientes (para leads do Chat)
+ALTER TABLE public.clientes
+ADD COLUMN data_retorno DATE;
 ```
 
-### Status Possíveis (unificados)
+### Normalização de Status
 
-| Status | Descrição |
-|--------|-----------|
-| `novo` | Lead recebido, sem contato |
-| `contatado` | Houve tentativa de contato |
-| `convertido` | Transformado em cliente |
-| `descartado` | Lead não qualificado |
-| `retorno_futuro` | Marcar para contato futuro |
+| Origem | Status Original | Status Unificado | Display |
+|--------|-----------------|------------------|---------|
+| Chat IA | `lead_incomplete` | `novo_incompleto` | "Novo (Incompleto)" |
+| Chat IA | `lead` | `novo` | "Novo" |
+| Formulário | `novo` | `novo` | "Novo" |
+| Ambos | `contatado` | `contatado` | "Contatado" |
+| Ambos | `convertido` | `convertido` | "Convertido" |
+| Ambos | `descartado` | `descartado` | "Descartado" |
+| Ambos | `retorno_futuro` | `retorno_futuro` | "Retorno Futuro" |
+
+### UnifiedLead Interface
+
+```typescript
+interface UnifiedLead {
+  id: string
+  source: 'chat' | 'form'
+  nome: string
+  telefone: string
+  cidade: string | null
+  location_display: string  // Cidade ou ZIP formatado
+  status: UnifiedLeadStatus
+  mensagem: string | null
+  notas: string | null  // 'notas' para form, 'notas_internas' para chat
+  created_at: string
+  contacted_at: string | null
+  data_retorno: string | null
+  original_record: any  // Registro original para referência
+}
+
+type UnifiedLeadStatus =
+  | 'novo_incompleto'
+  | 'novo'
+  | 'contatado'
+  | 'convertido'
+  | 'descartado'
+  | 'retorno_futuro'
+```
 
 ---
 
@@ -165,46 +205,102 @@ Cards responsivos com as mesmas informações.
 
 ## Conversion Logic
 
+### Deduplicação por Telefone (Antes da Conversão)
+
+Antes de converter, verificar se já existe cliente com o mesmo telefone:
+
+```typescript
+async function checkDuplicateLead(phone: string) {
+  const normalizedPhone = phone.replace(/\D/g, '')
+  const { data } = await supabase
+    .from('clientes')
+    .select('id, nome, status')
+    .eq('telefone', normalizedPhone)
+    .maybeSingle()
+
+  return data  // Retorna cliente existente ou null
+}
+```
+
+Se encontrar duplicata:
+- **Chat IA:** Apenas atualiza o lead existente para `ativo`
+- **Formulário:** Atualiza `contact_leads.cliente_id` para apontar para o cliente existente
+
 ### Lead do Chat IA → Cliente
 
 ```typescript
+// 1. Verificar duplicata
+const existingClient = await checkDuplicateLead(lead.telefone)
+
+if (existingClient) {
+  // Já existe cliente - apenas atualiza status
+  await supabase
+    .from('clientes')
+    .update({ status: 'ativo' })
+    .eq('id', existingClient.id)
+
+  return { clientId: existingClient.id, isNew: false }
+}
+
+// 2. Converter lead do chat
 await supabase
   .from('clientes')
   .update({
     status: 'ativo',
-    data_primeiro_servico: new Date().toISOString()
+    // NOTA: data_primeiro_servico só é definida quando agendamento é criado
   })
   .eq('id', leadId)
+
+return { clientId: leadId, isNew: true }
 ```
 
 ### Lead do Formulário → Cliente
 
 ```typescript
-// 1. Criar cliente
-const { data: cliente } = await supabase
-  .from('clientes')
-  .insert({
-    nome: lead.nome,
-    telefone: lead.telefone,
-    cidade: lead.cidade,
-    origem: 'website',
-    status: 'ativo'
-  })
-  .select()
-  .single()
+// 1. Verificar duplicata
+const existingClient = await checkDuplicateLead(lead.telefone)
 
-// 2. Linkar lead ao cliente
+let clienteId: string
+
+if (existingClient) {
+  // Cliente já existe - apenas linkar
+  clienteId = existingClient.id
+} else {
+  // 2. Criar novo cliente
+  const { data } = await supabase
+    .from('clientes')
+    .insert({
+      nome: lead.nome,
+      telefone: lead.telefone.replace(/\D/g, ''),
+      cidade: lead.cidade,
+      origem: 'website',
+      status: 'ativo'
+    })
+    .select('id')
+    .single()
+
+  clienteId = data.id
+}
+
+// 3. Linkar lead ao cliente
 await supabase
   .from('contact_leads')
   .update({
     status: 'convertido',
-    cliente_id: cliente.id
+    cliente_id: clienteId
   })
   .eq('id', leadId)
 
-// 3. Redirecionar para página do cliente
-router.push(`/admin/clientes/${cliente.id}`)
+// 4. Redirecionar para página do cliente
+router.push(`/admin/clientes/${clienteId}`)
 ```
+
+### Campo de Notas
+
+- **Leads do Chat:** Usa `clientes.notas_internas`
+- **Leads do Form:** Usa `contact_leads.notas`
+
+O hook `useLeadSource` normaliza para o campo `notas` na interface `UnifiedLead`.
 
 ---
 
@@ -242,8 +338,59 @@ router.push(`/admin/clientes/${cliente.id}`)
 | `LeadsMobileList` | Cards mobile |
 | `LeadDetailModal` | Modal de detalhes |
 | `ConvertToClientModal` | Modal de conversão |
-| `useLeadSource` | Hook que busca e mescla leads |
+| `useLeads` | Hook que busca e mescla leads das duas fontes |
 | `useLeadStats` | Hook que calcula estatísticas |
+
+### Hook: useLeads
+
+```typescript
+function normalizeToUnifiedLead(
+  source: 'chat' | 'form',
+  record: any
+): UnifiedLead {
+  if (source === 'chat') {
+    return {
+      id: record.id,
+      source: 'chat',
+      nome: record.nome,
+      telefone: record.telefone,
+      cidade: record.cidade,
+      location_display: record.cidade || record.zip_code || '—',
+      status: record.status === 'lead_incomplete' ? 'novo_incompleto' :
+              record.status === 'lead' ? 'novo' : record.status,
+      mensagem: null,
+      notas: record.notas_internas || null,
+      created_at: record.created_at,
+      contacted_at: null,
+      data_retorno: record.data_retorno || null,
+      original_record: record
+    }
+  } else {
+    return {
+      id: record.id,
+      source: 'form',
+      nome: record.nome,
+      telefone: record.telefone,
+      cidade: record.cidade,
+      location_display: record.cidade || '—',
+      status: record.status,
+      mensagem: record.mensagem || null,
+      notas: record.notas || null,
+      created_at: record.created_at,
+      contacted_at: record.contacted_at || null,
+      data_retorno: record.data_retorno || null,
+      original_record: record
+    }
+  }
+}
+
+export function useLeads(filters: LeadFilters) {
+  // Busca leads das duas fontes em paralelo
+  // Normaliza para UnifiedLead
+  // Aplica filtros client-side (ou via query Supabase)
+  // Retorna { leads, isLoading, error, refetch }
+}
+```
 
 ---
 
@@ -299,31 +446,89 @@ Novos textos em `lib/admin-i18n/`:
 ## Migration
 
 ```sql
--- Adicionar campo de mensagem ao formulário de contato
+-- =====================================================
+-- Migration: Central de Leads
+-- =====================================================
+
+-- 1. Adicionar campo de mensagem ao formulário de contato
 ALTER TABLE public.contact_leads
 ADD COLUMN mensagem TEXT;
 
--- Atualizar a view de estatísticas se necessário
--- (a view contact_leads_stats precisa incluir o novo campo)
+-- 2. Adicionar campo de data para retorno futuro
+ALTER TABLE public.contact_leads
+ADD COLUMN data_retorno DATE;
+
+-- 3. Adicionar campo de data para retorno futuro em clientes
+ALTER TABLE public.clientes
+ADD COLUMN data_retorno DATE;
+
+-- 4. Atualizar view contact_leads_stats (se existir)
+-- DROP VIEW IF EXISTS public.contact_leads_stats;
+-- CREATE VIEW public.contact_leads_stats AS ...
+-- (Ver implementação atual da view e ajustar conforme necessário)
 ```
+
+### Frontend Changes
+
+**Formulário de contato** (`components/landing/contact-form.tsx`):
+- Adicionar campo `mensagem` (Textarea, opcional)
+- Atualizar `formData` para incluir `mensagem`
+- Enviar `mensagem` para `/api/contact`
+
+**API** (`app/api/contact/route.ts`):
+- Adicionar `mensagem` ao `ContactRequestSchema`
+- Incluir `mensagem` no `insert` do Supabase
 
 ---
 
 ## Testing Checklist
 
+### Frontend
 - [ ] Leads do Chat e Formulário aparecem na mesma tabela
-- [ ] Filtro por origem funciona
-- [ ] Filtro por status funciona
+- [ ] Filtro por origem funciona (Todos/Chat/Formulário)
+- [ ] Filtro por status funciona (todos os status)
 - [ ] Busca por nome/telefone/cidade funciona
+- [ ] Mobile view funciona (cards responsivos)
+- [ ] Preview de mensagem aparece na tabela (primeiros 50 chars)
+- [ ] Mensagens sem texto mostram "—" na tabela
+- [ ] Notas são salvas automaticamente (onBlur)
+- [ ] Status é atualizado corretamente via dropdown
+- [ ] Modal de detalhes mostra informações corretas por origem
+
+### Formulário de Contato
+- [ ] Campo "Mensagem" aparece no formulário da landing page
+- [ ] Campo "Mensagem" é opcional (não required)
+- [ ] Mensagem é enviada corretamente para `/api/contact`
+- [ ] Mensagem é salva na tabela `contact_leads`
+
+### Conversão (Lead → Cliente)
 - [ ] Conversão de lead do Chat → atualiza status para 'ativo'
-- [ ] Conversão de lead do Form → cria cliente + link
-- [ ] Exclusão de lead com confirmação
-- [ ] Notas são salvas automaticamente
-- [ ] Status é atualizado corretamente
-- [ ] Mobile view funciona
-- [ ] Campo de mensagem aparece no formulário
-- [ ] Preview de mensagem aparece na tabela
+- [ ] Conversão de lead do Form → cria novo cliente
+- [ ] Conversão de lead do Form → linka `cliente_id` no lead
+- [ ] Modal de confirmação mostra dados corretos
 - [ ] Redirect para página do cliente após conversão
+
+### Deduplicação
+- [ ] Conversão com telefone duplicado (Chat) → usa cliente existente
+- [ ] Conversão com telefone duplicado (Form) → usa cliente existente
+- [ ] Lead do Form com telefone duplicado → linka ao cliente existente
+
+### Retorno Futuro
+- [ ] Status "Retorno Futuro" aparece no dropdown
+- [ ] Ao marcar "Retorno Futuro", modal pede data
+- [ ] Data de retorno é salva corretamente
+- [ ] Leads com data de retorno podem ser filtrados
+
+### Exclusão
+- [ ] Exclusão de lead requer confirmação
+- [ ] Lead do Chat excluído some da lista
+- [ ] Lead do Form excluído some da lista
+- [ ] Exclusão não afeta cliente vinculado (se convertido)
+
+### Estatísticas
+- [ ] Cards mostram números corretos
+- [ ] Estatísticas agregam ambas as origens
+- [ ] Botão "Atualizar" recarrega os dados
 
 ---
 
@@ -331,13 +536,14 @@ ADD COLUMN mensagem TEXT;
 
 1. **Paginação:** Implementar agora ou deixar para depois? (Recomendação: depois, somente se necessário)
 2. **Export CSV:** Adicionar como ação extra? (Recomendação: fora do escopo inicial)
-3. **Notificações:** Notificar admins quando novo lead chegar? (Já existe via webhook)
+3. **Notificações:** Notificar admins quando novo lead chegar? (Já existe via webhook Evolution)
+4. **contact_leads_stats view:** A view atual precisa ser recriada ou está funcional? (Verificar em implementação)
 
 ---
 
 ## Future Enhancements
 
-- Adicionar campo "data_retorno" para status `retorno_futuro`
 - Exportar leads para CSV
 - Integrar com WhatsApp/SMS para contato direto
 - Dashboard de conversão (lead → cliente)
+- Lembrete automático para leads com `data_retorno` definida

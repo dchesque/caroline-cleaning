@@ -113,7 +113,19 @@
       "Bash(npx supabase:*)",
       "Bash(python3 -c \"import matplotlib; import numpy; print\\('ok'\\)\")",
       "Bash(python -c \"import matplotlib; import numpy; print\\('ok'\\)\")",
-      "Bash(python generate_flow.py)"
+      "Bash(python generate_flow.py)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/ -o /tmp/landing.html)",
+      "Bash(python3 -c ' *)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s http://localhost:3000/ -o D:/Workspace/caroline-cleaning/.tmp-landing.html)",
+      "mcp__supabase__generate_typescript_types",
+      "Bash(npm test *)",
+      "Bash(npx @anthropic-ai/claude-code /model)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ],
+  "enableAllProjectMcpServers": true
 }
