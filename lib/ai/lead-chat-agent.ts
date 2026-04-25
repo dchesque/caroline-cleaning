@@ -288,6 +288,38 @@ function looksLikeFalsePromise(content: string, ctx: LeadContext): boolean {
   return GOODBYE_KEYWORDS.some((kw) => lower.includes(kw))
 }
 
+function reconcileToolArgs(
+  args: { name: string; phone: string; zip: string; address: string },
+  extracted: Partial<LeadContext>,
+  ctx: LeadContext,
+): { name: string; phone: string; zip: string; address: string } {
+  const reconciled = { ...args }
+
+  const ctxName = ctx.name ?? extracted.name
+  if (ctxName && args.name && ctxName.toLowerCase() !== args.name.toLowerCase()) {
+    logger.warn('[lead-chat] tool name diverges from context', { tool: args.name, ctx: ctxName })
+    reconciled.name = ctxName
+  }
+
+  const ctxPhone = ctx.phone ?? extracted.phone
+  if (ctxPhone) {
+    const argDigits = (args.phone ?? '').replace(/\D/g, '')
+    if (argDigits !== ctxPhone) {
+      logger.warn('[lead-chat] tool phone diverges from context', { tool: argDigits, ctx: ctxPhone })
+      reconciled.phone = ctxPhone
+    }
+  }
+
+  const ctxZip = ctx.zip ?? extracted.zip
+  if (ctxZip && args.zip && args.zip !== ctxZip) {
+    logger.warn('[lead-chat] tool zip diverges from context', { tool: args.zip, ctx: ctxZip })
+    reconciled.zip = ctxZip
+  }
+
+  // Address is free text; we trust the LLM (no good source of truth).
+  return reconciled
+}
+
 function incrementAttempts(after: LeadContext): LeadContext['attempts'] {
   return {
     name:    after.name           ? after.attempts.name    : after.attempts.name + 1,
@@ -619,31 +651,32 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
           address: string
         }
 
-        updatedContext.name    = args.name    ?? updatedContext.name
-        updatedContext.phone   = args.phone   ?? updatedContext.phone
-        updatedContext.address = args.address ?? updatedContext.address
+        const reconciled = reconcileToolArgs(args, extracted, updatedContext)
+        updatedContext.name    = reconciled.name    ?? updatedContext.name
+        updatedContext.phone   = reconciled.phone   ?? updatedContext.phone
+        updatedContext.address = reconciled.address ?? updatedContext.address
 
         // Edge case: extraction missed the ZIP but the LLM picked it up via the tool.
         // (Normal flow already validated ZIP during extraction.)
-        if (args.zip && !updatedContext.zip) {
-          const covered = await isZipCovered(args.zip)
+        if (reconciled.zip && !updatedContext.zip) {
+          const covered = await isZipCovered(reconciled.zip)
           if (!covered) {
             toolCalls.push({
               tool: 'save_lead',
-              args: { name: args.name, phone: args.phone, zip: args.zip, address: args.address },
+              args: { name: reconciled.name, phone: reconciled.phone, zip: reconciled.zip, address: reconciled.address },
               result: { covered: false },
               success: false,
               duration_ms: 0,
             })
             return {
-              message: `I'm sorry, ZIP ${args.zip} isn't in our service area yet 😔 Do you have another ZIP we could check?`,
+              message: `I'm sorry, ZIP ${reconciled.zip} isn't in our service area yet 😔 Do you have another ZIP we could check?`,
               context: updatedContext,
               timestamp,
               llmCalls,
               toolCalls,
             }
           }
-          updatedContext.zip = args.zip
+          updatedContext.zip = reconciled.zip
           updatedContext.zipConfirmed = true
         }
 
@@ -653,7 +686,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
 
         toolCalls.push({
           tool: 'save_lead',
-          args: { name: args.name, phone: args.phone, zip: args.zip, address: args.address },
+          args: { name: reconciled.name, phone: reconciled.phone, zip: reconciled.zip, address: reconciled.address },
           result: result ? { id: result.id, isNew: result.isNew } : null,
           success: result !== null,
           duration_ms: toolDuration,
@@ -734,15 +767,16 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
         try {
           const fn = (forcedChoice.message.tool_calls[0] as { function: { arguments: string } }).function
           const args = JSON.parse(fn.arguments) as { name: string; phone: string; zip: string; address: string }
-          updatedContext.name    = args.name    ?? updatedContext.name
-          updatedContext.phone   = args.phone   ?? updatedContext.phone
-          updatedContext.address = args.address ?? updatedContext.address
-          updatedContext.zip     = args.zip     ?? updatedContext.zip
+          const reconciled = reconcileToolArgs(args, extracted, updatedContext)
+          updatedContext.name    = reconciled.name    ?? updatedContext.name
+          updatedContext.phone   = reconciled.phone   ?? updatedContext.phone
+          updatedContext.address = reconciled.address ?? updatedContext.address
+          updatedContext.zip     = reconciled.zip     ?? updatedContext.zip
 
           const result = await saveLead(updatedContext, req.sessionId, req.browserContext)
           toolCalls.push({
             tool: 'save_lead',
-            args: { ...args, forced: true },
+            args: { ...reconciled, forced: true },
             result: result ? { id: result.id, isNew: result.isNew } : null,
             success: result !== null,
             duration_ms: 0,
