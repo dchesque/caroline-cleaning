@@ -45,6 +45,8 @@ export function BeforeAfterModal({
     const [ativo, setAtivo] = useState(true)
     const [imgAntes, setImgAntes] = useState('')
     const [imgDepois, setImgDepois] = useState('')
+    const [tipoServico, setTipoServico] = useState('')
+    const [cidade, setCidade] = useState('')
     const [uploadingAntes, setUploadingAntes] = useState(false)
     const [uploadingDepois, setUploadingDepois] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -62,6 +64,8 @@ export function BeforeAfterModal({
             setAtivo(item.ativo)
             setImgAntes(item.imagem_antes)
             setImgDepois(item.imagem_depois)
+            setTipoServico(item.tipo_servico ?? '')
+            setCidade(item.cidade ?? '')
         } else {
             setId(crypto.randomUUID())
             setTitulo('')
@@ -69,6 +73,8 @@ export function BeforeAfterModal({
             setAtivo(true)
             setImgAntes('')
             setImgDepois('')
+            setTipoServico('')
+            setCidade('')
         }
     }, [open, item])
 
@@ -130,6 +136,8 @@ export function BeforeAfterModal({
                 ativo,
                 imagem_antes: imgAntes,
                 imagem_depois: imgDepois,
+                tipo_servico: tipoServico.trim() || null,
+                cidade:        cidade.trim() || null,
             }
 
             const { error } = await supabase.from('before_after').upsert(payload)
@@ -191,6 +199,38 @@ export function BeforeAfterModal({
                                     onCheckedChange={setAtivo}
                                 />
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="ba-tipo-servico">Service type</Label>
+                            <Input
+                                id="ba-tipo-servico"
+                                value={tipoServico}
+                                onChange={(e) => setTipoServico(e.target.value)}
+                                list="ba-service-types"
+                                maxLength={60}
+                                placeholder="Deep Clean"
+                                className={inputClasses}
+                            />
+                            <datalist id="ba-service-types">
+                                <option value="Deep Clean" />
+                                <option value="Move-Out" />
+                                <option value="Recurring" />
+                                <option value="Post-Construction" />
+                            </datalist>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="ba-cidade">City</Label>
+                            <Input
+                                id="ba-cidade"
+                                value={cidade}
+                                onChange={(e) => setCidade(e.target.value)}
+                                maxLength={80}
+                                placeholder="Tampa, FL"
+                                className={inputClasses}
+                            />
                         </div>
                     </div>
 
