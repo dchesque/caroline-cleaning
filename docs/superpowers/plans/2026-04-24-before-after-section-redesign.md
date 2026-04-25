@@ -169,9 +169,9 @@ Place near the badges block to keep the file grouped by section.
 In the `CONFIG_METADATA` map (~line 408), add (in the `Página Inicial` block):
 
 ```ts
-    before_after_display_mode: { grupo: 'pagina_inicial', categoria: 'before_after' },
-    before_after_stat_count:   { grupo: 'pagina_inicial', categoria: 'before_after' },
-    before_after_stat_region:  { grupo: 'pagina_inicial', categoria: 'before_after' },
+    before_after_display_mode: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    before_after_stat_count:   { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    before_after_stat_region:  { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
 ```
 
 - [ ] **Step 4: Type-check**
