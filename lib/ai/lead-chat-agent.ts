@@ -364,8 +364,8 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
   const updatedContext: LeadContext = { ...req.context }
   const systemPrompt = buildSystemPrompt(updatedContext)
 
-  // Build message array (cap history at last 20 messages)
-  const recentHistory = req.history.slice(-20)
+  // Build message array (cap history at last 30 messages)
+  const recentHistory = req.history.slice(-30)
 
   const llmStart = Date.now()
   try {
