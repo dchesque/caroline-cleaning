@@ -266,6 +266,28 @@ function isLikelyOffTopic(
   return true
 }
 
+const GOODBYE_KEYWORDS = [
+  'team will reach',
+  "we'll be in touch",
+  'we will be in touch',
+  'someone from our team will',
+  'talk soon',
+  'take care',
+  'have a great',
+  'thanks for reaching out',
+  'thank you for reaching out',
+  'reach out soon',
+] as const
+
+function looksLikeFalsePromise(content: string, ctx: LeadContext): boolean {
+  if (ctx.leadSaved) return false
+  const allFieldsPresent =
+    !!ctx.name && !!ctx.phone && !!ctx.zipConfirmed && !!ctx.address
+  if (!allFieldsPresent) return false
+  const lower = content.toLowerCase()
+  return GOODBYE_KEYWORDS.some((kw) => lower.includes(kw))
+}
+
 function incrementAttempts(after: LeadContext): LeadContext['attempts'] {
   return {
     name:    after.name           ? after.attempts.name    : after.attempts.name + 1,
@@ -679,6 +701,74 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
     // Normal text response — extraction already ran before the LLM call.
     const content = choice.message.content ?? ''
 
+    if (looksLikeFalsePromise(content, updatedContext)) {
+      logger.warn('[lead-chat] false-promise detected, forcing save_lead', { content })
+      const forceStart = Date.now()
+      const forced = await openrouter.chat.completions.create({
+        model: env.defaultModel,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...recentHistory,
+          { role: 'user', content: sanitized },
+          { role: 'assistant', content },
+          { role: 'user', content: 'Please save my information now.' },
+        ],
+        tools: [SAVE_LEAD_TOOL],
+        tool_choice: { type: 'function', function: { name: 'save_lead' } } as never,
+        temperature: 0.3,
+        max_tokens: 200,
+      })
+      const forcedChoice = forced.choices[0]
+      llmCalls.push({
+        type: 'generate',
+        model: env.defaultModel,
+        prompt_content: '[forced save_lead]',
+        response_content: JSON.stringify(forcedChoice.message.tool_calls ?? ''),
+        tokens_used: forced.usage?.total_tokens,
+        prompt_tokens: forced.usage?.prompt_tokens,
+        completion_tokens: forced.usage?.completion_tokens,
+        duration_ms: Date.now() - forceStart,
+      })
+
+      if (forcedChoice.message.tool_calls?.length) {
+        try {
+          const fn = (forcedChoice.message.tool_calls[0] as { function: { arguments: string } }).function
+          const args = JSON.parse(fn.arguments) as { name: string; phone: string; zip: string; address: string }
+          updatedContext.name    = args.name    ?? updatedContext.name
+          updatedContext.phone   = args.phone   ?? updatedContext.phone
+          updatedContext.address = args.address ?? updatedContext.address
+          updatedContext.zip     = args.zip     ?? updatedContext.zip
+
+          const result = await saveLead(updatedContext, req.sessionId, req.browserContext)
+          toolCalls.push({
+            tool: 'save_lead',
+            args: { ...args, forced: true },
+            result: result ? { id: result.id, isNew: result.isNew } : null,
+            success: result !== null,
+            duration_ms: 0,
+          })
+
+          if (result) {
+            updatedContext.leadSaved = true
+            updatedContext.leadId = result.id
+            const firstName = updatedContext.name?.split(' ')[0] ?? 'there'
+            return {
+              message: `Perfect, ${firstName}! All set — our team will reach out soon to schedule your free evaluation. 😊`,
+              context: updatedContext,
+              timestamp,
+              llmCalls,
+              toolCalls,
+              conversion: result.conversion,
+            }
+          }
+        } catch (err) {
+          logger.error('[lead-chat] forced save_lead parse failed', { error: String(err) })
+        }
+      }
+      // If forced call failed, fall through and let the original (premature) content
+      // be returned. The next user message will trigger the normal flow.
+    }
+
     if (isLikelyOffTopic(sanitized, extracted, false)) {
       updatedContext.offTopicCount = updatedContext.offTopicCount + 1
     } else {
@@ -707,3 +797,5 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
 // ─── Test-only exports ────────────────────────────────────────────────────────
 
 export const extractPartialContextForTest = extractPartialContext
+export const looksLikeFalsePromiseForTest = looksLikeFalsePromise
+export const isLikelyOffTopicForTest = isLikelyOffTopic
