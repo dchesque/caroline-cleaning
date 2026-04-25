@@ -9,6 +9,8 @@ export interface BeforeAfterItem {
   titulo: string;
   imagem_antes: string;
   imagem_depois: string;
+  tipo_servico?: string | null;
+  cidade?: string | null;
   ordem: number;
   ativo: boolean;
   created_at: string;
