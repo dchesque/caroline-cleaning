@@ -92,3 +92,31 @@ describe('extractPartialContext — zip', () => {
     expect(updates.zip).toBeUndefined()
   })
 })
+
+describe('extractPartialContext — zip rejection', () => {
+  beforeEach(() => {
+    jest.resetModules()
+  })
+
+  it('returns zipRejected=true when zip is not covered', async () => {
+    jest.doMock('@/lib/supabase/server', () => ({
+      createAdminClient: () => ({
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              contains: () => ({
+                limit: async () => ({ data: [], error: null }),
+              }),
+            }),
+          }),
+        }),
+      }),
+    }))
+    const { extractPartialContextForTest: ext } = await import('../lead-chat-agent')
+    const empty = defaultLeadContext()
+    const { updates, zipRejected } = await ext([], '99999', empty)
+    expect(zipRejected).toBe(true)
+    expect(updates.zip).toBeUndefined()
+    expect(updates.zipConfirmed).toBeUndefined()
+  })
+})
