@@ -190,14 +190,22 @@ function extractPartialContext(
   }
 
   if (!existing.name) {
+    // Filler words that, on their own, are not names (full-string match).
     const SKIP = new Set(['yes', 'no', 'ok', 'hey', 'hi', 'hello', 'bye', 'thanks', 'thank', 'sure', 'yep', 'nope'])
+    // Common sentence-starters — if the FIRST word is one of these, treat
+    // the whole thing as a sentence, not a name (e.g., "my name is John").
+    const FIRST_WORD_SKIP = new Set(['my', 'i', "i'm", 'im', 'the', 'a', 'an', 'please', 'this', 'it', 'its', "it's"])
+    // Accept up to 5 words, with letters / hyphens / apostrophes / accents.
+    const NAME_RE = /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.'-]{1,29}(\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.'-]{0,29}){0,4}$/
     for (const text of userTexts) {
       const trimmed = text.trim()
-      // Single word, letters only, 2-30 chars, not a common filler word
-      if (/^[A-Za-zÀ-ÿ]{2,30}$/.test(trimmed) && !SKIP.has(trimmed.toLowerCase())) {
-        updates.name = trimmed
-        break
-      }
+      const lower = trimmed.toLowerCase()
+      if (!NAME_RE.test(trimmed)) continue
+      if (SKIP.has(lower)) continue
+      const firstWord = lower.split(/\s+/)[0]
+      if (FIRST_WORD_SKIP.has(firstWord)) continue
+      updates.name = trimmed
+      break
     }
   }
 
@@ -515,3 +523,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
     }
   }
 }
+
+// ─── Test-only exports ────────────────────────────────────────────────────────
+
+export const extractPartialContextForTest = extractPartialContext
