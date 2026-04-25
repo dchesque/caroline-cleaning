@@ -13,6 +13,7 @@ import type { LLMCallRecord } from '@/lib/ai/llm'
 import type { ToolCallRecord } from '@/lib/services/chat-logger'
 import { fireServerConversion, type ServerConversionResult } from '@/lib/tracking/server'
 import type { BrowserContext } from '@/lib/tracking/browser-context'
+import { getServiceAreaCities, formatCoverageForPrompt, type CoverageCities } from '@/lib/ai/coverage'
 
 export type { LeadContext }
 export { defaultLeadContext }
@@ -83,7 +84,8 @@ async function isZipCovered(zip: string): Promise<boolean> {
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(context: LeadContext): string {
+function buildSystemPrompt(context: LeadContext, coverage: CoverageCities): string {
+  const coverageBlock = formatCoverageForPrompt(coverage)
   const collected: string[] = []
   if (context.name)    collected.push(`name: ${context.name}`)
   if (context.phone)   collected.push(`phone: ${context.phone}`)
@@ -129,9 +131,13 @@ Explain (once, near the start) that the service is fully personalized and a team
 - Before calling save_lead, confirm all collected info naturally. It does NOT need to be a formal list. Something like "Just to make sure I got it right: John Smith, 704-555-1234, ZIP 28202, address 123 Main St. All good?" works, but vary the phrasing each conversation.
 - NEVER say goodbye, "we'll be in touch", "talk soon", or thank-you-for-your-info BEFORE you have called save_lead and received confirmation. Saying these without saving is the worst failure mode.
 
-## Service area (handled by the system, not by you)
-We serve Charlotte NC, Fort Mill SC, and surrounding areas (~30-mile radius of Fort Mill).
-The system validates the ZIP automatically when the customer provides it. You will see in the data below whether a ZIP was confirmed. Do not assert coverage on your own.
+## Service area
+We serve the Charlotte metro area within ~30 miles of Fort Mill, across these cities:
+${coverageBlock || 'Charlotte NC, Fort Mill SC, and surrounding areas.'}
+
+If the customer asks "do you serve <city>?", answer using ONLY the list above. If their city is on the list, say yes warmly and then ask for their ZIP to double-check the exact street is in range. If the city is NOT on the list, say honestly: "We don't cover <city> yet — we serve the Charlotte metro within about 30 miles of Fort Mill. If you're close to that area, share your ZIP and I can check."
+
+The system validates the ZIP automatically once the customer provides it. You will see in the data below whether a ZIP was confirmed — never assert coverage on your own based on the city list above; the ZIP is the source of truth.
 If the customer's ZIP is rejected by the system, the system will tell you to ask for another. After 2 rejections, the system ends the chat — do not push further.
 
 ## Address (asked AFTER ZIP is confirmed)
@@ -690,7 +696,8 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
     }
   }
 
-  const systemPrompt = buildSystemPrompt(updatedContext)
+  const coverage = await getServiceAreaCities()
+  const systemPrompt = buildSystemPrompt(updatedContext, coverage)
 
   const llmStart = Date.now()
   try {
