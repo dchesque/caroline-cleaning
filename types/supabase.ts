@@ -367,31 +367,37 @@ export type Database = {
       before_after: {
         Row: {
           ativo: boolean
+          cidade: string | null
           created_at: string
           id: string
           imagem_antes: string
           imagem_depois: string
           ordem: number
+          tipo_servico: string | null
           titulo: string
           updated_at: string
         }
         Insert: {
           ativo?: boolean
+          cidade?: string | null
           created_at?: string
           id?: string
           imagem_antes: string
           imagem_depois: string
           ordem?: number
+          tipo_servico?: string | null
           titulo: string
           updated_at?: string
         }
         Update: {
           ativo?: boolean
+          cidade?: string | null
           created_at?: string
           id?: string
           imagem_antes?: string
           imagem_depois?: string
           ordem?: number
+          tipo_servico?: string | null
           titulo?: string
           updated_at?: string
         }

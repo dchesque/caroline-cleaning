@@ -77,7 +77,7 @@ export function ContactForm() {
     }
 
     return (
-        <section className="py-16 bg-pot-pourri/30">
+        <section id="contact" className="py-16 bg-pot-pourri/30">
             <div className="container">
                 <div className="max-w-xl mx-auto">
                     {/* Header */}

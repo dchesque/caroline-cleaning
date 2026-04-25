@@ -1,8 +1,10 @@
 'use client';
 import { useRef, useState, PointerEvent } from 'react';
+import { BeforeAfterCaption } from './before-after-caption';
 
-export function BeforeAfterSlider({ antes, depois, titulo }: {
+export function BeforeAfterSlider({ antes, depois, titulo, tipoServico, cidade }: {
   antes: string; depois: string; titulo: string;
+  tipoServico?: string | null; cidade?: string | null;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(50);
@@ -56,6 +58,7 @@ export function BeforeAfterSlider({ antes, depois, titulo }: {
           <span className="text-neutral-700 text-sm">↔</span>
         </div>
       </div>
+      <BeforeAfterCaption titulo={titulo} tipoServico={tipoServico} cidade={cidade} />
     </div>
   );
 }
