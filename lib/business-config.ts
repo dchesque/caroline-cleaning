@@ -163,6 +163,11 @@ export interface BusinessSettings {
     tracking_custom_head_scripts: string;
     tracking_custom_body_scripts: string;
 
+    // Página Inicial - Before & After
+    before_after_display_mode: 'slider' | 'hover';
+    before_after_stat_count: number;
+    before_after_stat_region: string;
+
     // Legacy/Others (keep for compatibility)
     [key: string]: any;
 }
@@ -193,6 +198,10 @@ export const DEFAULT_SETTINGS: BusinessSettings = {
     badges_reviews_count: '150+',
     badges_years_experience: '5+',
     badges_google_reviews_url: '',
+
+    before_after_display_mode: 'slider',
+    before_after_stat_count: 500,
+    before_after_stat_region: 'Tampa Bay',
 
     chat_enabled: true,
     chat_bot_name: 'Carol',
@@ -433,6 +442,9 @@ const CONFIG_METADATA: Record<string, { grupo: string; categoria: string }> = {
     badges_reviews_count: { grupo: 'pagina_inicial', categoria: 'geral' },
     badges_years_experience: { grupo: 'pagina_inicial', categoria: 'geral' },
     badges_google_reviews_url: { grupo: 'pagina_inicial', categoria: 'geral' },
+    before_after_display_mode: { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    before_after_stat_count:   { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
+    before_after_stat_region:  { grupo: 'pagina_inicial', categoria: 'pagina_inicial' },
     ai_name: { grupo: 'pagina_inicial', categoria: 'geral' },
     ai_avatar: { grupo: 'pagina_inicial', categoria: 'geral' },
     ai_greeting: { grupo: 'pagina_inicial', categoria: 'geral' },
