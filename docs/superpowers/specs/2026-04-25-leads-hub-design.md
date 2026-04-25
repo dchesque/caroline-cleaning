@@ -476,8 +476,8 @@ Novos textos em `lib/admin-i18n/`:
       city: "Cidade",
       status: "Status",
       message: "Mensagem",
-      messagePreview: "Msg",
-      actions: "Ações"
+      messagePreview: "Msg"
+      // actions: usa common.actions
     }
   }
 }

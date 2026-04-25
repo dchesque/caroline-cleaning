@@ -121,11 +121,12 @@
       "Bash(curl -s http://localhost:3000/ -o D:/Workspace/caroline-cleaning/.tmp-landing.html)",
       "mcp__supabase__generate_typescript_types",
       "Bash(npm test *)",
-      "Bash(npx @anthropic-ai/claude-code /model)"
+      "Bash(npx @anthropic-ai/claude-code /model)",
+      "Bash(sqlite3 :memory: \"\")"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "supabase"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
