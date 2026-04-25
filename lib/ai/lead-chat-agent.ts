@@ -228,6 +228,26 @@ function sanitizeResponse(text: string): string {
   return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim()
 }
 
+function pickRandom<T>(arr: readonly T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+const SAVE_ERROR_MESSAGES = [
+  "Sorry, I had trouble saving your info. Could you share your name, phone, and ZIP one more time? 🙏",
+  "Hmm, something went sideways on my end. Mind sharing your name, phone, and ZIP again?",
+  "I dropped the ball on saving that. Can you walk me through your name, phone, and ZIP once more?",
+] as const
+
+const PARSE_ERROR_MESSAGES = [
+  "I had a small hiccup processing that. Could you share your name, phone, and ZIP one more time?",
+  "Looks like I got my wires crossed — could you tell me your name, phone, and ZIP again?",
+] as const
+
+const TECHNICAL_ERROR_MESSAGES = [
+  "Sorry, I ran into a technical issue. Please try again in a moment. 🙏",
+  "Something glitched on my side — give me a moment and try again, please. 🙏",
+] as const
+
 // ─── Lead persistence ─────────────────────────────────────────────────────────
 
 interface SaveLeadResult {
@@ -463,8 +483,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
         // Critical: only mark as saved when the DB operation actually succeeded
         if (result === null) {
           return {
-            message:
-              "Sorry, I had trouble saving your information. Could you share your name, phone, and ZIP one more time?",
+            message: pickRandom(SAVE_ERROR_MESSAGES),
             context: updatedContext,
             timestamp,
             llmCalls,
@@ -491,8 +510,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
       } catch (parseErr) {
         logger.warn('[lead-chat] tool args parse error', { error: String(parseErr) })
         return {
-          message:
-            "I had a small hiccup processing your info. Could you share your name, phone, and ZIP one more time?",
+          message: pickRandom(PARSE_ERROR_MESSAGES),
           context: updatedContext,
           timestamp,
           llmCalls,
@@ -517,8 +535,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
   } catch (err) {
     logger.error('[lead-chat] LLM error', { error: String(err) })
     return {
-      message:
-        "Sorry, I ran into a technical issue. Please try again in a moment. 🙏",
+      message: pickRandom(TECHNICAL_ERROR_MESSAGES),
       context: updatedContext,
       timestamp,
       llmCalls,
