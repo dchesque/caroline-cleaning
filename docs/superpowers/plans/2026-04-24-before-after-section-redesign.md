@@ -298,15 +298,15 @@ git commit -m "feat(admin): tipo_servico and cidade fields in before-after modal
 
 - [ ] **Step 1: Find an icon and a slot**
 
-Open the file. Locate the Trust Badges `AccordionItem` (`value="badges"`, ~line 282). The new "Before & After" accordion goes right after it (zebra alternates `bg-white` / `bg-gray-50/50`; pick whichever differs from `badges`). Use the `Sparkles` icon (already imported), or import `ImageIcon` from lucide if a better fit — keep imports tight if `Sparkles` works.
+Open the file. Locate the Trust Badges `AccordionItem` (`value="badges"`, ~line 282, `bg-white`); the next item (Services, ~line 346) is `bg-gray-50/50`. Inserting between them breaks zebra (would yield two adjacent rows of the same color either way). Insert the new "Before & After" accordion **after the Services accordion** with `bg-white` to preserve alternation (services gray → before-after white → next item should already be gray; verify by reading the file). Use the `Sparkles` icon (already imported).
 
 - [ ] **Step 2: Insert the accordion item**
 
-After the `</AccordionItem>` closing the badges block (~line 343), insert:
+After the `</AccordionItem>` closing the **Services** block (find its closing tag — the trigger is at ~line 346), insert:
 
 ```tsx
                     {/* Before & After Section */}
-                    <AccordionItem value="before_after" className="border-b-2 border-gray-200 bg-gray-50/50">
+                    <AccordionItem value="before_after" className="border-b-2 border-gray-200 bg-white">
                         <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-brandy-rose-50/50 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-brandy-rose-50">
