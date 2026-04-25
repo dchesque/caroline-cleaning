@@ -43,10 +43,9 @@ export async function getServiceAreaCities(): Promise<CoverageCities> {
         const sc = new Set<string>()
         for (const row of (data ?? []) as Array<{ cidade: string | null; estado: string | null }>) {
             if (!row.cidade) continue
-            // Skip meta-coverage rows that don't represent a single city
-            // (e.g. "Cobertura Metro 30mi / Fort Mill"). Dedup via Set already
-            // handles the city-name overlap, but skipping the longer label
-            // also keeps the source clean if anyone reads `nome` later.
+            // Set-based dedup naturally handles duplicate city rows (e.g. the
+            // "Cobertura Metro 30mi / Fort Mill" entry shares cidade='Fort Mill'
+            // with the dedicated Fort Mill row).
             const state = (row.estado ?? '').toUpperCase()
             if (state === 'NC') nc.add(row.cidade)
             else if (state === 'SC') sc.add(row.cidade)
