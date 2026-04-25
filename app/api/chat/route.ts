@@ -103,6 +103,13 @@ export async function POST(req: NextRequest) {
         const duration = Date.now() - startTime
 
         // Log the user interaction (fire-and-forget)
+        const contextWithTracking = {
+            ...(response.metrics?.contextSnapshot || {}),
+            tracking: response.conversion ? {
+                eventId: response.conversion.eventId,
+                eventName: response.conversion.eventName,
+            } : undefined,
+        }
         chatLogger.logInteraction({
             sessionId: currentSessionId,
             clienteId: response.cliente_id,
@@ -114,12 +121,12 @@ export async function POST(req: NextRequest) {
             toolCalls: [],
             handlersExecuted: response.metrics?.handlersExecuted || [],
             extractedData: response.metrics?.extractedData || {},
-            contextSnapshot: response.metrics?.contextSnapshot || {},
+            contextSnapshot: contextWithTracking,
             errors: response.metrics?.errors || [],
             responseTimeMs: duration,
         }).catch(() => {}) // Silently ignore logging errors
 
-        // Log the assistant response (fire-and-forget)
+        // Log the assistant response with full metrics (fire-and-forget)
         chatLogger.logInteraction({
             sessionId: currentSessionId,
             clienteId: response.cliente_id,
@@ -127,12 +134,12 @@ export async function POST(req: NextRequest) {
             messageContent: response.message,
             stateBefore: response.state_before,
             stateAfter: response.state,
-            llmCalls: [],
-            toolCalls: [],
-            handlersExecuted: [],
-            extractedData: {},
-            contextSnapshot: {},
-            errors: [],
+            llmCalls: response.metrics?.llmCalls || [],
+            toolCalls: [], // CarolAgent uses state machine, not OpenAI tools
+            handlersExecuted: response.metrics?.handlersExecuted || [],
+            extractedData: response.metrics?.extractedData || {},
+            contextSnapshot: contextWithTracking,
+            errors: response.metrics?.errors || [],
             responseTimeMs: 0,
         }).catch(() => {}) // Silently ignore logging errors
 

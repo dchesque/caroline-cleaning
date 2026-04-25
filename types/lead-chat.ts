@@ -13,6 +13,8 @@ export interface LeadContext {
   attempts: { name: number; phone: number; zip: number; address: number }
   zipRejectedCount: number
   offTopicCount: number
+  askedClosingQuestion: boolean
+  shouldCloseChat: boolean
 }
 
 export function defaultLeadContext(): LeadContext {
@@ -27,5 +29,7 @@ export function defaultLeadContext(): LeadContext {
     attempts: { name: 0, phone: 0, zip: 0, address: 0 },
     zipRejectedCount: 0,
     offTopicCount: 0,
+    askedClosingQuestion: false,
+    shouldCloseChat: false,
   }
 }

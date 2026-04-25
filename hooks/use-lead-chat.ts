@@ -89,6 +89,8 @@ export function useLeadChat() {
             zipRejectedCount: context.zipRejectedCount,
             offTopicCount: context.offTopicCount,
             attempts: context.attempts,
+            leadSaved: context.leadSaved,
+            askedClosingQuestion: context.askedClosingQuestion,
           },
         })
 
@@ -121,6 +123,9 @@ export function useLeadChat() {
             zipRejectedCount: data.context?.zipRejectedCount,
             offTopicCount: data.context?.offTopicCount,
             attempts: data.context?.attempts,
+            leadSaved: data.context?.leadSaved,
+            askedClosingQuestion: data.context?.askedClosingQuestion,
+            shouldCloseChat: data.context?.shouldCloseChat,
           },
         })
 
@@ -137,6 +142,14 @@ export function useLeadChat() {
             data.conversion.userData as Partial<UserData> | undefined,
             { eventId: data.conversion.eventId },
           )
+        }
+
+        // Auto-close chat if server signaled it (after showing final message)
+        if (data.context?.shouldCloseChat) {
+          console.log('[use-lead-chat] Server signaled chat close, dispatching event in 3s')
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('close-chat'))
+          }, 3000) // 3 seconds to read the goodbye message
         }
 
         // Mark user message as sent

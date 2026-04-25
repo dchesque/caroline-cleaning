@@ -633,12 +633,54 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
       zipRejectedCount: req.context.zipRejectedCount,
       offTopicCount: req.context.offTopicCount,
       attempts: req.context.attempts,
+      askedClosingQuestion: req.context.askedClosingQuestion,
     },
   })
 
-  // Lead already saved — respond warmly via LLM instead of a canned message
+  // Lead already saved — handle closing conversation
   if (req.context.leadSaved) {
     const sanitized = sanitizeInput(req.message)
+    const firstName = (req.context.name ?? '').split(' ')[0] ?? 'there'
+
+    // Check if user is saying "no" or similar (they don't have more questions)
+    const closingSignals = [
+      'no', 'nope', 'nah', 'nothing', 'none',
+      'no more', 'that\'s all', 'that is all', 'thats all',
+      'nothing else', 'all good', 'all set', 'done',
+      'nao', 'não', // PT
+    ]
+    const isClosingSignal = closingSignals.some(signal =>
+      sanitized.toLowerCase().trim() === signal ||
+      sanitized.toLowerCase().startsWith(signal + ' ') ||
+      sanitized.toLowerCase().startsWith(signal + ',') ||
+      sanitized.toLowerCase().startsWith(signal + '.')
+    )
+
+    // If we already asked and they signaled no more questions, close the chat
+    if (req.context.askedClosingQuestion && isClosingSignal) {
+      logger.info('[lead-chat] User confirmed no more questions, closing chat')
+      return {
+        message: `Thanks for chatting, ${firstName}! Our team will be in touch soon. Have a great day! 😊`,
+        context: { ...req.context, shouldCloseChat: true },
+        timestamp,
+        llmCalls,
+        toolCalls,
+      }
+    }
+
+    // If we haven't asked the closing question yet, ask it
+    if (!req.context.askedClosingQuestion) {
+      logger.info('[lead-chat] Asking closing question')
+      return {
+        message: `Perfect, ${firstName}! One more thing — do you have any other questions I can help with? 😊`,
+        context: { ...req.context, askedClosingQuestion: true },
+        timestamp,
+        llmCalls,
+        toolCalls,
+      }
+    }
+
+    // They have more questions — respond briefly via LLM
     const postSavePrompt = buildPostSavePrompt(req.context)
     const llmStart = Date.now()
     try {
@@ -664,8 +706,10 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
         completion_tokens: completion.usage?.completion_tokens,
         duration_ms: llmDuration,
       })
+      // After answering, ask again if they have more questions
+      const responseContent = sanitizeResponse(choice.message.content ?? "Sure, happy to help! 😊")
       return {
-        message: sanitizeResponse(choice.message.content ?? "Thank you! Our team will be in touch soon. 😊"),
+        message: `${responseContent}\n\nAnything else I can help with?`,
         context: req.context,
         timestamp,
         llmCalls,
@@ -674,7 +718,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
     } catch (err) {
       logger.error('[lead-chat] post-save LLM error', { error: String(err) })
       return {
-        message: "Thank you! Our team will be in touch soon. 😊",
+        message: "Sure, happy to help! Anything else? 😊",
         context: req.context,
         timestamp,
         llmCalls,
@@ -865,8 +909,8 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
 
         const confirmName = updatedContext.name?.split(' ')[0] ?? 'there'
         const confirmMessage = result.isNew
-          ? `Perfect, ${confirmName}! We've got your info and our team will reach out soon to schedule your free evaluation visit. It was great chatting with you! 😊`
-          : `Welcome back, ${confirmName}! We already have your info on file — our team will be in touch with you soon. 😊`
+          ? `Perfect, ${confirmName}! I've got everything saved. Our team will reach out soon to schedule your free evaluation visit. 😊`
+          : `Welcome back, ${confirmName}! Your info is on file and our team will be in touch soon. 😊`
 
         return {
           message: confirmMessage,
@@ -977,6 +1021,9 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
         zipRejectedCount: updatedContext.zipRejectedCount,
         offTopicCount: updatedContext.offTopicCount,
         attempts: updatedContext.attempts,
+        leadSaved: updatedContext.leadSaved,
+        askedClosingQuestion: updatedContext.askedClosingQuestion,
+        shouldCloseChat: updatedContext.shouldCloseChat,
       },
     })
 

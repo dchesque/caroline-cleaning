@@ -130,8 +130,15 @@ export function ChatWidget({ mode = 'full' }: { mode?: ChatMode } = {}) {
         const onOpenChat = () => {
             handleToggleChat(true)
         }
+        const onCloseChat = () => {
+            handleToggleChat(false)
+        }
         window.addEventListener('open-chat', onOpenChat)
-        return () => window.removeEventListener('open-chat', onOpenChat)
+        window.addEventListener('close-chat', onCloseChat)
+        return () => {
+            window.removeEventListener('open-chat', onOpenChat)
+            window.removeEventListener('close-chat', onCloseChat)
+        }
     }, [handleToggleChat])
 
     return (

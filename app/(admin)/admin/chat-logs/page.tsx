@@ -7,7 +7,17 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { RefreshCw } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { RefreshCw, Trash2 } from 'lucide-react'
 import { SessionList } from './components/SessionList'
 import { SessionSummary } from '@/lib/services/chat-logger'
 
@@ -17,9 +27,11 @@ export default function ChatLogsPage() {
 
   const [sessions, setSessions] = useState<SessionSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [pagination, setPagination] = useState({ page: 1, total_pages: 0, total_count: 0 })
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   // Filters
   const [hasErrors, setHasErrors] = useState(false)
@@ -68,6 +80,31 @@ export default function ChatLogsPage() {
     router.push(`/admin/chat-logs/${id}`)
   }
 
+  const handleDeleteAll = async () => {
+    setIsDeleting(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/admin/chat-logs/delete-all', {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to delete logs')
+      }
+
+      const data = await res.json()
+
+      setShowDeleteDialog(false)
+      fetchSessions(1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao excluir logs')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
@@ -77,10 +114,21 @@ export default function ChatLogsPage() {
             Auditoria e debug das conversas da Carol AI
           </p>
         </div>
-        <Button variant="outline" onClick={() => fetchSessions(pagination.page)}>
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Atualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={isLoading || pagination.total_count === 0}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Excluir Todos
+          </Button>
+          <Button variant="outline" onClick={() => fetchSessions(pagination.page)}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -165,6 +213,28 @@ export default function ChatLogsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir todos os logs?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso irá excluir permanentemente todos os {pagination.total_count} logs de conversa.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAll}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {isDeleting ? 'Excluindo...' : 'Excluir Todos'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
