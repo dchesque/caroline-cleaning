@@ -16,6 +16,9 @@ export function ChatWidget({ mode = 'full' }: { mode?: ChatMode } = {}) {
     const [isOpen, setIsOpen] = useState(false)
     const { trackEvent } = useTracking()
 
+    // Track if user has interacted with the page (enables audio autoplay)
+    const [hasUserInteracted, setHasUserInteracted] = useState(false)
+
     const [showBubble, setShowBubble] = useState(false)
     const [bubbleContent, setBubbleContent] = useState({
         title: "Hi! I'm Carol.",
@@ -64,16 +67,28 @@ export function ChatWidget({ mode = 'full' }: { mode?: ChatMode } = {}) {
         }
     }, [isOpen])
 
-    // Play notification sound when bubble appears OR updates
+    // Track user interaction to enable audio playback
     useEffect(() => {
-        if (showBubble && !isOpen) {
+        const enableAudio = () => setHasUserInteracted(true)
+
+        const events = ['click', 'keydown', 'scroll', 'touchstart']
+        events.forEach(event => window.addEventListener(event, enableAudio, { once: true }))
+
+        return () => {
+            events.forEach(event => window.removeEventListener(event, enableAudio))
+        }
+    }, [])
+
+    // Play notification sound when bubble appears (only after user interaction)
+    useEffect(() => {
+        if (showBubble && !isOpen && hasUserInteracted) {
             const audio = new Audio('/sounds/notification.mp3')
             audio.volume = 0.5
             audio.play().catch(e => {
                 console.warn('Notification sound could not be played:', e)
             })
         }
-    }, [showBubble, bubbleContent, isOpen])
+    }, [showBubble, isOpen, hasUserInteracted])
 
     // Hide bubble when chat opens
     useEffect(() => {
