@@ -32,6 +32,7 @@ export function CTASection() {
                         variant="secondary"
                         className="gap-2 text-base bg-white text-foreground hover:bg-brandy-rose-50 h-14 px-8"
                         onClick={openChat}
+                        data-fbignore="true"
                     >
                         <MessageCircle className="w-5 h-5" />
                         {settings.cta_button_text || 'Request a Visit'}

@@ -91,6 +91,7 @@ export function Testimonials() {
                         size="lg"
                         onClick={() => window.dispatchEvent(new CustomEvent('open-chat'))}
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
+                        data-fbignore="true"
                     >
                         <MessageCircle className="w-4 h-4" />
                         Schedule a Visit

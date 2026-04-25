@@ -146,6 +146,7 @@ export function Header() {
                             onClick={() => {
                                 window.dispatchEvent(new CustomEvent('open-chat'))
                             }}
+                            data-fbignore="true"
                         >
                             <MessageCircle className="w-4 h-4" />
                             {settings.hero_cta_text}
@@ -205,6 +206,7 @@ export function Header() {
                                     setIsMobileMenuOpen(false)
                                     window.dispatchEvent(new CustomEvent('open-chat'))
                                 }}
+                                data-fbignore="true"
                             >
                                 <MessageCircle className="w-4 h-4" />
                                 Chat with {settings.ai_name}

@@ -165,6 +165,7 @@ export function Pricing() {
                         size="lg"
                         onClick={openChat}
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
+                        data-fbignore="true"
                     >
                         <MessageCircle className="w-5 h-5" />
                         {settings.pricing_cta_text || 'Schedule Visit Now'}

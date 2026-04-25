@@ -106,7 +106,7 @@ export interface TrackingContextValue {
 export const EVENT_MAPPING = {
     meta: {
         PageView: 'PageView',
-        InitiateChat: 'InitiateCheckout',
+        InitiateChat: 'Contact',
         Lead: 'Lead',
         CompleteRegistration: 'CompleteRegistration',
         Schedule: 'Schedule',

@@ -165,6 +165,7 @@ export function BeforeAfterCarousel({ items, displayMode, statCount, statRegion 
           type="button"
           onClick={() => window.dispatchEvent(new CustomEvent('open-chat'))}
           className="mt-6 inline-flex items-center gap-2 rounded-full bg-brandy-rose-500 px-6 py-3 text-sm font-medium text-white shadow hover:bg-brandy-rose-600 transition-colors"
+          data-fbignore="true"
         >
           Book yours <span aria-hidden>→</span>
         </button>

@@ -74,7 +74,7 @@ export function HowItWorks() {
 
                 {/* CTA */}
                 <div className="text-center">
-                    <Button size="lg" onClick={openChat} className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white">
+                    <Button size="lg" onClick={openChat} className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white" data-fbignore="true">
                         <MessageCircle className="w-4 h-4" />
                         {settings.how_it_works_cta || 'Request a Visit'}
                     </Button>

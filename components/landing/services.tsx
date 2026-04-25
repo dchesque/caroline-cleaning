@@ -116,6 +116,7 @@ export function Services() {
                                     size="sm"
                                     onClick={openChat}
                                     className="mt-4 gap-2 text-brandy-rose-600 hover:text-brandy-rose-700 hover:bg-brandy-rose-50 p-0 h-auto font-semibold"
+                                    data-fbignore="true"
                                 >
                                     Request a quote
                                     <ArrowRight className="w-4 h-4" />
@@ -135,6 +136,7 @@ export function Services() {
                         onClick={openChat}
                         size="lg"
                         className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white min-w-[240px] h-14 text-lg"
+                        data-fbignore="true"
                     >
                         <MessageCircle className="w-5 h-5" />
                         Request a Quote

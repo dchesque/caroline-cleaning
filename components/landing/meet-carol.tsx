@@ -36,6 +36,7 @@ export function MeetCarol() {
                             size="lg"
                             className="gap-2 bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white"
                             onClick={openChat}
+                            data-fbignore="true"
                         >
                             <MessageCircle className="w-5 h-5" />
                             Chat with Carol

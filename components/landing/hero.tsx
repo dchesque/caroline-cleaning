@@ -49,6 +49,7 @@ export function Hero() {
                             size="lg"
                             className="gap-2 h-12 px-8 w-full sm:w-auto text-base bg-brandy-rose-500 hover:bg-brandy-rose-600 text-white shadow-lg shadow-brandy-rose-500/20"
                             onClick={openChat}
+                            data-fbignore="true"
                         >
                             <MessageCircle className="w-5 h-5" />
                             {settings.hero_cta_text}
