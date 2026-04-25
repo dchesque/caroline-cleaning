@@ -58,23 +58,32 @@ Add nullable columns:
 
 No backfill required (both nullable). Existing rows continue to work; caption simply hides when empty.
 
-### `business_settings` (extends existing flat schema)
-Add fields:
-- `before_after_display_mode: 'slider' | 'hover'` — default `'slider'`.
-- `before_after_stat_count: number` — default `500`.
-- `before_after_stat_region: string` — default `'Tampa Bay'`.
+### `configuracoes` table (KV store backing `business_settings`)
+The settings layer is a row-per-key table (`chave`/`valor`/`grupo`/`categoria`), not column-per-key. Adding a new setting requires three coordinated edits in [lib/business-config.ts](lib/business-config.ts):
 
-The `BusinessSettings` interface in [lib/business-config.ts](lib/business-config.ts) gets the three new fields. DB migration adds the same keys to whatever storage backs `business_settings` (single-row JSON or column-per-key — match the existing pattern).
+1. **Extend `BusinessSettings` interface** with:
+   - `before_after_display_mode: 'slider' | 'hover'`
+   - `before_after_stat_count: number`
+   - `before_after_stat_region: string`
+2. **Extend `DEFAULT_SETTINGS`** with defaults: `'slider'`, `500`, `'Tampa Bay'`.
+3. **Extend `CONFIG_METADATA`** with `{ grupo: 'pagina_inicial', categoria: 'before_after' }` for each new key.
+
+No SQL migration needed — `configuracoes` already accepts arbitrary keys; rows are upserted on first save through the existing settings flow. If we want the defaults present in DB on first deploy, include a one-time seed (insert/upsert) in a new migration file under `supabase/migrations/` for the three keys; otherwise rely on `DEFAULT_SETTINGS` fallback.
+
+### `BeforeAfterItem` (hand-written interface)
+[types/before-after.ts](types/before-after.ts) holds a hand-written `BeforeAfterItem` interface (not derived from the Supabase types). Add:
+- `tipo_servico?: string | null`
+- `cidade?: string | null`
 
 ### Generated types
-After migration, regenerate `types/supabase.ts` with `npm run db:generate`.
+After the `before_after` column migration, regenerate `types/supabase.ts` with `npm run db:generate`.
 
 ## Component architecture
 
 ### Files to modify
 
 - **[components/landing/before-after.tsx](components/landing/before-after.tsx)**
-  Server component. Fetches `before_after` items + `business_settings` (display mode, stat count, stat region). Passes everything to the carousel client component. Returns `null` when items are empty (current behaviour).
+  Server component. Fetches `before_after` items via `createClient()` and reads settings via `getBusinessSettingsServer()` from [lib/business-config-server.ts](lib/business-config-server.ts) (already used by `app/(public)/layout.tsx` and `components/landing/footer.tsx`). Pulls `before_after_display_mode`, `before_after_stat_count`, `before_after_stat_region`. Passes everything to the carousel client component. Returns `null` when items are empty (current behaviour).
 
 - **[components/landing/before-after-carousel.tsx](components/landing/before-after-carousel.tsx)**
   Refactor. Owns: selected index, prev/next handlers, keyboard navigation (`←`/`→`). Renders:
@@ -94,22 +103,34 @@ After migration, regenerate `types/supabase.ts` with `npm run db:generate`.
   Optional: surface the new fields as small badges under the title for at-a-glance inspection. Lightweight — skip if it complicates the table.
 
 - **[components/landing/contact-form.tsx](components/landing/contact-form.tsx)**
-  Add `id="contact"` to the wrapping `<section>` so the CTA anchor lands somewhere.
+  Add `id="contact"` to the outer `<section>` (line 80 — `<section className="py-16 bg-pot-pourri/30">`). `<ContactForm />` is mounted in [app/(public)/page.tsx](app/(public)/page.tsx); no wrapper to edit, the section in `contact-form.tsx` IS the anchor target.
 
-- **Admin settings page** for landing/business config (existing page that edits `business_settings` — locate during implementation, do not create new). Add a "Before & After display" group:
+- **Admin settings page**: [app/(admin)/admin/configuracoes/pagina-inicial/page.tsx](app/(admin)/admin/configuracoes/pagina-inicial/page.tsx). Add a "Before & After display" group with:
   - Select: display mode (slider / hover).
   - Number input: stat count.
   - Text input: stat region.
+  Match the existing form patterns in that file (Field components, save flow through `saveBusinessSetting` or equivalent already wired up in this tab).
 
 ### Files to create
 
 - **`components/landing/before-after-hover.tsx`** (new client component)
-  Renders the hover-reveal variant.
+  Renders the hover-reveal variant. Prop signature must match the slider exactly so the carousel can switch between them with the same props:
+  ```ts
+  type BeforeAfterCardProps = {
+    antes: string;
+    depois: string;
+    titulo: string;
+    tipoServico?: string | null;
+    cidade?: string | null;
+  };
+  ```
   - Two stacked `<img>` (depois on top by default, antes underneath).
   - Desktop: `onMouseEnter` / `onMouseLeave` toggles state; CSS transition (opacity 250ms) on the top image.
-  - Mobile / touch: detects via `(hover: none)` media query or pointer event type; tap toggles `revealed` state.
-  - Pill badge updates label per state.
-  - Caption overlay identical to slider variant — extract a shared `<BeforeAfterCaption>` if both components need it; otherwise inline.
+  - Mobile / touch: detects via `window.matchMedia('(hover: none)')` after mount; tap toggles `revealed` state. Before the media query resolves, render desktop-mode label to avoid hydration mismatch.
+  - Pill badge updates label per state (`Hover/Tap to see before` ↔ `Show after`).
+
+- **`components/landing/before-after-caption.tsx`** (new shared component)
+  Both `BeforeAfterSlider` and `BeforeAfterHover` use this. Renders the gradient overlay + titulo + `tipoServico · cidade` line. Hides itself if titulo + both meta fields are empty. Locks the visual treatment in one place.
 
 - **Migration** in `supabase/migrations/` adding `tipo_servico` and `cidade` columns plus the three `business_settings` keys (matching existing settings pattern — likely a row insert/update, not column add).
 
@@ -127,8 +148,11 @@ Detected with `window.matchMedia('(hover: none)')` (client-side after mount). Be
 ### Empty caption
 If both `tipo_servico` and `cidade` are null/empty, omit the secondary line. If `titulo` is also missing the entire overlay is hidden (the current schema makes titulo non-null, so this is defensive only).
 
+### Single-item edge case
+If `items.length === 1`: hide both arrow buttons and the thumb strip (single card stands alone). The closing stat/CTA block still renders.
+
 ### CTA anchor
-`Book yours →` is an `<a href="#contact">`. Smooth scroll already handled globally if present; if not, accept native jump (no new global handler for this section alone).
+`Book yours →` is an `<a href="#contact">`. Native browser jump is acceptable — no new smooth-scroll handler is added for this section.
 
 ## Error handling
 
