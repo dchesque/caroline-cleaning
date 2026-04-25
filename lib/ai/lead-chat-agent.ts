@@ -161,12 +161,13 @@ Do NOT ask for any information. Do NOT mention tools or saving. No em-dashes. 1-
 
 // ─── Partial context extraction from conversation history ─────────────────────
 
-function extractPartialContext(
+async function extractPartialContext(
   history: Array<{ role: 'user' | 'assistant'; content: string }>,
   currentMessage: string,
   existing: LeadContext,
-): Partial<LeadContext> {
+): Promise<{ updates: Partial<LeadContext>; zipRejected: boolean }> {
   const updates: Partial<LeadContext> = {}
+  let zipRejected = false
   const userTexts = [
     ...history.filter((m) => m.role === 'user').map((m) => m.content),
     currentMessage,
@@ -182,11 +183,18 @@ function extractPartialContext(
     }
   }
 
-  if (!existing.zip) {
+  // ZIP — only extract if not already confirmed; validate coverage inline.
+  if (!existing.zipConfirmed) {
     for (const text of userTexts) {
       const trimmed = text.trim()
       if (/^\d{5}$/.test(trimmed)) {
-        updates.zip = trimmed
+        const covered = await isZipCovered(trimmed)
+        if (covered) {
+          updates.zip = trimmed
+          updates.zipConfirmed = true
+        } else {
+          zipRejected = true
+        }
         break
       }
     }
@@ -212,7 +220,7 @@ function extractPartialContext(
     }
   }
 
-  return updates
+  return { updates, zipRejected }
 }
 
 // ─── Input sanitization ───────────────────────────────────────────────────────
@@ -393,10 +401,30 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
 
   const sanitized = sanitizeInput(req.message)
   const updatedContext: LeadContext = { ...req.context }
-  const systemPrompt = buildSystemPrompt(updatedContext)
 
   // Build message array (cap history at last 30 messages)
   const recentHistory = req.history.slice(-30)
+
+  // Extract any fields the customer just provided. ZIP is validated against
+  // our service area inline so we can react before involving the LLM.
+  const { updates: extracted, zipRejected } = await extractPartialContext(
+    recentHistory,
+    sanitized,
+    updatedContext,
+  )
+  Object.assign(updatedContext, extracted)
+
+  if (zipRejected) {
+    return {
+      message: "I'm sorry, that ZIP isn't in our service area yet 😔 Do you have another ZIP we could check?",
+      context: updatedContext,
+      timestamp,
+      llmCalls,
+      toolCalls,
+    }
+  }
+
+  const systemPrompt = buildSystemPrompt(updatedContext)
 
   const llmStart = Date.now()
   try {
@@ -519,11 +547,8 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
       }
     }
 
-    // Normal text response — extract partial context from history so next
-    // turn's system prompt reflects already-collected fields
+    // Normal text response — extraction already ran before the LLM call.
     const content = choice.message.content ?? ''
-    const extracted = extractPartialContext(recentHistory, sanitized, updatedContext)
-    Object.assign(updatedContext, extracted)
 
     return {
       message: sanitizeResponse(content),
