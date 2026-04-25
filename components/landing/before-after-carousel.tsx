@@ -161,12 +161,13 @@ export function BeforeAfterCarousel({ items, displayMode, statCount, statRegion 
         <p className="text-2xl md:text-3xl font-heading text-foreground">
           {statCount}+ homes transformed in {statRegion}
         </p>
-        <a
-          href="#contact"
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-chat'))}
           className="mt-6 inline-flex items-center gap-2 rounded-full bg-brandy-rose-500 px-6 py-3 text-sm font-medium text-white shadow hover:bg-brandy-rose-600 transition-colors"
         >
           Book yours <span aria-hidden>→</span>
-        </a>
+        </button>
       </div>
     </div>
   );
