@@ -91,6 +91,7 @@ export function ChatWidget({ mode = 'full' }: { mode?: ChatMode } = {}) {
 
     const handleToggleChat = useCallback((newState?: boolean) => {
         const nextState = newState !== undefined ? newState : !isOpen
+        console.log('[ChatWidget] handleToggleChat called', { newState, nextState, isOpen })
 
         if (nextState && !isOpen) {
             trackEvent('InitiateChat', {
@@ -106,6 +107,7 @@ export function ChatWidget({ mode = 'full' }: { mode?: ChatMode } = {}) {
 
     // Handler to click bubble (opens chat)
     const handleBubbleClick = () => {
+        console.log('[ChatWidget] handleBubbleClick called')
         handleToggleChat(true)
     }
 
