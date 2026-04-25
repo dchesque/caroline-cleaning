@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { BeforeAfterSlider } from './before-after-slider';
 import { BeforeAfterHover } from './before-after-hover';
@@ -15,58 +15,115 @@ interface Props {
 }
 
 export function BeforeAfterCarousel({ items, displayMode, statCount, statRegion }: Props) {
-  const [index, setIndex] = useState(0);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(true);
   const total = items.length;
-  const canPrev = index > 0;
-  const canNext = index < total - 1;
   const showNav = total > 1;
-  const current = items[index];
 
-  const goPrev = useCallback(() => setIndex(i => Math.max(0, i - 1)), []);
-  const goNext = useCallback(() => setIndex(i => Math.min(total - 1, i + 1)), [total]);
+  const updateScrollState = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 4);
+    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+
+    const cards = el.querySelectorAll<HTMLElement>('[data-card]');
+    let nearest = 0;
+    let nearestDist = Infinity;
+    cards.forEach((c, i) => {
+      const dist = Math.abs(c.offsetLeft - el.scrollLeft);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = i;
+      }
+    });
+    setActiveIndex(nearest);
+  }, []);
+
+  const scrollByOne = useCallback((direction: 1 | -1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const card = el.querySelector<HTMLElement>('[data-card]');
+    if (!card) return;
+    const step = card.offsetWidth + 16;
+    el.scrollBy({ left: direction * step, behavior: 'smooth' });
+  }, []);
+
+  const scrollToIndex = useCallback((idx: number) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const card = el.querySelectorAll<HTMLElement>('[data-card]')[idx];
+    if (!card) return;
+    el.scrollTo({ left: card.offsetLeft, behavior: 'smooth' });
+  }, []);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    window.addEventListener('resize', updateScrollState);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+    };
+  }, [updateScrollState]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-      if (e.key === 'ArrowLeft') goPrev();
-      else if (e.key === 'ArrowRight') goNext();
+      if (e.key === 'ArrowLeft') scrollByOne(-1);
+      else if (e.key === 'ArrowRight') scrollByOne(1);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goPrev, goNext]);
+  }, [scrollByOne]);
 
   const Card = displayMode === 'hover' ? BeforeAfterHover : BeforeAfterSlider;
 
   return (
-    <div className="mx-auto max-w-3xl">
-      {/* Card area */}
+    <div className="mx-auto max-w-6xl">
       <div className="relative">
-        <Card
-          antes={current.imagem_antes}
-          depois={current.imagem_depois}
-          titulo={current.titulo}
-          tipoServico={current.tipo_servico}
-          cidade={current.cidade}
-        />
+        <div
+          ref={scrollerRef}
+          className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        >
+          {items.map(it => (
+            <div
+              key={it.id}
+              data-card
+              className="snap-start shrink-0 basis-full md:basis-1/2 lg:basis-1/3"
+            >
+              <Card
+                antes={it.imagem_antes}
+                depois={it.imagem_depois}
+                titulo={it.titulo}
+                tipoServico={it.tipo_servico}
+                cidade={it.cidade}
+              />
+            </div>
+          ))}
+        </div>
 
         {showNav && (
           <>
             <button
               type="button"
               aria-label="Previous result"
-              onClick={goPrev}
+              onClick={() => scrollByOne(-1)}
               disabled={!canPrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white/90 shadow-md hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+              className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white shadow-md hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed z-10"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
             <button
               type="button"
               aria-label="Next result"
-              onClick={goNext}
+              onClick={() => scrollByOne(1)}
               disabled={!canNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white/90 shadow-md hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+              className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full bg-white shadow-md hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed z-10"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -74,7 +131,6 @@ export function BeforeAfterCarousel({ items, displayMode, statCount, statRegion 
         )}
       </div>
 
-      {/* Thumb strip */}
       {showNav && (
         <div className="mt-6 flex justify-center gap-3 overflow-x-auto pb-1">
           {items.map((it, i) => (
@@ -82,9 +138,9 @@ export function BeforeAfterCarousel({ items, displayMode, statCount, statRegion 
               key={it.id}
               type="button"
               aria-label={`Show ${it.titulo}`}
-              onClick={() => setIndex(i)}
+              onClick={() => scrollToIndex(i)}
               className={`relative shrink-0 overflow-hidden rounded-md transition ${
-                i === index
+                i === activeIndex
                   ? 'ring-2 ring-brandy-rose-500 opacity-100'
                   : 'opacity-60 hover:opacity-100'
               }`}
@@ -101,7 +157,6 @@ export function BeforeAfterCarousel({ items, displayMode, statCount, statRegion 
         </div>
       )}
 
-      {/* Closing block */}
       <div className="mt-12 text-center">
         <p className="text-2xl md:text-3xl font-heading text-foreground">
           {statCount}+ homes transformed in {statRegion}
