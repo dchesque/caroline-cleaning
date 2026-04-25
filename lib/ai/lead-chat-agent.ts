@@ -43,15 +43,16 @@ const SAVE_LEAD_TOOL = {
   function: {
     name: 'save_lead',
     description:
-      'Save the lead to the database once the customer has confirmed their name, phone number, and ZIP code.',
+      'Save the lead once the customer has confirmed name, phone, ZIP, and street address. Only call this after the customer explicitly confirms.',
     parameters: {
       type: 'object',
       properties: {
-        name:  { type: 'string', description: 'Full name of the customer' },
-        phone: { type: 'string', description: 'Phone number — digits only, 10 or 11 digits' },
-        zip:   { type: 'string', description: '5-digit ZIP code' },
+        name:    { type: 'string', description: 'Full name of the customer' },
+        phone:   { type: 'string', description: 'Phone number — digits only, 10 or 11 digits' },
+        zip:     { type: 'string', description: '5-digit ZIP code' },
+        address: { type: 'string', description: 'Street address (e.g., "123 Main St, Charlotte NC")' },
       },
-      required: ['name', 'phone', 'zip'],
+      required: ['name', 'phone', 'zip', 'address'],
     },
   },
 }
@@ -282,6 +283,10 @@ async function saveLead(context: LeadContext, sessionId: string, browserContext?
       logger.warn('[lead-chat] invalid name, aborting save', { name: context.name })
       return null
     }
+    if (!context.address || context.address.trim().length < 5) {
+      logger.warn('[lead-chat] invalid address, aborting save', { address: context.address })
+      return null
+    }
 
     // Duplicate check by phone
     const { data: existing } = await supabase
@@ -301,6 +306,7 @@ async function saveLead(context: LeadContext, sessionId: string, browserContext?
         nome: context.name,
         telefone: phone,
         zip_code: context.zip,
+        endereco_completo: context.address.trim(),
         status: 'lead',
         origem: 'lead_chat',
       })
@@ -466,34 +472,35 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
           name: string
           phone: string
           zip: string
+          address: string
         }
 
-        // Persist name and phone immediately — even if ZIP fails, we keep what we have
-        updatedContext.name = args.name ?? updatedContext.name
-        updatedContext.phone = args.phone ?? updatedContext.phone
+        updatedContext.name    = args.name    ?? updatedContext.name
+        updatedContext.phone   = args.phone   ?? updatedContext.phone
+        updatedContext.address = args.address ?? updatedContext.address
 
-        // Check ZIP coverage BEFORE committing it to context
-        const candidateZip = args.zip ?? updatedContext.zip
-        if (candidateZip) {
-          const covered = await isZipCovered(candidateZip)
+        // Edge case: extraction missed the ZIP but the LLM picked it up via the tool.
+        // (Normal flow already validated ZIP during extraction.)
+        if (args.zip && !updatedContext.zip) {
+          const covered = await isZipCovered(args.zip)
           if (!covered) {
-            // Leave updatedContext.zip as-is (null/previous) so next turn still asks for ZIP
             toolCalls.push({
               tool: 'save_lead',
-              args: { name: args.name, phone: args.phone, zip: args.zip },
+              args: { name: args.name, phone: args.phone, zip: args.zip, address: args.address },
               result: { covered: false },
               success: false,
               duration_ms: 0,
             })
             return {
-              message: `I'm sorry, ZIP code ${candidateZip} isn't in our service area yet 😔 We serve Charlotte NC, Fort Mill SC, and surrounding areas. Do you have another ZIP code we could check? 😊`,
+              message: `I'm sorry, ZIP ${args.zip} isn't in our service area yet 😔 Do you have another ZIP we could check?`,
               context: updatedContext,
               timestamp,
               llmCalls,
               toolCalls,
             }
           }
-          updatedContext.zip = candidateZip
+          updatedContext.zip = args.zip
+          updatedContext.zipConfirmed = true
         }
 
         const toolStart = Date.now()
@@ -502,7 +509,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
 
         toolCalls.push({
           tool: 'save_lead',
-          args: { name: args.name, phone: args.phone, zip: args.zip },
+          args: { name: args.name, phone: args.phone, zip: args.zip, address: args.address },
           result: result ? { id: result.id, isNew: result.isNew } : null,
           success: result !== null,
           duration_ms: toolDuration,
