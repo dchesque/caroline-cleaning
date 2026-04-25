@@ -40,3 +40,41 @@ describe('extractPartialContext — name', () => {
     expect(out.name).toBeUndefined()
   })
 })
+
+describe('extractPartialContext — phone', () => {
+  const empty = defaultLeadContext()
+
+  it('extracts 10-digit phone', () => {
+    const out = extractPartialContextForTest([], '7045551234', empty)
+    expect(out.phone).toBe('7045551234')
+  })
+
+  it('extracts 10-digit phone with formatting', () => {
+    const out = extractPartialContextForTest([], '(704) 555-1234', empty)
+    expect(out.phone).toBe('7045551234')
+  })
+
+  it('extracts 11-digit phone (with country code)', () => {
+    const out = extractPartialContextForTest([], '17045551234', empty)
+    expect(out.phone).toBe('17045551234')
+  })
+
+  it('does not extract short numbers', () => {
+    const out = extractPartialContextForTest([], '12345', empty)
+    expect(out.phone).toBeUndefined()
+  })
+})
+
+describe('extractPartialContext — zip', () => {
+  const empty = defaultLeadContext()
+
+  it('extracts a 5-digit zip', () => {
+    const out = extractPartialContextForTest([], '28202', empty)
+    expect(out.zip).toBe('28202')
+  })
+
+  it('does not extract 4 digits', () => {
+    const out = extractPartialContextForTest([], '2820', empty)
+    expect(out.zip).toBeUndefined()
+  })
+})
