@@ -378,6 +378,63 @@ export default function PaginaInicialConfigPage() {
                         </AccordionContent>
                     </AccordionItem>
 
+                    {/* Before & After Section */}
+                    <AccordionItem value="before_after" className="border-b-2 border-gray-200 bg-white">
+                        <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-brandy-rose-50/50 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-brandy-rose-50">
+                                    <Sparkles className="w-5 h-5 text-brandy-rose-500" />
+                                </div>
+                                <div className="text-left">
+                                    <h3 className="font-semibold text-foreground">Before &amp; After</h3>
+                                    <p className="text-sm text-muted-foreground">Display mode and closing stat for the showcase section</p>
+                                </div>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6">
+                            <div className="space-y-4 pt-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="ba-display-mode">Display mode</Label>
+                                    <select
+                                        id="ba-display-mode"
+                                        value={config.before_after_display_mode ?? 'slider'}
+                                        onChange={(e) => setConfig({ ...config, before_after_display_mode: e.target.value })}
+                                        className={cn(inputClasses, 'h-10 rounded-md px-3 w-full')}
+                                    >
+                                        <option value="slider">Drag slider (current)</option>
+                                        <option value="hover">Hover / tap to reveal before</option>
+                                    </select>
+                                    <p className="text-xs text-muted-foreground">Slider lets visitors drag a handle. Hover shows the after first and reveals the before on hover (desktop) or tap (mobile).</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ba-stat-count">Stat count</Label>
+                                        <Input
+                                            id="ba-stat-count"
+                                            type="number"
+                                            min={0}
+                                            value={config.before_after_stat_count ?? 0}
+                                            onChange={(e) => setConfig({ ...config, before_after_stat_count: Number(e.target.value) })}
+                                            placeholder="500"
+                                            className={inputClasses}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="ba-stat-region">Stat region</Label>
+                                        <Input
+                                            id="ba-stat-region"
+                                            value={config.before_after_stat_region ?? ''}
+                                            onChange={(e) => setConfig({ ...config, before_after_stat_region: e.target.value })}
+                                            placeholder="Tampa Bay"
+                                            className={inputClasses}
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Renders as: <span className="font-medium">{`${config.before_after_stat_count ?? 0}+ homes transformed in ${config.before_after_stat_region ?? ''}`}</span></p>
+                            </div>
+                        </AccordionContent>
+                    </AccordionItem>
+
                     {/* Pricing Section */}
                     <AccordionItem value="pricing" className="border-b-2 border-gray-200 bg-white">
                         <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-brandy-rose-50/50 transition-colors">
