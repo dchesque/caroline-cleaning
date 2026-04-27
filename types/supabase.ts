@@ -1,5 +1,5 @@
-// Temporary Database type for build purposes
-// This should be regenerated using `npm run db:generate` after migration
+// Database types for Supabase
+// Generated manually - includes migration 33 (leads hub columns)
 export type Database = {
   public: {
     Tables: {
@@ -129,7 +129,7 @@ export type Database = {
           imagem_depois: string
           tipo_servico?: string | null
           cidade?: string | null
-          order?: number
+          ordem?: number
           ativo?: boolean
           created_at?: string
           updated_at?: string
