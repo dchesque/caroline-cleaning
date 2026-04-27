@@ -3110,6 +3110,73 @@ export const translations = {
             invalidFileType: 'Invalid file type. Use JPEG, PNG or WebP.',
             fileTooLarge: 'File too large. Max 5 MB.',
         },
+        leads: {
+            title: 'Central de Leads',
+            subtitle: 'Gerencie leads do Chat IA e formulário em um só lugar',
+            source: {
+                all: 'Todas',
+                chat: 'Chat IA',
+                form: 'Formulário'
+            },
+            status: {
+                novo: 'Novo',
+                novo_incompleto: 'Novo (Incompleto)',
+                contatado: 'Contatado',
+                convertido: 'Convertido',
+                descartado: 'Descartado',
+                retorno_futuro: 'Retorno Futuro'
+            },
+            actions: {
+                convert: 'Transformar em Cliente',
+                markReturn: 'Marcar Retorno',
+                delete: 'Excluir Lead',
+                viewDetails: 'Ver Detalhes',
+                call: 'Ligar',
+                sms: 'SMS'
+            },
+            modal: {
+                title: 'Detalhes do Lead',
+                convertConfirm: 'Transformar Lead em Cliente',
+                convertWarning: 'Após converter, o lead será movido para a lista de clientes.',
+                message: 'Mensagem',
+                noMessage: 'Sem mensagem',
+                notesPlaceholder: 'Adicione notas sobre este lead...',
+                returnDate: 'Data de Retorno',
+                confirmDelete: 'Tem certeza que deseja excluir este lead?',
+                confirmConvert: 'Confirmar Conversão',
+                cancel: 'Cancelar',
+                close: 'Fechar'
+            },
+            table: {
+                name: 'Nome',
+                phone: 'Telefone',
+                source: 'Origem',
+                city: 'Cidade',
+                status: 'Status',
+                message: 'Mensagem',
+                messagePreview: 'Msg',
+                received: 'Recebido'
+            },
+            filters: {
+                search: 'Buscar por nome, telefone ou cidade...',
+                sourcePlaceholder: 'Origem',
+                statusPlaceholder: 'Status'
+            },
+            stats: {
+                total: 'Total',
+                today: 'Hoje',
+                new: 'Novos',
+                contacted: 'Contatados',
+                converted: 'Convertidos'
+            },
+            conversion: {
+                title: 'Transformar Lead em Cliente',
+                migrating: 'Os seguintes dados serão migrados:',
+                existingClient: '⚠️ Já existe um cliente com este telefone. O lead será vinculado ao cliente existente.',
+                success: 'Lead convertido com sucesso!',
+                error: 'Erro ao converter lead. Tente novamente.'
+            }
+        },
     },
 };
 
