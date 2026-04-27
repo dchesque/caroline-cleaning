@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
                 { status: parsed.status }
             )
         }
-        const { nome, telefone, cidade } = parsed.data
+        const { nome, telefone, cidade, mensagem } = parsed.data
 
         const supabase = await createClient()
 
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
                 nome: nome.trim(),
                 telefone: telefone.trim(),
                 cidade: cidade?.trim() || null,
+                mensagem: mensagem?.trim() || null,
                 origem: 'contact_form',
                 pagina_origem: request.headers.get('referer') || '/',
                 user_agent: userAgent,
