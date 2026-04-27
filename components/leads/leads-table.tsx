@@ -38,6 +38,7 @@ const sourceIcons = {
 export function LeadsTable({ leads, onViewDetails }: LeadsTableProps) {
   const { t, locale } = useAdminI18n()
   const leadsT = t('leads')
+  const common = t('common')
   const dateLocale = locale === 'pt-BR' ? ptBR : enUS
 
   const getStatusLabel = (status: string) => {
@@ -85,7 +86,7 @@ export function LeadsTable({ leads, onViewDetails }: LeadsTableProps) {
             <TableHead>{leadsT.table.status}</TableHead>
             <TableHead>{leadsT.table.messagePreview}</TableHead>
             <TableHead>{leadsT.table.received}</TableHead>
-            <TableHead className="text-right">{t('common.actions')}</TableHead>
+            <TableHead className="text-right">{common.actions}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

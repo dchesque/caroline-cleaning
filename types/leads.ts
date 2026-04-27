@@ -1,6 +1,6 @@
-import { Database } from './supabase'
+import type { Database } from '@/types'
 
-type ContactLead = Database['public']['Tables']['contact_leads']['Row']
+export type ContactLead = Database['public']['Tables']['contact_leads']['Row']
 type Cliente = Database['public']['Tables']['clientes']['Row']
 
 export type UnifiedLeadSource = 'chat' | 'form'

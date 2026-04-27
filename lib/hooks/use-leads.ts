@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { UnifiedLead } from '@/types/leads'
 import type { LeadFilters } from '@/types/leads'
+import type { ContactLead } from '@/types/leads'
 import { normalizeToUnifiedLead } from '@/lib/utils/leads-normalizer'
-import type { ContactLead } from '@/types/supabase'
-import type { Cliente } from '@/types/supabase'
+import type { Cliente } from '@/types'
 
 export function useLeads(filters: LeadFilters) {
   const [leads, setLeads] = useState<UnifiedLead[]>([])

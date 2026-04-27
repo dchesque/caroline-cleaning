@@ -113,6 +113,10 @@ export function ConvertToClientModal({ lead, open, onOpenChange, onConverted }: 
             .select('id')
             .single()
 
+          if (!data) {
+            throw new Error('Failed to create client')
+          }
+
           clientId = data.id
 
           // Link lead to client
@@ -211,7 +215,7 @@ export function ConvertToClientModal({ lead, open, onOpenChange, onConverted }: 
             disabled={isConverting}
             className="bg-brandy-rose-500 hover:bg-brandy-rose-600"
           >
-            {isConverting ? 'Convertendo...' : leadsT.conversion?.confirmConvert || 'Confirmar Conversão'}
+            {isConverting ? 'Convertendo...' : leadsT.modal?.confirmConvert || 'Confirmar Conversão'}
           </Button>
         </DialogFooter>
       </DialogContent>

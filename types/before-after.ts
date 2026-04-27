@@ -1,4 +1,4 @@
-import type { Database } from './supabase';
+import type { Database } from '@/types';
 
 export type BeforeAfterRow = Database['public']['Tables']['before_after']['Row'];
 export type BeforeAfterInsert = Database['public']['Tables']['before_after']['Insert'];

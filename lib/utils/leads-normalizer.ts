@@ -1,4 +1,4 @@
-import type { Database } from '@/types/supabase'
+import type { Database } from '@/types'
 import type { UnifiedLead, UnifiedLeadStatus, UnifiedLeadSource } from '@/types/leads'
 
 // Type aliases for cleaner code
@@ -29,8 +29,8 @@ export function normalizeToUnifiedLead(
       id: cliente.id,
       source: 'chat',
       nome: cliente.nome,
-      telefone: cliente.telefone,
-      cidade: cliente.cidade,
+      telefone: cliente.telefone || '—',
+      cidade: cliente.cidade || null,
       location_display: cliente.cidade || cliente.zip_code || '—',
       status: mapStatus('chat', cliente.status),
       mensagem: null,
@@ -50,7 +50,7 @@ export function normalizeToUnifiedLead(
     source: 'form',
     nome: lead.nome,
     telefone: lead.telefone,
-    cidade: lead.cidade,
+    cidade: lead.cidade ?? null,
     location_display: lead.cidade || '—',
     status: mapStatus('form', lead.status),
     mensagem: lead.mensagem || null,
