@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Phone, User, MapPin, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useBusinessSettings } from '@/lib/context/business-settings-context'
 
@@ -12,7 +13,8 @@ export function ContactForm() {
     const [formData, setFormData] = useState({
         nome: '',
         telefone: '',
-        cidade: ''
+        cidade: '',
+        mensagem: ''
     })
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
@@ -63,7 +65,7 @@ export function ContactForm() {
 
             if (result.success) {
                 setSubmitStatus('success')
-                setFormData({ nome: '', telefone: '', cidade: '' })
+                setFormData({ nome: '', telefone: '', cidade: '', mensagem: '' })
             } else {
                 setSubmitStatus('error')
                 setErrorMessage(result.error || 'Something went wrong')
@@ -173,6 +175,26 @@ export function ContactForm() {
                                             className="pl-10"
                                         />
                                     </div>
+                                </div>
+
+                                {/* Mensagem */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="mensagem" className="text-sm font-medium">
+                                        Message (optional)
+                                    </Label>
+                                    <Textarea
+                                        id="mensagem"
+                                        name="mensagem"
+                                        placeholder="Tell us about your cleaning needs..."
+                                        value={formData.mensagem}
+                                        onChange={handleChange}
+                                        maxLength={500}
+                                        rows={3}
+                                        className="resize-none"
+                                    />
+                                    <p className="text-xs text-muted-foreground text-right">
+                                        {formData.mensagem.length}/500
+                                    </p>
                                 </div>
 
                                 {/* Error Message */}
