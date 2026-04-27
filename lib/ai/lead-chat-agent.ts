@@ -69,13 +69,19 @@ async function isZipCovered(zip: string): Promise<boolean> {
     // Method 1: Try using .contains() (Supabase client method for arrays)
     const { data, error } = await supabase
       .from('areas_atendidas')
-      .select('id, nome, zip_codes')
+      .select('id, nome, cidade, zip_codes')
       .eq('ativo', true)
       .contains('zip_codes', [zip])
       .limit(1)
 
     if (error) {
-      logger.error('[lead-chat] isZipCovered .contains() error, trying RPC fallback', { error: error.message, zip })
+      logger.error('[lead-chat] isZipCovered .contains() error, trying RPC fallback', {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        zip,
+      })
 
       // Fallback to RPC function
       const { data: rpcData, error: rpcError } = await supabase
@@ -86,24 +92,34 @@ async function isZipCovered(zip: string): Promise<boolean> {
         return true
       }
 
-      // If both fail, fail open
-      logger.error('[lead-chat] isZipCovered RPC fallback also failed', { rpcError: rpcError?.message, zip })
-      return true
+      // If both fail, fail CLOSED (safer for lead capture - better to ask for another ZIP than to lose a lead)
+      logger.error('[lead-chat] isZipCovered RPC fallback also failed, ZIP will be REJECTED', {
+        rpcError: rpcError?.message,
+        rpcCode: rpcError?.code,
+        zip,
+      })
+      return false
     }
 
     const covered = !!(data && data.length > 0)
 
-    logger.info('[lead-chat] isZipCovered result', {
-      zip,
-      covered,
-      foundAreas: data?.map((d: any) => ({ nome: d.nome, zip_codes: d.zip_codes })) || [],
-      resultCount: data?.length || 0,
-    })
+    if (covered) {
+      logger.info('[lead-chat] isZipCovered FOUND', {
+        zip,
+        area: data![0].nome,
+        cidade: data![0].cidade,
+      })
+    } else {
+      logger.warn('[lead-chat] isZipCovered NOT FOUND', { zip })
+    }
 
     return covered
   } catch (err) {
-    logger.error('[lead-chat] isZipCovered exception', { error: String(err), zip })
-    return true
+    logger.error('[lead-chat] isZipCovered exception, ZIP will be REJECTED', {
+      error: String(err),
+      zip,
+    })
+    return false // Fail closed on exception too
   }
 }
 
@@ -297,6 +313,26 @@ function sanitizeResponse(text: string): string {
 
 function pickRandom<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
+}
+
+// Helper: Extract a 5-digit ZIP code from a message or history
+function extractZipFromMessage(
+  message: string,
+  history: Array<{ role: 'user' | 'assistant'; content: string }>
+): string | null {
+  // Try current message first
+  const currentMatch = message.match(/\b(\d{5})\b/)
+  if (currentMatch) return currentMatch[1]
+
+  // Check history for most recent 5-digit number
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].role === 'user') {
+      const match = history[i].content.match(/\b(\d{5})\b/)
+      if (match) return match[1]
+    }
+  }
+
+  return null
 }
 
 const SHORT_CONFIRMATIONS = new Set([
@@ -634,6 +670,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
       offTopicCount: req.context.offTopicCount,
       attempts: req.context.attempts,
       askedClosingQuestion: req.context.askedClosingQuestion,
+      postSaveInteractionCount: req.context.postSaveInteractionCount ?? 0,
     },
   })
 
@@ -648,17 +685,25 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
       'no more', 'that\'s all', 'that is all', 'thats all',
       'nothing else', 'all good', 'all set', 'done',
       'nao', 'não', // PT
+      'bye', 'goodbye', 'see you', 'have a great', // EN closing signals
     ]
-    const isClosingSignal = closingSignals.some(signal =>
-      sanitized.toLowerCase().trim() === signal ||
-      sanitized.toLowerCase().startsWith(signal + ' ') ||
-      sanitized.toLowerCase().startsWith(signal + ',') ||
-      sanitized.toLowerCase().startsWith(signal + '.')
-    )
+    const isClosingSignal = closingSignals.some(signal => {
+      const lower = sanitized.toLowerCase().trim()
+      return (
+        lower === signal ||
+        lower.startsWith(signal + ' ') ||
+        lower.startsWith(signal + ',') ||
+        lower.startsWith(signal + '.') ||
+        lower.endsWith(signal) // Match "no", "bye" at end of string
+      )
+    })
 
-    // If we already asked and they signaled no more questions, close the chat
-    if (req.context.askedClosingQuestion && isClosingSignal) {
-      logger.info('[lead-chat] User confirmed no more questions, closing chat')
+    // If user signaled closing, close the chat regardless of state
+    if (isClosingSignal) {
+      logger.info('[lead-chat] User signaled closing, ending chat', {
+        signal: sanitized,
+        askedClosingQuestion: req.context.askedClosingQuestion,
+      })
       return {
         message: `Thanks for chatting, ${firstName}! Our team will be in touch soon. Have a great day! 😊`,
         context: { ...req.context, shouldCloseChat: true },
@@ -668,12 +713,29 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
       }
     }
 
+    // Increment interaction counter
+    const interactionCount = (req.context.postSaveInteractionCount ?? 0) + 1
+
     // If we haven't asked the closing question yet, ask it
     if (!req.context.askedClosingQuestion) {
       logger.info('[lead-chat] Asking closing question')
       return {
         message: `Perfect, ${firstName}! One more thing — do you have any other questions I can help with? 😊`,
-        context: { ...req.context, askedClosingQuestion: true },
+        context: { ...req.context, askedClosingQuestion: true, postSaveInteractionCount: interactionCount },
+        timestamp,
+        llmCalls,
+        toolCalls,
+      }
+    }
+
+    // If user has interacted 3+ times with questions, offer to close more directly
+    if (interactionCount >= 3) {
+      logger.info('[lead-chat] Multiple interactions, offering to close', {
+        interactionCount,
+      })
+      return {
+        message: `${firstName}, I want to make sure I've helped with everything! Is there anything specific you need, or are we all set for now? 😊`,
+        context: { ...req.context, postSaveInteractionCount: interactionCount },
         timestamp,
         llmCalls,
         toolCalls,
@@ -681,6 +743,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
     }
 
     // They have more questions — respond briefly via LLM
+    // Note: We keep askedClosingQuestion=true to avoid repeating the initial question
     const postSavePrompt = buildPostSavePrompt(req.context)
     const llmStart = Date.now()
     try {
@@ -706,11 +769,11 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
         completion_tokens: completion.usage?.completion_tokens,
         duration_ms: llmDuration,
       })
-      // After answering, ask again if they have more questions
+      // Answer their question - don't repeat the "one more thing" question again
       const responseContent = sanitizeResponse(choice.message.content ?? "Sure, happy to help! 😊")
       return {
-        message: `${responseContent}\n\nAnything else I can help with?`,
-        context: req.context,
+        message: responseContent,
+        context: { ...req.context, postSaveInteractionCount: interactionCount },
         timestamp,
         llmCalls,
         toolCalls,
@@ -718,8 +781,8 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
     } catch (err) {
       logger.error('[lead-chat] post-save LLM error', { error: String(err) })
       return {
-        message: "Sure, happy to help! Anything else? 😊",
-        context: req.context,
+        message: "Sure, happy to help! 😊",
+        context: { ...req.context, postSaveInteractionCount: interactionCount },
         timestamp,
         llmCalls,
         toolCalls,
@@ -753,9 +816,47 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
 
   Object.assign(updatedContext, extracted)
 
+  // Server-side validation: Count ZIP rejections from message history
+  // This prevents client stale state from bypassing the 2-rejection limit
+  function countZipRejectionsFromHistory(
+    history: Array<{ role: 'user' | 'assistant'; content: string }>
+  ): number {
+    let rejections = 0
+    for (const msg of history) {
+      if (msg.role === 'user') {
+        const trimmed = msg.content.trim()
+        // Look for 5-digit numbers that are ZIPs
+        const zipMatch = trimmed.match(/\b\d{5}\b/g)
+        if (zipMatch) {
+          // Check if assistant responded with rejection message
+          const msgIndex = history.indexOf(msg)
+          const nextMsg = history[msgIndex + 1]
+          if (nextMsg?.role === 'assistant') {
+            const response = nextMsg.content.toLowerCase()
+            if (response.includes("isn't in our service area") ||
+                response.includes("isn't in our service") ||
+                response.includes("can't help right now")) {
+              rejections++
+            }
+          }
+        }
+      }
+    }
+    return rejections
+  }
+
+  const serverZipRejections = countZipRejectionsFromHistory(recentHistory)
+
   if (zipRejected) {
-    updatedContext.zipRejectedCount = updatedContext.zipRejectedCount + 1
+    const clientCount = updatedContext.zipRejectedCount
+    // Use the maximum of client count and server-derived count to handle stale state
+    const actualCount = Math.max(clientCount, serverZipRejections)
+    updatedContext.zipRejectedCount = actualCount + 1
     logger.warn('[lead-chat] ZIP REJECTED', {
+      testedZip: extractZipFromMessage(sanitized, recentHistory) || '(unknown)',
+      clientCount,
+      serverCount: serverZipRejections,
+      actualCount,
       newCount: updatedContext.zipRejectedCount,
       willTerminate: updatedContext.zipRejectedCount >= 2,
     })
@@ -907,10 +1008,29 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
         updatedContext.leadSaved = true
         updatedContext.leadId = result.id
 
+        // Ensure critical fields are preserved (prevent context corruption)
+        // These should already be set, but we explicitly preserve them to be safe
+        updatedContext.address = updatedContext.address ?? req.context.address
+        updatedContext.zipConfirmed = updatedContext.zipConfirmed ?? req.context.zipConfirmed
+        updatedContext.zip = updatedContext.zip ?? req.context.zip
+
         const confirmName = updatedContext.name?.split(' ')[0] ?? 'there'
         const confirmMessage = result.isNew
           ? `Perfect, ${confirmName}! I've got everything saved. Our team will reach out soon to schedule your free evaluation visit. 😊`
           : `Welcome back, ${confirmName}! Your info is on file and our team will be in touch soon. 😊`
+
+        logger.info('[lead-chat] Lead saved successfully, returning context', {
+          leadId: result.id,
+          isNew: result.isNew,
+          contextSnapshot: {
+            name: updatedContext.name,
+            phone: updatedContext.phone,
+            zip: updatedContext.zip,
+            zipConfirmed: updatedContext.zipConfirmed,
+            address: updatedContext.address,
+            leadSaved: updatedContext.leadSaved,
+          },
+        })
 
         return {
           message: confirmMessage,
@@ -1024,6 +1144,7 @@ export async function processLeadMessage(req: LeadChatRequest): Promise<LeadChat
         leadSaved: updatedContext.leadSaved,
         askedClosingQuestion: updatedContext.askedClosingQuestion,
         shouldCloseChat: updatedContext.shouldCloseChat,
+        postSaveInteractionCount: updatedContext.postSaveInteractionCount ?? 0,
       },
     })
 

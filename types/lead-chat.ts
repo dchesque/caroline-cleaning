@@ -15,6 +15,7 @@ export interface LeadContext {
   offTopicCount: number
   askedClosingQuestion: boolean
   shouldCloseChat: boolean
+  postSaveInteractionCount: number // Tracks how many user messages after lead save
 }
 
 export function defaultLeadContext(): LeadContext {
@@ -31,5 +32,6 @@ export function defaultLeadContext(): LeadContext {
     offTopicCount: 0,
     askedClosingQuestion: false,
     shouldCloseChat: false,
+    postSaveInteractionCount: 0,
   }
 }

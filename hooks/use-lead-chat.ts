@@ -20,6 +20,7 @@ const LEAD_HISTORY_KEY = (id: string) => `lead_history_v3_${id}`
 export function useLeadChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false) // Separate flag to prevent race conditions
   const [sessionId, setSessionId] = useState<string>('')
   const [context, setContext] = useState<LeadContext>(defaultLeadContext())
   const [error, setError] = useState<string | null>(null)
@@ -57,15 +58,25 @@ export function useLeadChat() {
 
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!content.trim() || isLoading) return
+      const trimmed = content.trim()
+      // Prevent processing if already processing (not just loading)
+      if (!trimmed || isProcessing || isLoading) return
 
+      // Prevent duplicate messages (user double-tapping send button or rapid retries)
+      const lastMessage = messages[messages.length - 1]
+      if (lastMessage?.role === 'user' && lastMessage?.content === trimmed) {
+        console.warn('[use-lead-chat] Duplicate message ignored', { content: trimmed })
+        return
+      }
+
+      setIsProcessing(true) // Set immediately to prevent race conditions
       setIsLoading(true)
       setError(null)
 
       const userMessage: ChatMessage = {
         id: nanoid(),
         role: 'user',
-        content: content.trim(),
+        content: trimmed,
         timestamp: new Date().toISOString(),
         status: 'sending',
       }
@@ -91,6 +102,7 @@ export function useLeadChat() {
             attempts: context.attempts,
             leadSaved: context.leadSaved,
             askedClosingQuestion: context.askedClosingQuestion,
+            postSaveInteractionCount: context.postSaveInteractionCount ?? 0,
           },
         })
 
@@ -98,7 +110,7 @@ export function useLeadChat() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: content.trim(),
+            message: trimmed,
             sessionId,
             history: historyForApi,
             context,
@@ -131,6 +143,14 @@ export function useLeadChat() {
 
         // Update context from server response
         if (data.context) {
+          // Log context changes for debugging state sync issues
+          const contextChanges = {
+            zipRejectedCount: { from: context.zipRejectedCount, to: data.context.zipRejectedCount },
+            leadSaved: { from: context.leadSaved, to: data.context.leadSaved },
+            askedClosingQuestion: { from: context.askedClosingQuestion, to: data.context.askedClosingQuestion },
+            postSaveInteractionCount: { from: context.postSaveInteractionCount ?? 0, to: data.context.postSaveInteractionCount ?? 0 },
+          }
+          console.log('[use-lead-chat] Context UPDATE:', contextChanges)
           setContext(data.context as LeadContext)
         }
 
@@ -177,9 +197,10 @@ export function useLeadChat() {
         setError(err instanceof Error ? err.message : 'Failed to send message')
       } finally {
         setIsLoading(false)
+        setIsProcessing(false) // Reset processing flag to allow new messages
       }
     },
-    [isLoading, sessionId, context, messages, trackEvent]
+    [isLoading, isProcessing, sessionId, context, messages, trackEvent]
   )
 
   const clearMessages = useCallback(() => {
@@ -197,7 +218,7 @@ export function useLeadChat() {
   return {
     messages,
     isLoading,
-    isProcessing: false, // kept for ChatHookReturn interface compatibility
+    isProcessing,
     sessionId,
     sendMessage,
     clearMessages,
