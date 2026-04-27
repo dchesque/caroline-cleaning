@@ -1,5 +1,8 @@
 import { Database } from './supabase'
 
+// Re-export Database for other files to use
+export type { Database }
+
 // Atalhos para tipos de tabelas
 // Nota: Esses tipos funcionarão corretamente apenas após gerar o types/supabase.ts real
 export type Cliente = Database['public']['Tables']['clientes']['Row']

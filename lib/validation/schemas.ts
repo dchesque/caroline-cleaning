@@ -21,6 +21,7 @@ export const ContactRequestSchema = z.object({
         .regex(/^[\d\s\-\(\)\+]{10,}$/, 'Formato de telefone inválido')
         .max(30),
     cidade: z.string().max(100).optional(),
+    mensagem: z.string().max(500).optional(),
 })
 
 const CarolQueryType = z.enum([

@@ -250,39 +250,76 @@ export const translations = {
             },
         },
         leads: {
-            title: 'Leads de Contato',
-            subtitle: 'Pessoas que solicitaram callback pelo formulário',
-            stats: {
-                new: 'Novos',
-                contacted: 'Contatados',
-                converted: 'Convertidos',
-                dropped: 'Descartados',
+            title: 'Central de Leads',
+            subtitle: 'Gerencie leads do Chat IA e formulário em um só lugar',
+            source: {
+                all: 'Todas',
+                chat: 'Chat IA',
+                form: 'Formulário'
             },
             status: {
                 novo: 'Novo',
+                novo_incompleto: 'Novo (Incompleto)',
                 contatado: 'Contatado',
                 convertido: 'Convertido',
                 descartado: 'Descartado',
+                retorno_futuro: 'Retorno Futuro'
             },
-            filters: {
-                search: 'Buscar por nome, telefone ou cidade...',
-                statusPlaceholder: 'Filtrar status',
+            actions: {
+                convert: 'Transformar em Cliente',
+                markReturn: 'Marcar Retorno',
+                delete: 'Excluir Lead',
+                viewDetails: 'Ver Detalhes',
+                call: 'Ligar',
+                sms: 'SMS'
+            },
+            modal: {
+                title: 'Detalhes do Lead',
+                convertConfirm: 'Transformar Lead em Cliente',
+                convertWarning: 'Após converter, o lead será movido para a lista de clientes.',
+                message: 'Mensagem',
+                noMessage: 'Sem mensagem',
+                notesPlaceholder: 'Adicione notas sobre este lead...',
+                returnDate: 'Data de Retorno',
+                confirmDelete: 'Tem certeza que deseja excluir este lead?',
+                confirmConvert: 'Confirmar Conversão',
+                cancel: 'Cancelar',
+                close: 'Fechar',
+                call: 'Ligar',
+                sms: 'SMS',
+                receivedAt: 'Recebido',
+                contactedAt: 'Contatado',
+                noCityProvided: 'Cidade não informada'
             },
             table: {
                 name: 'Nome',
                 phone: 'Telefone',
+                source: 'Origem',
                 city: 'Cidade',
                 status: 'Status',
-                received: 'Recebido',
+                message: 'Mensagem',
+                messagePreview: 'Msg',
+                received: 'Recebido'
             },
-            modal: {
-                title: 'Detalhes do Lead',
-                call: 'Ligar',
-                sms: 'SMS',
-                notesPlaceholder: 'Adicionar notas sobre este lead...',
-                receivedAt: 'Recebido',
-                contactedAt: 'Contatado',
-                noCityProvided: 'Cidade não informada',
+            filters: {
+                search: 'Buscar por nome, telefone ou cidade...',
+                sourcePlaceholder: 'Origem',
+                statusPlaceholder: 'Status'
+            },
+            stats: {
+                total: 'Total',
+                today: 'Hoje',
+                new: 'Novos',
+                contacted: 'Contatados',
+                converted: 'Convertidos'
+            },
+            conversion: {
+                title: 'Transformar Lead em Cliente',
+                migrating: 'Os seguintes dados serão migrados:',
+                existingClient: '⚠️ Já existe um cliente com este telefone. O lead será vinculado ao cliente existente.',
+                success: 'Lead convertido com sucesso!',
+                error: 'Erro ao converter lead. Tente novamente.',
+                warning: 'Após converter, o lead será movido para a lista de clientes.'
             },
             success: {
                 statusUpdated: 'Status atualizado!',
@@ -1857,39 +1894,76 @@ export const translations = {
             },
         },
         leads: {
-            title: 'Contact Leads',
-            subtitle: 'People who requested a callback via the form',
-            stats: {
-                new: 'New',
-                contacted: 'Contacted',
-                converted: 'Converted',
-                dropped: 'Discarded',
+            title: 'Leads Hub',
+            subtitle: 'Manage AI Chat and form leads in one place',
+            source: {
+                all: 'All',
+                chat: 'AI Chat',
+                form: 'Form'
             },
             status: {
                 novo: 'New',
+                novo_incompleto: 'New (Incomplete)',
                 contatado: 'Contacted',
                 convertido: 'Converted',
                 descartado: 'Discarded',
+                retorno_futuro: 'Future Follow-up'
             },
-            filters: {
-                search: 'Search by name, phone or city...',
-                statusPlaceholder: 'Filter status',
+            actions: {
+                convert: 'Convert to Client',
+                markReturn: 'Mark Follow-up',
+                delete: 'Delete Lead',
+                viewDetails: 'View Details',
+                call: 'Call',
+                sms: 'SMS'
+            },
+            modal: {
+                title: 'Lead Details',
+                convertConfirm: 'Convert Lead to Client',
+                convertWarning: 'After conversion, the lead will be moved to the clients list.',
+                message: 'Message',
+                noMessage: 'No message',
+                notesPlaceholder: 'Add notes about this lead...',
+                returnDate: 'Follow-up Date',
+                confirmDelete: 'Are you sure you want to delete this lead?',
+                confirmConvert: 'Confirm Conversion',
+                cancel: 'Cancel',
+                close: 'Close',
+                call: 'Call',
+                sms: 'SMS',
+                receivedAt: 'Received',
+                contactedAt: 'Contacted',
+                noCityProvided: 'City not provided'
             },
             table: {
                 name: 'Name',
                 phone: 'Phone',
+                source: 'Source',
                 city: 'City',
                 status: 'Status',
-                received: 'Received',
+                message: 'Message',
+                messagePreview: 'Msg',
+                received: 'Received'
             },
-            modal: {
-                title: 'Lead Details',
-                call: 'Call',
-                sms: 'SMS',
-                notesPlaceholder: 'Add notes about this lead...',
-                receivedAt: 'Received',
-                contactedAt: 'Contacted',
-                noCityProvided: 'City not provided',
+            filters: {
+                search: 'Search by name, phone or city...',
+                sourcePlaceholder: 'Source',
+                statusPlaceholder: 'Status'
+            },
+            stats: {
+                total: 'Total',
+                today: 'Today',
+                new: 'New',
+                contacted: 'Contacted',
+                converted: 'Converted'
+            },
+            conversion: {
+                title: 'Convert Lead to Client',
+                migrating: 'The following data will be migrated:',
+                existingClient: '⚠️ A client with this phone already exists. The lead will be linked to the existing client.',
+                success: 'Lead converted successfully!',
+                error: 'Error converting lead. Please try again.',
+                warning: 'After conversion, the lead will be moved to the clients list.'
             },
             success: {
                 statusUpdated: 'Status updated!',
